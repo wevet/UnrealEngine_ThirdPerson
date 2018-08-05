@@ -1,0 +1,26 @@
+{
+  "FileVersion": 3,
+  "Version": 1,
+  "VersionName": "1.0",
+  "FriendlyName": "Extra Camera Window Plugin",
+  "FriendlyVersion": "1.0",
+  "Description": "Sub Window Plugin",
+  "Category": "Camera",
+  "CreatedBy": "Shunji Nagasawa",
+  "CreatedByURL": "",
+  "DocsURL": "",
+  "MarketplaceURL": "",
+  "SupportURL": "",
+  "EngineVersion": "4.19.0",
+  "EnabledByDefault": true,
+  "CanContainContent": false,
+  "IsBetaVersion": false,
+  "Installed": false,
+  "Modules": [
+    {
+      "Name": "ExtraCameraWindow",
+      "Type": "Developer",
+      "LoadingPhase": "Default"
+    }
+  ]
+}
