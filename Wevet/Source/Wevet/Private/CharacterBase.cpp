@@ -135,7 +135,6 @@ void ACharacterBase::Equipment_Implementation()
 	{
 		return;
 	}
-	//FString Name = *(Super::GetName());
 
 	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT("Equipment : %s"), *(Super::GetName())));
 	this->IsEquipWeapon = true;
