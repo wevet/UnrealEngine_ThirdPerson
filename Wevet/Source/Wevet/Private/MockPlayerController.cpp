@@ -11,6 +11,17 @@ AMockPlayerController::AMockPlayerController(const FObjectInitializer& ObjectIni
 	//
 }
 
+void AMockPlayerController::Possess(APawn* Pawn)
+{
+	Super::Possess(Pawn);
+
+	AMockCharacter* MockCharacter = Cast<AMockCharacter>(Pawn);
+	if (MockCharacter)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Found"));
+	}
+}
+
 void AMockPlayerController::BeginPlay()
 {
 	if (this->WidgetMainUI)
@@ -25,31 +36,3 @@ void AMockPlayerController::BeginPlay()
 	}
 }
 
-void AMockPlayerController::Test(FString InString)
-{
-	if (InString.IsEmpty())
-	{
-		return;
-	}
-
-	FTCHARToUTF8 ToUtf8Converter(InString.GetCharArray().GetData());
-	auto Utf8StringSize = ToUtf8Converter.Length();
-	auto Utf8String = ToUtf8Converter.Get();
-
-	FUTF8ToTCHAR ToTCharConverter(Utf8String);
-	FString OutString(ToTCharConverter.Get());
-
-	for (int i = 0; i < Utf8StringSize; ++i) 
-	{
-		
-	}
-	//TCHAR* Chars = *(InString);
-	//ANSICHAR* AnsiChars = TCHAR_TO_ANSI(*InString);
-	
-	GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Red, InString);
-	//GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Black, AnsiChars);
-	GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Yellow, FString::FromInt(InString.Len()));
-	GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Blue, FString::FromInt(Utf8StringSize));
-	GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Green, OutString);
-
-}

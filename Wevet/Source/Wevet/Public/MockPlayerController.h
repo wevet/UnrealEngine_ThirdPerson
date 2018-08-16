@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerController.h"
+#include "MockCharacter.h"
 #include "MockPlayerController.generated.h"
 
 /**
@@ -16,6 +17,7 @@ class WEVET_API AMockPlayerController : public APlayerController
 	
 public:
 	AMockPlayerController(const FObjectInitializer& ObjectInitializer);
+	virtual void Possess(APawn* Pawn) override;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AMockPlayerController|Valiable")
 	TSubclassOf<class UUserWidget> WidgetMainUI;
@@ -24,6 +26,4 @@ public:
 
 	virtual void BeginPlay() override;
 	
-	UFUNCTION(BlueprintCallable, Category="AMockPlayerController|Valiable")
-	void Test(FString InString);
 };

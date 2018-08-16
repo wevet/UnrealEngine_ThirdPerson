@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/GameModeBase.h"
+#include "MockPlayerController.h"
 #include "WevetGameModeBase.generated.h"
 
 /**
@@ -14,7 +15,13 @@ class WEVET_API AWevetGameModeBase : public AGameModeBase
 {
 	GENERATED_BODY()
 	
+public:
+	AWevetGameModeBase(const FObjectInitializer& ObjectInitializer);
+
+	virtual void InitGameState() override;
 	
+	UFUNCTION(BlueprintCallable, Category = Game)
+	virtual void StartPlay() override;
 	
-	
+
 };
