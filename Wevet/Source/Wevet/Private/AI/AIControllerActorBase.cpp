@@ -42,10 +42,10 @@ void AAIControllerActorBase::Possess(APawn * Pawn)
 	AICharacter = Cast<AAICharacterActorBase>(Pawn);
 	if (AICharacter) 
 	{
-		auto BB = AICharacter->BehaviorTree->BlackboardAsset;
-		if (BB)
+		UBlackboardData* BlackBoard = AICharacter->BehaviorTree->BlackboardAsset;
+		if (BlackBoard)
 		{
-
+			//
 		}
 
 		AICharacter->InitializePosses();
