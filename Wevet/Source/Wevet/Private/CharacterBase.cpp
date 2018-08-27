@@ -35,12 +35,6 @@ void ACharacterBase::SprintStarted()
 	MovementSpeed = FMath::Clamp<float>(MovementSpeed * 3.f, 300.f, this->DefaultMaxSpeed);
 }
 
-//template< class T >
-//static FORCEINLINE T Clamp(const T X, const T Min, const T Max)
-//{
-//	return X<Min ? Min : X<Max ? X : Max;
-//}
-
 void ACharacterBase::SprintStopped()
 {
 	this->Sprint = false;

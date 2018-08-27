@@ -2,12 +2,15 @@
 
 #include "WeaponBase.h"
 #include "MockCharacter.h"
+#include "Engine.h"
+#include "Kismet/GameplayStatics.h"
 #include "Runtime/Engine/Classes/Components/SkeletalMeshComponent.h"
 
 AWeaponBase::AWeaponBase(const FObjectInitializer& ObjectInitializer) 
-	: Super(ObjectInitializer)
+	: Super(ObjectInitializer),
+	CharacterOwner(nullptr)
 {
-	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bCanEverTick = false;
 	this->MuzzleSocketName = FName(TEXT("MuzzleFlash"));
 	this->BulletDuration = 0.1F;
 
@@ -81,7 +84,17 @@ void AWeaponBase::SetReload(bool Reload)
 
 void AWeaponBase::OnFirePress_Implementation()
 {
-	this->CanFired = true;
+	if (WeaponItemInfo.CurrentAmmo <= 0)
+	{
+		if (this->CanFired)
+		{
+			this->CanFired = false;
+		}
+		UE_LOG(LogTemp, Log, TEXT("Out Of Ammos"));
+		return;
+	}
+	this->CanFired = false;
+
 }
 
 void AWeaponBase::OnFireRelease_Implementation()
@@ -112,18 +125,65 @@ void AWeaponBase::OnVisible_Implementation()
 	GLog->Log("On Visible " + Super::GetName());
 }
 
-void AWeaponBase::BeginOverlapRecieve(UPrimitiveComponent * OverlappedComponent, AActor * OtherActor, UPrimitiveComponent * OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult)
+void AWeaponBase::BeginOverlapRecieve(
+	UPrimitiveComponent * OverlappedComponent, 
+	AActor * OtherActor, 
+	UPrimitiveComponent * OtherComp, 
+	int32 OtherBodyIndex, 
+	bool bFromSweep, 
+	const FHitResult & SweepResult)
 {
-	AMockCharacter* MockCharacter = Cast<AMockCharacter>(OtherActor);
-
-	if (MockCharacter)
+	if (this->CharacterOwner == nullptr)
 	{
-		this->CharacterOwner = MockCharacter;
+		AMockCharacter* MockCharacter = Cast<AMockCharacter>(OtherActor);
+
+		if (MockCharacter)
+		{
+			this->CharacterOwner = MockCharacter;
+		}
+	}
+
+	if (this->WidgetComponent)
+	{
+		this->WidgetComponent->SetVisibility(true);
+	}
+	if (this->SkeletalMeshComponent)
+	{
+		this->SkeletalMeshComponent->SetRenderCustomDepth(true);
+	}
+	SetPickable(true);
+
+	APlayerController* PlayerController = UGameplayStatics::GetPlayerController(this, 0);
+	if (PlayerController)
+	{
+		Super::EnableInput(PlayerController);
 	}
 }
 
-void AWeaponBase::EndOverlapRecieve(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+void AWeaponBase::EndOverlapRecieve(
+	UPrimitiveComponent* OverlappedComp, 
+	AActor* OtherActor, 
+	UPrimitiveComponent* OtherComp, 
+	int32 OtherBodyIndex)
 {
-	this->CharacterOwner = nullptr;
+	if (this->CharacterOwner == nullptr)
+	{
+		AMockCharacter* MockCharacter = Cast<AMockCharacter>(OtherActor);
+
+		if (MockCharacter)
+		{
+			this->CharacterOwner = MockCharacter;
+		}
+	}
+
+	if (this->WidgetComponent)
+	{
+		this->WidgetComponent->SetVisibility(false);
+	}
+	if (this->SkeletalMeshComponent)
+	{
+		this->SkeletalMeshComponent->SetRenderCustomDepth(false);
+	}
+	SetPickable(false);
 }
 
