@@ -7,8 +7,10 @@
 #include "Weapon.h"
 #include "Classes/Animation/AnimMontage.h"
 #include "Components/SphereComponent.h"
-#include "WidgetComponent.h"
+#include "Components/WidgetComponent.h"
 #include "WeaponBase.generated.h"
+
+class AMockCharacter;
 
 UCLASS(ABSTRACT)
 class WEVET_API AWeaponBase : public AActor, public IWeapon
@@ -39,8 +41,8 @@ protected:
 	UPROPERTY(EditAnyWhere, BlueprintReadWrite, Category = "Valiable")
 	UAnimMontage* ReloadAnimMontageAsset;
 
-	UPROPERTY(EditAnyWhere, BlueprintReadWrite, Category = "Valiable")
-	class ACharacterBase* CharacterOwner;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Valiable")
+	class AMockCharacter* CharacterOwner;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	class USkeletalMeshComponent* SkeletalMeshComponent;
@@ -60,11 +62,6 @@ public:
 	virtual void SetFireSoundAsset(USoundBase* FireSoundAsset);
 	virtual void SetFireAnimMontageAsset(UAnimMontage* FireAnimMontageAsset);
 	virtual void SetReloadAnimMontageAsset(UAnimMontage* ReloadAnimMontageAsset);
-
-	virtual ACharacterBase* GetCharacterOwner() const
-	{
-		return this->CharacterOwner;
-	}
 
 	UFUNCTION(BlueprintCallable, Category = "AWeaponBase|Valiable")
 	virtual void OnEquip(bool Equip);

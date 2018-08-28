@@ -10,7 +10,7 @@ AWeaponBase::AWeaponBase(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer),
 	CharacterOwner(nullptr)
 {
-	PrimaryActorTick.bCanEverTick = false;
+	PrimaryActorTick.bCanEverTick = true;
 	this->MuzzleSocketName = FName(TEXT("MuzzleFlash"));
 	this->BulletDuration = 0.1F;
 
@@ -84,6 +84,18 @@ void AWeaponBase::SetReload(bool Reload)
 
 void AWeaponBase::OnFirePress_Implementation()
 {
+	if (this->CharacterOwner == nullptr)
+	{
+		// lost owner
+		return;
+	}
+
+	if (this->IsReload)
+	{
+		UE_LOG(LogTemp, Log, TEXT("Now Reloading..."));
+		return;
+	}
+
 	if (WeaponItemInfo.CurrentAmmo <= 0)
 	{
 		if (this->CanFired)
@@ -93,8 +105,29 @@ void AWeaponBase::OnFirePress_Implementation()
 		UE_LOG(LogTemp, Log, TEXT("Out Of Ammos"));
 		return;
 	}
-	this->CanFired = false;
 
+	const FVector Start = this->CharacterOwner->GetFollowCameraComponent()->GetComponentLocation();
+	const FVector End = Start + (this->CharacterOwner->GetFollowCameraComponent()->GetForwardVector() * 15000.f);
+
+	FHitResult HitData(ForceInit);
+	FCollisionQueryParams fCollisionQueryParams;
+	fCollisionQueryParams.TraceTag = FName("");
+	fCollisionQueryParams.OwnerTag = FName("");
+	fCollisionQueryParams.bTraceAsyncScene = false;
+	fCollisionQueryParams.bTraceComplex = true;
+	fCollisionQueryParams.bFindInitialOverlaps = false;
+	fCollisionQueryParams.bReturnFaceIndex = false;
+	fCollisionQueryParams.bReturnPhysicalMaterial = false;
+	fCollisionQueryParams.bIgnoreBlocks = false;
+	fCollisionQueryParams.IgnoreMask = 0;
+	fCollisionQueryParams.AddIgnoredActor(this);
+
+	bool bSuccess = GetWorld()->LineTraceSingleByChannel(HitData, Start, End, ECollisionChannel::ECC_Visibility, fCollisionQueryParams);
+
+	//FLinearColor fLineColor = FLinearColor(0.0, 255.0, 0.0, 0.0);
+	//float Duration = 0.5;
+	//float Thickness = 1.0f;
+	//UKismetSystemLibrary::DrawDebugLine(GetWorld(), Start, End, fLineColor, Duration, Thickness);
 }
 
 void AWeaponBase::OnFireRelease_Implementation()
@@ -113,7 +146,6 @@ void AWeaponBase::OffVisible_Implementation()
 	this->SkeletalMeshComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	this->SkeletalMeshComponent->SetSimulatePhysics(false);
 	this->WidgetComponent->SetVisibility(this->Visible);
-	GLog->Log("Off Visible " + Super::GetName());
 }
 
 void AWeaponBase::OnVisible_Implementation()
@@ -122,7 +154,6 @@ void AWeaponBase::OnVisible_Implementation()
 	this->SkeletalMeshComponent->SetCollisionEnabled(ECollisionEnabled::PhysicsOnly);
 	this->SkeletalMeshComponent->SetSimulatePhysics(true);
 	this->WidgetComponent->SetVisibility(this->Visible);
-	GLog->Log("On Visible " + Super::GetName());
 }
 
 void AWeaponBase::BeginOverlapRecieve(
