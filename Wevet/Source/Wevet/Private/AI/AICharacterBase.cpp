@@ -1,7 +1,7 @@
 #include "AICharacterBase.h"
 #include "MockCharacter.h"
 #include "Engine.h"
-#include "Runtime/Engine/Classes/Components/SkeletalMeshComponent.h"
+#include "Components/SkeletalMeshComponent.h"
 
 
 AAICharacterBase::AAICharacterBase(const FObjectInitializer& ObjectInitializer)

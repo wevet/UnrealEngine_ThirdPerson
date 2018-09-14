@@ -3,7 +3,7 @@
 #include "AICharacterActorBase.h"
 #include "AIControllerBase.h"
 #include "Engine.h"
-#include "Runtime/Engine/Classes/Components/SkeletalMeshComponent.h"
+#include "Components/SkeletalMeshComponent.h"
 
 
 AAICharacterActorBase::AAICharacterActorBase(const FObjectInitializer& ObjectInitializer)

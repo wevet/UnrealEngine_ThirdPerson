@@ -112,7 +112,9 @@ void AAIControllerBase::SetupAI()
 
 void AAIControllerBase::OnFirePress()
 {
-	if (!this->CharacterRef->GetActivate()) 
+	UWorld* World = GetWorld();
+
+	if (!this->CharacterRef->GetActivate() || World == nullptr) 
 	{
 		return;
 	}
@@ -137,22 +139,20 @@ void AAIControllerBase::OnFirePress()
 	fCollisionQueryParams.IgnoreMask = 0;
 	fCollisionQueryParams.AddIgnoredActor(this);
 
-	GetWorld()->LineTraceSingleByChannel(HitData, Start, End, ECollisionChannel::ECC_Visibility, fCollisionQueryParams);
+	bool bSuccess = World->LineTraceSingleByChannel(HitData, Start, End, ECollisionChannel::ECC_Visibility, fCollisionQueryParams);
 
-	//UGameplayStatics::PlaySound2D(this->CharacterRef->GetSelectedWeapon()->SetFireSoundAsset());
 	FName Socket = Weapon->GetMuzzleSocket();
 	FVector FireLocation = Weapon->GetSkeletalMeshComponent()->GetSocketTransform(Socket).GetLocation();
-
-	UGameplayStatics::PlaySoundAtLocation(GetWorld(), Weapon->GetFireSoundAsset(), FireLocation, 1.f, 1.f, 0.f, nullptr, nullptr);
+	UGameplayStatics::PlaySoundAtLocation(World, Weapon->GetFireSoundAsset(), FireLocation, 1.f, 1.f, 0.f, nullptr, nullptr);
 	this->CharacterRef->PlayAnimMontage(Weapon->GetFireAnimMontageAsset(), 1.0f);
 
 	--Weapon->WeaponItemInfo.CurrentAmmo;
 
-	if (HitData.Actor == nullptr)
+	if (!bSuccess)
 	{
 		return;
 	}
-
+	UGameplayStatics::PlaySoundAtLocation(World, Weapon->GetFireImpactSoundAsset(), HitData.Location, 1.f, 1.f, 0.f, nullptr, nullptr);
 	const FVector StartPoint = FireLocation;
 	const FVector EndPoint   = HitData.ImpactPoint;
 	const FRotator Rotation  = UKismetMathLibrary::FindLookAtRotation(StartPoint, EndPoint);
@@ -161,7 +161,7 @@ void AAIControllerBase::OnFirePress()
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.Owner = this;
 	SpawnParams.Instigator = Instigator;
-	ABulletBase* const Bullet = GetWorld()->SpawnActor<ABulletBase>(this->BulletsBP, Transform, SpawnParams);
+	ABulletBase* const Bullet = World->SpawnActor<ABulletBase>(this->BulletsBP, Transform, SpawnParams);
 
 	ICombat* CombatInterface = Cast<ICombat>(HitData.Actor);
 	if (CombatInterface)

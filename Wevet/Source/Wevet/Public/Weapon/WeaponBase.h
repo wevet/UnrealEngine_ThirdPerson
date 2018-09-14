@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "Weapon.h"
+#include "BulletBase.h"
 #include "Classes/Animation/AnimMontage.h"
 #include "Components/SphereComponent.h"
 #include "Components/WidgetComponent.h"
@@ -36,10 +37,16 @@ protected:
 	USoundBase* FireSoundAsset;
 
 	UPROPERTY(EditAnyWhere, BlueprintReadWrite, Category = "Valiable")
+	USoundBase* FireImpactSoundAsset;
+
+	UPROPERTY(EditAnyWhere, BlueprintReadWrite, Category = "Valiable")
 	UAnimMontage* FireAnimMontageAsset;
 
 	UPROPERTY(EditAnyWhere, BlueprintReadWrite, Category = "Valiable")
 	UAnimMontage* ReloadAnimMontageAsset;
+
+	UPROPERTY(EditAnyWhere, BlueprintReadWrite, Category = "Valiable")
+	TSubclassOf<class ABulletBase> BulletsBP;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Valiable")
 	class AMockCharacter* CharacterOwner;
@@ -55,6 +62,9 @@ protected:
 
 	USceneComponent* SceneComponent;
 	
+	virtual void BulletFireCoolDown();
+	virtual void BulletFireCoolDownTimer();
+	bool bBulletFireCoolDownSuccess;
 
 public:
 
@@ -134,6 +144,11 @@ public:
 	USoundBase* GetFireSoundAsset() const 
 	{
 		return this->FireSoundAsset; 
+	}
+
+	USoundBase* GetFireImpactSoundAsset() const
+	{
+		return this->FireImpactSoundAsset;
 	}
 
 	UAnimMontage* GetFireAnimMontageAsset() const 
