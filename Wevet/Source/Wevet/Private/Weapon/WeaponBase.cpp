@@ -17,6 +17,7 @@ AWeaponBase::AWeaponBase(const FObjectInitializer& ObjectInitializer)
 	PrimaryActorTick.bCanEverTick = true;
 	this->MuzzleSocketName = FName(TEXT("MuzzleFlash"));
 	this->BulletDuration = 0.1F;
+	this->ReloadDuration = 2.0f;
 
 	// setup scene component
 	SceneComponent = ObjectInitializer.CreateDefaultSubobject<USceneComponent>(this, TEXT("SceneComponent"));
@@ -53,13 +54,19 @@ void AWeaponBase::BeginPlay()
 
 void AWeaponBase::BulletFireCoolDown()
 {
+	UWorld* World = GetWorld();
+	if (World == nullptr)
+	{
+		return;
+	}
+
 	UE_LOG(LogTemp, Warning, TEXT("OnCoolDownCheckDelay FIRED!!! ... "));
 	FLatentActionInfo ActionInfo;
 	ActionInfo.Linkage = 0;
 	ActionInfo.CallbackTarget = this;
 	ActionInfo.ExecutionFunction = "BulletFireCoolDownTimer";
-	ActionInfo.UUID = 53344322;  //<=random number
-	UKismetSystemLibrary::RetriggerableDelay(GetWorld(), this->BulletDuration, ActionInfo);
+	ActionInfo.UUID = 53344322;
+	UKismetSystemLibrary::RetriggerableDelay(World, this->ReloadDuration, ActionInfo);
 }
 
 void AWeaponBase::BulletFireCoolDownTimer()
@@ -69,6 +76,10 @@ void AWeaponBase::BulletFireCoolDownTimer()
 
 void AWeaponBase::Tick(float DeltaTime)
 {
+	if (this->Equip)
+	{
+		this->BulletInterval += DeltaTime;
+	}
 	Super::Tick(DeltaTime);
 }
 
@@ -102,28 +113,34 @@ void AWeaponBase::SetReload(bool Reload)
 	this->IsReload = Reload;
 }
 
+// fire pressed
 void AWeaponBase::OnFirePress_Implementation()
 {
-	if (!this->bBulletFireCoolDownSuccess)
-	{
-		UE_LOG(LogTemp, Log, TEXT("Now CoolDown...Duraton %s msec"), *(FString::SanitizeFloat(this->BulletDuration)));
-		return;
-	}
+	this->CanFired = true;
 
 	UWorld* World = GetWorld();
 
+	// not found owner
 	if (this->CharacterOwner == nullptr || World == nullptr)
 	{
-		// lost owner
 		return;
 	}
 
+	// current weapon reloading...
 	if (this->IsReload)
 	{
 		UE_LOG(LogTemp, Log, TEXT("Now Reloading..."));
 		return;
 	}
 
+	// weapon bullets shufts interval
+	if (this->BulletInterval <= this->BulletDuration)
+	{
+		UE_LOG(LogTemp, Log, TEXT("Less Duration : %s"), *(FString::SanitizeFloat(this->BulletInterval)));
+		return;
+	}
+
+	// empty clip size
 	if (WeaponItemInfo.CurrentAmmo <= 0)
 	{
 		if (this->CanFired)
@@ -131,6 +148,7 @@ void AWeaponBase::OnFirePress_Implementation()
 			this->CanFired = false;
 		}
 		UE_LOG(LogTemp, Log, TEXT("Out Of Ammos"));
+		OnReloading_Implementation();
 		return;
 	}
 
@@ -173,6 +191,7 @@ void AWeaponBase::OnFirePress_Implementation()
 	UGameplayStatics::PlaySoundAtLocation(World, GetFireSoundAsset(), FireLocation, 1.f, 1.f, 0.f, nullptr, nullptr);
 	this->CharacterOwner->PlayAnimMontage(GetFireAnimMontageAsset(), 1.0f);
 	--WeaponItemInfo.CurrentAmmo;
+	this->BulletInterval = 0.f;
 
 	if (!bSuccess)
 	{
@@ -197,14 +216,34 @@ void AWeaponBase::OnFirePress_Implementation()
 	}
 }
 
+// fire released
 void AWeaponBase::OnFireRelease_Implementation()
 {
 	this->CanFired = false;
+
+	// empty clip size
+	if (WeaponItemInfo.CurrentAmmo <= 0)
+	{
+		UE_LOG(LogTemp, Log, TEXT("Out Of Ammos"));
+		OnReloading_Implementation();
+	}
 }
 
 void AWeaponBase::OnReloading_Implementation()
 {
-	// reloading event
+	if (WeaponItemInfo.MaxAmmo <= 0)
+	{
+		UE_LOG(LogTemp, Log, TEXT("Empty Ammos"));
+		return;
+	}
+
+	if (WeaponItemInfo.ClipType >= WeaponItemInfo.CurrentAmmo)
+	{
+		UE_LOG(LogTemp, Log, TEXT("Full Ammos"));
+		return;
+	}
+	SetReload(true);
+
 }
 
 void AWeaponBase::OffVisible_Implementation()

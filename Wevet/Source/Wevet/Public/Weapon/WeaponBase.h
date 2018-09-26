@@ -66,6 +66,13 @@ protected:
 	virtual void BulletFireCoolDownTimer();
 	bool bBulletFireCoolDownSuccess;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AWeaponBase|Valiable")
+	float BulletDuration;
+	float BulletInterval;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AWeaponBase|Valiable")
+	float ReloadDuration;
+
 public:
 
 	virtual void Tick(float DeltaTime) override;
@@ -96,9 +103,6 @@ public:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AWeaponBase|ReadOnlyValiable")
 	bool IsReload;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AWeaponBase|Valiable")
-	float BulletDuration;
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AWeaponBase|Interface")
 	void OnFirePress();
