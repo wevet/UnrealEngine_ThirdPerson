@@ -49,6 +49,16 @@ void ACharacterBase::UpdateSpeed()
 	GetCharacterMovement()->MaxWalkSpeed = Speed;
 }
 
+FVector ACharacterBase::BulletTraceRelativeLocation() const
+{
+	return FVector::ZeroVector;
+}
+
+FVector ACharacterBase::BulletTraceForwardLocation() const
+{
+	return FVector::ZeroVector;
+}
+
 void ACharacterBase::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);

@@ -1,7 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "WeaponBase.h"
-#include "MockCharacter.h"
+#include "CharacterBase.h"
 #include "Engine.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
@@ -98,40 +98,14 @@ void AWeaponBase::SetReload(bool Reload)
 	this->IsReload = Reload;
 }
 
-// fire pressed
 void AWeaponBase::OnFirePress_Implementation()
 {
 	this->CanFired = true;
 }
 
-// fire released
 void AWeaponBase::OnFireRelease_Implementation()
 {
 	this->CanFired = false;
-
-	// empty clip size
-	if (WeaponItemInfo.CurrentAmmo <= 0)
-	{
-		UE_LOG(LogTemp, Log, TEXT("Out Of Ammos"));
-		OnReloading_Implementation();
-	}
-}
-
-void AWeaponBase::OnReloading_Implementation()
-{
-	if (WeaponItemInfo.MaxAmmo <= 0)
-	{
-		UE_LOG(LogTemp, Log, TEXT("Empty Ammos"));
-		return;
-	}
-
-	if (WeaponItemInfo.ClipType >= WeaponItemInfo.CurrentAmmo)
-	{
-		UE_LOG(LogTemp, Log, TEXT("Full Ammos"));
-		return;
-	}
-	SetReload(true);
-
 }
 
 void AWeaponBase::OffVisible_Implementation()
@@ -154,10 +128,10 @@ void AWeaponBase::BeginOverlapRecieve(UPrimitiveComponent* OverlappedComponent, 
 {
 	if (this->CharacterOwner == nullptr)
 	{
-		AMockCharacter* MockCharacter = Cast<AMockCharacter>(OtherActor);
-		if (MockCharacter)
+		ACharacterBase* Character = Cast<ACharacterBase>(OtherActor);
+		if (Character)
 		{
-			this->CharacterOwner = MockCharacter;
+			this->CharacterOwner = Character;
 			check(this->CharacterOwner != nullptr);
 		}
 	}
@@ -183,10 +157,10 @@ void AWeaponBase::EndOverlapRecieve(UPrimitiveComponent* OverlappedComp, AActor*
 {
 	if (this->CharacterOwner == nullptr)
 	{
-		AMockCharacter* MockCharacter = Cast<AMockCharacter>(OtherActor);
-		if (MockCharacter)
+		ACharacterBase* Character = Cast<ACharacterBase>(OtherActor);
+		if (Character)
 		{
-			this->CharacterOwner = MockCharacter;
+			this->CharacterOwner = Character;
 			check(this->CharacterOwner != nullptr);
 		}
 	}
@@ -202,7 +176,7 @@ void AWeaponBase::EndOverlapRecieve(UPrimitiveComponent* OverlappedComp, AActor*
 	SetPickable(false);
 }
 
-void AWeaponBase::OnFirePressedInternal(const FVector RelativeLocation, const FVector ForwardLocation, float ForwardOffset = 15000.f)
+void AWeaponBase::OnFirePressedInternal()
 {
 	UWorld* World = GetWorld();
 
@@ -222,16 +196,14 @@ void AWeaponBase::OnFirePressedInternal(const FVector RelativeLocation, const FV
 	// empty current ammo
 	if (WeaponItemInfo.CurrentAmmo <= 0)
 	{
-		if (this->CanFired)
-		{
-			this->CanFired = false;
-		}
 		UE_LOG(LogTemp, Log, TEXT("Out Of Ammos"));
+		OnReloading_Implementation();
 		return;
 	}
 
-	const FVector StartLocation = RelativeLocation;
-	const FVector EndLocation = StartLocation + (ForwardLocation * ForwardOffset);
+	const float ForwardOffset = 15000.f;
+	const FVector StartLocation = this->CharacterOwner->BulletTraceRelativeLocation();
+	const FVector EndLocation = StartLocation + (this->CharacterOwner->BulletTraceForwardLocation() * ForwardOffset);
 
 	FHitResult HitData(ForceInit);
 	FCollisionQueryParams fCollisionQueryParams;
@@ -308,12 +280,8 @@ void AWeaponBase::OnFirePressedInternal(const FVector RelativeLocation, const FV
 		true);
 }
 
-void AWeaponBase::OnFireReleaseInternal()
-{
-	//
-}
 
-void AWeaponBase::OnReloadInternal()
+void AWeaponBase::OnReloading_Implementation()
 {
 	UWorld* World = GetWorld();
 
@@ -335,16 +303,17 @@ void AWeaponBase::OnReloadInternal()
 	}
 
 	SetReload(true);
-	OnReloadActionInternal();
+	OnReloadInternal();
 	FTimerDelegate TimerCallback;
-	TimerCallback.BindLambda([this] 
+	TimerCallback.BindLambda([this]
 	{
 		SetReload(false);
 	});
 	World->GetTimerManager().SetTimer(this->ReloadTimerHandle, TimerCallback, this->ReloadDuration, false);
 }
 
-void AWeaponBase::OnReloadActionInternal()
+
+void AWeaponBase::OnReloadInternal()
 {
 	this->CanFired = false;
 	check(this->CharacterOwner != nullptr);
@@ -363,4 +332,5 @@ void AWeaponBase::OnReloadActionInternal()
 		WeaponItemInfo.CurrentAmmo = WeaponItemInfo.ClipType;
 	}
 }
+
 

@@ -19,7 +19,7 @@ public:
 	virtual void Die_Implementation() override;
 	virtual void NotifyEquip_Implementation() override;
 
-	UFUNCTION(BlueprintCallable, Category = "AAICharacterBase|ReadOnlyValiable")
+	UFUNCTION(BlueprintCallable, Category = "AAICharacterBase|Variable")
 	bool GetActivate() const { return this->Activate; }
 
 	float GetAcceptanceRadius() const
@@ -37,10 +37,10 @@ protected:
 	UFUNCTION(BlueprintCallable, Category = "AAICharacterBase|PawnSensing")
 	virtual void Scanning() override;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AAICharacterBase|Valiable")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AAICharacterBase|Variable")
 	bool Activate;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AAICharacterBase|Valiable")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AAICharacterBase|Variable")
 	float AcceptanceRadius;
 
 private:

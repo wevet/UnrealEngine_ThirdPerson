@@ -47,8 +47,10 @@ public:
 	virtual void OnPickupItemExecuter_Implementation(AActor* Actor) override;
 	virtual void OnTakeDamage_Implementation(FName BoneName, float Damage, AActor* Actor) override;
 	virtual void NotifyEquip_Implementation() override;
+	virtual FVector BulletTraceRelativeLocation() const override;
+	virtual FVector BulletTraceForwardLocation() const override;
 
-	UFUNCTION(BlueprintCallable, Category = "AMockCharacter|ReadOnlyValiable")
+	UFUNCTION(BlueprintCallable, Category = "AMockCharacter|Variable")
 	int32 GetWeaponCurrentIndex() const 
 	{
 		return this->WeaponCurrentIndex;
@@ -80,7 +82,7 @@ protected:
 	UFUNCTION(BlueprintCallable, Category = "AMockCharacter|Action")
 	AWeaponBase* GetUnEquipedWeapon();
 
-	UPROPERTY(BlueprintReadOnly, Category = "AMockCharacter|Valiable")
+	UPROPERTY(BlueprintReadOnly, Category = "AMockCharacter|Variable")
 	int32 WeaponCurrentIndex;
 
 };

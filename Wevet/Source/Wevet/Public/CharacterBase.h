@@ -33,16 +33,16 @@ protected:
 	UPROPERTY(EditAnywhere, Instanced, Category = "ACharacterBase|Model")
 	UCharacterModel* CharacterModel;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ACharacterBase|Valiable")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ACharacterBase|Variable")
 	UAnimMontage* EquipMontage;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ACharacterBase|Valiable")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ACharacterBase|Variable")
 	UAnimMontage* FireMontage;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ACharacterBase|Valiable")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ACharacterBase|Variable")
 	UAnimMontage* ReloadMontage;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ACharacterBase|Valiable")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ACharacterBase|Variable")
 	USoundBase* FireSound;
 
 	float DefaultMaxSpeed;
@@ -56,6 +56,8 @@ public:
 	virtual void SprintStopped();
 	virtual void UpdateSpeed();
 
+	virtual FVector BulletTraceRelativeLocation() const;
+	virtual FVector BulletTraceForwardLocation() const;
 
 	UFUNCTION(BlueprintCallable, Category = "ACharacterBase|Action")
 	virtual void AttachWeapon();
@@ -121,16 +123,16 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ACharacterBase|ICombatExecuter")
 	bool IsEquipWeapon;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ACharacterBase|Valiable")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ACharacterBase|Variable")
 	float BaseTurnRate;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ACharacterBase|Valiable")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ACharacterBase|Variable")
 	float BaseLookUpRate;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ACharacterBase|Valiable")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ACharacterBase|Variable")
 	float MovementSpeed;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ACharacterBase|Valiable")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ACharacterBase|Variable")
 	FName HeadSocketName;
 
 	// @TODO

@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerController.h"
 #include "MockCharacter.h"
+#include "UMG/UMGManager.h"
 #include "MockPlayerController.generated.h"
 
 /**
@@ -19,11 +20,12 @@ public:
 	AMockPlayerController(const FObjectInitializer& ObjectInitializer);
 	virtual void Possess(APawn* Pawn) override;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AMockPlayerController|Valiable")
-	TSubclassOf<class UUserWidget> WidgetMainUI;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AMockPlayerController|Variable")
+	TSubclassOf<class UUMGManager> UMGManagerClass;
 
-	UUserWidget* Widget;
+	AMockCharacter* CharacterOwner;
+	UUMGManager* UMGManager;
 
-	virtual void BeginPlay() override;
+	virtual void Initialize();
 	
 };

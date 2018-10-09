@@ -25,25 +25,25 @@ public:
 protected:
 	APawn * OwningPawn;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Valiable")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
 	ACharacterBase* Owner;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Valiable")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
 	bool IsMoving;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Valiable")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
 	bool IsFalling;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Valiable")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
 	float Speed;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Valiable")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
 	float Direction;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Valiable")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
 	float Yaw;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Valiable")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
 	float Pitch;
 	
 	// FRotator Delta

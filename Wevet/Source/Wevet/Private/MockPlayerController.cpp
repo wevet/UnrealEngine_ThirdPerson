@@ -6,7 +6,8 @@
 
 
 AMockPlayerController::AMockPlayerController(const FObjectInitializer& ObjectInitializer)
-	: Super(ObjectInitializer)
+	: Super(ObjectInitializer),
+	UMGManager(nullptr)
 {
 	//
 }
@@ -15,22 +16,25 @@ void AMockPlayerController::Possess(APawn* Pawn)
 {
 	Super::Possess(Pawn);
 
-	AMockCharacter* MockCharacter = Cast<AMockCharacter>(Pawn);
-	if (MockCharacter)
+	AMockCharacter* Character = Cast<AMockCharacter>(Pawn);
+	if (Character)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Found"));
+		this->CharacterOwner = Character;
+		check(this->CharacterOwner);
+		Initialize();
 	}
 }
 
-void AMockPlayerController::BeginPlay()
+void AMockPlayerController::Initialize()
 {
-	if (this->WidgetMainUI)
+	if (this->UMGManagerClass)
 	{
-		this->Widget = CreateWidget<UUserWidget>(this, this->WidgetMainUI);
+		this->UMGManager = CreateWidget<UUMGManager>(this, this->UMGManagerClass);
 
-		if (this->Widget)
+		if (this->UMGManager)
 		{
-			this->Widget->AddToViewport();
+			this->UMGManager->AddToViewport();
+			this->UMGManager->BuildInitialize(this->CharacterOwner);
 		}
 
 	}

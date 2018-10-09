@@ -29,7 +29,7 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "AAIControllerBase|Action")
 	virtual void CreateTimerFunc();
 
-	UFUNCTION(BlueprintCallable, Category = "AAIControllerBase|Valiable")
+	UFUNCTION(BlueprintCallable, Category = "AAIControllerBase|Variable")
 	ACharacterBase* GetTargetCharacter() const;
 
 	virtual void Patrolling_Implementation() override;
@@ -44,37 +44,37 @@ public:
 	
 protected:
 
-	UFUNCTION(BlueprintCallable, Category = "AAIControllerBase|Valiable")
+	UFUNCTION(BlueprintCallable, Category = "AAIControllerBase|Variable")
 	virtual void SetupAI();
 
-	UFUNCTION(BlueprintCallable, Category = "AAIControllerBase|Valiable")
+	UFUNCTION(BlueprintCallable, Category = "AAIControllerBase|Variable")
 	virtual void OnFirePress();
 
-	UFUNCTION(BlueprintCallable, Category = "AAIControllerBase|Valiable")
+	UFUNCTION(BlueprintCallable, Category = "AAIControllerBase|Variable")
 	virtual void OnFireRelease();
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AAIControllerBase|Valiable")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AAIControllerBase|Variable")
 	AAICharacterBase * CharacterRef;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AAIControllerBase|Valiable")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AAIControllerBase|Variable")
 	TArray<AWayPointBase*> WayPointArray;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AAIControllerBase|Valiable")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AAIControllerBase|Variable")
 	int32 WayPointIndex;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AAIControllerBase|Valiable")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AAIControllerBase|Variable")
 	FTimerHandle TimerFunc;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AAIControllerBase|Valiable")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AAIControllerBase|Variable")
 	FString FunctionName;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AAIControllerBase|Valiable")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AAIControllerBase|Variable")
 	TSubclassOf<class ABulletBase> BulletsBP;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AAIControllerBase|Valiable")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AAIControllerBase|Variable")
 	bool IsWalkBack;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AAICharacterBase|Valiable")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AAICharacterBase|Variable")
 	float AcceptanceRadius;
 
 	FTimerHandle AlternateFunc;

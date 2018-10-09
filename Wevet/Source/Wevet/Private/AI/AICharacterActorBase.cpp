@@ -41,7 +41,6 @@ void AAICharacterActorBase::Die_Implementation()
 {
 	if (Super::DieSuccessCalled)
 	{
-		// twice
 		return;
 	}
 	GetMesh()->SetAllBodiesSimulatePhysics(true);
@@ -65,12 +64,8 @@ void AAICharacterActorBase::SetEnemyFound(bool EnemyFound)
 	this->IsEnemyFound = EnemyFound;
 }
 
-AMockCharacter * AAICharacterActorBase::GetPlayerCharacter() const
+AMockCharacter* AAICharacterActorBase::GetPlayerCharacter() const
 {
-	if (!GetWorld())
-	{
-		return nullptr;
-	}
 	return Cast<AMockCharacter>(GetTarget());
 }
 
@@ -95,13 +90,27 @@ void AAICharacterActorBase::BeginPlay()
 	}
 }
 
+FVector AAICharacterActorBase::BulletTraceRelativeLocation() const
+{
+	if (Super::GetSelectedWeapon() == nullptr)
+	{
+		return FVector::ZeroVector;
+	}
+	return Super::GetSelectedWeapon()->GetSkeletalMeshComponent()->GetSocketTransform(
+		Super::GetSelectedWeapon()->GetMuzzleSocket())
+		.GetLocation();
+}
+
+FVector AAICharacterActorBase::BulletTraceForwardLocation() const
+{
+	return GetControlRotation().Vector();
+}
+
 void AAICharacterActorBase::UpdateWeaponEvent()
 {
-	if (this->SpawnWeapon == nullptr)
-	{
-		return;
-	}
-	if (!GetWorld())
+	UWorld* World = GetWorld();
+
+	if (this->SpawnWeapon == nullptr || World == nullptr)
 	{
 		return;
 	}
@@ -109,7 +118,7 @@ void AAICharacterActorBase::UpdateWeaponEvent()
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.Owner = this;
 	SpawnParams.Instigator = Instigator;
-	AActor* const SpawningObject = GetWorld()->SpawnActor<AActor>(this->SpawnWeapon, FVector::ZeroVector, FRotator::ZeroRotator, SpawnParams);
+	AActor* const SpawningObject = World->SpawnActor<AActor>(this->SpawnWeapon, FVector::ZeroVector, FRotator::ZeroRotator, SpawnParams);
 	Super::SelectedWeapon = Cast<AWeaponBase>(SpawningObject);
 
 	// setup assets
@@ -136,18 +145,22 @@ void AAICharacterActorBase::UpdateWeaponEvent()
 
 void AAICharacterActorBase::UpdateWayPointEvent()
 {
-	if (GetWorld())
-	{
-		TArray<AActor*> FoundActor;
-		UGameplayStatics::GetAllActorsOfClass(GetWorld(), AWayPointBase::StaticClass(), FoundActor);
+	UWorld* World = GetWorld();
 
-		for (TActorIterator<AWayPointBase> ActorIterator(GetWorld()); ActorIterator; ++ActorIterator)
+	if (World == nullptr)
+	{
+		return;
+	}
+
+	TArray<AActor*> FoundActor;
+	UGameplayStatics::GetAllActorsOfClass(World, AWayPointBase::StaticClass(), FoundActor);
+
+	for (TActorIterator<AWayPointBase> ActorIterator(World); ActorIterator; ++ActorIterator)
+	{
+		AWayPointBase* WayPoint = *ActorIterator;
+		if (WayPoint)
 		{
-			AWayPointBase* WayPoint = *ActorIterator;
-			if (WayPoint)
-			{
-				this->WayPointList.Add(WayPoint);
-			}
+			this->WayPointList.Add(WayPoint);
 		}
 	}
 }
@@ -156,11 +169,11 @@ void AAICharacterActorBase::Scanning()
 {
 }
 
-void AAICharacterActorBase::OnSeePawnRecieve(APawn * OtherPawn)
+void AAICharacterActorBase::OnSeePawnRecieve(APawn* OtherPawn)
 {
 }
 
-void AAICharacterActorBase::OnHearNoiseRecieve(APawn * OtherActor, const FVector & Location, float Volume)
+void AAICharacterActorBase::OnHearNoiseRecieve(APawn* OtherActor, const FVector & Location, float Volume)
 {
 }
 

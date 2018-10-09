@@ -44,16 +44,16 @@ public:
 	void Hunting();
 	virtual void Hunting_Implementation() override;
 
-	UFUNCTION(BlueprintCallable, Category = "AAIControllerActorBase|ReadOnlyValiable")
+	UFUNCTION(BlueprintCallable, Category = "AAIControllerActorBase|Variable")
 	AAICharacterActorBase* GetAICharacter() const 
 	{
 		return this->AICharacter;
 	}
 
-	UFUNCTION(BlueprintCallable, Category = "AAIControllerActorBase|ReadOnlyValiable")
+	UFUNCTION(BlueprintCallable, Category = "AAIControllerActorBase|Variable")
 	AWayPointBase* GetRandomAtWayPoint();
 
-	UFUNCTION(BlueprintCallable, Category = "AAIControllerActorBase|ReadOnlyValiable")
+	UFUNCTION(BlueprintCallable, Category = "AAIControllerActorBase|Variable")
 	AMockCharacter* GetPlayerCharacter() const
 	{
 		return this->AICharacter->GetPlayerCharacter();
@@ -63,7 +63,7 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AAIControllerActorBase|Components")
 	UAIPerceptionComponent* AIPerceptionComponent;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AAIControllerActorBase|Valiable")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AAIControllerActorBase|Variable")
 	FName CanSeePlayerKey;
 
 	virtual void BeginPlay() override;

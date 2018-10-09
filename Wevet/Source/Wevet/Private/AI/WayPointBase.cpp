@@ -6,7 +6,7 @@
 AWayPointBase::AWayPointBase(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
-	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bCanEverTick = false;
 }
 
 void AWayPointBase::BeginPlay()

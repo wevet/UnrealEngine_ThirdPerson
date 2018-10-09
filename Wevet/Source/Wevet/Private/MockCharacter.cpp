@@ -201,7 +201,6 @@ void AMockCharacter::Die_Implementation()
 {
 	if (Super::DieSuccessCalled)
 	{
-		// twice
 		return;
 	}
 	GetCharacterMovement()->DisableMovement();	
@@ -303,6 +302,16 @@ void AMockCharacter::NotifyEquip_Implementation()
 		Super::bUseControllerRotationYaw = true;
 	}
 	//Super::NotifyEquip_Implementation();
+}
+
+FVector AMockCharacter::BulletTraceRelativeLocation() const
+{
+	return GetFollowCameraComponent()->GetComponentLocation();
+}
+
+FVector AMockCharacter::BulletTraceForwardLocation() const
+{
+	return GetFollowCameraComponent()->GetForwardVector();
 }
 
 AWeaponBase* AMockCharacter::ReleaseWeapon(const FTransform& Transform)

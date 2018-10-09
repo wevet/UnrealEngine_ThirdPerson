@@ -23,9 +23,9 @@ public:
 
 protected:
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Valiable")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
 	FName HandSocketName;
 	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Valiable")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
 	FName TargetSocketName;
 };

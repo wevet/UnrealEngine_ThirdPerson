@@ -55,31 +55,31 @@ struct WEVET_API FWeaponItemInfo
 
 public:
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Valiable")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
 	EWeaponItemType WeaponItemType;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Valiable")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
 	TSubclassOf<class AWeaponBase> WeaponClass;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Valiable")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
 	int32 ClipType;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Valiable")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
 	int32 CurrentAmmo;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Valiable")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
 	int32 MaxAmmo;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Valiable")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
 	float Damage;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Valiable")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
 	UTexture2D* Texture;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Valiable")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
 	FName EquipSocketName;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Valiable")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
 	FName UnEquipSocketName;
 
 	FWeaponItemInfo();

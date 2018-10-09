@@ -17,7 +17,7 @@ public:
 protected:
 	virtual void BeginPlay() override;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Valiable")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
 	float LifeInterval;
 
 public:	

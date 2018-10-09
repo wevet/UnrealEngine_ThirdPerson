@@ -11,7 +11,7 @@
 #include "Components/WidgetComponent.h"
 #include "WeaponBase.generated.h"
 
-class AMockCharacter;
+class ACharacterBase;
 
 UCLASS(ABSTRACT)
 class WEVET_API AWeaponBase : public AActor, public IWeapon
@@ -24,38 +24,38 @@ public:
 protected:
 	virtual void BeginPlay() override;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Valiable")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
 	FName MuzzleSocketName;
 
-	UPROPERTY(EditAnyWhere, BlueprintReadWrite, Category = "Valiable")
+	UPROPERTY(EditAnyWhere, BlueprintReadWrite, Category = "Variable")
 	int32 NeededAmmo;
 
-	UPROPERTY(EditAnyWhere, BlueprintReadWrite, Category = "Valiable")
+	UPROPERTY(EditAnyWhere, BlueprintReadWrite, Category = "Variable")
 	bool Visible;
 
-	UPROPERTY(EditAnyWhere, BlueprintReadWrite, Category = "Valiable")
+	UPROPERTY(EditAnyWhere, BlueprintReadWrite, Category = "Variable")
 	USoundBase* FireSoundAsset;
 
-	UPROPERTY(EditAnyWhere, BlueprintReadWrite, Category = "Valiable")
+	UPROPERTY(EditAnyWhere, BlueprintReadWrite, Category = "Variable")
 	USoundBase* FireImpactSoundAsset;
 
-	UPROPERTY(EditAnyWhere, BlueprintReadWrite, Category = "Valiable")
+	UPROPERTY(EditAnyWhere, BlueprintReadWrite, Category = "Variable")
 	UAnimMontage* FireAnimMontageAsset;
 
-	UPROPERTY(EditAnyWhere, BlueprintReadWrite, Category = "Valiable")
+	UPROPERTY(EditAnyWhere, BlueprintReadWrite, Category = "Variable")
 	UAnimMontage* ReloadAnimMontageAsset;
 
-	UPROPERTY(EditAnyWhere, BlueprintReadWrite, Category = "Valiable")
+	UPROPERTY(EditAnyWhere, BlueprintReadWrite, Category = "Variable")
 	UParticleSystem* MuzzleFlashEmitterTemplate;
 
-	UPROPERTY(EditAnyWhere, BlueprintReadWrite, Category = "Valiable")
+	UPROPERTY(EditAnyWhere, BlueprintReadWrite, Category = "Variable")
 	UParticleSystem* ImpactMetalEmitterTemplate;
 
-	UPROPERTY(EditAnyWhere, BlueprintReadWrite, Category = "Valiable")
+	UPROPERTY(EditAnyWhere, BlueprintReadWrite, Category = "Variable")
 	TSubclassOf<class ABulletBase> BulletsBP;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Valiable")
-	class AMockCharacter* CharacterOwner;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Variable")
+	class ACharacterBase* CharacterOwner;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	class USkeletalMeshComponent* SkeletalMeshComponent;
@@ -69,10 +69,10 @@ protected:
 	USceneComponent* SceneComponent;
 	FTimerHandle ReloadTimerHandle;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AWeaponBase|Valiable")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AWeaponBase|Variable")
 	float BulletDuration;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AWeaponBase|Valiable")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AWeaponBase|Variable")
 	float ReloadDuration;
 
 public:
@@ -83,28 +83,28 @@ public:
 	virtual void SetFireAnimMontageAsset(UAnimMontage* FireAnimMontageAsset);
 	virtual void SetReloadAnimMontageAsset(UAnimMontage* ReloadAnimMontageAsset);
 
-	UFUNCTION(BlueprintCallable, Category = "AWeaponBase|Valiable")
+	UFUNCTION(BlueprintCallable, Category = "AWeaponBase|Variable")
 	virtual void OnEquip(bool Equip);
 
-	UFUNCTION(BlueprintCallable, Category = "AWeaponBase|Valiable")
+	UFUNCTION(BlueprintCallable, Category = "AWeaponBase|Variable")
 	virtual void SetPickable(bool Pick);
 
-	UFUNCTION(BlueprintCallable, Category = "AWeaponBase|Valiable")
+	UFUNCTION(BlueprintCallable, Category = "AWeaponBase|Variable")
 	virtual void SetReload(bool Reload);
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AWeaponBase|Valiable")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AWeaponBase|Variable")
 	FWeaponItemInfo WeaponItemInfo;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AWeaponBase|ReadOnlyValiable")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AWeaponBase|Variable")
 	bool Equip;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AWeaponBase|ReadOnlyValiable")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AWeaponBase|Variable")
 	bool CanFired;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AWeaponBase|ReadOnlyValiable")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AWeaponBase|Variable")
 	bool CanPick;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AWeaponBase|ReadOnlyValiable")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AWeaponBase|Variable")
 	bool IsReload;
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AWeaponBase|Interface")
@@ -134,14 +134,8 @@ public:
 	virtual	void EndOverlapRecieve(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 
 	UFUNCTION(BlueprintCallable, Category = "AWeaponBase|API")
-	virtual void OnFirePressedInternal(const FVector RelativeLocation, const FVector ForwardLocation, float ForwardOffset);
-
-	UFUNCTION(BlueprintCallable, Category = "AWeaponBase|API")
-	virtual void OnFireReleaseInternal();
-
-	UFUNCTION(BlueprintCallable, Category = "AWeaponBase|API")
+	virtual void OnFirePressedInternal();
 	virtual void OnReloadInternal();
-	virtual void OnReloadActionInternal();
 
 	FName GetMuzzleSocket() const 
 	{
