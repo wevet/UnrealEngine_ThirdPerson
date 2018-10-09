@@ -199,6 +199,11 @@ AWeaponBase* AMockCharacter::GetUnEquipedWeapon()
 // death
 void AMockCharacter::Die_Implementation()
 {
+	if (Super::DieSuccessCalled)
+	{
+		// twice
+		return;
+	}
 	GetCharacterMovement()->DisableMovement();	
 	GetMesh()->SetAllBodiesSimulatePhysics(true);
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);

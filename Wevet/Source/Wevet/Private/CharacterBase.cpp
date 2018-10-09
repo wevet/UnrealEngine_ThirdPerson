@@ -5,7 +5,8 @@
 #include "Engine.h"
 
 ACharacterBase::ACharacterBase(const FObjectInitializer& ObjectInitializer)
-	: Super(ObjectInitializer)
+	: Super(ObjectInitializer),
+	DieSuccessCalled(false)
 {
 	PrimaryActorTick.bCanEverTick = true;
 	this->BaseTurnRate   = 45.f;
@@ -13,8 +14,8 @@ ACharacterBase::ACharacterBase(const FObjectInitializer& ObjectInitializer)
 	this->MovementSpeed  = 300.f;
 	this->MaxHealth      = 1.f;
 	this->CurrentHealth  = 1.f;
-	this->IsCrouch       = false;
-	this->IsEquipWeapon  = false;
+	this->IsCrouch = false;
+	this->IsEquipWeapon = false;
 	this->HeadSocketName = FName(TEXT("Head"));
 }
 
@@ -119,6 +120,10 @@ void ACharacterBase::OnTakeDamage_Implementation(FName BoneName, float Damage, A
 
 void ACharacterBase::Die_Implementation()
 {
+	if (!this->DieSuccessCalled)
+	{
+		this->DieSuccessCalled = true;
+	}
 	//UE_LOG(LogTemp, Warning, TEXT("Die_Implementation : %s"), *(Super::GetName()));
 	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT("Die_Implementation : %s"), *(Super::GetName())));
 }

@@ -33,7 +33,6 @@ protected:
 	UPROPERTY(EditAnywhere, Instanced, Category = "ACharacterBase|Model")
 	UCharacterModel* CharacterModel;
 
-	// @TODO
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ACharacterBase|Valiable")
 	UAnimMontage* EquipMontage;
 
@@ -47,6 +46,7 @@ protected:
 	USoundBase* FireSound;
 
 	float DefaultMaxSpeed;
+	bool DieSuccessCalled;
 
 public:
 	virtual void Tick(float DeltaTime) override;

@@ -32,6 +32,7 @@ AWeaponBase::AWeaponBase(const FObjectInitializer& ObjectInitializer)
 	SphereComponent->SetSphereRadius(90.0f);
 	SphereComponent->SetupAttachment(SkeletalMeshComponent);
 
+	// weapon umg
 	WidgetComponent = ObjectInitializer.CreateDefaultSubobject<UWidgetComponent>(this, TEXT("WidgetComponent"));
 	WidgetComponent->SetDrawSize(FVector2D(180.f, 70.f));
 	WidgetComponent->SetWorldLocation(FVector(0.f, 0.f, 60.f));
@@ -52,31 +53,19 @@ void AWeaponBase::BeginPlay()
 	}
 }
 
-void AWeaponBase::BulletFireCoolDown()
-{
-	UWorld* World = GetWorld();
-	if (World == nullptr)
-	{
-		return;
-	}
-
-	UE_LOG(LogTemp, Warning, TEXT("OnCoolDownCheckDelay FIRED!!! ... "));
-	FLatentActionInfo ActionInfo;
-	ActionInfo.Linkage = 0;
-	ActionInfo.CallbackTarget = this;
-	ActionInfo.ExecutionFunction = "BulletFireCoolDownTimer";
-	ActionInfo.UUID = 53344322;
-	UKismetSystemLibrary::RetriggerableDelay(World, this->ReloadDuration, ActionInfo);
-}
-
-void AWeaponBase::BulletFireCoolDownTimer()
-{
-	this->bBulletFireCoolDownSuccess = true;
-}
-
 void AWeaponBase::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+}
+
+void AWeaponBase::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	UWorld* World = GetWorld();
+	if (World && World->GetTimerManager().IsTimerActive(this->ReloadTimerHandle))
+	{
+		World->GetTimerManager().ClearTimer(this->ReloadTimerHandle);
+	}
+	Super::EndPlay(EndPlayReason);
 }
 
 void AWeaponBase::SetFireSoundAsset(USoundBase * FireSoundAsset)
@@ -213,7 +202,7 @@ void AWeaponBase::EndOverlapRecieve(UPrimitiveComponent* OverlappedComp, AActor*
 	SetPickable(false);
 }
 
-void AWeaponBase::OnFirePressedInternal(const FVector RelativeLocation, float ForwardOffset = 15000.f)
+void AWeaponBase::OnFirePressedInternal(const FVector RelativeLocation, const FVector ForwardLocation, float ForwardOffset = 15000.f)
 {
 	UWorld* World = GetWorld();
 
@@ -230,7 +219,7 @@ void AWeaponBase::OnFirePressedInternal(const FVector RelativeLocation, float Fo
 		return;
 	}
 
-	// empty clip size
+	// empty current ammo
 	if (WeaponItemInfo.CurrentAmmo <= 0)
 	{
 		if (this->CanFired)
@@ -242,7 +231,7 @@ void AWeaponBase::OnFirePressedInternal(const FVector RelativeLocation, float Fo
 	}
 
 	const FVector StartLocation = RelativeLocation;
-	const FVector EndLocation = StartLocation + (this->CharacterOwner->GetFollowCameraComponent()->GetForwardVector() * ForwardOffset);
+	const FVector EndLocation = StartLocation + (ForwardLocation * ForwardOffset);
 
 	FHitResult HitData(ForceInit);
 	FCollisionQueryParams fCollisionQueryParams;
@@ -269,7 +258,7 @@ void AWeaponBase::OnFirePressedInternal(const FVector RelativeLocation, float Fo
 	const FRotator MuzzleRotation = FRotator(MuzzleTransform.GetRotation());
 
 	UGameplayStatics::PlaySoundAtLocation(World, GetFireSoundAsset(), MuzzleLocation, 1.f, 1.f, 0.f, nullptr, nullptr);
-	this->CharacterOwner->PlayAnimMontage(GetFireAnimMontageAsset(), 1.0f);
+	this->CharacterOwner->PlayAnimMontage(GetFireAnimMontageAsset());
 	--WeaponItemInfo.CurrentAmmo;
 
 	UGameplayStatics::PlaySoundAtLocation(World, GetFireImpactSoundAsset(), HitData.Location, 1.f, 1.f, 0.f, nullptr, nullptr);
@@ -288,14 +277,25 @@ void AWeaponBase::OnFirePressedInternal(const FVector RelativeLocation, float Fo
 		ICombat* CombatInterface = Cast<ICombat>(HitData.Actor);
 		if (bSuccess && CombatInterface)
 		{
-			float Damage = (FMath::FRandRange(20.f, 35.f) / 1000.f);
-			CombatInterface->OnTakeDamage_Implementation(HitData.BoneName, Damage, this);
+			if (CombatInterface->IsDeath_Implementation())
+			{
+				CombatInterface->Die_Implementation();
+			}
+			else
+			{
+				float Damage = (FMath::FRandRange(20.f, 35.f) / 1000.f);
+				CombatInterface->OnTakeDamage_Implementation(HitData.BoneName, Damage, this);
+			}
 		}
 	}
 
 	// spawn impact emitter
 	const FTransform EmitterTransform = UKismetMathLibrary::MakeTransform(HitData.Location, FRotator::ZeroRotator, FVector::ZeroVector);
-	UParticleSystemComponent* ImpactMetalEmitterComponent = UGameplayStatics::SpawnEmitterAtLocation(World, this->ImpactMetalEmitterTemplate, EmitterTransform, true);
+	UParticleSystemComponent* ImpactMetalEmitterComponent = UGameplayStatics::SpawnEmitterAtLocation(
+		World, 
+		this->ImpactMetalEmitterTemplate, 
+		EmitterTransform, 
+		true);
 
 	// attach muzzleflash emitter
 	UParticleSystemComponent* MuzzleFlashEmitterComponent = UGameplayStatics::SpawnEmitterAttached(
@@ -310,5 +310,57 @@ void AWeaponBase::OnFirePressedInternal(const FVector RelativeLocation, float Fo
 
 void AWeaponBase::OnFireReleaseInternal()
 {
+	//
+}
+
+void AWeaponBase::OnReloadInternal()
+{
+	UWorld* World = GetWorld();
+
+	if (World == nullptr)
+	{
+		return;
+	}
+
+	if (WeaponItemInfo.MaxAmmo == 0)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Empty Ammos"));
+		return;
+	}
+
+	if (WeaponItemInfo.CurrentAmmo >= WeaponItemInfo.ClipType)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Full Ammos Current:%d, ClipType:%d"), WeaponItemInfo.CurrentAmmo, WeaponItemInfo.ClipType);
+		return;
+	}
+
+	SetReload(true);
+	OnReloadActionInternal();
+	FTimerDelegate TimerCallback;
+	TimerCallback.BindLambda([this] 
+	{
+		SetReload(false);
+	});
+	World->GetTimerManager().SetTimer(this->ReloadTimerHandle, TimerCallback, this->ReloadDuration, false);
+}
+
+void AWeaponBase::OnReloadActionInternal()
+{
+	this->CanFired = false;
+	check(this->CharacterOwner != nullptr);
+	this->CharacterOwner->PlayAnimMontage(GetReloadAnimMontageAsset());
+	this->NeededAmmo = (WeaponItemInfo.ClipType - WeaponItemInfo.CurrentAmmo);
+
+	if (WeaponItemInfo.MaxAmmo <= this->NeededAmmo)
+	{
+		int32 ResultAmmo = WeaponItemInfo.CurrentAmmo + WeaponItemInfo.MaxAmmo;
+		WeaponItemInfo.CurrentAmmo = ResultAmmo;
+		WeaponItemInfo.MaxAmmo = 0;
+	}
+	else
+	{
+		WeaponItemInfo.MaxAmmo = (WeaponItemInfo.MaxAmmo - this->NeededAmmo);
+		WeaponItemInfo.CurrentAmmo = WeaponItemInfo.ClipType;
+	}
 }
 

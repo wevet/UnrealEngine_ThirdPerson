@@ -67,10 +67,7 @@ protected:
 	class UWidgetComponent* WidgetComponent;
 
 	USceneComponent* SceneComponent;
-	
-	virtual void BulletFireCoolDown();
-	virtual void BulletFireCoolDownTimer();
-	bool bBulletFireCoolDownSuccess;
+	FTimerHandle ReloadTimerHandle;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AWeaponBase|Valiable")
 	float BulletDuration;
@@ -81,6 +78,7 @@ protected:
 public:
 
 	virtual void Tick(float DeltaTime) override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason);
 	virtual void SetFireSoundAsset(USoundBase* FireSoundAsset);
 	virtual void SetFireAnimMontageAsset(UAnimMontage* FireAnimMontageAsset);
 	virtual void SetReloadAnimMontageAsset(UAnimMontage* ReloadAnimMontageAsset);
@@ -135,11 +133,15 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "AWeaponBase|Component")
 	virtual	void EndOverlapRecieve(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 
-	UFUNCTION(BlueprintCallable, Category = "AWeaponBase")
-	virtual void OnFirePressedInternal(const FVector RelativeLocation, float ForwardOffset);
+	UFUNCTION(BlueprintCallable, Category = "AWeaponBase|API")
+	virtual void OnFirePressedInternal(const FVector RelativeLocation, const FVector ForwardLocation, float ForwardOffset);
 
-	UFUNCTION(BlueprintCallable, Category = "AWeaponBase")
+	UFUNCTION(BlueprintCallable, Category = "AWeaponBase|API")
 	virtual void OnFireReleaseInternal();
+
+	UFUNCTION(BlueprintCallable, Category = "AWeaponBase|API")
+	virtual void OnReloadInternal();
+	virtual void OnReloadActionInternal();
 
 	FName GetMuzzleSocket() const 
 	{

@@ -39,6 +39,11 @@ void AAICharacterActorBase::PostInitializeComponents()
 
 void AAICharacterActorBase::Die_Implementation()
 {
+	if (Super::DieSuccessCalled)
+	{
+		// twice
+		return;
+	}
 	GetMesh()->SetAllBodiesSimulatePhysics(true);
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
