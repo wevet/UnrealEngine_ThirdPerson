@@ -4,9 +4,9 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
+#include "MockCharacter.h"
 #include "UMGManager.generated.h"
 
-class AMockCharacter;
 /**
  * 
  */
@@ -23,6 +23,6 @@ public:
 	void BuildInitialize(AMockCharacter* Character);
 	
 protected:
-	UPROPERTY(VisibleAnywhere, Category = "UMGManager|Variable")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "UMGManager|Variable")
 	AMockCharacter* CharacterOwner;
 };

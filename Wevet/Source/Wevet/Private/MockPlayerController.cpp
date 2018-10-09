@@ -33,8 +33,9 @@ void AMockPlayerController::Initialize()
 
 		if (this->UMGManager)
 		{
-			this->UMGManager->AddToViewport();
+			// call before event construct
 			this->UMGManager->BuildInitialize(this->CharacterOwner);
+			this->UMGManager->AddToViewport();
 		}
 
 	}
