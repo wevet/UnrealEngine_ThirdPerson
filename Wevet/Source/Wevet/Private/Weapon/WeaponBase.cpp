@@ -76,10 +76,6 @@ void AWeaponBase::BulletFireCoolDownTimer()
 
 void AWeaponBase::Tick(float DeltaTime)
 {
-	if (this->Equip)
-	{
-		this->BulletInterval += DeltaTime;
-	}
 	Super::Tick(DeltaTime);
 }
 
@@ -117,103 +113,6 @@ void AWeaponBase::SetReload(bool Reload)
 void AWeaponBase::OnFirePress_Implementation()
 {
 	this->CanFired = true;
-
-	UWorld* World = GetWorld();
-
-	// not found owner
-	if (this->CharacterOwner == nullptr || World == nullptr)
-	{
-		return;
-	}
-
-	// current weapon reloading...
-	if (this->IsReload)
-	{
-		UE_LOG(LogTemp, Log, TEXT("Now Reloading..."));
-		return;
-	}
-
-	// weapon bullets shufts interval
-	if (this->BulletInterval <= this->BulletDuration)
-	{
-		UE_LOG(LogTemp, Log, TEXT("Less Duration : %s"), *(FString::SanitizeFloat(this->BulletInterval)));
-		return;
-	}
-
-	// empty clip size
-	if (WeaponItemInfo.CurrentAmmo <= 0)
-	{
-		if (this->CanFired)
-		{
-			this->CanFired = false;
-		}
-		UE_LOG(LogTemp, Log, TEXT("Out Of Ammos"));
-		OnReloading_Implementation();
-		return;
-	}
-
-	FVector StartLocation = FVector::ZeroVector;
-	FVector EndLocation = FVector::ZeroVector;
-	float ForwardOffset = 15000.f;
-
-	// player
-	if (this->CharacterOwner->GetFollowCameraComponent())
-	{
-		StartLocation = this->CharacterOwner->GetFollowCameraComponent()->GetComponentLocation();
-		EndLocation = StartLocation + (this->CharacterOwner->GetFollowCameraComponent()->GetForwardVector() * ForwardOffset);
-	}
-	// not player
-	else
-	{
-		//AWeaponBase* Weapon = this->CharacterRef->GetSelectedWeapon();
-		//StartLocation = Weapon->GetSkeletalMeshComponent()->GetSocketLocation(Weapon->GetMuzzleSocket());
-		//EndLocation = StartLocation + (GetControlRotation().Vector() * 15000);
-	}
-	const FVector Start = StartLocation;
-	const FVector End   = EndLocation;
-
-	FHitResult HitData(ForceInit);
-	FCollisionQueryParams fCollisionQueryParams;
-	fCollisionQueryParams.TraceTag = FName("");
-	fCollisionQueryParams.OwnerTag = FName("");
-	fCollisionQueryParams.bTraceAsyncScene = false;
-	fCollisionQueryParams.bTraceComplex = true;
-	fCollisionQueryParams.bFindInitialOverlaps = false;
-	fCollisionQueryParams.bReturnFaceIndex = false;
-	fCollisionQueryParams.bReturnPhysicalMaterial = false;
-	fCollisionQueryParams.bIgnoreBlocks = false;
-	fCollisionQueryParams.IgnoreMask = 0;
-	fCollisionQueryParams.AddIgnoredActor(this);
-
-	bool bSuccess = World->LineTraceSingleByChannel(HitData, Start, End, ECollisionChannel::ECC_Visibility, fCollisionQueryParams);
-
-	FVector FireLocation = GetSkeletalMeshComponent()->GetSocketTransform(GetMuzzleSocket()).GetLocation();
-	UGameplayStatics::PlaySoundAtLocation(World, GetFireSoundAsset(), FireLocation, 1.f, 1.f, 0.f, nullptr, nullptr);
-	this->CharacterOwner->PlayAnimMontage(GetFireAnimMontageAsset(), 1.0f);
-	--WeaponItemInfo.CurrentAmmo;
-	this->BulletInterval = 0.f;
-
-	if (!bSuccess)
-	{
-		return;
-	}
-	UGameplayStatics::PlaySoundAtLocation(World, GetFireImpactSoundAsset(), HitData.Location, 1.f, 1.f, 0.f, nullptr, nullptr);
-	const FVector StartPoint = FireLocation;
-	const FVector EndPoint   = HitData.ImpactPoint;
-	const FRotator Rotation  = UKismetMathLibrary::FindLookAtRotation(StartPoint, EndPoint);
-	const FTransform Transform = UKismetMathLibrary::MakeTransform(StartPoint, Rotation, FVector::OneVector);
-
-	FActorSpawnParameters SpawnParams;
-	SpawnParams.Owner = this;
-	SpawnParams.Instigator = Instigator;
-	ABulletBase* const Bullet = World->SpawnActor<ABulletBase>(this->BulletsBP, Transform, SpawnParams);
-
-	ICombat* CombatInterface = Cast<ICombat>(HitData.Actor);
-	if (CombatInterface)
-	{
-		float Damage = (FMath::FRandRange(20.f, 35.f) / 1000.f);
-		CombatInterface->OnTakeDamage_Implementation(HitData.BoneName, Damage, this);
-	}
 }
 
 // fire released
@@ -262,21 +161,15 @@ void AWeaponBase::OnVisible_Implementation()
 	this->WidgetComponent->SetVisibility(this->Visible);
 }
 
-void AWeaponBase::BeginOverlapRecieve(
-	UPrimitiveComponent * OverlappedComponent, 
-	AActor * OtherActor, 
-	UPrimitiveComponent * OtherComp, 
-	int32 OtherBodyIndex, 
-	bool bFromSweep, 
-	const FHitResult & SweepResult)
+void AWeaponBase::BeginOverlapRecieve(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult)
 {
 	if (this->CharacterOwner == nullptr)
 	{
 		AMockCharacter* MockCharacter = Cast<AMockCharacter>(OtherActor);
-
 		if (MockCharacter)
 		{
 			this->CharacterOwner = MockCharacter;
+			check(this->CharacterOwner != nullptr);
 		}
 	}
 
@@ -297,19 +190,15 @@ void AWeaponBase::BeginOverlapRecieve(
 	}
 }
 
-void AWeaponBase::EndOverlapRecieve(
-	UPrimitiveComponent* OverlappedComp, 
-	AActor* OtherActor, 
-	UPrimitiveComponent* OtherComp, 
-	int32 OtherBodyIndex)
+void AWeaponBase::EndOverlapRecieve(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
 	if (this->CharacterOwner == nullptr)
 	{
 		AMockCharacter* MockCharacter = Cast<AMockCharacter>(OtherActor);
-
 		if (MockCharacter)
 		{
 			this->CharacterOwner = MockCharacter;
+			check(this->CharacterOwner != nullptr);
 		}
 	}
 
@@ -322,5 +211,104 @@ void AWeaponBase::EndOverlapRecieve(
 		this->SkeletalMeshComponent->SetRenderCustomDepth(false);
 	}
 	SetPickable(false);
+}
+
+void AWeaponBase::OnFirePressedInternal(const FVector RelativeLocation, float ForwardOffset = 15000.f)
+{
+	UWorld* World = GetWorld();
+
+	// not found owner
+	if (this->CharacterOwner == nullptr || World == nullptr)
+	{
+		return;
+	}
+
+	// current weapon reloading...
+	if (this->IsReload)
+	{
+		UE_LOG(LogTemp, Log, TEXT("Now Reloading..."));
+		return;
+	}
+
+	// empty clip size
+	if (WeaponItemInfo.CurrentAmmo <= 0)
+	{
+		if (this->CanFired)
+		{
+			this->CanFired = false;
+		}
+		UE_LOG(LogTemp, Log, TEXT("Out Of Ammos"));
+		return;
+	}
+
+	const FVector StartLocation = RelativeLocation;
+	const FVector EndLocation = StartLocation + (this->CharacterOwner->GetFollowCameraComponent()->GetForwardVector() * ForwardOffset);
+
+	FHitResult HitData(ForceInit);
+	FCollisionQueryParams fCollisionQueryParams;
+	fCollisionQueryParams.TraceTag = FName("");
+	fCollisionQueryParams.OwnerTag = FName("");
+	fCollisionQueryParams.bTraceAsyncScene = false;
+	fCollisionQueryParams.bTraceComplex = true;
+	fCollisionQueryParams.bFindInitialOverlaps = false;
+	fCollisionQueryParams.bReturnFaceIndex = false;
+	fCollisionQueryParams.bReturnPhysicalMaterial = false;
+	fCollisionQueryParams.bIgnoreBlocks = false;
+	fCollisionQueryParams.IgnoreMask = 0;
+	fCollisionQueryParams.AddIgnoredActor(this);
+
+	bool bSuccess = World->LineTraceSingleByChannel(
+		HitData, 
+		StartLocation, 
+		EndLocation, 
+		ECollisionChannel::ECC_Visibility, 
+		fCollisionQueryParams);
+
+	FTransform MuzzleTransform = GetSkeletalMeshComponent()->GetSocketTransform(GetMuzzleSocket());
+	const FVector MuzzleLocation  = MuzzleTransform.GetLocation();
+	const FRotator MuzzleRotation = FRotator(MuzzleTransform.GetRotation());
+
+	UGameplayStatics::PlaySoundAtLocation(World, GetFireSoundAsset(), MuzzleLocation, 1.f, 1.f, 0.f, nullptr, nullptr);
+	this->CharacterOwner->PlayAnimMontage(GetFireAnimMontageAsset(), 1.0f);
+	--WeaponItemInfo.CurrentAmmo;
+
+	UGameplayStatics::PlaySoundAtLocation(World, GetFireImpactSoundAsset(), HitData.Location, 1.f, 1.f, 0.f, nullptr, nullptr);
+	const FVector StartPoint = MuzzleLocation;
+	const FVector EndPoint   = UKismetMathLibrary::SelectVector(HitData.ImpactPoint, HitData.TraceEnd, bSuccess);
+	const FRotator Rotation  = UKismetMathLibrary::FindLookAtRotation(StartPoint, EndPoint);
+	const FTransform Transform = UKismetMathLibrary::MakeTransform(StartPoint, Rotation, FVector::OneVector);
+
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.Owner = this;
+	SpawnParams.Instigator = Instigator;
+	const ABulletBase* Bullet = World->SpawnActor<ABulletBase>(this->BulletsBP, Transform, SpawnParams);
+
+	if (HitData.Actor != nullptr)
+	{
+		ICombat* CombatInterface = Cast<ICombat>(HitData.Actor);
+		if (bSuccess && CombatInterface)
+		{
+			float Damage = (FMath::FRandRange(20.f, 35.f) / 1000.f);
+			CombatInterface->OnTakeDamage_Implementation(HitData.BoneName, Damage, this);
+		}
+	}
+
+	// spawn impact emitter
+	const FTransform EmitterTransform = UKismetMathLibrary::MakeTransform(HitData.Location, FRotator::ZeroRotator, FVector::ZeroVector);
+	UParticleSystemComponent* ImpactMetalEmitterComponent = UGameplayStatics::SpawnEmitterAtLocation(World, this->ImpactMetalEmitterTemplate, EmitterTransform, true);
+
+	// attach muzzleflash emitter
+	UParticleSystemComponent* MuzzleFlashEmitterComponent = UGameplayStatics::SpawnEmitterAttached(
+		this->MuzzleFlashEmitterTemplate, 
+		GetSkeletalMeshComponent(),
+		GetMuzzleSocket(), 
+		MuzzleLocation,
+		MuzzleRotation,
+		EAttachLocation::KeepWorldPosition, 
+		true);
+}
+
+void AWeaponBase::OnFireReleaseInternal()
+{
 }
 

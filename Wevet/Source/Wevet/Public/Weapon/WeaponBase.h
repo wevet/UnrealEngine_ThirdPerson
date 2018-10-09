@@ -46,6 +46,12 @@ protected:
 	UAnimMontage* ReloadAnimMontageAsset;
 
 	UPROPERTY(EditAnyWhere, BlueprintReadWrite, Category = "Valiable")
+	UParticleSystem* MuzzleFlashEmitterTemplate;
+
+	UPROPERTY(EditAnyWhere, BlueprintReadWrite, Category = "Valiable")
+	UParticleSystem* ImpactMetalEmitterTemplate;
+
+	UPROPERTY(EditAnyWhere, BlueprintReadWrite, Category = "Valiable")
 	TSubclassOf<class ABulletBase> BulletsBP;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Valiable")
@@ -68,7 +74,6 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AWeaponBase|Valiable")
 	float BulletDuration;
-	float BulletInterval;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AWeaponBase|Valiable")
 	float ReloadDuration;
@@ -130,6 +135,12 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "AWeaponBase|Component")
 	virtual	void EndOverlapRecieve(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 
+	UFUNCTION(BlueprintCallable, Category = "AWeaponBase")
+	virtual void OnFirePressedInternal(const FVector RelativeLocation, float ForwardOffset);
+
+	UFUNCTION(BlueprintCallable, Category = "AWeaponBase")
+	virtual void OnFireReleaseInternal();
+
 	FName GetMuzzleSocket() const 
 	{
 		return this->MuzzleSocketName; 
@@ -147,7 +158,7 @@ public:
 
 	USoundBase* GetFireSoundAsset() const 
 	{
-		return this->FireSoundAsset; 
+		return this->FireSoundAsset;  
 	}
 
 	USoundBase* GetFireImpactSoundAsset() const
