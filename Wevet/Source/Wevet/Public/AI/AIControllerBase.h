@@ -54,10 +54,7 @@ protected:
 	virtual void OnFireRelease();
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AAIControllerBase|Variable")
-	AAICharacterBase * CharacterRef;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AAIControllerBase|Variable")
-	TArray<AWayPointBase*> WayPointArray;
+	AAICharacterBase* CharacterRef;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AAIControllerBase|Variable")
 	int32 WayPointIndex;

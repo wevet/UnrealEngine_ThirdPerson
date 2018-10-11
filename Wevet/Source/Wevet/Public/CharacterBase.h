@@ -52,15 +52,19 @@ public:
 	virtual void Tick(float DeltaTime) override;
 	virtual void Jump();
 	virtual void StopJumping();
-	virtual void SprintStarted();
-	virtual void SprintStopped();
-	virtual void UpdateSpeed();
+	virtual void OnSprint();
+	virtual void OnCrouch();
 
-	virtual FVector BulletTraceRelativeLocation() const;
-	virtual FVector BulletTraceForwardLocation() const;
 
-	UFUNCTION(BlueprintCallable, Category = "ACharacterBase|Action")
-	virtual void AttachWeapon();
+	virtual FVector BulletTraceRelativeLocation() const
+	{
+		return FVector::ZeroVector;
+	};
+
+	virtual FVector BulletTraceForwardLocation() const
+	{
+		return FVector::ZeroVector;
+	};
 
 	UCharacterModel* GetCharacterModel() const 
 	{
@@ -104,15 +108,17 @@ public:
 	virtual void NotifyEquip_Implementation() override;
 #pragma endregion
 
-
-	UFUNCTION(BlueprintCallable, Category = "ACharacterBase|ICombatExecuter")
-	virtual void UpdateCrouch(bool Crouch);
+	UFUNCTION(BlueprintCallable, Category = "ACharacterBase|Weapon")
+	AWeaponBase* GetSelectedWeapon() const
+	{
+		return this->SelectedWeapon;
+	};
 
 	UFUNCTION(BlueprintCallable, Category = "ACharacterBase|Weapon")
-	AWeaponBase* GetSelectedWeapon() const;
-
-	UFUNCTION(BlueprintCallable, Category = "ACharacterBase|Weapon")
-	TArray<AWeaponBase*> GetWeaponList() const;
+	const TArray<AWeaponBase*>& GetWeaponList()
+	{
+		return this->WeaponList;
+	};
 
 	UFUNCTION(BlueprintCallable, Category = "ACharacterBase|Weapon")
 	AWeaponBase* GetCategoryByWeapon(EWeaponItemType WeaponItemType);

@@ -5,12 +5,11 @@
 
 
 AAIControllerBase::AAIControllerBase(const FObjectInitializer& ObjectInitializer)
-	: Super(ObjectInitializer)
+	: Super(ObjectInitializer),
+	WayPointIndex(0),
+	IsWalkBack(false)
 {
-	//PerceptionComponent = CreateDefaultSubobject<UAIPerceptionComponent>(TEXT("AI Perception Component"));
 	this->FunctionName = FString(TEXT("CheckEnemySighting"));
-	this->WayPointIndex = 0;
-	this->IsWalkBack = false;
 }
 
 void AAIControllerBase::CreateTimerFunc()
@@ -69,19 +68,25 @@ void AAIControllerBase::Patrolling_Implementation()
 
 void AAIControllerBase::CheckEnemySighting_Implementation()
 {
-	// Pawn Death
+	UWorld* World = GetWorld();
+
+	if (World == nullptr)
+	{
+		return;
+	}
+
 	if (this->CharacterRef->IsDeath_Implementation())
 	{
-		GetWorld()->GetTimerManager().ClearTimer(this->TimerFunc);
+		World->GetTimerManager().ClearTimer(this->TimerFunc);
 		Super::StopMovement();
 		return;
 	}
-	// Player Death
+
 	if (this->GetTargetCharacter()->IsDeath_Implementation()) 
 	{
 		return;
 	}
-	// has enemy found
+
 	if (this->CharacterRef->GetEnemyFound())
 	{
 		Hunting_Implementation();
@@ -99,79 +104,37 @@ void AAIControllerBase::Hunting_Implementation()
 
 void AAIControllerBase::SetupAI()
 {
-	auto Pawn = Super::GetPawn();
-	if (Pawn)
+	UWorld* World = GetWorld();
+
+	if (World == nullptr)
 	{
-		this->CharacterRef  = Cast<AAICharacterBase>(Pawn);
-		this->CharacterRef->UpdateWayPointEvent();
-		this->WayPointArray = this->CharacterRef->GetWayPointList();
+		return;
+	}
+
+	if (Super::AICharacterOwner)
+	{
+		this->CharacterRef  = Cast<AAICharacterBase>(Super::AICharacterOwner);
 		this->AcceptanceRadius = this->CharacterRef->GetAcceptanceRadius();
 	}
-	GetWorld()->GetTimerManager().SetTimer(this->AlternateFunc, this, &AAIControllerBase::Patrolling_Implementation, 0.5f, true);
+	World->GetTimerManager().SetTimer(this->AlternateFunc, this, &AAIControllerBase::Patrolling_Implementation, 0.5f, true);
 }
 
 void AAIControllerBase::OnFirePress()
 {
-	UWorld* World = GetWorld();
-
-	if (!this->CharacterRef->GetActivate() || World == nullptr) 
+	if (Super::AICharacterOwner->GetSelectedWeapon() == nullptr)
 	{
 		return;
 	}
-	if (this->CharacterRef->GetSelectedWeapon() == nullptr) 
-	{
-		return;
-	}
-	AWeaponBase* Weapon = this->CharacterRef->GetSelectedWeapon();
-	const FVector Start = Weapon->GetSkeletalMeshComponent()->GetSocketLocation(Weapon->GetMuzzleSocket());
-	const FVector End = Start + (GetControlRotation().Vector() * 15000);
 
-	FHitResult HitData(ForceInit);
-	FCollisionQueryParams fCollisionQueryParams;
-	fCollisionQueryParams.TraceTag = FName("");
-	fCollisionQueryParams.OwnerTag = FName("");
-	fCollisionQueryParams.bTraceAsyncScene = false;
-	fCollisionQueryParams.bTraceComplex = true;
-	fCollisionQueryParams.bFindInitialOverlaps = false;
-	fCollisionQueryParams.bReturnFaceIndex = false;
-	fCollisionQueryParams.bReturnPhysicalMaterial = false;
-	fCollisionQueryParams.bIgnoreBlocks = false;
-	fCollisionQueryParams.IgnoreMask = 0;
-	fCollisionQueryParams.AddIgnoredActor(this);
-
-	bool bSuccess = World->LineTraceSingleByChannel(HitData, Start, End, ECollisionChannel::ECC_Visibility, fCollisionQueryParams);
-
-	FName Socket = Weapon->GetMuzzleSocket();
-	FVector FireLocation = Weapon->GetSkeletalMeshComponent()->GetSocketTransform(Socket).GetLocation();
-	UGameplayStatics::PlaySoundAtLocation(World, Weapon->GetFireSoundAsset(), FireLocation, 1.f, 1.f, 0.f, nullptr, nullptr);
-	this->CharacterRef->PlayAnimMontage(Weapon->GetFireAnimMontageAsset(), 1.0f);
-
-	--Weapon->WeaponItemInfo.CurrentAmmo;
-
-	if (!bSuccess)
-	{
-		return;
-	}
-	UGameplayStatics::PlaySoundAtLocation(World, Weapon->GetFireImpactSoundAsset(), HitData.Location, 1.f, 1.f, 0.f, nullptr, nullptr);
-	const FVector StartPoint = FireLocation;
-	const FVector EndPoint   = HitData.ImpactPoint;
-	const FRotator Rotation  = UKismetMathLibrary::FindLookAtRotation(StartPoint, EndPoint);
-	const FTransform Transform = UKismetMathLibrary::MakeTransform(StartPoint, Rotation, FVector::OneVector);
-
-	FActorSpawnParameters SpawnParams;
-	SpawnParams.Owner = this;
-	SpawnParams.Instigator = Instigator;
-	ABulletBase* const Bullet = World->SpawnActor<ABulletBase>(this->BulletsBP, Transform, SpawnParams);
-
-	ICombat* CombatInterface = Cast<ICombat>(HitData.Actor);
-	if (CombatInterface)
-	{	
-		float Damage = (FMath::FRandRange(20.f, 35.f) / 1000.f);
-		CombatInterface->OnTakeDamage_Implementation(HitData.BoneName, Damage, this);
-	}
+	Super::AICharacterOwner->GetSelectedWeapon()->OnFirePressedInternal();
 }
 
 void AAIControllerBase::OnFireRelease()
 {
+	if (Super::AICharacterOwner->GetSelectedWeapon() == nullptr)
+	{
+		return;
+	}
 
+	Super::AICharacterOwner->GetSelectedWeapon()->OnFireReleaseInternal();
 }

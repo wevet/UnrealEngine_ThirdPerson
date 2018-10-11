@@ -8,7 +8,8 @@
 #include "Runtime/AIModule/Classes/Perception/AIPerceptionComponent.h"
 #include "Runtime/AIModule/Classes/Blueprint/AIBlueprintHelperLibrary.h"
 
-AAIControllerActorBase::AAIControllerActorBase(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
+AAIControllerActorBase::AAIControllerActorBase(const FObjectInitializer& ObjectInitializer)
+	: Super(ObjectInitializer)
 {
 
 	AIPerceptionComponent = ObjectInitializer.CreateDefaultSubobject<UAIPerceptionComponent>(this, TEXT("AIPerceptionComponent"));
@@ -39,18 +40,18 @@ void AAIControllerActorBase::Possess(APawn * Pawn)
 {
 	Super::Possess(Pawn);
 
-	AICharacter = Cast<AAICharacterActorBase>(Pawn);
-	if (AICharacter) 
+	this->AICharacterOwner = Cast<AAICharacterActorBase>(Pawn);
+	if (this->AICharacterOwner)
 	{
-		UBlackboardData* BlackBoard = AICharacter->BehaviorTree->BlackboardAsset;
+		UBlackboardData* BlackBoard = this->AICharacterOwner->BehaviorTree->BlackboardAsset;
 		if (BlackBoard)
 		{
 			//
 		}
 
-		AICharacter->InitializePosses();
-		this->WayPointList = AICharacter->GetWayPointList();
-		Super::RunBehaviorTree(AICharacter->BehaviorTree);
+		this->AICharacterOwner->InitializePosses();
+		this->WayPointArray = this->AICharacterOwner->GetWayPointList();
+		Super::RunBehaviorTree(this->AICharacterOwner->BehaviorTree);
 	}
 }
 
@@ -74,18 +75,14 @@ void AAIControllerActorBase::Hunting_Implementation()
 	//auto BB = UAIBlueprintHelperLibrary::GetBlackboard();
 }
 
-AWayPointBase * AAIControllerActorBase::GetRandomAtWayPoint()
+AWayPointBase* AAIControllerActorBase::GetRandomAtWayPoint()
 {
-	if (AICharacter)
+	if (this->WayPointArray.Num() <= 0)
 	{
-		if (this->WayPointList.Num() <= 0) 
-		{
-			return nullptr;
-		}
-		int32 RandomIndex = FMath::RandRange(0, this->WayPointList.Num() - 1);
-		return this->WayPointList[RandomIndex];
+		return nullptr;
 	}
-	return nullptr;
+	int32 RandomIndex = FMath::RandRange(0, this->WayPointArray.Num() - 1);
+	return this->WayPointArray[RandomIndex];
 }
 
 void AAIControllerActorBase::BeginPlay()
@@ -117,10 +114,10 @@ void AAIControllerActorBase::OnTargetPerceptionUpdatedRecieve(AActor * Actor, FA
 
 			//UE_LOG(LogTemp, Warning, TEXT("PerceptionUpdated : %s"), Success ? TEXT("True") : TEXT("False"));
 
-			if (AICharacter)
+			if (this->AICharacterOwner)
 			{
-				AICharacter->SetTargetActor(MockCharacter);
-				AICharacter->SetEnemyFound(Success);
+				this->AICharacterOwner->SetTargetActor(MockCharacter);
+				this->AICharacterOwner->SetEnemyFound(Success);
 			}
 		}
 	}

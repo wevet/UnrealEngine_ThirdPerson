@@ -47,7 +47,7 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "AAIControllerActorBase|Variable")
 	AAICharacterActorBase* GetAICharacter() const 
 	{
-		return this->AICharacter;
+		return this->AICharacterOwner;
 	}
 
 	UFUNCTION(BlueprintCallable, Category = "AAIControllerActorBase|Variable")
@@ -56,7 +56,7 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "AAIControllerActorBase|Variable")
 	AMockCharacter* GetPlayerCharacter() const
 	{
-		return this->AICharacter->GetPlayerCharacter();
+		return this->AICharacterOwner->GetPlayerCharacter();
 	}
 
 protected:
@@ -73,8 +73,10 @@ protected:
 
 	FGenericTeamId GetGenericTeamId() const override;
 
-	AAICharacterActorBase* AICharacter;
-	TArray<AWayPointBase*> WayPointList;
+	AAICharacterActorBase* AICharacterOwner;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AAIControllerActorBase|Variable")
+	TArray<AWayPointBase*> WayPointArray;
 
 	class UAISenseConfig_Sight* SightConfig;
 	class UAISenseConfig_Hearing* HearConfig;

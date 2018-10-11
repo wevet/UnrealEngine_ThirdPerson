@@ -38,16 +38,21 @@ public:
 	}
 
 	virtual void Jump() override;
+	
 	virtual void StopJumping() override;
+	
 	virtual void Die_Implementation() override;
-	virtual void SprintStarted() override;
-	virtual void SprintStopped() override;
-	virtual void UpdateSpeed() override;
+
 	virtual void OnReleaseItemExecuter_Implementation() override;
+
 	virtual void OnPickupItemExecuter_Implementation(AActor* Actor) override;
+
 	virtual void OnTakeDamage_Implementation(FName BoneName, float Damage, AActor* Actor) override;
+
 	virtual void NotifyEquip_Implementation() override;
+
 	virtual FVector BulletTraceRelativeLocation() const override;
+
 	virtual FVector BulletTraceForwardLocation() const override;
 
 	UFUNCTION(BlueprintCallable, Category = "AMockCharacter|Variable")
@@ -59,8 +64,10 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
+
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
-	virtual void OnCrouch();
+
+	virtual void OnCrouch() override;
 
 	UFUNCTION(BlueprintCallable, Category = "AMockCharacter|Action")
 	virtual void UpdateWeapon();
@@ -69,11 +76,17 @@ protected:
 	virtual void ReleaseItem();
 
 	void TouchStarted(ETouchIndex::Type FingerIndex, FVector Location);
+
 	void TouchStopped(ETouchIndex::Type FingerIndex, FVector Location);
+
 	void TurnAtRate(float Rate);
+
 	void LookUpAtRate(float Rate);
+
 	void MoveForward(float Value);
+
 	void MoveRight(float Value);
+
 	void Equipment();
 
 	UFUNCTION(BlueprintCallable, Category = "AMockCharacter|Action")

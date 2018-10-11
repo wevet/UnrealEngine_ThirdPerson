@@ -38,36 +38,17 @@ void AMockCharacter::BeginPlay()
 	GetCharacterMovement()->MaxWalkSpeed = Super::MovementSpeed;
 }
 
-void AMockCharacter::SprintStarted()
-{
-	this->Sprint = true;
-	MovementSpeed = this->DefaultMaxSpeed;
-}
-
-void AMockCharacter::SprintStopped()
-{
-	this->Sprint = false;
-	MovementSpeed = this->DefaultMaxSpeed *0.5f;
-}
-
-void AMockCharacter::UpdateSpeed()
-{
-	auto DeltaSeconds = GetWorld()->GetDeltaSeconds();
-	auto Speed = FMath::FInterpTo(GetCharacterMovement()->MaxWalkSpeed, this->MovementSpeed, DeltaSeconds, 0.6);
-	GetCharacterMovement()->MaxWalkSpeed = Speed;
-}
 
 #pragma region InputAction
 void AMockCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent)
 {
 	check(PlayerInputComponent);
-	PlayerInputComponent->BindAction("Crouch", IE_Pressed,   this, &AMockCharacter::OnCrouch);
+	PlayerInputComponent->BindAction("Crouch", IE_Pressed,   this, &ACharacterBase::OnCrouch);
+	PlayerInputComponent->BindAction("Sprint", IE_Pressed,   this, &ACharacterBase::OnSprint);
 	PlayerInputComponent->BindAction("Jump",   IE_Pressed,   this, &AMockCharacter::Jump);
 	PlayerInputComponent->BindAction("Jump",   IE_Released,  this, &AMockCharacter::StopJumping);
-	PlayerInputComponent->BindAction("Sprint", IE_Pressed,   this, &ACharacterBase::SprintStarted);
-	PlayerInputComponent->BindAction("Sprint", IE_Released,  this, &ACharacterBase::SprintStopped);
 	PlayerInputComponent->BindAction("EquipWeapon", IE_Pressed, this, &AMockCharacter::Equipment);
-	PlayerInputComponent->BindAction("SwapWeapon", IE_Pressed,  this, &AMockCharacter::UpdateWeapon);
+	PlayerInputComponent->BindAction("SwapWeapon",  IE_Pressed,  this, &AMockCharacter::UpdateWeapon);
 	PlayerInputComponent->BindAction("DropItem", IE_Pressed, this, &AMockCharacter::ReleaseItem);
 
 	PlayerInputComponent->BindAxis("Turn",        this, &APawn::AddControllerYawInput);
@@ -109,7 +90,6 @@ void AMockCharacter::MoveForward(float Value)
 {
 	if ((Controller != NULL) && (Value != 0.0f))
 	{
-		Super::UpdateSpeed();
 		const FRotator Rotation = Controller->GetControlRotation();
 		const FRotator YawRotation(0.f, Rotation.Yaw, 0.f);
 		const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
@@ -121,7 +101,6 @@ void AMockCharacter::MoveRight(float Value)
 {
 	if ((Controller != NULL) && (Value != 0.0f))
 	{
-		Super::UpdateSpeed();
 		const FRotator Rotation = Controller->GetControlRotation();
 		const FRotator YawRotation(0.f, Rotation.Yaw, 0.f);
 		const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
@@ -154,9 +133,14 @@ void AMockCharacter::StopJumping()
 
 void AMockCharacter::OnCrouch()
 {
-	Super::IsCrouch = !Super::IsCrouch;
-	Super::UpdateCrouch(Super::IsCrouch);
-	//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, Super::IsCrouch ? TEXT("Crouch!") : TEXT("UnCrouch!"));
+	Super::OnCrouch();
+
+	if (Super::IsCrouch)
+	{
+		this->Sprint = false;
+		MovementSpeed = this->DefaultMaxSpeed *0.5f;
+		GetCharacterMovement()->MaxWalkSpeed = MovementSpeed;
+	}
 }
 #pragma endregion
 
@@ -316,6 +300,13 @@ FVector AMockCharacter::BulletTraceForwardLocation() const
 
 AWeaponBase* AMockCharacter::ReleaseWeapon(const FTransform& Transform)
 {
+	UWorld* World = GetWorld();
+
+	if (World == nullptr)
+	{
+		return nullptr;
+	}
+
 	auto IgnoreWeapon = GetUnEquipedWeapon();
 	if (IgnoreWeapon)
 	{
@@ -330,7 +321,7 @@ AWeaponBase* AMockCharacter::ReleaseWeapon(const FTransform& Transform)
 		FActorSpawnParameters SpawnInfo;
 		SpawnInfo.Owner = NULL;
 		SpawnInfo.Instigator = NULL;
-		AWeaponBase* SpawningObject = GetWorld()->SpawnActor<AWeaponBase>(WeaponClass, Transform.GetLocation(), Super::GetActorRotation(), SpawnInfo);
+		AWeaponBase* SpawningObject = World->SpawnActor<AWeaponBase>(WeaponClass, Transform.GetLocation(), Super::GetActorRotation(), SpawnInfo);
 		return SpawningObject;
 	}
 	return nullptr;

@@ -181,7 +181,7 @@ void AWeaponBase::OnFirePressedInternal()
 	UWorld* World = GetWorld();
 
 	// not found owner
-	if (this->CharacterOwner == nullptr || World == nullptr)
+	if (this->CharacterOwner == nullptr || World == nullptr || (this->CharacterOwner && this->CharacterOwner->IsDeath_Implementation()))
 	{
 		return;
 	}
@@ -189,7 +189,6 @@ void AWeaponBase::OnFirePressedInternal()
 	// current weapon reloading...
 	if (this->IsReload)
 	{
-		UE_LOG(LogTemp, Log, TEXT("Now Reloading..."));
 		return;
 	}
 
@@ -312,6 +311,10 @@ void AWeaponBase::OnReloading_Implementation()
 	World->GetTimerManager().SetTimer(this->ReloadTimerHandle, TimerCallback, this->ReloadDuration, false);
 }
 
+
+void AWeaponBase::OnFireReleaseInternal()
+{
+}
 
 void AWeaponBase::OnReloadInternal()
 {

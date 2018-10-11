@@ -30,35 +30,6 @@ void ACharacterBase::BeginPlay()
 	this->DefaultMaxSpeed = GetCharacterMovement()->MaxWalkSpeed;
 }
 
-void ACharacterBase::SprintStarted()
-{
-	this->Sprint = true;
-	MovementSpeed = FMath::Clamp<float>(MovementSpeed * 3.f, 300.f, this->DefaultMaxSpeed);
-}
-
-void ACharacterBase::SprintStopped()
-{
-	this->Sprint = false;
-	MovementSpeed = FMath::Clamp<float>(MovementSpeed * 0.5f, 300.f, 300.f);
-}
-
-void ACharacterBase::UpdateSpeed()
-{
-	auto DeltaSeconds = GetWorld()->GetDeltaSeconds();
-	auto Speed = FMath::FInterpTo(GetCharacterMovement()->MaxWalkSpeed, this->MovementSpeed, DeltaSeconds, 0.6);
-	GetCharacterMovement()->MaxWalkSpeed = Speed;
-}
-
-FVector ACharacterBase::BulletTraceRelativeLocation() const
-{
-	return FVector::ZeroVector;
-}
-
-FVector ACharacterBase::BulletTraceForwardLocation() const
-{
-	return FVector::ZeroVector;
-}
-
 void ACharacterBase::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
@@ -72,6 +43,32 @@ void ACharacterBase::Jump()
 void ACharacterBase::StopJumping()
 {
 	Super::StopJumping();
+}
+
+void ACharacterBase::OnSprint()
+{
+	this->Sprint = !this->Sprint;
+
+	// now crouching slow speed
+	if (this->IsCrouch)
+	{
+		this->Sprint = false;
+	}
+
+	if (this->Sprint)
+	{
+		MovementSpeed = this->DefaultMaxSpeed;
+	}
+	else
+	{
+		MovementSpeed = this->DefaultMaxSpeed *0.5f;
+	}
+	GetCharacterMovement()->MaxWalkSpeed = MovementSpeed;
+}
+
+void ACharacterBase::OnCrouch()
+{
+	this->IsCrouch = !this->IsCrouch;
 }
 
 void ACharacterBase::OnReleaseItemExecuter_Implementation()
@@ -104,7 +101,6 @@ bool ACharacterBase::IsDeath_Implementation()
 
 void ACharacterBase::OnTakeDamage_Implementation(FName BoneName, float Damage, AActor* Actor)
 {
-	// has already death?
 	if (this->IsDeath_Implementation()) 
 	{
 		return;
@@ -164,22 +160,7 @@ void ACharacterBase::UnEquipment_Implementation()
 }
 
 
-void ACharacterBase::UpdateCrouch(bool Crouch)
-{
-	this->IsCrouch = Crouch;
-}
-
-AWeaponBase* ACharacterBase::GetSelectedWeapon() const
-{
-	return this->SelectedWeapon;
-}
-
-TArray<AWeaponBase*> ACharacterBase::GetWeaponList() const
-{
-	return this->WeaponList;
-}
-
-AWeaponBase * ACharacterBase::GetCategoryByWeapon(EWeaponItemType WeaponItemType)
+AWeaponBase* ACharacterBase::GetCategoryByWeapon(EWeaponItemType WeaponItemType)
 {
 	if (this->WeaponList.Num() <= 0) {
 		return nullptr;
@@ -203,11 +184,5 @@ AWeaponBase * ACharacterBase::GetCategoryByWeapon(EWeaponItemType WeaponItemType
 		}
 	}
 	return nullptr;
-}
-
-
-void ACharacterBase::AttachWeapon()
-{
-	//
 }
 

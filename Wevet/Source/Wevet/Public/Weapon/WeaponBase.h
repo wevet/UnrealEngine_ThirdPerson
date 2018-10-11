@@ -135,6 +135,10 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "AWeaponBase|API")
 	virtual void OnFirePressedInternal();
+
+	UFUNCTION(BlueprintCallable, Category = "AWeaponBase|API")
+	virtual void OnFireReleaseInternal();
+
 	virtual void OnReloadInternal();
 
 	FName GetMuzzleSocket() const 
