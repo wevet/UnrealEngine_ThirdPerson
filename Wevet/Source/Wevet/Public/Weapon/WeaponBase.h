@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "Weapon.h"
+#include "WeaponControllerExecuter.h"
 #include "BulletBase.h"
 #include "Classes/Animation/AnimMontage.h"
 #include "Components/SphereComponent.h"
@@ -14,7 +14,7 @@
 class ACharacterBase;
 
 UCLASS(ABSTRACT)
-class WEVET_API AWeaponBase : public AActor, public IWeapon
+class WEVET_API AWeaponBase : public AActor, public IWeaponControllerExecuter
 {
 	GENERATED_BODY()
 
@@ -149,6 +149,11 @@ public:
 	USkeletalMeshComponent* GetSkeletalMeshComponent() const 
 	{
 		return this->SkeletalMeshComponent; 
+	}
+
+	const FTransform GetMuzzleTransform()
+	{
+		return this->SkeletalMeshComponent->GetSocketTransform(this->GetMuzzleSocket());
 	}
 
 	USphereComponent* GetSphereComponent() const

@@ -4,34 +4,37 @@
 
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
-#include "Weapon.generated.h"
+#include "WeaponControllerExecuter.generated.h"
 
+/**
+*
+*/
 UINTERFACE(BlueprintType)
-class WEVET_API UWeapon : public UInterface
+class WEVET_API UWeaponControllerExecuter : public UInterface
 {
 	GENERATED_UINTERFACE_BODY()
 };
 
 
-class WEVET_API IWeapon
+class WEVET_API IWeaponControllerExecuter
 {
 	GENERATED_IINTERFACE_BODY()
 
 public:
 
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Interface")
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "IWeaponControllerExecuter")
 	void OnFirePress();
 
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Interface")
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "IWeaponControllerExecuter")
 	void OnFireRelease();
 
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Interface")
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "IWeaponControllerExecuter")
 	void OnReloading();
 
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Interface")
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "IWeaponControllerExecuter")
 	void OffVisible();
 
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Interface")
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "IWeaponControllerExecuter")
 	void OnVisible();
 };
 

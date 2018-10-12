@@ -15,6 +15,7 @@ ACharacterBase::ACharacterBase(const FObjectInitializer& ObjectInitializer)
 	this->MaxHealth      = 1.f;
 	this->CurrentHealth  = 1.f;
 	this->IsCrouch = false;
+	this->IsSprint = false;
 	this->IsEquipWeapon = false;
 	this->HeadSocketName = FName(TEXT("Head"));
 }
@@ -47,15 +48,15 @@ void ACharacterBase::StopJumping()
 
 void ACharacterBase::OnSprint()
 {
-	this->Sprint = !this->Sprint;
+	this->IsSprint = !this->IsSprint;
 
 	// now crouching slow speed
 	if (this->IsCrouch)
 	{
-		this->Sprint = false;
+		this->IsSprint = false;
 	}
-
-	if (this->Sprint)
+	
+	if (this->IsSprint)
 	{
 		MovementSpeed = this->DefaultMaxSpeed;
 	}

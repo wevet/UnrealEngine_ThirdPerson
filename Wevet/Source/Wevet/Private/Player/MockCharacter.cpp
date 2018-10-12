@@ -68,7 +68,7 @@ void AMockCharacter::ReleaseItem()
 
 void AMockCharacter::TouchStarted(ETouchIndex::Type FingerIndex, FVector Location)
 {
-	this->Jump();
+	Super::Jump();
 }
 
 void AMockCharacter::TouchStopped(ETouchIndex::Type FingerIndex, FVector Location)
@@ -137,7 +137,7 @@ void AMockCharacter::OnCrouch()
 
 	if (Super::IsCrouch)
 	{
-		this->Sprint = false;
+		Super::IsSprint = false;
 		MovementSpeed = this->DefaultMaxSpeed *0.5f;
 		GetCharacterMovement()->MaxWalkSpeed = MovementSpeed;
 	}

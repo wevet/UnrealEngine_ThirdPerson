@@ -2,80 +2,82 @@
 
 #pragma once
 
+
 #include "CoreMinimal.h"
-#include "AIControllerActorBase.h"
-#include "Perception/AiPerceptionComponent.h"
+#include "AIController.h"
+#include "Perception/AIPerceptionComponent.h"
+#include "Perception/AISenseConfig_Sight.h"
 #include "Perception/AISenseConfig_Hearing.h"
-#include "Perception/AISense_Hearing.h"
-#include "CharacterBase.h"
+#include "BehaviorTree/BlackboardComponent.h"
+#include "BehaviorTree/BehaviorTreeComponent.h"
+#include "BehaviorTree/BehaviorTree.h"
+#include "Macros.h"
+#include "MockCharacter.h"
 #include "AICharacterBase.h"
 #include "WayPointBase.h"
-#include "BulletBase.h"
+#include "AICombatControllerExecuter.h"
 #include "AIControllerBase.generated.h"
 
 /**
-*
-*/
-UCLASS()
-class WEVET_API AAIControllerBase : public AAIControllerActorBase
+ *
+ */
+
+UCLASS(ABSTRACT)
+class WEVET_API AAIControllerBase :  public AAIController, public IAICombatControllerExecuter
 {
 	GENERATED_BODY()
 
 
 public:
-
 	AAIControllerBase(const FObjectInitializer& ObjectInitializer);
+	virtual void Possess(APawn* Pawn) override;
 
-	UFUNCTION(BlueprintCallable, Category = "AAIControllerBase|Action")
-	virtual void CreateTimerFunc();
-
-	UFUNCTION(BlueprintCallable, Category = "AAIControllerBase|Variable")
-	ACharacterBase* GetTargetCharacter() const;
-
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AAIControllerBase|Interface")
+	void Patrolling();
 	virtual void Patrolling_Implementation() override;
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AAIControllerBase|Interface")
+	void CheckEnemySighting();
 	virtual void CheckEnemySighting_Implementation() override;
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AAIControllerBase|Interface")
+	void Hunting();
 	virtual void Hunting_Implementation() override;
 
-
-	bool HasCheckEnemyResult() const 
+	UFUNCTION(BlueprintCallable, Category = "AAIControllerBase|Variable")
+	AAICharacterBase* GetAICharacter() const
 	{
-		return this->CheckEnemyResult; 
+		return this->AICharacterOwner;
 	}
-	
+
+	UFUNCTION(BlueprintCallable, Category = "AAIControllerBase|Variable")
+	AWayPointBase* GetRandomAtWayPoint();
+
+	UFUNCTION(BlueprintCallable, Category = "AAIControllerBase|Variable")
+	AMockCharacter* GetPlayerCharacter() const
+	{
+		return this->AICharacterOwner->GetPlayerCharacter();
+	}
+
 protected:
-
-	UFUNCTION(BlueprintCallable, Category = "AAIControllerBase|Variable")
-	virtual void SetupAI();
-
-	UFUNCTION(BlueprintCallable, Category = "AAIControllerBase|Variable")
-	virtual void OnFirePress();
-
-	UFUNCTION(BlueprintCallable, Category = "AAIControllerBase|Variable")
-	virtual void OnFireRelease();
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AAIControllerBase|Components")
+	UAIPerceptionComponent* AIPerceptionComponent;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AAIControllerBase|Variable")
-	AAICharacterBase* CharacterRef;
+	FName CanSeePlayerKey;
+
+	virtual void BeginPlay() override;
+
+	UFUNCTION(BlueprintCallable, Category = "AAIControllerBase|Perception")
+	virtual void OnTargetPerceptionUpdatedRecieve(AActor* Actor, FAIStimulus Stimulus);
+
+	FGenericTeamId GetGenericTeamId() const override;
+
+	AAICharacterBase* AICharacterOwner;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AAIControllerBase|Variable")
-	int32 WayPointIndex;
+	TArray<AWayPointBase*> WayPointList;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AAIControllerBase|Variable")
-	FTimerHandle TimerFunc;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AAIControllerBase|Variable")
-	FString FunctionName;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AAIControllerBase|Variable")
-	TSubclassOf<class ABulletBase> BulletsBP;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AAIControllerBase|Variable")
-	bool IsWalkBack;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AAICharacterBase|Variable")
-	float AcceptanceRadius;
-
-	FTimerHandle AlternateFunc;
-	bool CheckEnemyResult;
-
+	class UAISenseConfig_Sight* SightConfig;
+	class UAISenseConfig_Hearing* HearConfig;
 };
-

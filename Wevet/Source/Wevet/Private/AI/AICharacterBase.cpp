@@ -1,163 +1,182 @@
+// Fill out your copyright notice in the Description page of Project Settings.
+
 #include "AICharacterBase.h"
-#include "MockCharacter.h"
+#include "AIControllerBase.h"
 #include "Engine.h"
+#include "Kismet/KismetMathLibrary.h"
+#include "Components/WidgetComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 
 
 AAICharacterBase::AAICharacterBase(const FObjectInitializer& ObjectInitializer)
-	: Super(ObjectInitializer)
+	: Super(ObjectInitializer), 
+	IsEnemyFound(false)
 {
-	this->AcceptanceRadius = 1500.f;
+	PrimaryActorTick.bCanEverTick = true;
+
+	// create pawnsensing
+	PawnSensingComponent = ObjectInitializer.CreateDefaultSubobject<UPawnSensingComponent>(this, TEXT("PawnSensingComponent"));
+	PawnSensingComponent->SetPeripheralVisionAngle(90.f);
+	PawnSensingComponent->SensingInterval = .1f;
+	PawnSensingComponent->bOnlySensePlayers = false;
+	PawnSensingComponent->bHearNoises = true;
+	PawnSensingComponent->bSeePawns = true;
+
+	WidgetComponent = ObjectInitializer.CreateDefaultSubobject<UWidgetComponent>(this, TEXT("WidgetComponent"));
+	WidgetComponent->SetupAttachment(GetMesh());
+	WidgetComponent->SetDrawSize(FVector2D(200.f, 70.f));
+	WidgetComponent->SetWorldLocation(FVector(0.f, 0.f, 230.f));
+	const FRotator Rot = FRotator::MakeFromEuler(FVector(0.f, 0.f, 90.f));
+	WidgetComponent->SetWorldRotation(Rot);
 }
 
-void AAICharacterBase::OnConstruction(const FTransform& Transform)
+void AAICharacterBase::OnConstruction(const FTransform & Transform)
 {
 	Super::OnConstruction(Transform);
 }
 
-void AAICharacterBase::Tick(float DeltaTime)
+void AAICharacterBase::PostInitializeComponents()
 {
-	if (Super::IsDeath_Implementation())
-	{
-		return;
-	}
-	Super::Tick(DeltaTime);
-
-	if (Super::IsEnemyFound)
-	{
-		this->TickInterval += DeltaTime;
-		if (this->TickInterval > this->TickWaitInterval) 
-		{
-			this->TickInterval = 0.f;
-			Scanning();
-		}
-
-	}
+	Super::PostInitializeComponents();
 }
 
 void AAICharacterBase::Die_Implementation()
 {
-	if (Super::SelectedWeapon) 
+	if (Super::DieSuccessCalled)
 	{
-		Super::SelectedWeapon->OnEquip(false);
+		return;
 	}
+	GetMesh()->SetAllBodiesSimulatePhysics(true);
+	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	if (WidgetComponent)
+	{
+		WidgetComponent->SetVisibility(false);
+	}
+	this->SetTargetActor(nullptr);
 	Super::Die_Implementation();
 }
 
-void AAICharacterBase::NotifyEquip_Implementation()
+void AAICharacterBase::SetTargetActor(AActor * Actor)
 {
-	if (Super::SelectedWeapon)
-	{
-		FName SocketName = Super::IsEquipWeapon ? Super::SelectedWeapon->WeaponItemInfo.EquipSocketName : Super::SelectedWeapon->WeaponItemInfo.UnEquipSocketName;
-		Super::SelectedWeapon->AttachToComponent(Super::GetMesh(), { EAttachmentRule::SnapToTarget, true }, SocketName);
-	}
-	Super::IsEnemyFound = Super::IsEquipWeapon;
-	Super::NotifyEquip_Implementation(); 
+	this->Target = Actor;
 }
 
+void AAICharacterBase::SetEnemyFound(bool EnemyFound)
+{
+	this->IsEnemyFound = EnemyFound;
+}
+
+AMockCharacter* AAICharacterBase::GetPlayerCharacter() const
+{
+	return Cast<AMockCharacter>(GetTarget());
+}
+
+void AAICharacterBase::InitializePosses()
+{
+	UpdateWeaponEvent();
+	UpdateWayPointEvent();
+}
+
+void AAICharacterBase::BeginPlay()
+{
+	Super::BeginPlay();
+	GetCharacterMovement()->MaxWalkSpeed = Super::MovementSpeed;
+
+	AAIControllerBase* AIController = Cast<AAIControllerBase>(Controller);
+
+	// runtime
+	if (PawnSensingComponent && PawnSensingComponent->IsValidLowLevel())
+	{
+		PawnSensingComponent->OnSeePawn.AddDynamic(this, &AAICharacterBase::OnSeePawnRecieve);
+		PawnSensingComponent->OnHearNoise.AddDynamic(this, &AAICharacterBase::OnHearNoiseRecieve);
+	}
+}
+
+FVector AAICharacterBase::BulletTraceRelativeLocation() const
+{
+	if (Super::GetSelectedWeapon() == nullptr)
+	{
+		return FVector::ZeroVector;
+	}
+	return Super::GetSelectedWeapon()->GetMuzzleTransform().GetLocation();
+}
+
+FVector AAICharacterBase::BulletTraceForwardLocation() const
+{
+	return GetControlRotation().Vector();
+}
+
+void AAICharacterBase::UpdateWeaponEvent()
+{
+	UWorld* World = GetWorld();
+
+	if (this->SpawnWeapon == nullptr || World == nullptr)
+	{
+		return;
+	}
+
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.Owner = this;
+	SpawnParams.Instigator = Instigator;
+	AActor* const SpawningObject = World->SpawnActor<AActor>(this->SpawnWeapon, FVector::ZeroVector, FRotator::ZeroRotator, SpawnParams);
+	Super::SelectedWeapon = Cast<AWeaponBase>(SpawningObject);
+
+	check(Super::SelectedWeapon);
+
+	// setup assets
+	Super::SelectedWeapon->SetFireSoundAsset(Super::FireSound);
+	Super::SelectedWeapon->SetFireAnimMontageAsset(Super::FireMontage);
+	Super::SelectedWeapon->SetReloadAnimMontageAsset(Super::ReloadMontage);
+	if (Super::SelectedWeapon->GetSphereComponent())
+	{
+		Super::SelectedWeapon->GetSphereComponent()->DestroyComponent();
+	}
+	Super::SelectedWeapon->OffVisible_Implementation();
+
+	if (!Super::WeaponList.Contains(Super::SelectedWeapon))
+	{
+		Super::WeaponList.Add(Super::SelectedWeapon);
+	}
+
+	if (Super::SelectedWeapon)
+	{
+		FName SocketName = Super::SelectedWeapon->WeaponItemInfo.UnEquipSocketName;
+		Super::SelectedWeapon->AttachToComponent(Super::GetMesh(), { EAttachmentRule::SnapToTarget, true }, SocketName);
+	}
+}
+
+void AAICharacterBase::UpdateWayPointEvent()
+{
+	UWorld* World = GetWorld();
+
+	if (World == nullptr)
+	{
+		return;
+	}
+
+	TArray<AActor*> FoundActor;
+	UGameplayStatics::GetAllActorsOfClass(World, AWayPointBase::StaticClass(), FoundActor);
+
+	for (TActorIterator<AWayPointBase> ActorIterator(World); ActorIterator; ++ActorIterator)
+	{
+		AWayPointBase* WayPoint = *ActorIterator;
+		if (WayPoint)
+		{
+			this->WayPointList.Add(WayPoint);
+		}
+	}
+}
+
+void AAICharacterBase::Scanning()
+{
+}
 
 void AAICharacterBase::OnSeePawnRecieve(APawn* OtherPawn)
 {
-	AMockCharacter* Player = Cast<AMockCharacter>(OtherPawn);
-	if (Player) 
-	{
-		if (Player->IsDeath_Implementation()) 
-		{
-			if (Super::IsEquipWeapon) 
-			{
-				Super::UnEquipment_Implementation();
-				Super::PlayAnimMontage(this->EquipMontage, 1.6f, FName(TEXT("None")));
-			}
-			if (Super::IsEnemyFound)
-			{
-				Super::IsEnemyFound = false;
-			}
-			return;
-		}
-		else 
-		{
-			// target has not setting yet
-			if (Super::GetTarget() == nullptr) 
-			{
-				Super::SetTargetActor(Player);
-			}
-
-			if (!Super::IsEnemyFound)
-			{
-				Super::IsEnemyFound = true;
-				FString message = TEXT("Saw Actor ") + OtherPawn->GetName();
-				GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, message);
-				Super::Equipment_Implementation();
-				Super::PlayAnimMontage(this->EquipMontage, 1.6f, FName(TEXT("None")));
-			}
-		}
-
-	}
 }
 
-void AAICharacterBase::OnHearNoiseRecieve(APawn * OtherActor, const FVector & Location, float Volume)
+void AAICharacterBase::OnHearNoiseRecieve(APawn* OtherActor, const FVector & Location, float Volume)
 {
-	const FString VolumeDesc = FString::Printf(TEXT(" at volume %f"), Volume);
-	FString message = TEXT("Heard Actor ") + OtherActor->GetName() + VolumeDesc;
-	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, message);
-}
-
-
-// scan tracing
-void AAICharacterBase::Scanning()
-{
-	// not found enemy
-	if (Super::SelectedWeapon == nullptr) 
-	{
-		return;
-	}
-
-	ACharacterBase* Character = Super::GetPlayerCharacter();
-	if (Character)
-	{
-		float Distance = FVector::Dist(Character->GetActorLocation(), GetActorLocation());
-		//UE_LOG(LogTemp, Log, TEXT("Distance = %d"), Distance);
-	}
-
-	const FTransform Transform = Super::SelectedWeapon->GetSkeletalMeshComponent()->GetSocketTransform(Super::SelectedWeapon->GetMuzzleSocket());
-	//const FVector Start = Transform.GetLocation();
-	const FVector Start = Super::GetActorLocation();
-	const FVector End = Start + (Controller->GetControlRotation().Vector() * 5000);
-
-	FHitResult HitData(ForceInit);
-	FCollisionQueryParams fCollisionQueryParams;
-	fCollisionQueryParams.TraceTag = FName("");
-	fCollisionQueryParams.OwnerTag = FName("");
-	fCollisionQueryParams.bTraceAsyncScene = false;
-	fCollisionQueryParams.bTraceComplex = true;
-	fCollisionQueryParams.bFindInitialOverlaps = false;
-	fCollisionQueryParams.bReturnFaceIndex = false;
-	fCollisionQueryParams.bReturnPhysicalMaterial = false;
-	fCollisionQueryParams.bIgnoreBlocks = false;
-	fCollisionQueryParams.IgnoreMask = 0;
-	fCollisionQueryParams.AddIgnoredActor(this);
-
-	GetWorld()->LineTraceSingleByChannel(HitData, Start, End, ECollisionChannel::ECC_Visibility, fCollisionQueryParams);
-
-	if (HitData.Actor == nullptr) 
-	{
-		return;
-	}
-
-	ICombat* CombatInterface = Cast<ICombat>(HitData.Actor);
-	if (CombatInterface)
-	{
-		this->Activate = true;
-	}
-	else
-	{
-		this->Activate = false;
-	}
-	GLog->Log("On Hit an Actor of " + HitData.Actor->GetName());
-	FLinearColor fLineColor = FLinearColor(0.0, 255.0, 0.0, 0.0);
-	float Duration  = 0.5;
-	float Thickness = 1.0f;
-	UKismetSystemLibrary::DrawDebugLine(GetWorld(), Start, End, fLineColor, Duration, Thickness);
-
 }
 

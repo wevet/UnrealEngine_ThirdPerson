@@ -127,6 +127,9 @@ public:
 	bool IsCrouch;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ACharacterBase|ICombatExecuter")
+	bool IsSprint;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ACharacterBase|ICombatExecuter")
 	bool IsEquipWeapon;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ACharacterBase|Variable")
@@ -149,8 +152,6 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ACharacterBase|Model")
 	float CurrentHealth;
 
-
-	bool Sprint;
 };
 
 
