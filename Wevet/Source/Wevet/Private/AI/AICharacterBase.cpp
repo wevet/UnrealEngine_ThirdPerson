@@ -1,7 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "AICharacterBase.h"
-#include "AIControllerBase.h"
+#include "AIUserWidgetBase.h"
 #include "Engine.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Components/WidgetComponent.h"
@@ -40,6 +40,46 @@ void AAICharacterBase::PostInitializeComponents()
 	Super::PostInitializeComponents();
 }
 
+void AAICharacterBase::BeginPlay()
+{
+	Super::BeginPlay();
+
+	if (PawnSensingComponent && PawnSensingComponent->IsValidLowLevel())
+	{
+		PawnSensingComponent->OnSeePawn.AddDynamic(this, &AAICharacterBase::OnSeePawnRecieve);
+		PawnSensingComponent->OnHearNoise.AddDynamic(this, &AAICharacterBase::OnHearNoiseRecieve);
+	}
+
+	if (WidgetComponent && WidgetComponent->IsValidLowLevel())
+	{
+		UAIUserWidgetBase* AIWidget = Cast<UAIUserWidgetBase>(WidgetComponent->GetUserWidgetObject());
+		check(AIWidget);
+		AIWidget->Init(this);
+	}
+}
+
+void AAICharacterBase::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+
+	if (Super::SelectedWeapon)
+	{
+		if (this->IsEnemyFound && Super::IsEquipWeapon)
+		{
+			this->BulletInterval += DeltaTime;
+			if (this->BulletInterval >= this->BulletDelay)
+			{
+				BP_FirePressReceive();
+				this->BulletInterval = 0.f;
+			}
+		}
+		else
+		{
+			//BP_FireReleaseReceive();
+		}
+	}
+}
+
 void AAICharacterBase::Die_Implementation()
 {
 	if (Super::DieSuccessCalled)
@@ -53,18 +93,64 @@ void AAICharacterBase::Die_Implementation()
 	{
 		WidgetComponent->SetVisibility(false);
 	}
-	this->SetTargetActor(nullptr);
+	// stopfireevent
+	if (Super::SelectedWeapon)
+	{
+		Super::SelectedWeapon->OnFireRelease_Implementation();
+	}
+	SetTargetActor(nullptr);
 	Super::Die_Implementation();
 }
 
-void AAICharacterBase::SetTargetActor(AActor * Actor)
+void AAICharacterBase::NotifyEquip_Implementation()
+{
+	if (Super::SelectedWeapon)
+	{
+		if (this->IsEnemyFound)
+		{
+			Super::SelectedWeapon->AttachToComponent(
+				Super::GetMesh(), 
+				{ EAttachmentRule::SnapToTarget, true }, 
+				Super::SelectedWeapon->WeaponItemInfo.EquipSocketName);
+			Super::Equipment_Implementation();
+		}
+		else 
+		{
+			Super::SelectedWeapon->AttachToComponent(
+				Super::GetMesh(), 
+				{ EAttachmentRule::SnapToTarget, true }, 
+				Super::SelectedWeapon->WeaponItemInfo.UnEquipSocketName);
+			Super::UnEquipment_Implementation();
+		}
+		Super::NotifyEquip_Implementation();
+	}
+}
+
+void AAICharacterBase::OnTakeDamage_Implementation(FName BoneName, float Damage, AActor* Actor)
+{
+	Super::OnTakeDamage_Implementation(BoneName, Damage, Actor);
+	if (Super::IsDeath_Implementation())
+	{
+		Die_Implementation();
+		OnFireReleaseInternal();
+	}
+}
+
+void AAICharacterBase::SetTargetActor(AActor* Actor)
 {
 	this->Target = Actor;
 }
 
 void AAICharacterBase::SetEnemyFound(bool EnemyFound)
 {
+	bool InEnemyFound = this->IsEnemyFound;
+
+	if (InEnemyFound == EnemyFound)
+	{
+		return;
+	}
 	this->IsEnemyFound = EnemyFound;
+	PlayAnimMontage(this->EquipMontage, 1.6f);
 }
 
 AMockCharacter* AAICharacterBase::GetPlayerCharacter() const
@@ -78,27 +164,18 @@ void AAICharacterBase::InitializePosses()
 	UpdateWayPointEvent();
 }
 
-void AAICharacterBase::BeginPlay()
+void AAICharacterBase::OnFirePressedInternal()
 {
-	Super::BeginPlay();
-	GetCharacterMovement()->MaxWalkSpeed = Super::MovementSpeed;
+	Super::SelectedWeapon->OnFirePressedInternal();
+}
 
-	AAIControllerBase* AIController = Cast<AAIControllerBase>(Controller);
-
-	// runtime
-	if (PawnSensingComponent && PawnSensingComponent->IsValidLowLevel())
-	{
-		PawnSensingComponent->OnSeePawn.AddDynamic(this, &AAICharacterBase::OnSeePawnRecieve);
-		PawnSensingComponent->OnHearNoise.AddDynamic(this, &AAICharacterBase::OnHearNoiseRecieve);
-	}
+void AAICharacterBase::OnFireReleaseInternal()
+{
+	Super::SelectedWeapon->OnFireReleaseInternal();
 }
 
 FVector AAICharacterBase::BulletTraceRelativeLocation() const
 {
-	if (Super::GetSelectedWeapon() == nullptr)
-	{
-		return FVector::ZeroVector;
-	}
 	return Super::GetSelectedWeapon()->GetMuzzleTransform().GetLocation();
 }
 
@@ -119,30 +196,26 @@ void AAICharacterBase::UpdateWeaponEvent()
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.Owner = this;
 	SpawnParams.Instigator = Instigator;
-	AActor* const SpawningObject = World->SpawnActor<AActor>(this->SpawnWeapon, FVector::ZeroVector, FRotator::ZeroRotator, SpawnParams);
+	const FTransform Transform = FTransform::Identity;
+	AActor* SpawningObject = World->SpawnActor<AActor>(this->SpawnWeapon, Transform, SpawnParams);
 	Super::SelectedWeapon = Cast<AWeaponBase>(SpawningObject);
 
 	check(Super::SelectedWeapon);
 
 	// setup assets
+	Super::SelectedWeapon->SetCharacterOwner(this);
 	Super::SelectedWeapon->SetFireSoundAsset(Super::FireSound);
 	Super::SelectedWeapon->SetFireAnimMontageAsset(Super::FireMontage);
 	Super::SelectedWeapon->SetReloadAnimMontageAsset(Super::ReloadMontage);
-	if (Super::SelectedWeapon->GetSphereComponent())
-	{
-		Super::SelectedWeapon->GetSphereComponent()->DestroyComponent();
-	}
+	Super::SelectedWeapon->GetSphereComponent()->DestroyComponent();
 	Super::SelectedWeapon->OffVisible_Implementation();
+
+	FName SocketName = Super::SelectedWeapon->WeaponItemInfo.UnEquipSocketName;
+	Super::SelectedWeapon->AttachToComponent(Super::GetMesh(), { EAttachmentRule::SnapToTarget, true }, SocketName);
 
 	if (!Super::WeaponList.Contains(Super::SelectedWeapon))
 	{
 		Super::WeaponList.Add(Super::SelectedWeapon);
-	}
-
-	if (Super::SelectedWeapon)
-	{
-		FName SocketName = Super::SelectedWeapon->WeaponItemInfo.UnEquipSocketName;
-		Super::SelectedWeapon->AttachToComponent(Super::GetMesh(), { EAttachmentRule::SnapToTarget, true }, SocketName);
 	}
 }
 

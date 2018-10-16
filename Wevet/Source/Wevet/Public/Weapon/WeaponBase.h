@@ -191,5 +191,6 @@ public:
 		return this->Visible;
 	}
 
+	virtual void SetCharacterOwner(ACharacterBase* InCharacterOwner);
 };
 

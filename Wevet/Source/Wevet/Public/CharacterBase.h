@@ -55,23 +55,13 @@ public:
 	virtual void OnSprint();
 	virtual void OnCrouch();
 
+	virtual FVector BulletTraceRelativeLocation() const { return FVector::ZeroVector; };
 
-	virtual FVector BulletTraceRelativeLocation() const
-	{
-		return FVector::ZeroVector;
-	};
+	virtual FVector BulletTraceForwardLocation() const { return FVector::ZeroVector; };
 
-	virtual FVector BulletTraceForwardLocation() const
-	{
-		return FVector::ZeroVector;
-	};
+	UCharacterModel* GetCharacterModel() const { return this->CharacterModel; }
 
-	UCharacterModel* GetCharacterModel() const 
-	{
-		return this->CharacterModel; 
-	}
-
-#pragma region InteractionExecuter
+public:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "ACharacterBase|IInteractionExecuter")
 	void OnReleaseItemExecuter();
 	virtual void OnReleaseItemExecuter_Implementation() override;
@@ -79,10 +69,7 @@ public:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "ACharacterBase|InteractionExecuter")
 	void OnPickupItemExecuter(AActor* Actor);
 	virtual void OnPickupItemExecuter_Implementation(AActor* Actor) override;
-#pragma endregion
 
-
-#pragma region CombatExecuter
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "ACharacterBase|ICombatExecuter")
 	bool IsDeath();
 	virtual bool IsDeath_Implementation() override;
@@ -106,30 +93,46 @@ public:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "ACharacterBase|ICombatExecuter")
 	void NotifyEquip();
 	virtual void NotifyEquip_Implementation() override;
-#pragma endregion
+
+public:
+	UFUNCTION(BlueprintCallable, Category = "ACharacterBase|Weapon")
+	AWeaponBase* GetSelectedWeapon() const { return this->SelectedWeapon; };
 
 	UFUNCTION(BlueprintCallable, Category = "ACharacterBase|Weapon")
-	AWeaponBase* GetSelectedWeapon() const
-	{
-		return this->SelectedWeapon;
-	};
-
-	UFUNCTION(BlueprintCallable, Category = "ACharacterBase|Weapon")
-	const TArray<AWeaponBase*>& GetWeaponList()
-	{
-		return this->WeaponList;
-	};
+	const TArray<AWeaponBase*>& GetWeaponList() { return this->WeaponList; };
 
 	UFUNCTION(BlueprintCallable, Category = "ACharacterBase|Weapon")
 	AWeaponBase* GetCategoryByWeapon(EWeaponItemType WeaponItemType);
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ACharacterBase|ICombatExecuter")
+	UFUNCTION(BlueprintCallable, Category = "ACharacterBase|Variable")
+	const bool HasCrouch() { return this->IsCrouch; }
+
+	UFUNCTION(BlueprintCallable, Category = "ACharacterBase|Variable")
+	const bool HasSprint() { return this->IsSprint; }
+
+	UFUNCTION(BlueprintCallable, Category = "ACharacterBase|Variable")
+	const bool HasEquipWeapon() { return this->IsEquipWeapon; }
+
+	UFUNCTION(BlueprintCallable, Category = "ACharacterBase|Variable")
+	const float GetMaxHealth() { return this->MaxHealth; }
+
+	UFUNCTION(BlueprintCallable, Category = "ACharacterBase|Variable")
+	const float GetCurrentHealth() { return this->CurrentHealth; }
+
+	UFUNCTION(BlueprintCallable, Category = "ACharacterBase|Variable")
+	float GetHealthToWidget() const 
+	{
+		return this->CurrentHealth / this->MaxHealth;
+	}
+
+protected:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ACharacterBase|Variable")
 	bool IsCrouch;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ACharacterBase|ICombatExecuter")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ACharacterBase|Variable")
 	bool IsSprint;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ACharacterBase|ICombatExecuter")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ACharacterBase|Variable")
 	bool IsEquipWeapon;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ACharacterBase|Variable")
@@ -144,12 +147,10 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ACharacterBase|Variable")
 	FName HeadSocketName;
 
-	// @TODO
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ACharacterBase|Model")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ACharacterBase|Variable")
 	float MaxHealth;
 
-	// @TODO
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ACharacterBase|Model")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ACharacterBase|Variable")
 	float CurrentHealth;
 
 };

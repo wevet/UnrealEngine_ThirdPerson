@@ -29,6 +29,7 @@ void ACharacterBase::BeginPlay()
 {
 	Super::BeginPlay();
 	this->DefaultMaxSpeed = GetCharacterMovement()->MaxWalkSpeed;
+	GetCharacterMovement()->MaxWalkSpeed = this->MovementSpeed;
 }
 
 void ACharacterBase::Tick(float DeltaTime)

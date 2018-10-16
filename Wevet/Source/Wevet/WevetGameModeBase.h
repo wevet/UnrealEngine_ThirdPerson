@@ -16,6 +16,7 @@ class WEVET_API AWevetGameModeBase : public AGameModeBase
 	GENERATED_BODY()
 	
 public:
+	AWevetGameModeBase();
 	AWevetGameModeBase(const FObjectInitializer& ObjectInitializer);
 
 	virtual void InitGameState() override;

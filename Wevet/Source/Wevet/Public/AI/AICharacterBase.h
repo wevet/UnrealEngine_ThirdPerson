@@ -24,9 +24,18 @@ class WEVET_API AAICharacterBase : public ACharacterBase
 
 public:
 	AAICharacterBase(const FObjectInitializer& ObjectInitializer);
+
 	virtual void OnConstruction(const FTransform& Transform) override;
+
 	virtual void PostInitializeComponents() override;
+
+	virtual void Tick(float DeltaTime) override;
+
 	virtual void Die_Implementation() override;
+
+	virtual void NotifyEquip_Implementation() override;
+
+	virtual void OnTakeDamage_Implementation(FName BoneName, float Damage, AActor* Actor) override;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AAICharacterBase|Variable")
 	UPawnSensingComponent* PawnSensingComponent;
@@ -47,12 +56,6 @@ public:
 	}
 
 	UFUNCTION(BlueprintCallable, Category = "AAICharacterBase|Variable")
-	virtual AController* GetController() const
-	{
-		return Cast<APawn>(GetTarget())->Controller;
-	}
-
-	UFUNCTION(BlueprintCallable, Category = "AAICharacterBase|Variable")
 	virtual AMockCharacter* GetPlayerCharacter() const;
 
 	UFUNCTION(BlueprintCallable, Category = "AAICharacterBase|Variable")
@@ -67,11 +70,8 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "AAICharacterBase|Variable")
 	virtual void UpdateWayPointEvent();
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AAICharacterBase|Variable")
-	bool IsEnemyFound;
-
 	UFUNCTION(BlueprintCallable, Category = "AAICharacterBase|Variable")
-	bool GetEnemyFound() const
+	bool HasEnemyFound() const
 	{
 		return this->IsEnemyFound;
 	}
@@ -81,6 +81,9 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "AAICharacterBase|Variable")
 	virtual void InitializePosses();
+
+	virtual void OnFirePressedInternal();
+	virtual void OnFireReleaseInternal();
 
 protected:
 	AActor* Target;
@@ -103,4 +106,17 @@ protected:
 
 	UFUNCTION(BlueprintCallable, Category = "AAICharacterBase|PawnSensing")
 	virtual	void OnHearNoiseRecieve(APawn *OtherActor, const FVector &Location, float Volume);
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AAICharacterBase|Variable")
+	bool IsEnemyFound;
+
+	UFUNCTION(BlueprintImplementableEvent, Category = "AICharacterBase|NativeEvent")
+	void BP_FirePressReceive();
+
+	UFUNCTION(BlueprintImplementableEvent, Category = "AICharacterBase|NativeEvent")
+	void BP_FireReleaseReceive();
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AAICharacterBase|Variable")
+	float BulletDelay = 1.4f;
+	float BulletInterval;
 };

@@ -113,7 +113,7 @@ void AWeaponBase::OffVisible_Implementation()
 	this->Visible = false;
 	this->SkeletalMeshComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	this->SkeletalMeshComponent->SetSimulatePhysics(false);
-	this->WidgetComponent->SetVisibility(this->Visible);
+	this->WidgetComponent->SetVisibility(false);
 }
 
 void AWeaponBase::OnVisible_Implementation()
@@ -121,7 +121,7 @@ void AWeaponBase::OnVisible_Implementation()
 	this->Visible = true;
 	this->SkeletalMeshComponent->SetCollisionEnabled(ECollisionEnabled::PhysicsOnly);
 	this->SkeletalMeshComponent->SetSimulatePhysics(true);
-	this->WidgetComponent->SetVisibility(this->Visible);
+	this->WidgetComponent->SetVisibility(true);
 }
 
 void AWeaponBase::BeginOverlapRecieve(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult)
@@ -131,7 +131,7 @@ void AWeaponBase::BeginOverlapRecieve(UPrimitiveComponent* OverlappedComponent, 
 		ACharacterBase* Character = Cast<ACharacterBase>(OtherActor);
 		if (Character)
 		{
-			this->CharacterOwner = Character;
+			SetCharacterOwner(Character);
 			check(this->CharacterOwner != nullptr);
 		}
 	}
@@ -160,7 +160,7 @@ void AWeaponBase::EndOverlapRecieve(UPrimitiveComponent* OverlappedComp, AActor*
 		ACharacterBase* Character = Cast<ACharacterBase>(OtherActor);
 		if (Character)
 		{
-			this->CharacterOwner = Character;
+			SetCharacterOwner(Character);
 			check(this->CharacterOwner != nullptr);
 		}
 	}
@@ -181,7 +181,9 @@ void AWeaponBase::OnFirePressedInternal()
 	UWorld* World = GetWorld();
 
 	// not found owner
-	if (this->CharacterOwner == nullptr || World == nullptr || (this->CharacterOwner && this->CharacterOwner->IsDeath_Implementation()))
+	if (World == nullptr  
+		|| this->CharacterOwner == nullptr
+		|| (this->CharacterOwner && this->CharacterOwner->IsDeath_Implementation()))
 	{
 		return;
 	}
@@ -243,7 +245,7 @@ void AWeaponBase::OnFirePressedInternal()
 	SpawnParams.Instigator = Instigator;
 	const ABulletBase* Bullet = World->SpawnActor<ABulletBase>(this->BulletsBP, Transform, SpawnParams);
 
-	if (HitData.Actor != nullptr)
+	if (HitData.Actor.IsValid())
 	{
 		ICombat* CombatInterface = Cast<ICombat>(HitData.Actor);
 		if (bSuccess && CombatInterface)
@@ -334,6 +336,11 @@ void AWeaponBase::OnReloadInternal()
 		WeaponItemInfo.MaxAmmo = (WeaponItemInfo.MaxAmmo - this->NeededAmmo);
 		WeaponItemInfo.CurrentAmmo = WeaponItemInfo.ClipType;
 	}
+}
+
+void AWeaponBase::SetCharacterOwner(ACharacterBase* InCharacterOwner)
+{
+	this->CharacterOwner = InCharacterOwner;
 }
 
 

@@ -3,6 +3,12 @@
 #include "WevetGameModeBase.h"
 #include "Engine.h"
 
+
+AWevetGameModeBase::AWevetGameModeBase()
+{
+	//
+}
+
 AWevetGameModeBase::AWevetGameModeBase(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {

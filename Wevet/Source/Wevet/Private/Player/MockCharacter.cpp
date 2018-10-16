@@ -35,7 +35,6 @@ void AMockCharacter::OnConstruction(const FTransform& Transform)
 void AMockCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-	GetCharacterMovement()->MaxWalkSpeed = Super::MovementSpeed;
 }
 
 
@@ -172,7 +171,7 @@ AWeaponBase* AMockCharacter::GetUnEquipedWeapon()
 	}
 	for (AWeaponBase* Weapon : WeaponList)
 	{
-		if (Weapon && Weapon->Equip == false) 
+		if (Weapon->Equip == false)
 		{
 			return Weapon;
 		}
@@ -215,8 +214,8 @@ void AMockCharacter::OnReleaseItemExecuter_Implementation()
 	if (IgnoreWeapon) 
 	{
 		IgnoreWeapon->OnVisible_Implementation();
+		Super::OnReleaseItemExecuter_Implementation();
 	}
-	Super::OnReleaseItemExecuter_Implementation();
 }
 
 // pick up
@@ -238,15 +237,17 @@ void AMockCharacter::OnPickupItemExecuter_Implementation(AActor * Actor)
 		const FTransform Transform = Super::GetMesh()->GetSocketTransform(WeaponItemInfo.UnEquipSocketName);
 		AWeaponBase* PickingWeapon = GetWorld()->SpawnActor<AWeaponBase>(WeaponClass, Transform, SpawnInfo);
 
-		if (this->WeaponList.Contains(PickingWeapon) == false)
-		{
-			this->WeaponList.Add(PickingWeapon);
-		}
 		PickingWeapon->AttachToComponent(Super::GetMesh(), { EAttachmentRule::SnapToTarget, true }, WeaponItemInfo.UnEquipSocketName);
 		PickingWeapon->OffVisible_Implementation();
+		PickingWeapon->OnEquip(false);
+
 		if (PickingWeapon->GetSphereComponent()) 
 		{
 			PickingWeapon->GetSphereComponent()->DestroyComponent();
+		}
+		if (Super::WeaponList.Contains(PickingWeapon) == false)
+		{
+			Super::WeaponList.Add(PickingWeapon);
 		}
 		Weapon->Destroy();
 		Weapon = nullptr;
@@ -259,7 +260,7 @@ void AMockCharacter::OnTakeDamage_Implementation(FName BoneName, float Damage, A
 	Super::OnTakeDamage_Implementation(BoneName, Damage, Actor);
 	if (Super::IsDeath_Implementation())
 	{
-		this->Die_Implementation();
+		Die_Implementation();
 	}
 }
 
@@ -268,18 +269,16 @@ void AMockCharacter::NotifyEquip_Implementation()
 	if (Super::SelectedWeapon) 
 	{
 		// detach weapon
-		Super::SelectedWeapon->OnEquip(false);
 		Super::SelectedWeapon->AttachToComponent(Super::GetMesh(), { EAttachmentRule::SnapToTarget, true }, Super::SelectedWeapon->WeaponItemInfo.UnEquipSocketName);
-		Super::SelectedWeapon = nullptr;
 		Super::UnEquipment_Implementation();
 		GetCharacterMovement()->bOrientRotationToMovement = true;
 		Super::bUseControllerRotationYaw = false;
+		Super::SelectedWeapon = nullptr;
 	}  
 	else
 	{
 		// attach weapon
 		Super::SelectedWeapon = this->WeaponList[GetWeaponCurrentIndex()];
-		Super::SelectedWeapon->OnEquip(true);
 		Super::SelectedWeapon->AttachToComponent(Super::GetMesh(), { EAttachmentRule::SnapToTarget, true }, Super::SelectedWeapon->WeaponItemInfo.EquipSocketName);
 		Super::Equipment_Implementation();
 		GetCharacterMovement()->bOrientRotationToMovement = false;
@@ -307,13 +306,13 @@ AWeaponBase* AMockCharacter::ReleaseWeapon(const FTransform& Transform)
 		return nullptr;
 	}
 
-	auto IgnoreWeapon = GetUnEquipedWeapon();
+	AWeaponBase* IgnoreWeapon = GetUnEquipedWeapon();
 	if (IgnoreWeapon)
 	{
-		// destory event
+		WeaponList.Remove(IgnoreWeapon);
+
 		FWeaponItemInfo WeaponItemInfo = IgnoreWeapon->WeaponItemInfo;
 		TSubclassOf<class AWeaponBase> WeaponClass = WeaponItemInfo.WeaponClass;
-		WeaponList.Remove(IgnoreWeapon);
 		IgnoreWeapon->Destroy();
 		IgnoreWeapon = nullptr;
 

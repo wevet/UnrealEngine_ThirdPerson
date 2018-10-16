@@ -82,32 +82,37 @@ void AAIControllerBase::BeginPlay()
 	AIPerceptionComponent->OnTargetPerceptionUpdated.AddDynamic(this, &AAIControllerBase::OnTargetPerceptionUpdatedRecieve);
 }
 
-void AAIControllerBase::OnTargetPerceptionUpdatedRecieve(AActor * Actor, FAIStimulus Stimulus)
+void AAIControllerBase::OnTargetPerceptionUpdatedRecieve(AActor* Actor, FAIStimulus Stimulus)
 {
+	if (this->AICharacterOwner == nullptr 
+		|| (this->AICharacterOwner && this->AICharacterOwner->IsDeath_Implementation()))
+	{
+		return;
+	}
+
 	AMockCharacter* MockCharacter = Cast<AMockCharacter>(Actor);
 
-	if (MockCharacter)
+	if (MockCharacter == nullptr 
+		|| (MockCharacter && MockCharacter->IsDeath_Implementation()))
 	{
-		if (MockCharacter->IsDeath_Implementation())
+		return;
+	}
+
+	UBlackboardComponent* BComp = GetBlackboardComponent();
+	if (BComp)
+	{
+		if (this->AICharacterOwner->HasEnemyFound())
 		{
 			return;
 		}
-		if (GetBlackboardComponent())
-		{
-			auto BComp = GetBlackboardComponent();
 
-			bool Success = Stimulus.WasSuccessfullySensed() ? true : false;
-			BComp->SetValueAsBool(this->CanSeePlayerKey, Success);
-
-			//UE_LOG(LogTemp, Warning, TEXT("PerceptionUpdated : %s"), Success ? TEXT("True") : TEXT("False"));
-
-			if (this->AICharacterOwner)
-			{
-				this->AICharacterOwner->SetTargetActor(MockCharacter);
-				this->AICharacterOwner->SetEnemyFound(Success);
-			}
-		}
+		bool Success = Stimulus.WasSuccessfullySensed() ? true : false;
+		//UE_LOG(LogTemp, Warning, TEXT("PerceptionUpdated : %s"), Success ? TEXT("True") : TEXT("False"));
+		this->AICharacterOwner->SetTargetActor(MockCharacter);
+		this->AICharacterOwner->SetEnemyFound(Success);
+		BComp->SetValueAsBool(this->CanSeePlayerKey, Success);
 	}
+
 }
 
 
