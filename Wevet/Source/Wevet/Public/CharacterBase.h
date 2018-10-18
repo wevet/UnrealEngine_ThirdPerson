@@ -114,15 +114,9 @@ public:
 	const bool HasEquipWeapon() { return this->IsEquipWeapon; }
 
 	UFUNCTION(BlueprintCallable, Category = "ACharacterBase|Variable")
-	const float GetMaxHealth() { return this->MaxHealth; }
-
-	UFUNCTION(BlueprintCallable, Category = "ACharacterBase|Variable")
-	const float GetCurrentHealth() { return this->CurrentHealth; }
-
-	UFUNCTION(BlueprintCallable, Category = "ACharacterBase|Variable")
 	float GetHealthToWidget() const 
 	{
-		return this->CurrentHealth / this->MaxHealth;
+		return CharacterModel->GetHealthToWidget();
 	}
 
 protected:
@@ -146,13 +140,6 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ACharacterBase|Variable")
 	FName HeadSocketName;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ACharacterBase|Variable")
-	float MaxHealth;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ACharacterBase|Variable")
-	float CurrentHealth;
-
 };
 
 

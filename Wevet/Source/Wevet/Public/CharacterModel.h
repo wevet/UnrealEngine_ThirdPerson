@@ -17,9 +17,6 @@ class WEVET_API UCharacterModel : public UObject
 public:
 	UCharacterModel(const FObjectInitializer& ObjectInitializer);
 
-	UCharacterModel();
-
-
 	UFUNCTION(BlueprintCallable, Category = "API")
 	int32 GetMaxHealth() const { return this->MaxHealth; }
 
@@ -49,6 +46,12 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "API")
 	virtual void SetWisdomValue(int32 Wisdom);
+
+	UFUNCTION(BlueprintCallable, Category = "API")
+	float GetHealthToWidget() const
+	{
+		return (float)this->CurrentHealth / (float)this->MaxHealth;
+	}
 
 protected:
 

@@ -90,6 +90,7 @@ void AAIControllerBase::OnTargetPerceptionUpdatedRecieve(AActor* Actor, FAIStimu
 		return;
 	}
 
+	UBlackboardComponent* BComp = GetBlackboardComponent();
 	AMockCharacter* MockCharacter = Cast<AMockCharacter>(Actor);
 
 	if (MockCharacter == nullptr 
@@ -98,7 +99,6 @@ void AAIControllerBase::OnTargetPerceptionUpdatedRecieve(AActor* Actor, FAIStimu
 		return;
 	}
 
-	UBlackboardComponent* BComp = GetBlackboardComponent();
 	if (BComp)
 	{
 		if (this->AICharacterOwner->HasEnemyFound())

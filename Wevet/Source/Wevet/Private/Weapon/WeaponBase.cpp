@@ -256,7 +256,7 @@ void AWeaponBase::OnFirePressedInternal()
 			}
 			else
 			{
-				float Damage = (FMath::FRandRange(20.f, 35.f) / 1000.f);
+				float Damage = FMath::FRandRange(10.f, 20.f);
 				CombatInterface->OnTakeDamage_Implementation(HitData.BoneName, Damage, this);
 			}
 		}

@@ -12,8 +12,6 @@ ACharacterBase::ACharacterBase(const FObjectInitializer& ObjectInitializer)
 	this->BaseTurnRate   = 45.f;
 	this->BaseLookUpRate = 45.f;
 	this->MovementSpeed  = 300.f;
-	this->MaxHealth      = 1.f;
-	this->CurrentHealth  = 1.f;
 	this->IsCrouch = false;
 	this->IsSprint = false;
 	this->IsEquipWeapon = false;
@@ -81,24 +79,20 @@ void ACharacterBase::OnReleaseItemExecuter_Implementation()
 void ACharacterBase::OnPickupItemExecuter_Implementation(AActor * Actor)
 {
 	UE_LOG(LogTemp, Warning, TEXT("Pick : %s"), *(Actor->GetName()));
-	//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT("OnPickupItemExecuter_Implementation : %s"), *(Actor->GetName())));
 }
 
 void ACharacterBase::NotifyEquip_Implementation()
 {
 	UE_LOG(LogTemp, Warning, TEXT("NotifyEquip : %s"), *(Super::GetName()));
-	//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT("NotifyEquip_Implementation : %s"), *(Super::GetName())));
 }
 
-// @TODO
 bool ACharacterBase::IsDeath_Implementation()
 {
-	bool IsDie = false;
-	if (CharacterModel) 
+	if (this->DieSuccessCalled)
 	{
-		IsDie = CharacterModel->GetCurrentHealth() <= 0;
+		return true;
 	}
-	return (this->CurrentHealth <= 0.0f) || IsDie;
+	return CharacterModel->GetCurrentHealth() <= 0;
 }
 
 void ACharacterBase::OnTakeDamage_Implementation(FName BoneName, float Damage, AActor* Actor)
@@ -109,20 +103,13 @@ void ACharacterBase::OnTakeDamage_Implementation(FName BoneName, float Damage, A
 	}
 	if (BoneName == this->HeadSocketName) 
 	{
-		this->CurrentHealth = 0.f;
-		if (CharacterModel) 
-		{
-			CharacterModel->SetCurrentHealthValue(0);
-		}
+		CharacterModel->SetCurrentHealthValue(0);
 		return;
 	} 
 	else
 	{
-		this->CurrentHealth = this->CurrentHealth - Damage;
-		if (CharacterModel)
-		{
-			CharacterModel->SetCurrentHealthValue(CharacterModel->GetCurrentHealth() - (int)Damage);
-		}
+		int TakeDamage = (int)(FMath::Abs(Damage));
+		CharacterModel->SetCurrentHealthValue(CharacterModel->GetCurrentHealth() - TakeDamage);
 	}
 }
 
@@ -132,8 +119,6 @@ void ACharacterBase::Die_Implementation()
 	{
 		this->DieSuccessCalled = true;
 	}
-	//UE_LOG(LogTemp, Warning, TEXT("Die_Implementation : %s"), *(Super::GetName()));
-	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT("Die_Implementation : %s"), *(Super::GetName())));
 }
 
 void ACharacterBase::Equipment_Implementation()
@@ -142,29 +127,25 @@ void ACharacterBase::Equipment_Implementation()
 	{
 		return;
 	}
-
-	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT("Equipment : %s"), *(Super::GetName())));
 	this->IsEquipWeapon = true;
 	this->SelectedWeapon->OnEquip(this->IsEquipWeapon);
-	//GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Cyan, FString::FString("HandleUpdate Delta ") + FString::SanitizeFloat(Value));
-	//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("This is an on screen message!"));
-	//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT("Some variable values: x: %s"), 10.0f));
 }
 
 void ACharacterBase::UnEquipment_Implementation()
 {
-	this->IsEquipWeapon = false;
-	if (this->SelectedWeapon)
+	if (this->SelectedWeapon == nullptr)
 	{
-		this->SelectedWeapon->OnEquip(this->IsEquipWeapon);
+		return;
 	}
-	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT("UnEquipment : %s"), *(Super::GetName())));
+	this->IsEquipWeapon = false;
+	this->SelectedWeapon->OnEquip(this->IsEquipWeapon);
 }
 
 
 AWeaponBase* ACharacterBase::GetCategoryByWeapon(EWeaponItemType WeaponItemType)
 {
-	if (this->WeaponList.Num() <= 0) {
+	if (this->WeaponList.Num() <= 0) 
+	{
 		return nullptr;
 	}
 

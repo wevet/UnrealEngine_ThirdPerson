@@ -3,19 +3,11 @@
 #include "CharacterModel.h"
 
 
-UCharacterModel::UCharacterModel()
-{
-
-}
-
 UCharacterModel::UCharacterModel(const FObjectInitializer& ObjectInitializer)
-	: Super(ObjectInitializer)
+	: Super(ObjectInitializer),
+	CurrentHealth(100), MaxHealth(100), Attack(100), Defence(100), Wisdom(100)
 {
-	this->CurrentHealth = 100;
-	this->MaxHealth = 100;
-	this->Attack = 100;
-	this->Defence = 100;
-	this->Wisdom = 100;
+	//
 }
 
 void UCharacterModel::SetCurrentHealthValue(int32 Health)
