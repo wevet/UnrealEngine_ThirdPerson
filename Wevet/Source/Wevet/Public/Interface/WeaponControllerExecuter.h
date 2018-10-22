@@ -86,6 +86,20 @@ public:
 	FName UnEquipSocketName;
 
 	FWeaponItemInfo();
+
+public:
+	void CopyTo(FWeaponItemInfo& InWeaponItemInfo)
+	{
+		WeaponItemType = InWeaponItemInfo.WeaponItemType;
+		WeaponClass = InWeaponItemInfo.WeaponClass;
+		ClipType = InWeaponItemInfo.ClipType;
+		CurrentAmmo = InWeaponItemInfo.CurrentAmmo;
+		MaxAmmo = InWeaponItemInfo.MaxAmmo;
+		Damage = InWeaponItemInfo.Damage;
+		Texture = InWeaponItemInfo.Texture;
+		EquipSocketName = InWeaponItemInfo.EquipSocketName;
+		UnEquipSocketName = InWeaponItemInfo.UnEquipSocketName;
+	}
 };
 
 

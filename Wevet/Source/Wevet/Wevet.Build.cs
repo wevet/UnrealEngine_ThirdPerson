@@ -19,6 +19,7 @@ public class Wevet : ModuleRules
 				"UMG",
 				"Slate",
 				"SlateCore",
+				//"NavigationSystem",
 				"ExtraCameraWindow"
 			}
 		);

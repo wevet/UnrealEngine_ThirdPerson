@@ -37,7 +37,6 @@ void AMockCharacter::BeginPlay()
 	Super::BeginPlay();
 }
 
-
 #pragma region InputAction
 void AMockCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent)
 {
@@ -87,22 +86,21 @@ void AMockCharacter::LookUpAtRate(float Rate)
 
 void AMockCharacter::MoveForward(float Value)
 {
-	if ((Controller != NULL) && (Value != 0.0f))
+	if (Controller && Value != 0.0f)
 	{
-		const FRotator Rotation = Controller->GetControlRotation();
-		const FRotator YawRotation(0.f, Rotation.Yaw, 0.f);
-		const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
+		const bool bLimiteRotation = (GetCharacterMovement()->IsMovingOnGround() || GetCharacterMovement()->IsFalling());
+		const FRotator Rotation = bLimiteRotation ? GetActorRotation() : Controller->GetControlRotation();
+		const FVector Direction = FRotationMatrix(Rotation).GetUnitAxis(EAxis::X);
 		AddMovementInput(Direction, Value);
 	}
 }
 
 void AMockCharacter::MoveRight(float Value)
 {
-	if ((Controller != NULL) && (Value != 0.0f))
+	if (Value != 0.f)
 	{
-		const FRotator Rotation = Controller->GetControlRotation();
-		const FRotator YawRotation(0.f, Rotation.Yaw, 0.f);
-		const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
+		const FRotator Rotation = GetActorRotation();
+		const FVector Direction = FRotationMatrix(Rotation).GetScaledAxis(EAxis::Y);
 		AddMovementInput(Direction, Value);
 	}
 }
@@ -142,8 +140,7 @@ void AMockCharacter::OnCrouch()
 	}
 }
 #pragma endregion
-
-// 
+ 
 void AMockCharacter::UpdateWeapon()
 {
 	if (this->WeaponList.Num() <= 0)
@@ -162,7 +159,6 @@ void AMockCharacter::UpdateWeapon()
 	UE_LOG(LogTemp, Warning, TEXT("WeaponCurrentIndex : %d"), this->WeaponCurrentIndex);
 }
 
-// current unequipment weapon
 AWeaponBase* AMockCharacter::GetUnEquipedWeapon()
 {
 	if (WeaponList.Num() <= 0) 
@@ -321,6 +317,8 @@ AWeaponBase* AMockCharacter::ReleaseWeapon(const FTransform& Transform)
 		SpawnInfo.Owner = NULL;
 		SpawnInfo.Instigator = NULL;
 		AWeaponBase* SpawningObject = World->SpawnActor<AWeaponBase>(WeaponClass, Transform.GetLocation(), Super::GetActorRotation(), SpawnInfo);
+		check(SpawningObject != nullptr);
+		SpawningObject->WeaponItemInfo.CopyTo(WeaponItemInfo);
 		return SpawningObject;
 	}
 	return nullptr;
