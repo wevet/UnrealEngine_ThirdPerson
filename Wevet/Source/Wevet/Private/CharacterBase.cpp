@@ -6,16 +6,16 @@
 
 ACharacterBase::ACharacterBase(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer),
-	DieSuccessCalled(false)
+	DieSuccessCalled(false),
+	BaseTurnRate(45.f),
+	BaseLookUpRate(45.f),
+	MovementSpeed(300.f),
+	HeadSocketName(FName(TEXT("Head")))
 {
 	PrimaryActorTick.bCanEverTick = true;
-	this->BaseTurnRate   = 45.f;
-	this->BaseLookUpRate = 45.f;
-	this->MovementSpeed  = 300.f;
 	this->IsCrouch = false;
 	this->IsSprint = false;
 	this->IsEquipWeapon = false;
-	this->HeadSocketName = FName(TEXT("Head"));
 }
 
 void ACharacterBase::OnConstruction(const FTransform& Transform)
@@ -26,6 +26,7 @@ void ACharacterBase::OnConstruction(const FTransform& Transform)
 void ACharacterBase::BeginPlay()
 {
 	Super::BeginPlay();
+	this->CharacterModel  = NewObject<UCharacterModel>();
 	this->DefaultMaxSpeed = GetCharacterMovement()->MaxWalkSpeed;
 	GetCharacterMovement()->MaxWalkSpeed = this->MovementSpeed;
 }
@@ -117,7 +118,18 @@ void ACharacterBase::Die_Implementation()
 {
 	if (!this->DieSuccessCalled)
 	{
+		if (this->SelectedWeapon)
+		{
+			this->SelectedWeapon->OnFireRelease_Implementation();
+		}
 		this->DieSuccessCalled = true;
+		this->CharacterModel->ConditionalBeginDestroy();
+		Super::GetMesh()->SetAllBodiesSimulatePhysics(true);
+		Super::GetMesh()->SetSimulatePhysics(true);
+		Super::GetMesh()->WakeAllRigidBodies();
+		Super::GetMesh()->bBlendPhysics = true;
+		Super::GetCharacterMovement()->DisableMovement();
+		GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	}
 }
 
@@ -141,7 +153,6 @@ void ACharacterBase::UnEquipment_Implementation()
 	this->SelectedWeapon->OnEquip(this->IsEquipWeapon);
 }
 
-
 AWeaponBase* ACharacterBase::GetCategoryByWeapon(EWeaponItemType WeaponItemType)
 {
 	if (this->WeaponList.Num() <= 0) 
@@ -151,7 +162,7 @@ AWeaponBase* ACharacterBase::GetCategoryByWeapon(EWeaponItemType WeaponItemType)
 
 	if (this->SelectedWeapon)
 	{
-		if (this->SelectedWeapon->WeaponItemInfo.WeaponItemType == WeaponItemType)
+		if (this->SelectedWeapon->HasMatchTypes(WeaponItemType))
 		{
 			return this->SelectedWeapon;
 		}

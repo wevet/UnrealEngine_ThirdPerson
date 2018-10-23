@@ -13,7 +13,10 @@
 
 
 UCLASS(ABSTRACT)
-class WEVET_API ACharacterBase : public ACharacter, public ICombat, public IInteractionExecuter
+class WEVET_API ACharacterBase : 
+	public ACharacter, 
+	public ICombat, 
+	public IInteractionExecuter
 {
 	GENERATED_BODY()
 
@@ -24,30 +27,6 @@ public:
 protected:
 	virtual void BeginPlay() override;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ACharacterBase|Weapon")
-	AWeaponBase* SelectedWeapon;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ACharacterBase|Weapon")
-	TArray<AWeaponBase*> WeaponList;
-
-	UPROPERTY(EditAnywhere, Instanced, Category = "ACharacterBase|Model")
-	UCharacterModel* CharacterModel;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ACharacterBase|Variable")
-	UAnimMontage* EquipMontage;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ACharacterBase|Variable")
-	UAnimMontage* FireMontage;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ACharacterBase|Variable")
-	UAnimMontage* ReloadMontage;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ACharacterBase|Variable")
-	USoundBase* FireSound;
-
-	float DefaultMaxSpeed;
-	bool DieSuccessCalled;
-
 public:
 	virtual void Tick(float DeltaTime) override;
 	virtual void Jump();
@@ -56,9 +35,7 @@ public:
 	virtual void OnCrouch();
 
 	virtual FVector BulletTraceRelativeLocation() const { return FVector::ZeroVector; };
-
 	virtual FVector BulletTraceForwardLocation() const { return FVector::ZeroVector; };
-
 	UCharacterModel* GetCharacterModel() const { return this->CharacterModel; }
 
 public:
@@ -120,25 +97,47 @@ public:
 	}
 
 protected:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ACharacterBase|Variable")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ACharacterBase|Weapon")
+	AWeaponBase* SelectedWeapon;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ACharacterBase|Weapon")
+	TArray<AWeaponBase*> WeaponList;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ACharacterBase|Variable")
+	UAnimMontage* EquipMontage;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ACharacterBase|Variable")
+	UAnimMontage* FireMontage;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ACharacterBase|Variable")
+	UAnimMontage* ReloadMontage;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ACharacterBase|Variable")
+	USoundBase* FireSound;
+
+	UCharacterModel* CharacterModel;
+	float DefaultMaxSpeed;
+	bool DieSuccessCalled;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ACharacterBase|Variable")
 	bool IsCrouch;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ACharacterBase|Variable")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ACharacterBase|Variable")
 	bool IsSprint;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ACharacterBase|Variable")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ACharacterBase|Variable")
 	bool IsEquipWeapon;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ACharacterBase|Variable")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ACharacterBase|Variable")
 	float BaseTurnRate;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ACharacterBase|Variable")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ACharacterBase|Variable")
 	float BaseLookUpRate;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ACharacterBase|Variable")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ACharacterBase|Variable")
 	float MovementSpeed;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ACharacterBase|Variable")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ACharacterBase|Variable")
 	FName HeadSocketName;
 };
 

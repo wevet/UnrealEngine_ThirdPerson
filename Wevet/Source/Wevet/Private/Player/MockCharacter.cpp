@@ -156,7 +156,7 @@ void AMockCharacter::UpdateWeapon()
 	{
 		++this->WeaponCurrentIndex;
 	}
-	UE_LOG(LogTemp, Warning, TEXT("WeaponCurrentIndex : %d"), this->WeaponCurrentIndex);
+	//UE_LOG(LogTemp, Warning, TEXT("WeaponCurrentIndex : %d"), this->WeaponCurrentIndex);
 }
 
 AWeaponBase* AMockCharacter::GetUnEquipedWeapon()
@@ -182,15 +182,7 @@ void AMockCharacter::Die_Implementation()
 	{
 		return;
 	}
-	GetCharacterMovement()->DisableMovement();	
-	GetMesh()->SetAllBodiesSimulatePhysics(true);
-	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
-	// stopfireevent
-	if (Super::SelectedWeapon)
-	{
-		Super::SelectedWeapon->OnFireRelease_Implementation();
-	}
 	auto Controller = UGameplayStatics::GetPlayerController(this, 0);
 	if (Controller)
 	{
@@ -262,10 +254,14 @@ void AMockCharacter::OnTakeDamage_Implementation(FName BoneName, float Damage, A
 
 void AMockCharacter::NotifyEquip_Implementation()
 {
+	const FName SocketName = Super::SelectedWeapon ? 
+		Super::SelectedWeapon->WeaponItemInfo.UnEquipSocketName : 
+		Super::SelectedWeapon->WeaponItemInfo.EquipSocketName;
+
 	if (Super::SelectedWeapon) 
 	{
 		// detach weapon
-		Super::SelectedWeapon->AttachToComponent(Super::GetMesh(), { EAttachmentRule::SnapToTarget, true }, Super::SelectedWeapon->WeaponItemInfo.UnEquipSocketName);
+		Super::SelectedWeapon->AttachToComponent(Super::GetMesh(), { EAttachmentRule::SnapToTarget, true }, SocketName);
 		Super::UnEquipment_Implementation();
 		GetCharacterMovement()->bOrientRotationToMovement = true;
 		Super::bUseControllerRotationYaw = false;
@@ -275,12 +271,12 @@ void AMockCharacter::NotifyEquip_Implementation()
 	{
 		// attach weapon
 		Super::SelectedWeapon = this->WeaponList[GetWeaponCurrentIndex()];
-		Super::SelectedWeapon->AttachToComponent(Super::GetMesh(), { EAttachmentRule::SnapToTarget, true }, Super::SelectedWeapon->WeaponItemInfo.EquipSocketName);
+		Super::SelectedWeapon->AttachToComponent(Super::GetMesh(), { EAttachmentRule::SnapToTarget, true }, SocketName);
 		Super::Equipment_Implementation();
 		GetCharacterMovement()->bOrientRotationToMovement = false;
 		Super::bUseControllerRotationYaw = true;
 	}
-	//Super::NotifyEquip_Implementation();
+	Super::NotifyEquip_Implementation();
 }
 
 FVector AMockCharacter::BulletTraceRelativeLocation() const

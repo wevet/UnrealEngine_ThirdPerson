@@ -20,8 +20,6 @@ public:
 	AWevetGameModeBase(const FObjectInitializer& ObjectInitializer);
 
 	virtual void InitGameState() override;
-	
-	UFUNCTION(BlueprintCallable, Category = Game)
 	virtual void StartPlay() override;
 	
 

@@ -86,19 +86,13 @@ void AAICharacterBase::Die_Implementation()
 	{
 		return;
 	}
-	GetMesh()->SetAllBodiesSimulatePhysics(true);
-	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
 	if (WidgetComponent)
 	{
 		WidgetComponent->SetVisibility(false);
 	}
-	// stopfireevent
-	if (Super::SelectedWeapon)
-	{
-		Super::SelectedWeapon->OnFireRelease_Implementation();
-	}
 	SetTargetActor(nullptr);
+	OnFireReleaseInternal();
 	Super::Die_Implementation();
 }
 
@@ -132,7 +126,6 @@ void AAICharacterBase::OnTakeDamage_Implementation(FName BoneName, float Damage,
 	if (Super::IsDeath_Implementation())
 	{
 		Die_Implementation();
-		OnFireReleaseInternal();
 	}
 }
 

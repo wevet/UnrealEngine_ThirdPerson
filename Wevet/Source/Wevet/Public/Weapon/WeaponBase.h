@@ -107,6 +107,7 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AWeaponBase|Variable")
 	bool IsReload;
 
+#pragma region interface
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AWeaponBase|Interface")
 	void OnFirePress();
 	virtual void OnFirePress_Implementation() override;
@@ -126,6 +127,7 @@ public:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AWeaponBase|Interface")
 	void OnVisible();
 	virtual void OnVisible_Implementation() override;
+#pragma endregion
 
 	UFUNCTION(BlueprintCallable, Category = "AWeaponBase|Component")
 	virtual	void BeginOverlapRecieve(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult &SweepResult);
@@ -141,54 +143,22 @@ public:
 
 	virtual void OnReloadInternal();
 
-	FName GetMuzzleSocket() const 
-	{
-		return this->MuzzleSocketName; 
-	}
-	
-	USkeletalMeshComponent* GetSkeletalMeshComponent() const 
-	{
-		return this->SkeletalMeshComponent; 
-	}
+	FName GetMuzzleSocket() const { return this->MuzzleSocketName; }	
+	USkeletalMeshComponent* GetSkeletalMeshComponent() const { return this->SkeletalMeshComponent; }
+	USphereComponent* GetSphereComponent() const { return this->SphereComponent; }
+	const FTransform GetMuzzleTransform() { return this->SkeletalMeshComponent->GetSocketTransform(this->GetMuzzleSocket()); }
 
-	const FTransform GetMuzzleTransform()
-	{
-		return this->SkeletalMeshComponent->GetSocketTransform(this->GetMuzzleSocket());
-	}
+	USoundBase* GetFireSoundAsset() const { return this->FireSoundAsset; }
+	USoundBase* GetFireImpactSoundAsset() const { return this->FireImpactSoundAsset; }
+	UAnimMontage* GetFireAnimMontageAsset() const  { return this->FireAnimMontageAsset;  }
+	UAnimMontage* GetReloadAnimMontageAsset() const { return this->ReloadAnimMontageAsset; }
+	UWidgetComponent* GetWidgetComponent() const { return this->WidgetComponent; }
 
-	USphereComponent* GetSphereComponent() const
-	{
-		return this->SphereComponent;
-	}
+	bool GetVisibility() const { return this->Visible; }
 
-	USoundBase* GetFireSoundAsset() const 
+	bool HasMatchTypes(EWeaponItemType InWeaponItemType) const
 	{
-		return this->FireSoundAsset;  
-	}
-
-	USoundBase* GetFireImpactSoundAsset() const
-	{
-		return this->FireImpactSoundAsset;
-	}
-
-	UAnimMontage* GetFireAnimMontageAsset() const 
-	{
-		return this->FireAnimMontageAsset; 
-	}
-
-	UAnimMontage* GetReloadAnimMontageAsset() const 
-	{
-		return this->ReloadAnimMontageAsset; 
-	}
-
-	UWidgetComponent* GetWidgetComponent() const
-	{
-		return this->WidgetComponent;
-	}
-
-	bool GetVisibility() const
-	{
-		return this->Visible;
+		return WeaponItemInfo.WeaponItemType == InWeaponItemType;
 	}
 
 	virtual void SetCharacterOwner(ACharacterBase* InCharacterOwner);
