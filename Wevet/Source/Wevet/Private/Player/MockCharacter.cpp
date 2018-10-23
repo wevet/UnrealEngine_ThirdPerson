@@ -1,3 +1,5 @@
+// Copyright 2018 wevet works All Rights Reserved.
+
 #include "MockCharacter.h"
 #include "Engine.h"
 #include "Kismet/GameplayStatics.h"

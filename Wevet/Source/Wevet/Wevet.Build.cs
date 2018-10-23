@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+﻿// Copyright 2018 wevet works All Rights Reserved.
 
 using UnrealBuildTool;
 
