@@ -90,19 +90,20 @@ void AMockCharacter::MoveForward(float Value)
 {
 	if (Controller && Value != 0.0f)
 	{
-		const bool bLimiteRotation = (GetCharacterMovement()->IsMovingOnGround() || GetCharacterMovement()->IsFalling());
-		const FRotator Rotation = bLimiteRotation ? GetActorRotation() : Controller->GetControlRotation();
-		const FVector Direction = FRotationMatrix(Rotation).GetUnitAxis(EAxis::X);
+		const FRotator Rotation = Controller->GetControlRotation();
+		const FRotator YawRotation(0.f, Rotation.Yaw, 0.f);
+		const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
 		AddMovementInput(Direction, Value);
 	}
 }
 
 void AMockCharacter::MoveRight(float Value)
 {
-	if (Value != 0.f)
+	if (Controller && Value != 0.f)
 	{
-		const FRotator Rotation = GetActorRotation();
-		const FVector Direction = FRotationMatrix(Rotation).GetScaledAxis(EAxis::Y);
+		const FRotator Rotation = Controller->GetControlRotation();
+		const FRotator YawRotation(0.f, Rotation.Yaw, 0.f);
+		const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
 		AddMovementInput(Direction, Value);
 	}
 }
@@ -256,14 +257,15 @@ void AMockCharacter::OnTakeDamage_Implementation(FName BoneName, float Damage, A
 
 void AMockCharacter::NotifyEquip_Implementation()
 {
-	const FName SocketName = Super::SelectedWeapon ? 
-		Super::SelectedWeapon->WeaponItemInfo.UnEquipSocketName : 
-		Super::SelectedWeapon->WeaponItemInfo.EquipSocketName;
 
 	if (Super::SelectedWeapon) 
 	{
 		// detach weapon
-		Super::SelectedWeapon->AttachToComponent(Super::GetMesh(), { EAttachmentRule::SnapToTarget, true }, SocketName);
+		Super::SelectedWeapon->AttachToComponent(
+			Super::GetMesh(), 
+			{ EAttachmentRule::SnapToTarget, true }, 
+			Super::SelectedWeapon->WeaponItemInfo.UnEquipSocketName);
+		
 		Super::UnEquipment_Implementation();
 		GetCharacterMovement()->bOrientRotationToMovement = true;
 		Super::bUseControllerRotationYaw = false;
@@ -273,7 +275,11 @@ void AMockCharacter::NotifyEquip_Implementation()
 	{
 		// attach weapon
 		Super::SelectedWeapon = this->WeaponList[GetWeaponCurrentIndex()];
-		Super::SelectedWeapon->AttachToComponent(Super::GetMesh(), { EAttachmentRule::SnapToTarget, true }, SocketName);
+		Super::SelectedWeapon->AttachToComponent(
+			Super::GetMesh(), 
+			{ EAttachmentRule::SnapToTarget, true }, 
+			Super::SelectedWeapon->WeaponItemInfo.EquipSocketName);
+
 		Super::Equipment_Implementation();
 		GetCharacterMovement()->bOrientRotationToMovement = false;
 		Super::bUseControllerRotationYaw = true;

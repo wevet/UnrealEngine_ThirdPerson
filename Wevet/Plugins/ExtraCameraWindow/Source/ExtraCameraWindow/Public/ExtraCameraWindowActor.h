@@ -82,7 +82,7 @@ protected:
 	APlayerCameraManager* CameraManager;
 
 	bool StandaloneGame = false;
-	
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TSubclassOf<class UUserWidget> PanelWidgetClass;
 

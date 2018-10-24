@@ -89,19 +89,26 @@ void ACharacterBase::NotifyEquip_Implementation()
 
 bool ACharacterBase::IsDeath_Implementation()
 {
-	if (this->DieSuccessCalled)
+	if (this->DieSuccessCalled || this->CharacterModel == nullptr)
 	{
 		return true;
 	}
-	return CharacterModel->GetCurrentHealth() <= 0;
+	return this->CharacterModel->GetCurrentHealth() <= 0;
 }
 
 void ACharacterBase::OnTakeDamage_Implementation(FName BoneName, float Damage, AActor* Actor)
 {
-	if (this->IsDeath_Implementation()) 
+	if (this->IsDeath_Implementation())
 	{
 		return;
 	}
+
+	if (this->CharacterModel == nullptr && !this->DieSuccessCalled)
+	{
+		this->DieSuccessCalled = true;
+		return;
+	}
+
 	if (BoneName == this->HeadSocketName) 
 	{
 		CharacterModel->SetCurrentHealthValue(0);
@@ -122,14 +129,14 @@ void ACharacterBase::Die_Implementation()
 		{
 			this->SelectedWeapon->OnFireRelease_Implementation();
 		}
-		this->DieSuccessCalled = true;
-		this->CharacterModel->ConditionalBeginDestroy();
 		Super::GetMesh()->SetAllBodiesSimulatePhysics(true);
 		Super::GetMesh()->SetSimulatePhysics(true);
 		Super::GetMesh()->WakeAllRigidBodies();
 		Super::GetMesh()->bBlendPhysics = true;
 		Super::GetCharacterMovement()->DisableMovement();
 		GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		this->CharacterModel->ConditionalBeginDestroy();
+		this->DieSuccessCalled = true;
 	}
 }
 
