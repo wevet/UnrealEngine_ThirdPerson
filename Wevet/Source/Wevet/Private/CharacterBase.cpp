@@ -16,6 +16,11 @@ ACharacterBase::ACharacterBase(const FObjectInitializer& ObjectInitializer)
 	this->IsCrouch = false;
 	this->IsSprint = false;
 	this->IsEquipWeapon = false;
+	PawnNoiseEmitterComponent = ObjectInitializer.CreateDefaultSubobject<UPawnNoiseEmitterComponent>(this, TEXT("PawnNoiseEmitterComponent"));
+	AudioComponent = ObjectInitializer.CreateDefaultSubobject<UAudioComponent>(this, TEXT("AudioComponent"));
+	AudioComponent->bAutoActivate = false;
+	AudioComponent->bAutoDestroy = false;
+	AudioComponent->SetupAttachment(RootComponent);
 }
 
 void ACharacterBase::OnConstruction(const FTransform& Transform)

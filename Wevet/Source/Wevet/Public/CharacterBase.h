@@ -96,7 +96,23 @@ public:
 		return CharacterModel->GetHealthToWidget();
 	}
 
+	FORCEINLINE class UPawnNoiseEmitterComponent* GetPawnNoiseEmitterComponent() const
+	{
+		return PawnNoiseEmitterComponent;
+	}
+
+	FORCEINLINE class UAudioComponent* GetAudioComponent() const
+	{
+		return AudioComponent;
+	}
+
 protected:
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Components, meta = (AllowPrivateAccess = "true"))
+	class UPawnNoiseEmitterComponent* PawnNoiseEmitterComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Components, meta = (AllowPrivateAccess = "true"))
+	class UAudioComponent* AudioComponent;
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ACharacterBase|Weapon")
 	AWeaponBase* SelectedWeapon;
 
