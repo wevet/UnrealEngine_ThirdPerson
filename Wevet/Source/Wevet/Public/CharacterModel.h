@@ -55,18 +55,18 @@ public:
 
 protected:
 
-	UPROPERTY(EditAnywhere, Category = "Variable")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Variable")
 	int32 CurrentHealth;
 
-	UPROPERTY(EditAnywhere, Category = "Variable")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Variable")
 	int32 MaxHealth;
 
-	UPROPERTY(EditAnywhere, Category = "Variable")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Variable")
 	int32 Attack;
 
-	UPROPERTY(EditAnywhere, Category = "Variable")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Variable")
 	int32 Defence;
 
-	UPROPERTY(EditAnywhere, Category = "Variable")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Variable")
 	int32 Wisdom;
 };

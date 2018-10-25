@@ -12,10 +12,10 @@ AWeaponBase::AWeaponBase(const FObjectInitializer& ObjectInitializer)
 	CharacterOwner(nullptr), 
 	WidgetComponent(nullptr),
 	SphereComponent(nullptr),
-	SkeletalMeshComponent(nullptr)
+	SkeletalMeshComponent(nullptr),
+	MuzzleSocketName(FName(TEXT("MuzzleFlash")))
 {
 	PrimaryActorTick.bCanEverTick = true;
-	this->MuzzleSocketName = FName(TEXT("MuzzleFlash"));
 	this->BulletDuration = 0.1F;
 	this->ReloadDuration = 2.0f;
 
@@ -42,9 +42,9 @@ AWeaponBase::AWeaponBase(const FObjectInitializer& ObjectInitializer)
 void AWeaponBase::BeginPlay()
 {
 	Super::BeginPlay();
-	if (WidgetComponent) 
+	if (WidgetComponent && WidgetComponent->IsValidLowLevel()) 
 	{
-		WidgetComponent->SetVisibility(this->Visible);
+		WidgetComponent->SetVisibility(false);
 	}
 	if (SphereComponent && SphereComponent->IsValidLowLevel())
 	{
@@ -68,32 +68,32 @@ void AWeaponBase::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	Super::EndPlay(EndPlayReason);
 }
 
-void AWeaponBase::SetFireSoundAsset(USoundBase * FireSoundAsset)
+void AWeaponBase::SetFireSoundAsset(USoundBase* FireSoundAsset)
 {
 	this->FireSoundAsset = FireSoundAsset;
 }
 
-void AWeaponBase::SetFireAnimMontageAsset(UAnimMontage * FireAnimMontageAsset)
+void AWeaponBase::SetFireAnimMontageAsset(UAnimMontage* FireAnimMontageAsset)
 {
 	this->FireAnimMontageAsset = FireAnimMontageAsset;
 }
 
-void AWeaponBase::SetReloadAnimMontageAsset(UAnimMontage * ReloadAnimMontageAsset)
+void AWeaponBase::SetReloadAnimMontageAsset(UAnimMontage* ReloadAnimMontageAsset)
 {
 	this->ReloadAnimMontageAsset = ReloadAnimMontageAsset;
 }
 
-void AWeaponBase::OnEquip(bool Equip)
+void AWeaponBase::OnEquip(const bool Equip)
 {
 	this->Equip = Equip;
 }
 
-void AWeaponBase::SetPickable(bool Pick)
+void AWeaponBase::SetPickable(const bool Pick)
 {
 	this->CanPick = Pick;
 }
 
-void AWeaponBase::SetReload(bool Reload)
+void AWeaponBase::SetReload(const bool Reload)
 {
 	this->IsReload = Reload;
 }
@@ -110,7 +110,6 @@ void AWeaponBase::OnFireRelease_Implementation()
 
 void AWeaponBase::OffVisible_Implementation()
 {
-	this->Visible = false;
 	this->SkeletalMeshComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	this->SkeletalMeshComponent->SetSimulatePhysics(false);
 	this->WidgetComponent->SetVisibility(false);
@@ -118,7 +117,6 @@ void AWeaponBase::OffVisible_Implementation()
 
 void AWeaponBase::OnVisible_Implementation()
 {
-	this->Visible = true;
 	this->SkeletalMeshComponent->SetCollisionEnabled(ECollisionEnabled::PhysicsOnly);
 	this->SkeletalMeshComponent->SetSimulatePhysics(true);
 	this->WidgetComponent->SetVisibility(true);
@@ -132,7 +130,6 @@ void AWeaponBase::BeginOverlapRecieve(UPrimitiveComponent* OverlappedComponent, 
 		if (Character)
 		{
 			SetCharacterOwner(Character);
-			check(this->CharacterOwner != nullptr);
 		}
 	}
 
@@ -161,7 +158,6 @@ void AWeaponBase::EndOverlapRecieve(UPrimitiveComponent* OverlappedComp, AActor*
 		if (Character)
 		{
 			SetCharacterOwner(Character);
-			check(this->CharacterOwner != nullptr);
 		}
 	}
 
@@ -321,7 +317,6 @@ void AWeaponBase::OnFireReleaseInternal()
 void AWeaponBase::OnReloadInternal()
 {
 	this->CanFired = false;
-	check(this->CharacterOwner != nullptr);
 	this->CharacterOwner->PlayAnimMontage(GetReloadAnimMontageAsset());
 	this->NeededAmmo = (WeaponItemInfo.ClipType - WeaponItemInfo.CurrentAmmo);
 
@@ -341,6 +336,5 @@ void AWeaponBase::OnReloadInternal()
 void AWeaponBase::SetCharacterOwner(ACharacterBase* InCharacterOwner)
 {
 	this->CharacterOwner = InCharacterOwner;
+	check(this->CharacterOwner != nullptr);
 }
-
-

@@ -48,8 +48,11 @@ void AMockCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInpu
 	PlayerInputComponent->BindAction("Jump",   IE_Pressed,   this, &AMockCharacter::Jump);
 	PlayerInputComponent->BindAction("Jump",   IE_Released,  this, &AMockCharacter::StopJumping);
 	PlayerInputComponent->BindAction("EquipWeapon", IE_Pressed, this, &AMockCharacter::Equipment);
-	PlayerInputComponent->BindAction("SwapWeapon",  IE_Pressed,  this, &AMockCharacter::UpdateWeapon);
-	PlayerInputComponent->BindAction("DropItem", IE_Pressed, this, &AMockCharacter::ReleaseItem);
+	PlayerInputComponent->BindAction("SwapWeapon",  IE_Pressed, this, &AMockCharacter::UpdateWeapon);
+	PlayerInputComponent->BindAction("DropItem",    IE_Pressed, this, &AMockCharacter::ReleaseItem);
+	PlayerInputComponent->BindAction("Fire", IE_Pressed,   this, &AMockCharacter::FirePressed);
+	PlayerInputComponent->BindAction("Fire", IE_Released,  this, &AMockCharacter::FireReleassed);
+	PlayerInputComponent->BindAction("Reload", IE_Pressed, this, &AMockCharacter::Reload);
 
 	PlayerInputComponent->BindAxis("Turn",        this, &APawn::AddControllerYawInput);
 	PlayerInputComponent->BindAxis("LookUp",      this, &APawn::AddControllerPitchInput);
@@ -105,6 +108,30 @@ void AMockCharacter::MoveRight(float Value)
 		const FRotator YawRotation(0.f, Rotation.Yaw, 0.f);
 		const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
 		AddMovementInput(Direction, Value);
+	}
+}
+
+void AMockCharacter::FirePressed()
+{
+	if (Super::SelectedWeapon)
+	{
+		BP_FirePressReceive();
+	}
+}
+
+void AMockCharacter::FireReleassed()
+{
+	if (Super::SelectedWeapon)
+	{
+		BP_FireReleaseReceive();
+	}
+}
+
+void AMockCharacter::Reload()
+{
+	if (Super::SelectedWeapon)
+	{
+		BP_ReloadReceive();
 	}
 }
 
@@ -274,7 +301,7 @@ void AMockCharacter::NotifyEquip_Implementation()
 	else
 	{
 		// attach weapon
-		Super::SelectedWeapon = this->WeaponList[GetWeaponCurrentIndex()];
+		Super::SelectedWeapon = this->WeaponList[this->WeaponCurrentIndex];
 		Super::SelectedWeapon->AttachToComponent(
 			Super::GetMesh(), 
 			{ EAttachmentRule::SnapToTarget, true }, 
@@ -321,7 +348,6 @@ AWeaponBase* AMockCharacter::ReleaseWeapon(const FTransform& Transform)
 		SpawnInfo.Owner = NULL;
 		SpawnInfo.Instigator = NULL;
 		AWeaponBase* SpawningObject = World->SpawnActor<AWeaponBase>(WeaponClass, Transform.GetLocation(), Super::GetActorRotation(), SpawnInfo);
-		check(SpawningObject != nullptr);
 		SpawningObject->WeaponItemInfo.CopyTo(WeaponItemInfo);
 		return SpawningObject;
 	}

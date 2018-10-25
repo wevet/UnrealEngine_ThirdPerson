@@ -24,73 +24,71 @@ public:
 protected:
 	virtual void BeginPlay() override;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Variable")
 	FName MuzzleSocketName;
 
-	UPROPERTY(EditAnyWhere, BlueprintReadWrite, Category = "Variable")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Variable")
 	int32 NeededAmmo;
 
-	UPROPERTY(EditAnyWhere, BlueprintReadWrite, Category = "Variable")
-	bool Visible;
-
-	UPROPERTY(EditAnyWhere, BlueprintReadWrite, Category = "Variable")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Variable")
 	USoundBase* FireSoundAsset;
 
-	UPROPERTY(EditAnyWhere, BlueprintReadWrite, Category = "Variable")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Variable")
 	USoundBase* FireImpactSoundAsset;
 
-	UPROPERTY(EditAnyWhere, BlueprintReadWrite, Category = "Variable")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Variable")
 	UAnimMontage* FireAnimMontageAsset;
 
-	UPROPERTY(EditAnyWhere, BlueprintReadWrite, Category = "Variable")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Variable")
 	UAnimMontage* ReloadAnimMontageAsset;
 
-	UPROPERTY(EditAnyWhere, BlueprintReadWrite, Category = "Variable")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Variable")
 	UParticleSystem* MuzzleFlashEmitterTemplate;
 
-	UPROPERTY(EditAnyWhere, BlueprintReadWrite, Category = "Variable")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Variable")
 	UParticleSystem* ImpactMetalEmitterTemplate;
 
-	UPROPERTY(EditAnyWhere, BlueprintReadWrite, Category = "Variable")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Variable")
 	TSubclassOf<class ABulletBase> BulletsBP;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Variable")
+	float BulletDuration;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Variable")
+	float ReloadDuration;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Variable")
 	class ACharacterBase* CharacterOwner;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Components, meta = (AllowPrivateAccess = "true"))
 	class USkeletalMeshComponent* SkeletalMeshComponent;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Components, meta = (AllowPrivateAccess = "true"))
 	class USphereComponent* SphereComponent;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Components, meta = (AllowPrivateAccess = "true"))
 	class UWidgetComponent* WidgetComponent;
 
 	USceneComponent* SceneComponent;
 	FTimerHandle ReloadTimerHandle;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AWeaponBase|Variable")
-	float BulletDuration;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AWeaponBase|Variable")
-	float ReloadDuration;
-
 public:
 
 	virtual void Tick(float DeltaTime) override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason);
-	virtual void SetFireSoundAsset(USoundBase* FireSoundAsset);
-	virtual void SetFireAnimMontageAsset(UAnimMontage* FireAnimMontageAsset);
-	virtual void SetReloadAnimMontageAsset(UAnimMontage* ReloadAnimMontageAsset);
+
+	FORCEINLINE class USkeletalMeshComponent* GetSkeletalMeshComponent() const { return this->SkeletalMeshComponent; }
+	FORCEINLINE class USphereComponent* GetSphereComponent() const { return this->SphereComponent; }
+	FORCEINLINE class UWidgetComponent* GetWidgetComponent() const { return this->WidgetComponent; }
 
 	UFUNCTION(BlueprintCallable, Category = "AWeaponBase|Variable")
-	virtual void OnEquip(bool Equip);
+	virtual void OnEquip(const bool Equip);
 
 	UFUNCTION(BlueprintCallable, Category = "AWeaponBase|Variable")
-	virtual void SetPickable(bool Pick);
+	virtual void SetPickable(const bool Pick);
 
 	UFUNCTION(BlueprintCallable, Category = "AWeaponBase|Variable")
-	virtual void SetReload(bool Reload);
+	virtual void SetReload(const bool Reload);
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AWeaponBase|Variable")
 	FWeaponItemInfo WeaponItemInfo;
@@ -143,18 +141,20 @@ public:
 
 	virtual void OnReloadInternal();
 
-	FName GetMuzzleSocket() const { return this->MuzzleSocketName; }	
-	USkeletalMeshComponent* GetSkeletalMeshComponent() const { return this->SkeletalMeshComponent; }
-	USphereComponent* GetSphereComponent() const { return this->SphereComponent; }
-	const FTransform GetMuzzleTransform() { return this->SkeletalMeshComponent->GetSocketTransform(this->GetMuzzleSocket()); }
+	FName GetMuzzleSocket() const { return this->MuzzleSocketName; }
 
+	const FTransform GetMuzzleTransform()
+	{ 
+		return this->SkeletalMeshComponent->GetSocketTransform(this->GetMuzzleSocket()); 
+	}
+
+	virtual void SetFireSoundAsset(USoundBase* FireSoundAsset);
+	virtual void SetFireAnimMontageAsset(UAnimMontage* FireAnimMontageAsset);
+	virtual void SetReloadAnimMontageAsset(UAnimMontage* ReloadAnimMontageAsset);
 	USoundBase* GetFireSoundAsset() const { return this->FireSoundAsset; }
 	USoundBase* GetFireImpactSoundAsset() const { return this->FireImpactSoundAsset; }
 	UAnimMontage* GetFireAnimMontageAsset() const  { return this->FireAnimMontageAsset;  }
 	UAnimMontage* GetReloadAnimMontageAsset() const { return this->ReloadAnimMontageAsset; }
-	UWidgetComponent* GetWidgetComponent() const { return this->WidgetComponent; }
-
-	bool GetVisibility() const { return this->Visible; }
 
 	bool HasMatchTypes(EWeaponItemType InWeaponItemType) const
 	{

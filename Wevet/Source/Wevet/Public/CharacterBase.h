@@ -36,7 +36,7 @@ public:
 
 	virtual FVector BulletTraceRelativeLocation() const { return FVector::ZeroVector; };
 	virtual FVector BulletTraceForwardLocation() const { return FVector::ZeroVector; };
-	UCharacterModel* GetCharacterModel() const { return this->CharacterModel; }
+	UCharacterModel* GetCharacterModel() { return this->CharacterModel; }
 
 public:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "ACharacterBase|IInteractionExecuter")
@@ -73,7 +73,7 @@ public:
 
 public:
 	UFUNCTION(BlueprintCallable, Category = "ACharacterBase|Weapon")
-	AWeaponBase* GetSelectedWeapon() const { return this->SelectedWeapon; };
+	AWeaponBase* GetSelectedWeapon() { return this->SelectedWeapon; };
 
 	UFUNCTION(BlueprintCallable, Category = "ACharacterBase|Weapon")
 	const TArray<AWeaponBase*>& GetWeaponList() { return this->WeaponList; };
@@ -115,10 +115,6 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ACharacterBase|Variable")
 	USoundBase* FireSound;
 
-	UCharacterModel* CharacterModel;
-	float DefaultMaxSpeed;
-	bool DieSuccessCalled;
-
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ACharacterBase|Variable")
 	bool IsCrouch;
 
@@ -139,8 +135,18 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ACharacterBase|Variable")
 	FName HeadSocketName;
+
+	UCharacterModel* CharacterModel;
+	float DefaultMaxSpeed;
+	bool DieSuccessCalled;
+
+public:
+	UFUNCTION(BlueprintImplementableEvent, Category = "ACharacterBase|NativeEvent")
+	void BP_FirePressReceive();
+
+	UFUNCTION(BlueprintImplementableEvent, Category = "ACharacterBase|NativeEvent")
+	void BP_FireReleaseReceive();
+
+	UFUNCTION(BlueprintImplementableEvent, Category = "ACharacterBase|NativeEvent")
+	void BP_ReloadReceive();
 };
-
-
-
-

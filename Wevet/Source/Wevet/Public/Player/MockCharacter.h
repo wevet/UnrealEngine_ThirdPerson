@@ -55,13 +55,6 @@ public:
 
 	virtual FVector BulletTraceForwardLocation() const override;
 
-	UFUNCTION(BlueprintCallable, Category = "AMockCharacter|Variable")
-	int32 GetWeaponCurrentIndex() const 
-	{
-		return this->WeaponCurrentIndex;
-	}
-
-
 protected:
 	virtual void BeginPlay() override;
 
@@ -80,13 +73,12 @@ protected:
 	void TouchStopped(ETouchIndex::Type FingerIndex, FVector Location);
 
 	void TurnAtRate(float Rate);
-
 	void LookUpAtRate(float Rate);
-
 	void MoveForward(float Value);
-
 	void MoveRight(float Value);
-
+	void FirePressed();
+	void FireReleassed();
+	void Reload();
 	void Equipment();
 
 	UFUNCTION(BlueprintCallable, Category = "AMockCharacter|Action")

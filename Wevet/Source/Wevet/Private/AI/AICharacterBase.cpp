@@ -92,7 +92,6 @@ void AAICharacterBase::Die_Implementation()
 		WidgetComponent->SetVisibility(false);
 	}
 	SetTargetActor(nullptr);
-	OnFireReleaseInternal();
 	Super::Die_Implementation();
 }
 
@@ -157,19 +156,13 @@ void AAICharacterBase::InitializePosses()
 	UpdateWayPointEvent();
 }
 
-void AAICharacterBase::OnFirePressedInternal()
-{
-	Super::SelectedWeapon->OnFirePressedInternal();
-}
-
-void AAICharacterBase::OnFireReleaseInternal()
-{
-	Super::SelectedWeapon->OnFireReleaseInternal();
-}
-
 FVector AAICharacterBase::BulletTraceRelativeLocation() const
 {
-	return Super::GetSelectedWeapon()->GetMuzzleTransform().GetLocation();
+	if (Super::SelectedWeapon)
+	{
+		return Super::SelectedWeapon->GetMuzzleTransform().GetLocation();
+	}
+	return FVector::ZeroVector;
 }
 
 FVector AAICharacterBase::BulletTraceForwardLocation() const

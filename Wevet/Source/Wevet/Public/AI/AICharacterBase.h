@@ -82,9 +82,6 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "AAICharacterBase|Variable")
 	virtual void InitializePosses();
 
-	virtual void OnFirePressedInternal();
-	virtual void OnFireReleaseInternal();
-
 protected:
 	AActor* Target;
 
@@ -109,12 +106,6 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AAICharacterBase|Variable")
 	bool IsEnemyFound;
-
-	UFUNCTION(BlueprintImplementableEvent, Category = "AICharacterBase|NativeEvent")
-	void BP_FirePressReceive();
-
-	UFUNCTION(BlueprintImplementableEvent, Category = "AICharacterBase|NativeEvent")
-	void BP_FireReleaseReceive();
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AAICharacterBase|Variable")
 	float BulletDelay = 1.4f;
