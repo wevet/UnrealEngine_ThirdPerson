@@ -20,7 +20,10 @@ public class Wevet : ModuleRules
 				"Slate",
 				"SlateCore",
 				"NavigationSystem",
-				"ExtraCameraWindow"
+				"ExtraCameraWindow",
+				"ShaderCore",
+				"RenderCore",
+				"RHI",
 			}
 		);
 

@@ -25,27 +25,39 @@ public:
 protected:
 	APawn * OwningPawn;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Variable")
 	ACharacterBase* Owner;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Variable")
 	bool IsMoving;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Variable")
 	bool IsFalling;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Variable")
+	bool IsCrouch;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Variable")
+	bool IsEquip;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Variable")
 	float Speed;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Variable")
 	float Direction;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Variable")
 	float Yaw;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Variable")
 	float Pitch;
 	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Variable")
+	float BlendWeight;
+
 	// FRotator Delta
 	virtual FRotator NormalizedDeltaRotator(FRotator A, FRotator B) const;
+
+	virtual void SetCrouch();
+	virtual void SetEquip();
 };

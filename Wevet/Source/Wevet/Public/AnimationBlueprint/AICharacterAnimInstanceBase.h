@@ -6,6 +6,7 @@
 #include "AnimationBlueprint/CharacterAnimInstanceBase.h"
 #include "AICharacterAnimInstanceBase.generated.h"
 
+class AAICharacterBase;
 /**
  * 
  */
@@ -22,10 +23,13 @@ public:
 	virtual void NativeUpdateAnimation(float DeltaTimeX) override;
 
 protected:
-
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
 	FName HandSocketName;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
 	FName TargetSocketName;
+
+	AAICharacterBase* AICharacterOwner;
+
+	virtual void SetEquip() override;
 };

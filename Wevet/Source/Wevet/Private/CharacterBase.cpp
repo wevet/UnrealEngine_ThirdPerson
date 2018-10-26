@@ -20,7 +20,7 @@ ACharacterBase::ACharacterBase(const FObjectInitializer& ObjectInitializer)
 	AudioComponent = ObjectInitializer.CreateDefaultSubobject<UAudioComponent>(this, TEXT("AudioComponent"));
 	AudioComponent->bAutoActivate = false;
 	AudioComponent->bAutoDestroy = false;
-	AudioComponent->SetupAttachment(RootComponent);
+	AudioComponent->SetupAttachment(GetMesh());
 }
 
 void ACharacterBase::OnConstruction(const FTransform& Transform)
@@ -108,9 +108,12 @@ void ACharacterBase::OnTakeDamage_Implementation(FName BoneName, float Damage, A
 		return;
 	}
 
-	if (this->CharacterModel == nullptr && !this->DieSuccessCalled)
+	if (this->CharacterModel == nullptr)
 	{
-		this->DieSuccessCalled = true;
+		if (!this->DieSuccessCalled) 
+		{
+			this->DieSuccessCalled = true;
+		}
 		return;
 	}
 

@@ -4,17 +4,17 @@
 	"Category": "",
 	"Description": "",
 	"Modules": [
-		{
-			"Name": "Wevet",
-			"Type": "Runtime",
-			"LoadingPhase": "Default",
-			"AdditionalDependencies": [
-				"Engine",
-				"CoreUObject",
-				"AIModule",
-				"UMG"
-			]
-		}
+    {
+      "Name": "Wevet",
+      "Type": "Runtime",
+      "LoadingPhase": "PostConfigInit",
+      "AdditionalDependencies": [
+        "Engine",
+        "CoreUObject",
+        "AIModule",
+        "UMG"
+      ]
+    }
 	],
 	"Plugins": [
 		{

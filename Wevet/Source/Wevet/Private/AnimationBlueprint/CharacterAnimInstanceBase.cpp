@@ -3,6 +3,7 @@
 #include "CharacterAnimInstanceBase.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "GameFramework/Pawn.h"
+#include "GameFramework/PawnMovementComponent.h"
 
 UCharacterAnimInstanceBase::UCharacterAnimInstanceBase(const FObjectInitializer& ObjectInitializer) 
 	: Super(ObjectInitializer)
@@ -30,8 +31,14 @@ void UCharacterAnimInstanceBase::NativeUpdateAnimation(float DeltaTimeX)
 	this->IsMoving = (this->OwningPawn->GetVelocity().SizeSquared() > 25);
 	this->Speed = this->OwningPawn->GetVelocity().Size();
 
-	//UPawnMovementComponent* comp = this->OwningPawn->GetMovementComponent();
-	//const bool falling = this->OwningPawn->GetMovementComponent()->IsFalling();
+	UPawnMovementComponent* MovementComponent = this->OwningPawn->GetMovementComponent();
+	
+	if (MovementComponent)
+	{
+		this->IsFalling = MovementComponent->IsFalling();
+		//const bool isInAir = MovementComponent->MovementMode == EMovementMode::MOVE_Falling;
+		//const float Velocity = MovementComponent->GetVelocity();
+	}
 
 	const FRotator ControlRotation = this->OwningPawn->GetControlRotation();
 	const FRotator Rotation = this->OwningPawn->GetActorRotation();
@@ -41,6 +48,10 @@ void UCharacterAnimInstanceBase::NativeUpdateAnimation(float DeltaTimeX)
 	const FRotator ResultRotation = NormalizedDeltaRotator(ControlRotation, Rotation);
 	this->Yaw = ResultRotation.Yaw;
 	this->Pitch = ResultRotation.Pitch;
+
+	SetCrouch();
+	SetEquip();
+	this->BlendWeight = (this->IsEquip) ? 0.8f : 0.f;
 }
 
 FRotator UCharacterAnimInstanceBase::NormalizedDeltaRotator(FRotator A, FRotator B) const
@@ -48,4 +59,20 @@ FRotator UCharacterAnimInstanceBase::NormalizedDeltaRotator(FRotator A, FRotator
 	FRotator Diff = A - B;
 	Diff.Normalize();
 	return Diff;
+}
+
+void UCharacterAnimInstanceBase::SetCrouch()
+{
+	if (this->Owner)
+	{
+		this->IsCrouch = this->Owner->HasCrouch();
+	}
+}
+
+void UCharacterAnimInstanceBase::SetEquip()
+{
+	if (this->Owner)
+	{
+		this->IsEquip = this->Owner->HasEquipWeapon();
+	}
 }
