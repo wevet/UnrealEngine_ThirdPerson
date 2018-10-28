@@ -100,7 +100,7 @@ void AAIControllerBase::OnTargetPerceptionUpdatedRecieve(AActor* Actor, FAIStimu
 	}
 
 	if (BComp)
-	{
+	{		
 		if (this->AICharacterOwner->HasEnemyFound())
 		{
 			return;

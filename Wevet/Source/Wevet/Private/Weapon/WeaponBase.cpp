@@ -239,7 +239,11 @@ void AWeaponBase::OnFirePressedInternal()
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.Owner = this;
 	SpawnParams.Instigator = Instigator;
-	const ABulletBase* Bullet = World->SpawnActor<ABulletBase>(this->BulletsBP, Transform, SpawnParams);
+	ABulletBase* Bullet = World->SpawnActor<ABulletBase>(this->BulletsBP, Transform, SpawnParams);
+
+#if WITH_EDITOR
+	Bullet->SetFolderPath("/BulletsRoot");
+#endif
 
 	if (HitData.Actor.IsValid())
 	{

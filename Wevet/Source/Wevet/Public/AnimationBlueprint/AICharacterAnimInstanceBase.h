@@ -29,6 +29,7 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
 	FName TargetSocketName;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Variable")
 	AAICharacterBase* AICharacterOwner;
 
 	virtual void SetEquip() override;

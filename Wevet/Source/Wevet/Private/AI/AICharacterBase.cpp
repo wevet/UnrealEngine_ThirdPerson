@@ -93,6 +93,7 @@ void AAICharacterBase::Die_Implementation()
 	}
 	SetTargetActor(nullptr);
 	Super::Die_Implementation();
+
 }
 
 void AAICharacterBase::NotifyEquip_Implementation()
@@ -227,7 +228,7 @@ void AAICharacterBase::UpdateWayPointEvent()
 	}
 }
 
-void AAICharacterBase::Scanning()
+void AAICharacterBase::UpdateSensing()
 {
 }
 

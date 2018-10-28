@@ -23,6 +23,8 @@ class WEVET_API ACharacterBase :
 public:
 	ACharacterBase(const FObjectInitializer& ObjectInitializer);
 	virtual void OnConstruction(const FTransform& Transform) override;
+	virtual void BeginDestroy() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason);
 
 protected:
 	virtual void BeginPlay() override;
@@ -152,6 +154,7 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ACharacterBase|Variable")
 	FName HeadSocketName;
 
+	UPROPERTY(EditAnywhere, Instanced, Category = "ACharacterBase|CharacterModel")
 	UCharacterModel* CharacterModel;
 	float DefaultMaxSpeed;
 	bool DieSuccessCalled;

@@ -89,8 +89,7 @@ protected:
 	virtual FVector BulletTraceRelativeLocation() const override;
 	virtual FVector BulletTraceForwardLocation() const override;
 
-	UFUNCTION(BlueprintCallable, Category = "AAICharacterBase|PawnSensing")
-	virtual void Scanning();
+	virtual void UpdateSensing();
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AAICharacterBase|Variable")
 	TArray<AWayPointBase*> WayPointList;
@@ -110,4 +109,9 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AAICharacterBase|Variable")
 	float BulletDelay = 1.4f;
 	float BulletInterval;
+
+	/* Last time the player was spotted */
+	float LastSeenTime;
+	/* Last time the player was heard */
+	float LastHeardTime;
 };

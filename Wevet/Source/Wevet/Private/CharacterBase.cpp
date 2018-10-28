@@ -28,10 +28,23 @@ void ACharacterBase::OnConstruction(const FTransform& Transform)
 	Super::OnConstruction(Transform);
 }
 
+void ACharacterBase::BeginDestroy()
+{
+	if (this->CharacterModel)
+	{
+		this->CharacterModel->ConditionalBeginDestroy();
+	}
+	Super::BeginDestroy();
+}
+
+void ACharacterBase::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	Super::EndPlay(EndPlayReason);
+}
+
 void ACharacterBase::BeginPlay()
 {
 	Super::BeginPlay();
-	this->CharacterModel  = NewObject<UCharacterModel>();
 	this->DefaultMaxSpeed = GetCharacterMovement()->MaxWalkSpeed;
 	GetCharacterMovement()->MaxWalkSpeed = this->MovementSpeed;
 }
@@ -108,24 +121,23 @@ void ACharacterBase::OnTakeDamage_Implementation(FName BoneName, float Damage, A
 		return;
 	}
 
-	if (this->CharacterModel == nullptr)
-	{
-		if (!this->DieSuccessCalled) 
-		{
-			this->DieSuccessCalled = true;
-		}
-		return;
-	}
-
 	if (BoneName == this->HeadSocketName) 
 	{
-		CharacterModel->SetCurrentHealthValue(0);
+		this->CharacterModel->SetCurrentHealthValue(0);
 		return;
 	} 
 	else
 	{
-		int TakeDamage = (int)(FMath::Abs(Damage));
-		CharacterModel->SetCurrentHealthValue(CharacterModel->GetCurrentHealth() - TakeDamage);
+		if (this->CharacterModel)
+		{
+			int32 TakeDamage = (int32)(FMath::Abs(Damage));
+			int32 CurrentHealth = this->CharacterModel->GetCurrentHealth();
+			this->CharacterModel->SetCurrentHealthValue(CurrentHealth - TakeDamage);
+		}
+		else
+		{
+			Die_Implementation();
+		}
 	}
 }
 
@@ -143,8 +155,8 @@ void ACharacterBase::Die_Implementation()
 		Super::GetMesh()->bBlendPhysics = true;
 		Super::GetCharacterMovement()->DisableMovement();
 		GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-		this->CharacterModel->ConditionalBeginDestroy();
 		this->DieSuccessCalled = true;
+		//this->CharacterModel->ConditionalBeginDestroy();
 	}
 }
 
@@ -186,7 +198,7 @@ AWeaponBase* ACharacterBase::GetCategoryByWeapon(EWeaponItemType WeaponItemType)
 	{
 		for (AWeaponBase* Weapon : this->WeaponList)
 		{
-			if (Weapon->WeaponItemInfo.WeaponItemType == WeaponItemType)
+			if (Weapon->HasMatchTypes(WeaponItemType))
 			{
 				return Weapon;
 			}
