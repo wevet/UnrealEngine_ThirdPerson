@@ -28,7 +28,7 @@ void AExtraCameraWindowActor::BeginPlay()
 			if (PlayerController && PlayerController->PlayerCameraManager)
 			{
 				CameraManager = PlayerController->PlayerCameraManager;
-			}			
+			}
 		}
 	}
 
@@ -43,7 +43,7 @@ void AExtraCameraWindowActor::BeginPlay()
 	{
 		GetCameraComponent()->bLockToHmd = false;
 	}
-	
+
 	FSlateRenderer* Renderer = FSlateApplication::Get().GetRenderer();
 
 	if (LockResolutionToMainWindow)
@@ -51,7 +51,7 @@ void AExtraCameraWindowActor::BeginPlay()
 		GEngine->GameViewport->GetViewportSize(InitialWindowSize);
 	}
 
-	
+
 	SAssignNew(ExtraWindow, SWindow)
 		.ClientSize(InitialWindowSize)
 		.HasCloseButton(false)
@@ -66,18 +66,18 @@ void AExtraCameraWindowActor::BeginPlay()
 	ViewportOverlayWidget = SNew(SOverlay);
 
 	TSharedRef<SGameLayerManager> LayerManagerRef = SNew(SGameLayerManager)
-	.SceneViewport(GEngine->GameViewport->GetGameViewport())
-	.Visibility(EVisibility::Visible)
-	.IsEnabled(true)
-	.Cursor(CursorInWindow)
-	[
-		ViewportOverlayWidget.ToSharedRef()
-	];
+		.SceneViewport(GEngine->GameViewport->GetGameViewport())
+		.Visibility(EVisibility::Visible)
+		.IsEnabled(true)
+		.Cursor(CursorInWindow)
+		[
+			ViewportOverlayWidget.ToSharedRef()
+		];
 
 	TSharedPtr<SViewport> Viewport = SNew(SViewport)
-		.RenderDirectlyToWindow(false) // true crashes some stuff because HMDs need the rendertarget tex for distortion etc..
+		.RenderDirectlyToWindow(false)
 		.EnableGammaCorrection(false)
-		.EnableStereoRendering(false) // not displaying on an HMD
+		.EnableStereoRendering(false)
 		.Cursor(CursorInWindow)
 		[
 			LayerManagerRef
@@ -92,26 +92,17 @@ void AExtraCameraWindowActor::BeginPlay()
 	ExtraWindow->SetContent(Viewport.ToSharedRef());
 	ExtraWindow->ShowWindow();
 
-	// SWindow Close Request
-	ExtraWindow->SetOnWindowClosed(FOnWindowClosed::CreateLambda([this](const TSharedRef<SWindow>& WindowBeingClosed) 
+	ExtraWindow->SetOnWindowClosed(FOnWindowClosed::CreateLambda([this](const TSharedRef<SWindow>& WindowBeingClosed)
 	{
-		// stop slateapplication
-		//FSlateApplication::Get().UnregisterGameViewport();
-		//GEngine->GameViewport->CloseRequested(SceneViewport->GetViewport());
-
 		// self extrawindow destroy
 		ExtraCameraWindowEnabled = false;
 		ImmediateDestroy();
-
-		//FGameDelegates::Get().GetEndPlayMapDelegate().Broadcast();
-		//FPlatformMisc::RequestExit(0);
 	}));
 
 	SceneViewport->CaptureMouse(LockMouseFocusToExtraWindow);
 	SceneViewport->SetUserFocus(LockMouseFocusToExtraWindow);
 	SceneViewport->LockMouseToViewport(LockMouseFocusToExtraWindow);
 
-	// the window and some stuff gets initialized by ticking slate, otherwise we get a thread-related crash in packaged builds..
 	FSlateApplication::Get().Tick();
 
 	SceneViewport->SetOnSceneViewportResizeDel(FOnSceneViewportResize::CreateLambda([this](FVector2D NewViewportSize)
@@ -120,9 +111,6 @@ void AExtraCameraWindowActor::BeginPlay()
 		{
 			return;
 		}
-
-		// deny any window resolution change in the child windows
-
 		FVector2D MainViewportSize;
 		GEngine->GameViewport->GetViewportSize(MainViewportSize);
 
@@ -142,7 +130,6 @@ void AExtraCameraWindowActor::BeginPlay()
 		StandaloneGame = false;
 	}
 
-	// initialize everything before we call base class so that in blueprint beginplay everything is ready
 	Super::BeginPlay();
 	Super::SetActorTickInterval(TickInterval);
 }
@@ -155,9 +142,9 @@ bool AExtraCameraWindowActor::AddWidgetToExtraCamera(UUserWidget* InWidget, int3
 	}
 
 	ViewportOverlayWidget->AddSlot(ZOrder)
-	[
-		InWidget->TakeWidget()
-	];
+		[
+			InWidget->TakeWidget()
+		];
 
 	return true;
 }
@@ -201,13 +188,11 @@ void AExtraCameraWindowActor::Tick(float DeltaTime)
 		return;
 	}
 
-	// adjust camera
 	AActor* OldTarget = nullptr;
 	OldTarget = CameraManager->GetViewTarget();
 	CameraManager->SetViewTarget(this);
 	CameraManager->UpdateCamera(0.0f);
 	SceneViewport->Draw();
-	// reset camera
 	CameraManager->SetViewTarget(OldTarget);
 }
 
@@ -221,7 +206,7 @@ void AExtraCameraWindowActor::AddChildWidget(UUserWidget * ChildWidget)
 
 void AExtraCameraWindowActor::BeginDestroy()
 {
-	if (Destroyed) 
+	if (Destroyed)
 	{
 		return;
 	}
@@ -274,4 +259,3 @@ void AExtraCameraWindowActor::ImmediateDestroy()
 		Destroyed = true;
 	}
 }
-

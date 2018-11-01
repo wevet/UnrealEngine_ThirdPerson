@@ -33,6 +33,3 @@ EBTNodeResult::Type UBTTask_FindPatrolLocation::ExecuteTask(UBehaviorTreeCompone
 	}
 	return EBTNodeResult::Failed;
 }
-
-
-

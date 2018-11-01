@@ -7,6 +7,7 @@
 #include "Macros.h"
 #include "WeaponBase.h"
 #include "Combat.h"
+#include "STypes.h"
 #include "InteractionExecuter.h"
 #include "CharacterModel.h"
 #include "CharacterBase.generated.h"

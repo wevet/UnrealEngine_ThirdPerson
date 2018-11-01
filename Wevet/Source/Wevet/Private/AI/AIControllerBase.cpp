@@ -6,9 +6,15 @@
 
 AAIControllerBase::AAIControllerBase(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer), 
-	CanSeePlayerKey(FName(TEXT("CanSeePlayer")))
+	BotTypeKeyName(FName(TEXT("BotType"))),
+	CanSeePlayerKey(FName(TEXT("CanSeePlayer"))),
+	TargetEnemyKeyName(FName(TEXT("TargetEnemy"))),
+	PatrolLocationKeyName(FName(TEXT("PatrolLocation"))),
+	CurrentWaypointKeyName(FName(TEXT("CurrentWaypoint")))
 {
 
+	BehaviorTreeComponent = ObjectInitializer.CreateDefaultSubobject<UBehaviorTreeComponent>(this, TEXT("BehaviorTreeComponent"));
+	BlackboardComponent   = ObjectInitializer.CreateDefaultSubobject<UBlackboardComponent>(this, TEXT("BlackboardComponent"));
 	AIPerceptionComponent = ObjectInitializer.CreateDefaultSubobject<UAIPerceptionComponent>(this, TEXT("AIPerceptionComponent"));
 
 	// sight create
@@ -36,19 +42,24 @@ void AAIControllerBase::Possess(APawn* Pawn)
 {
 	Super::Possess(Pawn);
 
-	this->AICharacterOwner = Cast<AAICharacterBase>(Pawn);
-	if (this->AICharacterOwner)
+	AICharacterOwner = Cast<AAICharacterBase>(Pawn);
+	if (AICharacterOwner)
 	{
-		UBlackboardData* BlackBoard = this->AICharacterOwner->BehaviorTree->BlackboardAsset;
-		if (BlackBoard)
+		if (AICharacterOwner->BehaviorTree->BlackboardAsset)
 		{
-			//
+			BlackboardComponent->InitializeBlackboard(*AICharacterOwner->BehaviorTree->BlackboardAsset);
 		}
 
-		this->AICharacterOwner->InitializePosses();
-		this->WayPointList = this->AICharacterOwner->GetWayPointList();
-		Super::RunBehaviorTree(this->AICharacterOwner->BehaviorTree);
+		AICharacterOwner->InitializePosses();
+		WayPointList = AICharacterOwner->GetWayPointList();
+		BehaviorTreeComponent->StartTree(*AICharacterOwner->BehaviorTree);
 	}
+}
+
+void AAIControllerBase::UnPossess()
+{
+	Super::UnPossess();
+	BehaviorTreeComponent->StopTree();
 }
 
 FGenericTeamId AAIControllerBase::GetGenericTeamId() const
@@ -72,6 +83,22 @@ AWayPointBase* AAIControllerBase::GetRandomAtWayPoint()
 	return this->WayPointList[RandomIndex];
 }
 
+void AAIControllerBase::SetTargetEnemy(APawn * NewTarget)
+{
+	if (BlackboardComponent)
+	{
+		BlackboardComponent->SetValueAsObject(TargetEnemyKeyName, NewTarget);
+	}
+}
+
+void AAIControllerBase::SetBlackboardBotType(EBotBehaviorType NewType)
+{
+	if (BlackboardComponent)
+	{
+		BlackboardComponent->SetValueAsEnum(BotTypeKeyName, (uint8)NewType);
+	}
+}
+
 void AAIControllerBase::BeginPlay()
 {
 	Super::BeginPlay();
@@ -90,7 +117,6 @@ void AAIControllerBase::OnTargetPerceptionUpdatedRecieve(AActor* Actor, FAIStimu
 		return;
 	}
 
-	UBlackboardComponent* BComp = GetBlackboardComponent();
 	AMockCharacter* MockCharacter = Cast<AMockCharacter>(Actor);
 
 	if (MockCharacter == nullptr 
@@ -99,18 +125,26 @@ void AAIControllerBase::OnTargetPerceptionUpdatedRecieve(AActor* Actor, FAIStimu
 		return;
 	}
 
-	if (BComp)
-	{		
+	if (BlackboardComponent)
+	{	
+		bool Success = (MockCharacter->IsDeath_Implementation() == false) 
+			&& Stimulus.WasSuccessfullySensed() ? true : false;
 		if (this->AICharacterOwner->HasEnemyFound())
 		{
+			if (MockCharacter->IsDeath_Implementation())
+			{
+				this->AICharacterOwner->SetTargetActor(nullptr);
+				this->AICharacterOwner->SetEnemyFound(false);
+				BlackboardComponent->SetValueAsBool(CanSeePlayerKey, Success);
+			}
 			return;
 		}
-
-		bool Success = Stimulus.WasSuccessfullySensed() ? true : false;
-		//UE_LOG(LogTemp, Warning, TEXT("PerceptionUpdated : %s"), Success ? TEXT("True") : TEXT("False"));
-		this->AICharacterOwner->SetTargetActor(MockCharacter);
-		this->AICharacterOwner->SetEnemyFound(Success);
-		BComp->SetValueAsBool(this->CanSeePlayerKey, Success);
+		else
+		{
+			this->AICharacterOwner->SetTargetActor(MockCharacter);
+			this->AICharacterOwner->SetEnemyFound(Success);
+			BlackboardComponent->SetValueAsBool(CanSeePlayerKey, Success);
+		}
 	}
 
 }

@@ -141,7 +141,7 @@ void AMockCharacter::Equipment()
 	{
 		return;
 	}
-	PlayAnimMontage(this->EquipMontage, 1.6f);
+	PlayAnimMontage(EquipMontage, 1.6f);
 }
 
 void AMockCharacter::Jump()

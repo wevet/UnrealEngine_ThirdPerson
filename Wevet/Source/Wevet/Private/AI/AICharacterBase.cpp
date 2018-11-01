@@ -61,8 +61,18 @@ void AAICharacterBase::BeginPlay()
 void AAICharacterBase::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
-	if (Super::SelectedWeapon)
+	if (Super::SelectedWeapon == nullptr)
+	{
+		return;
+	}
+	if (this->Target == nullptr)
+	{
+		if (this->IsEnemyFound || Super::IsEquipWeapon)
+		{
+			SetEnemyFound(false);
+		}
+	}
+	else
 	{
 		if (this->IsEnemyFound && Super::IsEquipWeapon)
 		{
@@ -73,11 +83,8 @@ void AAICharacterBase::Tick(float DeltaTime)
 				this->BulletInterval = 0.f;
 			}
 		}
-		else
-		{
-			//BP_FireReleaseReceive();
-		}
 	}
+
 }
 
 void AAICharacterBase::Die_Implementation()
@@ -143,7 +150,7 @@ void AAICharacterBase::SetEnemyFound(bool EnemyFound)
 		return;
 	}
 	this->IsEnemyFound = EnemyFound;
-	PlayAnimMontage(this->EquipMontage, 1.6f);
+	PlayAnimMontage(EquipMontage, 1.6f);
 }
 
 AMockCharacter* AAICharacterBase::GetPlayerCharacter() const

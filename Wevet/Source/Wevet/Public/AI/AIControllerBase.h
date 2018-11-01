@@ -18,19 +18,37 @@
 #include "AICombatControllerExecuter.h"
 #include "AIControllerBase.generated.h"
 
-/**
- *
- */
+class UBehaviorTreeComponent;
 
 UCLASS(ABSTRACT)
 class WEVET_API AAIControllerBase :  public AAIController, public IAICombatControllerExecuter
 {
 	GENERATED_BODY()
 
+	UBehaviorTreeComponent* BehaviorTreeComponent;
+	UBlackboardComponent* BlackboardComponent;
+	UAIPerceptionComponent* AIPerceptionComponent;
+
+public:
+	FORCEINLINE class UBehaviorTreeComponent* GetBehaviorTreeComponent()
+	{
+		return BehaviorTreeComponent;
+	}
+
+	FORCEINLINE class UBlackboardComponent* GetBlackboardComponent()
+	{
+		return BlackboardComponent;
+	}
+
+	FORCEINLINE class UAIPerceptionComponent* GetAIPerceptionComponent()
+	{
+		return AIPerceptionComponent;
+	}
 
 public:
 	AAIControllerBase(const FObjectInitializer& ObjectInitializer);
 	virtual void Possess(APawn* Pawn) override;
+	virtual void UnPossess() override;
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AAIControllerBase|Interface")
 	void Patrolling();
@@ -50,18 +68,19 @@ public:
 		return this->AICharacterOwner;
 	}
 
-	UFUNCTION(BlueprintCallable, Category = "AAIControllerBase|Variable")
+	UFUNCTION(BlueprintCallable, Category = "AAIControllerBase|Components")
 	AWayPointBase* GetRandomAtWayPoint();
 
-	UFUNCTION(BlueprintCallable, Category = "AAIControllerBase|Variable")
+	UFUNCTION(BlueprintCallable, Category = "AAIControllerBase|Components")
 	AMockCharacter* GetPlayerCharacter() const
 	{
 		return this->AICharacterOwner->GetPlayerCharacter();
 	}
 
+	virtual void SetTargetEnemy(APawn* NewTarget);
+	virtual void SetBlackboardBotType(EBotBehaviorType NewType);
+
 protected:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AAIControllerBase|Components")
-	UAIPerceptionComponent* AIPerceptionComponent;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AAIControllerBase|Variable")
 	FName CanSeePlayerKey;
@@ -75,9 +94,21 @@ protected:
 
 	AAICharacterBase* AICharacterOwner;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AAIControllerBase|Variable")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "AAIControllerBase|Variable")
 	TArray<AWayPointBase*> WayPointList;
 
 	class UAISenseConfig_Sight* SightConfig;
 	class UAISenseConfig_Hearing* HearConfig;
+
+	UPROPERTY(EditDefaultsOnly, Category = "AAIControllerBase|Variable")
+	FName TargetEnemyKeyName;
+
+	UPROPERTY(EditDefaultsOnly, Category = "AAIControllerBase|Variable")
+	FName PatrolLocationKeyName;
+
+	UPROPERTY(EditDefaultsOnly, Category = "AAIControllerBase|Variable")
+	FName CurrentWaypointKeyName;
+
+	UPROPERTY(EditDefaultsOnly, Category = "AAIControllerBase|Variable")
+	FName BotTypeKeyName;
 };
