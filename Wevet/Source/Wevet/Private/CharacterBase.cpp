@@ -92,17 +92,17 @@ void ACharacterBase::OnCrouch()
 
 void ACharacterBase::OnReleaseItemExecuter_Implementation()
 {
-	UE_LOG(LogTemp, Warning, TEXT("Release"));
+	//UE_LOG(LogTemp, Warning, TEXT("Release"));
 }
 
 void ACharacterBase::OnPickupItemExecuter_Implementation(AActor * Actor)
 {
-	UE_LOG(LogTemp, Warning, TEXT("Pick : %s"), *(Actor->GetName()));
+	//UE_LOG(LogTemp, Warning, TEXT("Pick : %s"), *(Actor->GetName()));
 }
 
 void ACharacterBase::NotifyEquip_Implementation()
 {
-	UE_LOG(LogTemp, Warning, TEXT("NotifyEquip : %s"), *(Super::GetName()));
+	//UE_LOG(LogTemp, Warning, TEXT("NotifyEquip : %s"), *(Super::GetName()));
 }
 
 bool ACharacterBase::IsDeath_Implementation()
@@ -143,21 +143,56 @@ void ACharacterBase::OnTakeDamage_Implementation(FName BoneName, float Damage, A
 
 void ACharacterBase::Die_Implementation()
 {
-	if (!this->DieSuccessCalled)
+	// twice called
+	if (this->DieSuccessCalled)
 	{
-		if (this->SelectedWeapon)
-		{
-			this->SelectedWeapon->OnFireRelease_Implementation();
-		}
-		Super::GetMesh()->SetAllBodiesSimulatePhysics(true);
-		Super::GetMesh()->SetSimulatePhysics(true);
-		Super::GetMesh()->WakeAllRigidBodies();
-		Super::GetMesh()->bBlendPhysics = true;
-		Super::GetCharacterMovement()->DisableMovement();
-		GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-		this->DieSuccessCalled = true;
-		//this->CharacterModel->ConditionalBeginDestroy();
+		return;
 	}
+
+	if (this->SelectedWeapon)
+	{
+		this->SelectedWeapon->OnFireRelease_Implementation();
+	}
+	Super::GetMesh()->SetAllBodiesSimulatePhysics(true);
+	Super::GetMesh()->SetSimulatePhysics(true);
+	Super::GetMesh()->WakeAllRigidBodies();
+	Super::GetMesh()->bBlendPhysics = true;
+	Super::GetCharacterMovement()->DisableMovement();
+	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	if (this->SelectedWeapon)
+	{
+		UWorld* World = GetWorld();
+		if (World)
+		{
+			const FQuat Rotation = Super::GetActorRotation().Quaternion();
+			const FVector Forward = Super::GetActorLocation() + (Controller->GetControlRotation().Vector() * 200);
+			FTransform Transform;
+			Transform.SetLocation(Forward);
+			Transform.SetRotation(Rotation);
+			Transform.SetScale3D(FVector::OneVector);
+
+			if (WeaponList.Find(this->SelectedWeapon) != INDEX_NONE)
+			{
+				WeaponList.Remove(this->SelectedWeapon);
+			}
+			FWeaponItemInfo WeaponItemInfo = SelectedWeapon->WeaponItemInfo;
+			TSubclassOf<class AWeaponBase> WeaponClass = WeaponItemInfo.WeaponClass;
+			this->SelectedWeapon->Destroy();
+			this->SelectedWeapon = nullptr;
+
+			// spawn event
+			FActorSpawnParameters SpawnInfo;
+			SpawnInfo.Owner = NULL;
+			SpawnInfo.Instigator = NULL;
+			AWeaponBase* SpawningObject = World->SpawnActor<AWeaponBase>(WeaponClass, Transform.GetLocation(), Super::GetActorRotation(), SpawnInfo);
+			SpawningObject->WeaponItemInfo.CopyTo(WeaponItemInfo);
+			SpawningObject->OnVisible_Implementation();
+		}
+	}
+
+	DieSuccessCalled = true;
+
 }
 
 void ACharacterBase::Equipment_Implementation()
@@ -180,29 +215,30 @@ void ACharacterBase::UnEquipment_Implementation()
 	this->SelectedWeapon->OnEquip(this->IsEquipWeapon);
 }
 
-AWeaponBase* ACharacterBase::GetCategoryByWeapon(EWeaponItemType WeaponItemType)
+AWeaponBase* ACharacterBase::FindByWeapon(EWeaponItemType WeaponItemType)
 {
-	if (this->WeaponList.Num() <= 0) 
+	if (WeaponList.Num() <= 0 || SelectedWeapon == nullptr) 
 	{
 		return nullptr;
 	}
 
-	if (this->SelectedWeapon)
+	for (AWeaponBase*& Weapon : this->WeaponList)
 	{
-		if (this->SelectedWeapon->HasMatchTypes(WeaponItemType))
+		if (SelectedWeapon)
 		{
-			return this->SelectedWeapon;
+			if (SelectedWeapon->HasMatchTypes(WeaponItemType))
+			{
+				return SelectedWeapon;
+			}
 		}
-	}
-	else 
-	{
-		for (AWeaponBase* Weapon : this->WeaponList)
+		else 
 		{
-			if (Weapon->HasMatchTypes(WeaponItemType))
+			if (Weapon && Weapon->HasMatchTypes(WeaponItemType))
 			{
 				return Weapon;
 			}
 		}
+
 	}
 	return nullptr;
 }

@@ -114,4 +114,6 @@ protected:
 	float LastSeenTime;
 	/* Last time the player was heard */
 	float LastHeardTime;
+	/* Last time we attacked something */
+	float LastMeleeAttackTime;
 };

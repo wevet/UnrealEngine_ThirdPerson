@@ -82,7 +82,7 @@ public:
 	const TArray<AWeaponBase*>& GetWeaponList() { return this->WeaponList; };
 
 	UFUNCTION(BlueprintCallable, Category = "ACharacterBase|Weapon")
-	AWeaponBase* GetCategoryByWeapon(EWeaponItemType WeaponItemType);
+	AWeaponBase* FindByWeapon(EWeaponItemType WeaponItemType);
 
 	UFUNCTION(BlueprintCallable, Category = "ACharacterBase|Variable")
 	const bool HasCrouch() { return this->IsCrouch; }

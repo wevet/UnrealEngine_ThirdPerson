@@ -227,6 +227,7 @@ void AMockCharacter::OnReleaseItemExecuter_Implementation()
 	const FRotator Rotation = Super::GetActorRotation();	
 	const FVector Forward   = Super::GetActorLocation() + (Controller->GetControlRotation().Vector() * 200);
 	const FTransform Transform = UKismetMathLibrary::MakeTransform(Forward, Rotation, FVector::OneVector);
+
 	AWeaponBase* IgnoreWeapon = ReleaseWeapon(Transform);
 
 	if (IgnoreWeapon) 
@@ -245,7 +246,7 @@ void AMockCharacter::OnPickupItemExecuter_Implementation(AActor * Actor)
 		FWeaponItemInfo WeaponItemInfo = Weapon->WeaponItemInfo;
 		if (WeaponItemInfo.WeaponItemType == EWeaponItemType::None)
 		{
-			UE_LOG(LogTemp, Warning, TEXT("UnRegistItem : %s"), *(Actor->GetName()));
+			UE_LOG(LogTemp, Warning, TEXT("UnKnownItemType : %s"), *(Weapon->GetName()));
 			return;
 		}
 		TSubclassOf<class AWeaponBase> WeaponClass = WeaponItemInfo.WeaponClass;
@@ -255,7 +256,10 @@ void AMockCharacter::OnPickupItemExecuter_Implementation(AActor * Actor)
 		const FTransform Transform = Super::GetMesh()->GetSocketTransform(WeaponItemInfo.UnEquipSocketName);
 		AWeaponBase* PickingWeapon = GetWorld()->SpawnActor<AWeaponBase>(WeaponClass, Transform, SpawnInfo);
 
-		PickingWeapon->AttachToComponent(Super::GetMesh(), { EAttachmentRule::SnapToTarget, true }, WeaponItemInfo.UnEquipSocketName);
+		PickingWeapon->AttachToComponent(
+			Super::GetMesh(), 
+			{ EAttachmentRule::SnapToTarget, true }, 
+			WeaponItemInfo.UnEquipSocketName);
 		PickingWeapon->OffVisible_Implementation();
 		PickingWeapon->OnEquip(false);
 
