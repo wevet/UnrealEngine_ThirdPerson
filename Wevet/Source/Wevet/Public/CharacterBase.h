@@ -169,4 +169,8 @@ public:
 
 	UFUNCTION(BlueprintImplementableEvent, Category = "ACharacterBase|NativeEvent")
 	void BP_ReloadReceive();
+
+public:
+	virtual void EquipmentMontage();
+
 };

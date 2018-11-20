@@ -6,21 +6,24 @@
 #include "Kismet/KismetMathLibrary.h"
 #include "Components/WidgetComponent.h"
 #include "Components/SkeletalMeshComponent.h"
+#include "AIControllerBase.h"
 
 
 AAICharacterBase::AAICharacterBase(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer), 
-	IsEnemyFound(false)
+	SenseTimeOut(4.f)
 {
 	PrimaryActorTick.bCanEverTick = true;
 
 	// create pawnsensing
 	PawnSensingComponent = ObjectInitializer.CreateDefaultSubobject<UPawnSensingComponent>(this, TEXT("PawnSensingComponent"));
-	PawnSensingComponent->SetPeripheralVisionAngle(90.f);
-	PawnSensingComponent->SensingInterval = .1f;
-	PawnSensingComponent->bOnlySensePlayers = false;
-	PawnSensingComponent->bHearNoises = true;
-	PawnSensingComponent->bSeePawns = true;
+	PawnSensingComponent->SetPeripheralVisionAngle(60.f);
+	PawnSensingComponent->SightRadius = 2000.f;
+	PawnSensingComponent->HearingThreshold = 600;
+	PawnSensingComponent->LOSHearingThreshold = 1200;
+
+	GetMovementComponent()->NavAgentProps.AgentRadius = 42;
+	GetMovementComponent()->NavAgentProps.AgentRadius = 192;
 
 	WidgetComponent = ObjectInitializer.CreateDefaultSubobject<UWidgetComponent>(this, TEXT("WidgetComponent"));
 	WidgetComponent->SetupAttachment(GetMesh());
@@ -61,30 +64,50 @@ void AAICharacterBase::BeginPlay()
 void AAICharacterBase::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	if (Super::SelectedWeapon == nullptr)
+
+	UWorld* World = GetWorld();
+	if (World)
 	{
-		return;
-	}
-	if (this->Target == nullptr)
-	{
-		if (this->IsEnemyFound || Super::IsEquipWeapon)
+		bool bReload = false;
+		if (bSensedTarget)
 		{
-			SetEnemyFound(false);
-		}
-	}
-	else
-	{
-		if (this->IsEnemyFound && Super::IsEquipWeapon)
-		{
-			this->BulletInterval += DeltaTime;
-			if (this->BulletInterval >= this->BulletDelay)
+			if (SelectedWeapon->IsReload)
 			{
-				BP_FirePressReceive();
-				this->BulletInterval = 0.f;
+				bReload = true;
+			}
+		}
+
+		if (bReload)
+		{
+			// weapon reload
+			return;
+		}
+
+		if (bSensedTarget
+			&& (World->TimeSeconds - LastSeenTime) > SenseTimeOut
+			&& (World->TimeSeconds - LastHeardTime) > SenseTimeOut)
+		{
+			bSensedTarget = false;
+			SetTargetActor(nullptr);
+			Super::EquipmentMontage();
+		}
+		else
+		{
+			if (Super::IsEquipWeapon && HasEnemyFound())
+			{
+				BulletInterval += DeltaTime;
+				if (BulletInterval >= BulletDelay)
+				{
+					BP_FirePressReceive();
+					BulletInterval = 0.f;
+					// repeat sense target
+					LastSeenTime = World->GetTimeSeconds();
+					LastHeardTime = World->GetTimeSeconds();
+					bSensedTarget = true;
+				}
 			}
 		}
 	}
-
 }
 
 void AAICharacterBase::Die_Implementation()
@@ -98,7 +121,7 @@ void AAICharacterBase::Die_Implementation()
 	{
 		WidgetComponent->SetVisibility(false);
 	}
-	SetTargetActor(nullptr);
+	this->Target = nullptr;
 	Super::Die_Implementation();
 
 }
@@ -107,7 +130,7 @@ void AAICharacterBase::NotifyEquip_Implementation()
 {
 	if (Super::SelectedWeapon)
 	{
-		if (this->IsEnemyFound)
+		if (HasEnemyFound())
 		{
 			Super::SelectedWeapon->AttachToComponent(
 				Super::GetMesh(), 
@@ -139,18 +162,12 @@ void AAICharacterBase::OnTakeDamage_Implementation(FName BoneName, float Damage,
 void AAICharacterBase::SetTargetActor(AActor* Actor)
 {
 	this->Target = Actor;
-}
-
-void AAICharacterBase::SetEnemyFound(bool EnemyFound)
-{
-	bool InEnemyFound = this->IsEnemyFound;
-
-	if (InEnemyFound == EnemyFound)
+	AAIControllerBase* AIController = Cast<AAIControllerBase>(GetController());
+	if (AIController)
 	{
-		return;
+		AIController->SetBlackboardSeeActor(HasEnemyFound());
 	}
-	this->IsEnemyFound = EnemyFound;
-	PlayAnimMontage(EquipMontage, 1.6f);
+	UE_LOG(LogTemp, Warning, TEXT("SeeActor : %s"), HasEnemyFound() ? TEXT("true") : TEXT("false"));
 }
 
 AMockCharacter* AAICharacterBase::GetPlayerCharacter() const
@@ -230,7 +247,7 @@ void AAICharacterBase::UpdateWayPointEvent()
 		AWayPointBase* WayPoint = *ActorIterator;
 		if (WayPoint)
 		{
-			this->WayPointList.Add(WayPoint);
+			this->WayPointList.Emplace(WayPoint);
 		}
 	}
 }
@@ -241,9 +258,47 @@ void AAICharacterBase::UpdateSensing()
 
 void AAICharacterBase::OnSeePawnRecieve(APawn* OtherPawn)
 {
+	if (IsDeath_Implementation())
+	{
+		return;
+	}
+
+	if (!bSensedTarget)
+	{
+		//
+	}
+
+	LastSeenTime = GetWorld()->GetTimeSeconds();
+	bSensedTarget = true;
+
+	auto Player = Cast<AMockCharacter>(OtherPawn);
+	if (Player && !Player->IsDeath_Implementation())
+	{
+		SetTargetActor(Player);
+		Super::EquipmentMontage();
+	}
 }
 
 void AAICharacterBase::OnHearNoiseRecieve(APawn* OtherActor, const FVector & Location, float Volume)
 {
+	if (IsDeath_Implementation() || FMath::IsNearlyZero(Volume))
+	{
+		return;
+	}
+
+	if (!bSensedTarget)
+	{
+		//
+	}
+
+	LastHeardTime = GetWorld()->GetTimeSeconds();
+	bSensedTarget = true;
+
+	auto Player = Cast<AMockCharacter>(OtherActor);
+	if (Player && !Player->IsDeath_Implementation())
+	{
+		SetTargetActor(Player);
+		Super::EquipmentMontage();
+	}
 }
 

@@ -14,8 +14,8 @@
 #include "AICharacterBase.generated.h"
 
 /**
- *
- */
+*
+*/
 UCLASS(ABSTRACT)
 class WEVET_API AAICharacterBase : public ACharacterBase
 {
@@ -47,9 +47,6 @@ public:
 	virtual void SetTargetActor(AActor* Actor);
 
 	UFUNCTION(BlueprintCallable, Category = "AAICharacterBase|Variable")
-	virtual void SetEnemyFound(bool EnemyFound);
-
-	UFUNCTION(BlueprintCallable, Category = "AAICharacterBase|Variable")
 	virtual AActor* GetTarget()const
 	{
 		return this->Target;
@@ -73,17 +70,21 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "AAICharacterBase|Variable")
 	bool HasEnemyFound() const
 	{
-		return this->IsEnemyFound;
+		if (Target)
+		{
+			return true;
+		}
+		return false;
 	}
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AAICharacterBase|Variable")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "AAICharacterBase|Variable")
 	class UBehaviorTree* BehaviorTree;
 
 	UFUNCTION(BlueprintCallable, Category = "AAICharacterBase|Variable")
 	virtual void InitializePosses();
 
 protected:
-	AActor* Target;
+	AActor * Target;
 
 	virtual void BeginPlay() override;
 	virtual FVector BulletTraceRelativeLocation() const override;
@@ -103,17 +104,25 @@ protected:
 	UFUNCTION(BlueprintCallable, Category = "AAICharacterBase|PawnSensing")
 	virtual	void OnHearNoiseRecieve(APawn *OtherActor, const FVector &Location, float Volume);
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AAICharacterBase|Variable")
-	bool IsEnemyFound;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AAICharacterBase|Variable")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "AAICharacterBase|Variable")
 	float BulletDelay = 1.4f;
+
+	/* Last bullet action after interval */
 	float BulletInterval;
 
 	/* Last time the player was spotted */
 	float LastSeenTime;
+
 	/* Last time the player was heard */
 	float LastHeardTime;
+
 	/* Last time we attacked something */
 	float LastMeleeAttackTime;
+
+	/* Time-out value to clear the sensed position of the player. Should be higher than Sense interval in the PawnSense component not never miss sense ticks. */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "AAICharacterBase|Variable")
+	float SenseTimeOut;
+
+	/* Resets after sense time-out to avoid unnecessary clearing of target each tick */
+	bool bSensedTarget;
 };

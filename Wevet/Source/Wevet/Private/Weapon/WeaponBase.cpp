@@ -256,8 +256,13 @@ void AWeaponBase::OnFirePressedInternal()
 			}
 			else
 			{
+				// @TODO
+				// owner Character Set
 				float Damage = FMath::FRandRange(10.f, 20.f);
-				CombatInterface->OnTakeDamage_Implementation(HitData.BoneName, Damage, this);
+				CombatInterface->OnTakeDamage_Implementation(
+					HitData.BoneName, 
+					Damage, 
+					this);
 			}
 		}
 	}
@@ -299,7 +304,9 @@ void AWeaponBase::OnReloading_Implementation()
 
 	if (WeaponItemInfo.CurrentAmmo >= WeaponItemInfo.ClipType)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Full Ammos Current:%d, ClipType:%d"), WeaponItemInfo.CurrentAmmo, WeaponItemInfo.ClipType);
+		UE_LOG(LogTemp, Warning, TEXT("Full Ammos Current:%d, ClipType:%d"), 
+			WeaponItemInfo.CurrentAmmo, 
+			WeaponItemInfo.ClipType);
 		return;
 	}
 
@@ -326,9 +333,8 @@ void AWeaponBase::OnReloadInternal()
 
 	if (WeaponItemInfo.MaxAmmo <= this->NeededAmmo)
 	{
-		int32 ResultAmmo = WeaponItemInfo.CurrentAmmo + WeaponItemInfo.MaxAmmo;
-		WeaponItemInfo.CurrentAmmo = ResultAmmo;
 		WeaponItemInfo.MaxAmmo = 0;
+		WeaponItemInfo.CurrentAmmo = (WeaponItemInfo.CurrentAmmo + WeaponItemInfo.MaxAmmo);
 	}
 	else
 	{

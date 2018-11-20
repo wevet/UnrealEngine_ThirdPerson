@@ -47,7 +47,9 @@ void AMockCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInpu
 	PlayerInputComponent->BindAction("Sprint", IE_Pressed,   this, &ACharacterBase::OnSprint);
 	PlayerInputComponent->BindAction("Jump",   IE_Pressed,   this, &AMockCharacter::Jump);
 	PlayerInputComponent->BindAction("Jump",   IE_Released,  this, &AMockCharacter::StopJumping);
-	PlayerInputComponent->BindAction("EquipWeapon", IE_Pressed, this, &AMockCharacter::Equipment);
+	// @NOTE 
+	// CharacterBase class
+	PlayerInputComponent->BindAction("EquipWeapon", IE_Pressed, this, &ACharacterBase::EquipmentMontage);
 	PlayerInputComponent->BindAction("SwapWeapon",  IE_Pressed, this, &AMockCharacter::UpdateWeapon);
 	PlayerInputComponent->BindAction("DropItem",    IE_Pressed, this, &AMockCharacter::ReleaseItem);
 	PlayerInputComponent->BindAction("Fire", IE_Pressed,   this, &AMockCharacter::FirePressed);
@@ -135,15 +137,6 @@ void AMockCharacter::Reload()
 	}
 }
 
-void AMockCharacter::Equipment()
-{
-	if (this->WeaponList.Num() <= 0) 
-	{
-		return;
-	}
-	PlayAnimMontage(EquipMontage, 1.6f);
-}
-
 void AMockCharacter::Jump()
 {
 	if (Super::IsCrouch)
@@ -195,7 +188,7 @@ AWeaponBase* AMockCharacter::GetUnEquipedWeapon()
 	{
 		return nullptr;
 	}
-	for (AWeaponBase* Weapon : WeaponList)
+	for (AWeaponBase* &Weapon : WeaponList)
 	{
 		if (Weapon->Equip == false)
 		{

@@ -79,7 +79,6 @@ protected:
 	void FirePressed();
 	void FireReleassed();
 	void Reload();
-	void Equipment();
 
 	UFUNCTION(BlueprintCallable, Category = "AMockCharacter|Action")
 	AWeaponBase* ReleaseWeapon(const FTransform& Transform);

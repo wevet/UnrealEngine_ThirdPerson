@@ -73,15 +73,7 @@ void ACharacterBase::OnSprint()
 	{
 		this->IsSprint = false;
 	}
-	
-	if (this->IsSprint)
-	{
-		MovementSpeed = this->DefaultMaxSpeed;
-	}
-	else
-	{
-		MovementSpeed = this->DefaultMaxSpeed *0.5f;
-	}
+	MovementSpeed = this->IsSprint ? this->DefaultMaxSpeed : this->DefaultMaxSpeed *0.5f;
 	GetCharacterMovement()->MaxWalkSpeed = MovementSpeed;
 }
 
@@ -241,5 +233,14 @@ AWeaponBase* ACharacterBase::FindByWeapon(EWeaponItemType WeaponItemType)
 
 	}
 	return nullptr;
+}
+
+void ACharacterBase::EquipmentMontage()
+{
+	if (this->WeaponList.Num() <= 0)
+	{
+		return;
+	}
+	PlayAnimMontage(EquipMontage, 1.6f);
 }
 

@@ -79,6 +79,7 @@ public:
 
 	virtual void SetTargetEnemy(APawn* NewTarget);
 	virtual void SetBlackboardBotType(EBotBehaviorType NewType);
+	virtual void SetBlackboardSeeActor(bool InCanSeeActor);
 
 protected:
 
