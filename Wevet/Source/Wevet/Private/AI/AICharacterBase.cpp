@@ -72,7 +72,7 @@ void AAICharacterBase::Tick(float DeltaTime)
 		bool bReload = false;
 		if (bSensedTarget)
 		{
-			if (Super::SelectedWeapon && Super::SelectedWeapon->IsReload)
+			if (Super::SelectedWeapon && Super::SelectedWeapon->bReload)
 			{
 				bReload = true;
 			}
@@ -209,6 +209,7 @@ void AAICharacterBase::UpdateWeaponEvent()
 	check(Super::SelectedWeapon);
 
 	// setup assets
+	Super::SelectedWeapon->SetEquip(false);
 	Super::SelectedWeapon->SetCharacterOwner(this);
 	Super::SelectedWeapon->GetSphereComponent()->DestroyComponent();
 	Super::SelectedWeapon->OffVisible_Implementation();
@@ -216,7 +217,7 @@ void AAICharacterBase::UpdateWeaponEvent()
 	FName SocketName = Super::SelectedWeapon->WeaponItemInfo.UnEquipSocketName;
 	Super::SelectedWeapon->AttachToComponent(Super::GetMesh(), { EAttachmentRule::SnapToTarget, true }, SocketName);
 
-	if (Super::WeaponList.Contains(Super::SelectedWeapon) == false)
+	if (!Super::WeaponList.Contains(Super::SelectedWeapon))
 	{
 		Super::WeaponList.Emplace(Super::SelectedWeapon);
 	}

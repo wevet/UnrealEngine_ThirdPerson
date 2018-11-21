@@ -87,29 +87,24 @@ public:
 		return this->WidgetComponent; 
 	}
 
-	UFUNCTION(BlueprintCallable, Category = "AWeaponBase|Variable")
-	virtual void OnEquip(const bool Equip);
-
-	UFUNCTION(BlueprintCallable, Category = "AWeaponBase|Variable")
+	virtual void SetEquip(const bool Equip);
 	virtual void SetPickable(const bool Pick);
-
-	UFUNCTION(BlueprintCallable, Category = "AWeaponBase|Variable")
 	virtual void SetReload(const bool Reload);
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "AWeaponBase|Variable")
 	FWeaponItemInfo WeaponItemInfo;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AWeaponBase|Variable")
-	bool Equip;
+	bool bEquip;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AWeaponBase|Variable")
-	bool CanFired;
+	bool bFired;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AWeaponBase|Variable")
-	bool CanPick;
+	bool bPick;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AWeaponBase|Variable")
-	bool IsReload;
+	bool bReload;
 
 #pragma region interface
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AWeaponBase|Interface")
@@ -148,11 +143,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "AWeaponBase|API")
 	virtual void OnReloadInternal();
 
-	FName GetMuzzleSocket() const { return this->MuzzleSocketName; }
-
 	const FTransform GetMuzzleTransform()
 	{ 
-		return this->SkeletalMeshComponent->GetSocketTransform(this->GetMuzzleSocket()); 
+		return SkeletalMeshComponent->GetSocketTransform(MuzzleSocketName);
 	}
 
 	bool HasMatchTypes(EWeaponItemType InWeaponItemType) const

@@ -109,7 +109,7 @@ public:
 		{
 			return false;
 		}
-		return SelectedWeapon->Equip;
+		return SelectedWeapon->bEquip;
 	}
 
 	UFUNCTION(BlueprintCallable, Category = "ACharacterBase|Variable")

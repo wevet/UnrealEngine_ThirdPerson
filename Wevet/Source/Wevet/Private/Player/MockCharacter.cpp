@@ -231,22 +231,21 @@ void AMockCharacter::OnPickupItemExecuter_Implementation(AActor * Actor)
 		SpawnInfo.Owner = NULL;
 		SpawnInfo.Instigator = NULL;
 		const FTransform Transform = Super::GetMesh()->GetSocketTransform(WeaponItemInfo.UnEquipSocketName);
-		AWeaponBase* PickingWeapon = GetWorld()->SpawnActor<AWeaponBase>(WeaponClass, Transform, SpawnInfo);
+		AWeaponBase* const PickingWeapon = GetWorld()->SpawnActor<AWeaponBase>(WeaponClass, Transform, SpawnInfo);
 
 		PickingWeapon->AttachToComponent(
 			Super::GetMesh(), 
 			{ EAttachmentRule::SnapToTarget, true }, 
 			WeaponItemInfo.UnEquipSocketName);
-		PickingWeapon->OffVisible_Implementation();
-		PickingWeapon->OnEquip(false);
 
-		if (PickingWeapon->GetSphereComponent()) 
+		PickingWeapon->SetEquip(false);
+		PickingWeapon->SetCharacterOwner(this);
+		PickingWeapon->OffVisible_Implementation();
+		PickingWeapon->GetSphereComponent()->DestroyComponent();
+
+		if (!Super::WeaponList.Contains(PickingWeapon))
 		{
-			PickingWeapon->GetSphereComponent()->DestroyComponent();
-		}
-		if (Super::WeaponList.Contains(PickingWeapon) == false)
-		{
-			Super::WeaponList.Add(PickingWeapon);
+			Super::WeaponList.Emplace(PickingWeapon);
 		}
 		Weapon->Destroy();
 		Weapon = nullptr;

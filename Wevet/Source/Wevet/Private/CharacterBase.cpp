@@ -164,7 +164,7 @@ void ACharacterBase::Die_Implementation()
 			Transform.SetRotation(Rotation);
 			Transform.SetScale3D(FVector::OneVector);
 
-			if (WeaponList.Find(this->SelectedWeapon) != INDEX_NONE)
+			if (WeaponList.Contains(this->SelectedWeapon))
 			{
 				WeaponList.Remove(this->SelectedWeapon);
 			}
@@ -191,7 +191,7 @@ void ACharacterBase::Equipment_Implementation()
 	{
 		return;
 	}
-	this->SelectedWeapon->OnEquip(true);
+	this->SelectedWeapon->SetEquip(true);
 }
 
 void ACharacterBase::UnEquipment_Implementation()
@@ -200,21 +200,21 @@ void ACharacterBase::UnEquipment_Implementation()
 	{
 		return;
 	}
-	this->SelectedWeapon->OnEquip(false);
+	this->SelectedWeapon->SetEquip(false);
 }
 
 // WeaponList Find Category
 AWeaponBase* ACharacterBase::FindByWeapon(EWeaponItemType WeaponItemType)
 {
-	if (WeaponList.Num() <= 0 || this->SelectedWeapon == nullptr) 
+	if (WeaponList.Num() <= 0)/*  || this->SelectedWeapon == nullptr */ 
 	{
 		return nullptr;
 	}
 
-	if (this->SelectedWeapon && this->SelectedWeapon->HasMatchTypes(WeaponItemType))
-	{
-		return this->SelectedWeapon;
-	}
+	//if (this->SelectedWeapon && this->SelectedWeapon->HasMatchTypes(WeaponItemType))
+	//{
+	//	return this->SelectedWeapon;
+	//}
 
 	for (AWeaponBase*& Weapon : WeaponList)
 	{
@@ -235,7 +235,7 @@ AWeaponBase* ACharacterBase::GetUnEquipWeapon()
 	}
 	for (AWeaponBase* &Weapon : WeaponList)
 	{
-		if (Weapon->Equip == false)
+		if (Weapon->bEquip == false)
 		{
 			return Weapon;
 		}

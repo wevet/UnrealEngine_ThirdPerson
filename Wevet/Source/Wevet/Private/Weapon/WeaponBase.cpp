@@ -13,11 +13,11 @@ AWeaponBase::AWeaponBase(const FObjectInitializer& ObjectInitializer)
 	WidgetComponent(nullptr),
 	SphereComponent(nullptr),
 	SkeletalMeshComponent(nullptr),
-	MuzzleSocketName(FName(TEXT("MuzzleFlash")))
+	MuzzleSocketName(FName(TEXT("MuzzleFlash"))),
+	BulletDuration(0.1f),
+	ReloadDuration(2.f)
 {
 	PrimaryActorTick.bCanEverTick = true;
-	this->BulletDuration = 0.1F;
-	this->ReloadDuration = 2.0f;
 
 	// setup scene component
 	SceneComponent = ObjectInitializer.CreateDefaultSubobject<USceneComponent>(this, TEXT("SceneComponent"));
@@ -42,15 +42,19 @@ AWeaponBase::AWeaponBase(const FObjectInitializer& ObjectInitializer)
 void AWeaponBase::BeginPlay()
 {
 	Super::BeginPlay();
-	if (WidgetComponent && WidgetComponent->IsValidLowLevel()) 
+
+	if (!ensure(WidgetComponent)) 
 	{
-		WidgetComponent->SetVisibility(false);
+		return;
 	}
-	if (SphereComponent && SphereComponent->IsValidLowLevel())
+	WidgetComponent->SetVisibility(false);
+
+	if (!ensure(SphereComponent)) 
 	{
-		SphereComponent->OnComponentBeginOverlap.AddDynamic(this, &AWeaponBase::BeginOverlapRecieve);
-		SphereComponent->OnComponentEndOverlap.AddDynamic(this, &AWeaponBase::EndOverlapRecieve);
+		return;
 	}
+	SphereComponent->OnComponentBeginOverlap.AddDynamic(this, &AWeaponBase::BeginOverlapRecieve);
+	SphereComponent->OnComponentEndOverlap.AddDynamic(this, &AWeaponBase::EndOverlapRecieve);
 }
 
 void AWeaponBase::Tick(float DeltaTime)
@@ -68,29 +72,29 @@ void AWeaponBase::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	Super::EndPlay(EndPlayReason);
 }
 
-void AWeaponBase::OnEquip(const bool Equip)
+void AWeaponBase::SetEquip(const bool Equip)
 {
-	this->Equip = Equip;
+	this->bEquip = Equip;
 }
 
 void AWeaponBase::SetPickable(const bool Pick)
 {
-	this->CanPick = Pick;
+	this->bPick = Pick;
 }
 
 void AWeaponBase::SetReload(const bool Reload)
 {
-	this->IsReload = Reload;
+	this->bReload = Reload;
 }
 
 void AWeaponBase::OnFirePress_Implementation()
 {
-	this->CanFired = true;
+	this->bFired = true;
 }
 
 void AWeaponBase::OnFireRelease_Implementation()
 {
-	this->CanFired = false;
+	this->bFired = false;
 }
 
 void AWeaponBase::OffVisible_Implementation()
@@ -118,14 +122,8 @@ void AWeaponBase::BeginOverlapRecieve(UPrimitiveComponent* OverlappedComponent, 
 		}
 	}
 
-	if (this->WidgetComponent)
-	{
-		this->WidgetComponent->SetVisibility(true);
-	}
-	if (this->SkeletalMeshComponent)
-	{
-		this->SkeletalMeshComponent->SetRenderCustomDepth(true);
-	}
+	this->WidgetComponent->SetVisibility(true);
+	this->SkeletalMeshComponent->SetRenderCustomDepth(true);
 	SetPickable(true);
 
 	APlayerController* PlayerController = UGameplayStatics::GetPlayerController(this, 0);
@@ -146,14 +144,8 @@ void AWeaponBase::EndOverlapRecieve(UPrimitiveComponent* OverlappedComp, AActor*
 		}
 	}
 
-	if (this->WidgetComponent)
-	{
-		this->WidgetComponent->SetVisibility(false);
-	}
-	if (this->SkeletalMeshComponent)
-	{
-		this->SkeletalMeshComponent->SetRenderCustomDepth(false);
-	}
+	this->WidgetComponent->SetVisibility(false);
+	this->SkeletalMeshComponent->SetRenderCustomDepth(false);
 	SetPickable(false);
 }
 
@@ -170,7 +162,7 @@ void AWeaponBase::OnFirePressedInternal()
 	}
 
 	// current weapon reloading...
-	if (this->IsReload)
+	if (this->bReload)
 	{
 		return;
 	}
@@ -208,7 +200,7 @@ void AWeaponBase::OnFirePressedInternal()
 		ECollisionChannel::ECC_Visibility, 
 		fCollisionQueryParams);
 
-	FTransform MuzzleTransform = GetSkeletalMeshComponent()->GetSocketTransform(GetMuzzleSocket());
+	FTransform MuzzleTransform = GetMuzzleTransform();
 	const FVector MuzzleLocation  = MuzzleTransform.GetLocation();
 	const FRotator MuzzleRotation = FRotator(MuzzleTransform.GetRotation());
 
@@ -265,7 +257,7 @@ void AWeaponBase::OnFirePressedInternal()
 	UParticleSystemComponent* MuzzleFlashEmitterComponent = UGameplayStatics::SpawnEmitterAttached(
 		MuzzleFlashEmitterTemplate, 
 		GetSkeletalMeshComponent(),
-		GetMuzzleSocket(), 
+		MuzzleSocketName, 
 		MuzzleLocation,
 		MuzzleRotation,
 		EAttachLocation::KeepWorldPosition, 
@@ -313,7 +305,7 @@ void AWeaponBase::OnFireReleaseInternal()
 
 void AWeaponBase::OnReloadInternal()
 {
-	this->CanFired = false;
+	this->bFired = false;
 	this->CharacterOwner->ReloadActionMontage();
 	this->NeededAmmo = (WeaponItemInfo.ClipType - WeaponItemInfo.CurrentAmmo);
 
