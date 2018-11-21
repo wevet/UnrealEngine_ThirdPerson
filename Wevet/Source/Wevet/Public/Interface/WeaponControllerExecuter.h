@@ -47,6 +47,7 @@ enum class EWeaponItemType : uint8
 	Pistol UMETA(DisplayName = "Pistol"),
 	Rifle  UMETA(DisplayName = "Rifle"),
 	Sniper UMETA(DisplayName = "Sniper"),
+	Bomb   UMETA(DisplayName = "Bomb"),
 };
 
 

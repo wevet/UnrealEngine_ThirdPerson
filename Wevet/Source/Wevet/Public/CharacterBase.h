@@ -93,13 +93,13 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "ACharacterBase|Variable")
 	const bool HasCrouch() 
 	{
-		return this->IsCrouch; 
+		return this->bCrouch; 
 	}
 
 	UFUNCTION(BlueprintCallable, Category = "ACharacterBase|Variable")
 	const bool HasSprint() 
 	{
-		return this->IsSprint; 
+		return this->bSprint; 
 	}
 
 	UFUNCTION(BlueprintCallable, Category = "ACharacterBase|Variable")
@@ -151,10 +151,13 @@ protected:
 	UAnimMontage* ReloadMontage;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ACharacterBase|Variable")
-	bool IsCrouch;
+	bool bCrouch;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ACharacterBase|Variable")
-	bool IsSprint;
+	bool bSprint;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ACharacterBase|Variable")
+	bool bDied;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ACharacterBase|Variable")
 	float BaseTurnRate;
@@ -171,10 +174,12 @@ protected:
 	UPROPERTY(EditAnywhere, Instanced, Category = "ACharacterBase|CharacterModel")
 	UCharacterModel* CharacterModel;
 	float DefaultMaxSpeed;
-	bool DieSuccessCalled;
 
-	// get unequip weapon
+	/* get unequip weapon */
 	AWeaponBase* GetUnEquipWeapon();
+
+	/* same weaponList */
+	const bool SameWeapon(AWeaponBase* Weapon);
 
 // blueprint native event
 public:

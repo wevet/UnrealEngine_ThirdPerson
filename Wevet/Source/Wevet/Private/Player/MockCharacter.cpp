@@ -139,7 +139,7 @@ void AMockCharacter::Reload()
 
 void AMockCharacter::Jump()
 {
-	if (Super::IsCrouch)
+	if (Super::bCrouch)
 	{
 		return;
 	}
@@ -155,9 +155,9 @@ void AMockCharacter::OnCrouch()
 {
 	Super::OnCrouch();
 
-	if (Super::IsCrouch)
+	if (Super::bCrouch)
 	{
-		Super::IsSprint = false;
+		Super::bSprint = false;
 		MovementSpeed = this->DefaultMaxSpeed *0.5f;
 		GetCharacterMovement()->MaxWalkSpeed = MovementSpeed;
 	}
@@ -184,7 +184,7 @@ void AMockCharacter::UpdateWeapon()
 // death
 void AMockCharacter::Die_Implementation()
 {
-	if (Super::DieSuccessCalled)
+	if (Super::bDied)
 	{
 		return;
 	}
@@ -214,6 +214,12 @@ void AMockCharacter::OnPickupItemExecuter_Implementation(AActor * Actor)
 	AWeaponBase* Weapon = Cast<AWeaponBase>(Actor);
 	if (Weapon) 
 	{
+		const bool bSame = Super::SameWeapon(Weapon);
+		if (bSame)
+		{
+			return;
+		}
+
 		FWeaponItemInfo WeaponItemInfo = Weapon->WeaponItemInfo;
 		if (WeaponItemInfo.WeaponItemType == EWeaponItemType::None)
 		{

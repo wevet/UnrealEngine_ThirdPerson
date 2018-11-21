@@ -113,7 +113,7 @@ void AAICharacterBase::Tick(float DeltaTime)
 
 void AAICharacterBase::Die_Implementation()
 {
-	if (Super::DieSuccessCalled)
+	if (Super::bDied)
 	{
 		return;
 	}

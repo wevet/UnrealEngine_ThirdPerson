@@ -6,15 +6,15 @@
 
 ACharacterBase::ACharacterBase(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer),
-	DieSuccessCalled(false),
 	BaseTurnRate(45.f),
 	BaseLookUpRate(45.f),
 	MovementSpeed(300.f),
 	HeadSocketName(FName(TEXT("Head")))
 {
 	PrimaryActorTick.bCanEverTick = true;
-	IsCrouch = false;
-	IsSprint = false;
+	bCrouch = false;
+	bSprint = false;
+	bDied   = false;
 	PawnNoiseEmitterComponent = ObjectInitializer.CreateDefaultSubobject<UPawnNoiseEmitterComponent>(this, TEXT("PawnNoiseEmitterComponent"));
 	AudioComponent = ObjectInitializer.CreateDefaultSubobject<UAudioComponent>(this, TEXT("AudioComponent"));
 	AudioComponent->bAutoActivate = false;
@@ -65,40 +65,40 @@ void ACharacterBase::StopJumping()
 
 void ACharacterBase::OnSprint()
 {
-	this->IsSprint = !this->IsSprint;
+	this->bSprint = !this->bSprint;
 
 	// now crouching slow speed
-	if (this->IsCrouch)
+	if (this->bCrouch)
 	{
-		this->IsSprint = false;
+		this->bSprint = false;
 	}
-	MovementSpeed = this->IsSprint ? this->DefaultMaxSpeed : this->DefaultMaxSpeed *0.5f;
+	MovementSpeed = this->bSprint ? this->DefaultMaxSpeed : this->DefaultMaxSpeed *0.5f;
 	GetCharacterMovement()->MaxWalkSpeed = MovementSpeed;
 }
 
 void ACharacterBase::OnCrouch()
 {
-	this->IsCrouch = !this->IsCrouch;
+	this->bCrouch = !this->bCrouch;
 }
 
 void ACharacterBase::OnReleaseItemExecuter_Implementation()
 {
-	//UE_LOG(LogTemp, Warning, TEXT("Release"));
+	//
 }
 
-void ACharacterBase::OnPickupItemExecuter_Implementation(AActor * Actor)
+void ACharacterBase::OnPickupItemExecuter_Implementation(AActor* Actor)
 {
-	//UE_LOG(LogTemp, Warning, TEXT("Pick : %s"), *(Actor->GetName()));
+	//
 }
 
 void ACharacterBase::NotifyEquip_Implementation()
 {
-	//UE_LOG(LogTemp, Warning, TEXT("NotifyEquip : %s"), *(Super::GetName()));
+	//
 }
 
 bool ACharacterBase::IsDeath_Implementation()
 {
-	if (this->DieSuccessCalled || this->CharacterModel == nullptr)
+	if (this->bDied || this->CharacterModel == nullptr)
 	{
 		return true;
 	}
@@ -135,7 +135,7 @@ void ACharacterBase::OnTakeDamage_Implementation(FName BoneName, float Damage, A
 void ACharacterBase::Die_Implementation()
 {
 	// twice called
-	if (this->DieSuccessCalled)
+	if (this->bDied)
 	{
 		return;
 	}
@@ -182,7 +182,7 @@ void ACharacterBase::Die_Implementation()
 			SpawningObject->OnVisible_Implementation();
 		}
 	}
-	this->DieSuccessCalled = true;
+	this->bDied = true;
 }
 
 void ACharacterBase::Equipment_Implementation()
@@ -203,6 +203,7 @@ void ACharacterBase::UnEquipment_Implementation()
 	this->SelectedWeapon->OnEquip(false);
 }
 
+// WeaponList Find Category
 AWeaponBase* ACharacterBase::FindByWeapon(EWeaponItemType WeaponItemType)
 {
 	if (WeaponList.Num() <= 0 || this->SelectedWeapon == nullptr) 
@@ -215,7 +216,7 @@ AWeaponBase* ACharacterBase::FindByWeapon(EWeaponItemType WeaponItemType)
 		return this->SelectedWeapon;
 	}
 
-	for (AWeaponBase*& Weapon : this->WeaponList)
+	for (AWeaponBase*& Weapon : WeaponList)
 	{
 		if (Weapon && Weapon->HasMatchTypes(WeaponItemType))
 		{
@@ -225,6 +226,7 @@ AWeaponBase* ACharacterBase::FindByWeapon(EWeaponItemType WeaponItemType)
 	return nullptr;
 }
 
+// unequip weapon?
 AWeaponBase* ACharacterBase::GetUnEquipWeapon()
 {
 	if (WeaponList.Num() <= 0)
@@ -241,6 +243,22 @@ AWeaponBase* ACharacterBase::GetUnEquipWeapon()
 	return nullptr;
 }
 
+// pick already sameweapon category ?
+const bool ACharacterBase::SameWeapon(AWeaponBase* Weapon)
+{
+	AWeaponBase* InWeapon = FindByWeapon(Weapon->WeaponItemInfo.WeaponItemType);
+	if (InWeapon) 
+	{
+		bool bSame = InWeapon->WeaponItemInfo.WeaponItemType == Weapon->WeaponItemInfo.WeaponItemType;
+		if (bSame)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("SameWeapon : %s"), *(InWeapon->GetName()));
+		}
+		return bSame;
+	}
+
+	return false;
+}
 
 void ACharacterBase::EquipmentActionMontage()
 {
