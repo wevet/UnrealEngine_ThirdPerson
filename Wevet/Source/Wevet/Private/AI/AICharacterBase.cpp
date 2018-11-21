@@ -67,45 +67,55 @@ void AAICharacterBase::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 
 	UWorld* World = GetWorld();
-	if (World)
+	if (World == nullptr)
 	{
-		bool bReload = false;
-		if (bSensedTarget)
-		{
-			if (Super::SelectedWeapon && Super::SelectedWeapon->bReload)
-			{
-				bReload = true;
-			}
-		}
+		return;
+	}
 
-		if (bReload)
+	bool bReload = false;
+	if (bSensedTarget)
+	{
+		if (Super::SelectedWeapon && Super::SelectedWeapon->bReload)
 		{
-			// weapon reload
-			return;
+			bReload = true;
 		}
+	}
 
-		if (bSensedTarget
-			&& (World->TimeSeconds - LastSeenTime) > SenseTimeOut
-			&& (World->TimeSeconds - LastHeardTime) > SenseTimeOut)
+	if (bReload)
+	{
+		// weapon reload
+		return;
+	}
+
+	// target died ?
+	if (TargetCharacter && TargetCharacter->IsDeath_Implementation())
+	{
+		bSensedTarget = false;
+		SetTargetActor(nullptr);
+		Super::EquipmentActionMontage();
+	}
+
+	if (bSensedTarget
+		&& (World->TimeSeconds - LastSeenTime) > SenseTimeOut
+		&& (World->TimeSeconds - LastHeardTime) > SenseTimeOut)
+	{
+		bSensedTarget = false;
+		SetTargetActor(nullptr);
+		Super::EquipmentActionMontage();
+	}
+	else
+	{
+		if (HasEquipWeapon() && HasEnemyFound())
 		{
-			bSensedTarget = false;
-			SetTargetActor(nullptr);
-			Super::EquipmentActionMontage();
-		}
-		else
-		{
-			if (HasEquipWeapon() && HasEnemyFound())
+			BulletInterval += DeltaTime;
+			if (BulletInterval >= BulletDelay)
 			{
-				BulletInterval += DeltaTime;
-				if (BulletInterval >= BulletDelay)
-				{
-					BP_FirePressReceive();
-					BulletInterval = 0.f;
-					// repeat sense target
-					LastSeenTime = World->GetTimeSeconds();
-					LastHeardTime = World->GetTimeSeconds();
-					bSensedTarget = true;
-				}
+				BP_FirePressReceive();
+				BulletInterval = 0.f;
+				// repeat sense target
+				LastSeenTime = World->GetTimeSeconds();
+				LastHeardTime = World->GetTimeSeconds();
+				bSensedTarget = true;
 			}
 		}
 	}
@@ -122,7 +132,7 @@ void AAICharacterBase::Die_Implementation()
 	{
 		WidgetComponent->SetVisibility(false);
 	}
-	this->Target = nullptr;
+	this->TargetCharacter = nullptr;
 	Super::Die_Implementation();
 
 }
@@ -160,9 +170,9 @@ void AAICharacterBase::OnTakeDamage_Implementation(FName BoneName, float Damage,
 	}
 }
 
-void AAICharacterBase::SetTargetActor(AActor* Actor)
+void AAICharacterBase::SetTargetActor(ACharacterBase* NewCharacter)
 {
-	this->Target = Actor;
+	this->TargetCharacter = NewCharacter;
 	AAIControllerBase* AIController = Cast<AAIControllerBase>(GetController());
 	if (AIController)
 	{

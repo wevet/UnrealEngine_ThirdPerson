@@ -77,11 +77,6 @@ void AWeaponBase::SetEquip(const bool Equip)
 	this->bEquip = Equip;
 }
 
-void AWeaponBase::SetPickable(const bool Pick)
-{
-	this->bPick = Pick;
-}
-
 void AWeaponBase::SetReload(const bool Reload)
 {
 	this->bReload = Reload;
@@ -124,7 +119,6 @@ void AWeaponBase::BeginOverlapRecieve(UPrimitiveComponent* OverlappedComponent, 
 
 	this->WidgetComponent->SetVisibility(true);
 	this->SkeletalMeshComponent->SetRenderCustomDepth(true);
-	SetPickable(true);
 
 	APlayerController* PlayerController = UGameplayStatics::GetPlayerController(this, 0);
 	if (PlayerController)
@@ -146,7 +140,6 @@ void AWeaponBase::EndOverlapRecieve(UPrimitiveComponent* OverlappedComp, AActor*
 
 	this->WidgetComponent->SetVisibility(false);
 	this->SkeletalMeshComponent->SetRenderCustomDepth(false);
-	SetPickable(false);
 }
 
 void AWeaponBase::OnFirePressedInternal()
@@ -200,7 +193,7 @@ void AWeaponBase::OnFirePressedInternal()
 		ECollisionChannel::ECC_Visibility, 
 		fCollisionQueryParams);
 
-	FTransform MuzzleTransform = GetMuzzleTransform();
+	const FTransform MuzzleTransform = GetMuzzleTransform();
 	const FVector MuzzleLocation  = MuzzleTransform.GetLocation();
 	const FRotator MuzzleRotation = FRotator(MuzzleTransform.GetRotation());
 

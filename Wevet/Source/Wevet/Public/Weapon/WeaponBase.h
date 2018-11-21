@@ -88,7 +88,6 @@ public:
 	}
 
 	virtual void SetEquip(const bool Equip);
-	virtual void SetPickable(const bool Pick);
 	virtual void SetReload(const bool Reload);
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "AWeaponBase|Variable")
@@ -99,9 +98,6 @@ public:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AWeaponBase|Variable")
 	bool bFired;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AWeaponBase|Variable")
-	bool bPick;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AWeaponBase|Variable")
 	bool bReload;

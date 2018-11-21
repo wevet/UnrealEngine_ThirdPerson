@@ -39,7 +39,7 @@ public:
 	virtual void Die_Implementation() override;
 	virtual void NotifyEquip_Implementation() override;
 	virtual void OnTakeDamage_Implementation(FName BoneName, float Damage, AActor* Actor) override;
-	virtual void SetTargetActor(AActor* Actor);
+	virtual void SetTargetActor(ACharacterBase* NewCharacter);
 	virtual void UpdateWeaponEvent();
 	virtual void CreateWayPointList(TArray<AWayPointBase*>& OutWayPointList);
 
@@ -54,15 +54,9 @@ public:
 	}
 
 	UFUNCTION(BlueprintCallable, Category = "AAICharacterBase|Variable")
-	virtual AActor* GetTarget() const
-	{
-		return this->Target;
-	}
-
-	UFUNCTION(BlueprintCallable, Category = "AAICharacterBase|Variable")
 	bool HasEnemyFound() const
 	{
-		if (Target)
+		if (TargetCharacter)
 		{
 			return true;
 		}
@@ -76,7 +70,7 @@ public:
 	virtual void InitializePosses();
 
 protected:
-	AActor* Target;
+	ACharacterBase* TargetCharacter;
 
 	virtual void BeginPlay() override;
 	virtual FVector BulletTraceRelativeLocation() const override;
@@ -96,11 +90,7 @@ protected:
 	UFUNCTION(BlueprintCallable, Category = "AAICharacterBase|Target")
 	ACharacterBase* GetTargetCharacter() const
 	{
-		if (Target == nullptr)
-		{
-			return nullptr;
-		}
-		return Cast<ACharacterBase>(Target);
+		return TargetCharacter;
 	}
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "AAICharacterBase|Variable")
