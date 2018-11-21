@@ -13,9 +13,8 @@ ACharacterBase::ACharacterBase(const FObjectInitializer& ObjectInitializer)
 	HeadSocketName(FName(TEXT("Head")))
 {
 	PrimaryActorTick.bCanEverTick = true;
-	this->IsCrouch = false;
-	this->IsSprint = false;
-	this->IsEquipWeapon = false;
+	IsCrouch = false;
+	IsSprint = false;
 	PawnNoiseEmitterComponent = ObjectInitializer.CreateDefaultSubobject<UPawnNoiseEmitterComponent>(this, TEXT("PawnNoiseEmitterComponent"));
 	AudioComponent = ObjectInitializer.CreateDefaultSubobject<UAudioComponent>(this, TEXT("AudioComponent"));
 	AudioComponent->bAutoActivate = false;
@@ -144,6 +143,7 @@ void ACharacterBase::Die_Implementation()
 	if (this->SelectedWeapon)
 	{
 		this->SelectedWeapon->OnFireRelease_Implementation();
+		this->SelectedWeapon->SetCharacterOwner(nullptr);
 	}
 	Super::GetMesh()->SetAllBodiesSimulatePhysics(true);
 	Super::GetMesh()->SetSimulatePhysics(true);
@@ -177,14 +177,12 @@ void ACharacterBase::Die_Implementation()
 			FActorSpawnParameters SpawnInfo;
 			SpawnInfo.Owner = NULL;
 			SpawnInfo.Instigator = NULL;
-			AWeaponBase* SpawningObject = World->SpawnActor<AWeaponBase>(WeaponClass, Transform.GetLocation(), Super::GetActorRotation(), SpawnInfo);
+			AWeaponBase* const SpawningObject = World->SpawnActor<AWeaponBase>(WeaponClass, Transform.GetLocation(), Super::GetActorRotation(), SpawnInfo);
 			SpawningObject->WeaponItemInfo.CopyTo(WeaponItemInfo);
 			SpawningObject->OnVisible_Implementation();
 		}
 	}
-
-	DieSuccessCalled = true;
-
+	this->DieSuccessCalled = true;
 }
 
 void ACharacterBase::Equipment_Implementation()
@@ -193,8 +191,7 @@ void ACharacterBase::Equipment_Implementation()
 	{
 		return;
 	}
-	this->IsEquipWeapon = true;
-	this->SelectedWeapon->OnEquip(this->IsEquipWeapon);
+	this->SelectedWeapon->OnEquip(true);
 }
 
 void ACharacterBase::UnEquipment_Implementation()
@@ -203,44 +200,71 @@ void ACharacterBase::UnEquipment_Implementation()
 	{
 		return;
 	}
-	this->IsEquipWeapon = false;
-	this->SelectedWeapon->OnEquip(this->IsEquipWeapon);
+	this->SelectedWeapon->OnEquip(false);
 }
 
 AWeaponBase* ACharacterBase::FindByWeapon(EWeaponItemType WeaponItemType)
 {
-	if (WeaponList.Num() <= 0 || SelectedWeapon == nullptr) 
+	if (WeaponList.Num() <= 0 || this->SelectedWeapon == nullptr) 
 	{
 		return nullptr;
 	}
 
+	if (this->SelectedWeapon && this->SelectedWeapon->HasMatchTypes(WeaponItemType))
+	{
+		return this->SelectedWeapon;
+	}
+
 	for (AWeaponBase*& Weapon : this->WeaponList)
 	{
-		if (SelectedWeapon)
+		if (Weapon && Weapon->HasMatchTypes(WeaponItemType))
 		{
-			if (SelectedWeapon->HasMatchTypes(WeaponItemType))
-			{
-				return SelectedWeapon;
-			}
+			return Weapon;
 		}
-		else 
-		{
-			if (Weapon && Weapon->HasMatchTypes(WeaponItemType))
-			{
-				return Weapon;
-			}
-		}
-
 	}
 	return nullptr;
 }
 
-void ACharacterBase::EquipmentMontage()
+AWeaponBase* ACharacterBase::GetUnEquipWeapon()
+{
+	if (WeaponList.Num() <= 0)
+	{
+		return nullptr;
+	}
+	for (AWeaponBase* &Weapon : WeaponList)
+	{
+		if (Weapon->Equip == false)
+		{
+			return Weapon;
+		}
+	}
+	return nullptr;
+}
+
+
+void ACharacterBase::EquipmentActionMontage()
 {
 	if (this->WeaponList.Num() <= 0)
 	{
 		return;
 	}
-	PlayAnimMontage(EquipMontage, 1.6f);
+	PlayAnimMontage(this->EquipMontage, 1.6f);
 }
 
+void ACharacterBase::FireActionMontage()
+{
+	if (this->WeaponList.Num() <= 0 || this->SelectedWeapon == nullptr)
+	{
+		return;
+	}
+	PlayAnimMontage(this->FireMontage);
+}
+
+void ACharacterBase::ReloadActionMontage()
+{
+	if (this->WeaponList.Num() <= 0 || this->SelectedWeapon == nullptr)
+	{
+		return;
+	}
+	PlayAnimMontage(this->ReloadMontage);
+}

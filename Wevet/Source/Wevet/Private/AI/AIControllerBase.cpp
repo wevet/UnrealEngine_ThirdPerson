@@ -51,7 +51,7 @@ void AAIControllerBase::Possess(APawn* Pawn)
 		}
 
 		AICharacterOwner->InitializePosses();
-		WayPointList = AICharacterOwner->GetWayPointList();
+		AICharacterOwner->CreateWayPointList(WayPointList);
 		BehaviorTreeComponent->StartTree(*AICharacterOwner->BehaviorTree);
 	}
 }
@@ -67,11 +67,17 @@ FGenericTeamId AAIControllerBase::GetGenericTeamId() const
 	return PTG_TEAM_ID_ENEMY;
 }
 
-void AAIControllerBase::Patrolling_Implementation() {}
+void AAIControllerBase::Patrolling_Implementation() 
+{
+}
 
-void AAIControllerBase::CheckEnemySighting_Implementation() {}
+void AAIControllerBase::CheckEnemySighting_Implementation() 
+{
+}
 
-void AAIControllerBase::Hunting_Implementation() {}
+void AAIControllerBase::Hunting_Implementation() 
+{
+}
 
 AWayPointBase* AAIControllerBase::GetRandomAtWayPoint()
 {

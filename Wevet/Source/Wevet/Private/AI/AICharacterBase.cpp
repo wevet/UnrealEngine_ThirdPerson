@@ -29,8 +29,7 @@ AAICharacterBase::AAICharacterBase(const FObjectInitializer& ObjectInitializer)
 	WidgetComponent->SetupAttachment(GetMesh());
 	WidgetComponent->SetDrawSize(FVector2D(200.f, 70.f));
 	WidgetComponent->SetWorldLocation(FVector(0.f, 0.f, 230.f));
-	const FRotator Rot = FRotator::MakeFromEuler(FVector(0.f, 0.f, 90.f));
-	WidgetComponent->SetWorldRotation(Rot);
+	WidgetComponent->SetWorldRotation(FRotator::MakeFromEuler(FVector(0.f, 0.f, 90.f)));
 }
 
 void AAICharacterBase::OnConstruction(const FTransform & Transform)
@@ -47,18 +46,20 @@ void AAICharacterBase::BeginPlay()
 {
 	Super::BeginPlay();
 
-	if (PawnSensingComponent && PawnSensingComponent->IsValidLowLevel())
+	if (!ensure(PawnSensingComponent)) 
 	{
-		PawnSensingComponent->OnSeePawn.AddDynamic(this, &AAICharacterBase::OnSeePawnRecieve);
-		PawnSensingComponent->OnHearNoise.AddDynamic(this, &AAICharacterBase::OnHearNoiseRecieve);
+		return;
 	}
+	PawnSensingComponent->OnSeePawn.AddDynamic(this, &AAICharacterBase::OnSeePawnRecieve);
+	PawnSensingComponent->OnHearNoise.AddDynamic(this, &AAICharacterBase::OnHearNoiseRecieve);
 
-	if (WidgetComponent && WidgetComponent->IsValidLowLevel())
+	if (!ensure(WidgetComponent)) 
 	{
-		UAIUserWidgetBase* AIWidget = Cast<UAIUserWidgetBase>(WidgetComponent->GetUserWidgetObject());
-		check(AIWidget);
-		AIWidget->Init(this);
+		return;
 	}
+	UAIUserWidgetBase* AIWidget = Cast<UAIUserWidgetBase>(WidgetComponent->GetUserWidgetObject());
+	check(AIWidget);
+	AIWidget->Init(this);
 }
 
 void AAICharacterBase::Tick(float DeltaTime)
@@ -71,7 +72,7 @@ void AAICharacterBase::Tick(float DeltaTime)
 		bool bReload = false;
 		if (bSensedTarget)
 		{
-			if (SelectedWeapon->IsReload)
+			if (Super::SelectedWeapon && Super::SelectedWeapon->IsReload)
 			{
 				bReload = true;
 			}
@@ -89,11 +90,11 @@ void AAICharacterBase::Tick(float DeltaTime)
 		{
 			bSensedTarget = false;
 			SetTargetActor(nullptr);
-			Super::EquipmentMontage();
+			Super::EquipmentActionMontage();
 		}
 		else
 		{
-			if (Super::IsEquipWeapon && HasEnemyFound())
+			if (HasEquipWeapon() && HasEnemyFound())
 			{
 				BulletInterval += DeltaTime;
 				if (BulletInterval >= BulletDelay)
@@ -170,15 +171,9 @@ void AAICharacterBase::SetTargetActor(AActor* Actor)
 	UE_LOG(LogTemp, Warning, TEXT("SeeActor : %s"), HasEnemyFound() ? TEXT("true") : TEXT("false"));
 }
 
-AMockCharacter* AAICharacterBase::GetPlayerCharacter() const
-{
-	return Cast<AMockCharacter>(GetTarget());
-}
-
 void AAICharacterBase::InitializePosses()
 {
 	UpdateWeaponEvent();
-	UpdateWayPointEvent();
 }
 
 FVector AAICharacterBase::BulletTraceRelativeLocation() const
@@ -215,45 +210,31 @@ void AAICharacterBase::UpdateWeaponEvent()
 
 	// setup assets
 	Super::SelectedWeapon->SetCharacterOwner(this);
-	Super::SelectedWeapon->SetFireSoundAsset(Super::FireSound);
-	Super::SelectedWeapon->SetFireAnimMontageAsset(Super::FireMontage);
-	Super::SelectedWeapon->SetReloadAnimMontageAsset(Super::ReloadMontage);
 	Super::SelectedWeapon->GetSphereComponent()->DestroyComponent();
 	Super::SelectedWeapon->OffVisible_Implementation();
 
 	FName SocketName = Super::SelectedWeapon->WeaponItemInfo.UnEquipSocketName;
 	Super::SelectedWeapon->AttachToComponent(Super::GetMesh(), { EAttachmentRule::SnapToTarget, true }, SocketName);
 
-	if (!Super::WeaponList.Contains(Super::SelectedWeapon))
+	if (Super::WeaponList.Contains(Super::SelectedWeapon) == false)
 	{
-		Super::WeaponList.Add(Super::SelectedWeapon);
+		Super::WeaponList.Emplace(Super::SelectedWeapon);
 	}
 }
 
-void AAICharacterBase::UpdateWayPointEvent()
+void AAICharacterBase::CreateWayPointList(TArray<AWayPointBase*>& OutWayPointList)
 {
-	UWorld* World = GetWorld();
-
-	if (World == nullptr)
-	{
-		return;
-	}
-
 	TArray<AActor*> FoundActor;
-	UGameplayStatics::GetAllActorsOfClass(World, AWayPointBase::StaticClass(), FoundActor);
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), AWayPointBase::StaticClass(), FoundActor);
 
-	for (TActorIterator<AWayPointBase> ActorIterator(World); ActorIterator; ++ActorIterator)
+	for (TActorIterator<AWayPointBase> ActorIterator(GetWorld()); ActorIterator; ++ActorIterator)
 	{
 		AWayPointBase* WayPoint = *ActorIterator;
 		if (WayPoint)
 		{
-			this->WayPointList.Emplace(WayPoint);
+			OutWayPointList.Emplace(WayPoint);
 		}
 	}
-}
-
-void AAICharacterBase::UpdateSensing()
-{
 }
 
 void AAICharacterBase::OnSeePawnRecieve(APawn* OtherPawn)
@@ -267,6 +248,11 @@ void AAICharacterBase::OnSeePawnRecieve(APawn* OtherPawn)
 	{
 		//
 	}
+	else
+	{
+		// bAlready Sense Target
+		return;
+	}
 
 	LastSeenTime = GetWorld()->GetTimeSeconds();
 	bSensedTarget = true;
@@ -275,7 +261,7 @@ void AAICharacterBase::OnSeePawnRecieve(APawn* OtherPawn)
 	if (Player && !Player->IsDeath_Implementation())
 	{
 		SetTargetActor(Player);
-		Super::EquipmentMontage();
+		Super::EquipmentActionMontage();
 	}
 }
 
@@ -290,6 +276,11 @@ void AAICharacterBase::OnHearNoiseRecieve(APawn* OtherActor, const FVector & Loc
 	{
 		//
 	}
+	else
+	{
+		// bAlready Sense Target
+		return;
+	}
 
 	LastHeardTime = GetWorld()->GetTimeSeconds();
 	bSensedTarget = true;
@@ -298,7 +289,7 @@ void AAICharacterBase::OnHearNoiseRecieve(APawn* OtherActor, const FVector & Loc
 	if (Player && !Player->IsDeath_Implementation())
 	{
 		SetTargetActor(Player);
-		Super::EquipmentMontage();
+		Super::EquipmentActionMontage();
 	}
 }
 

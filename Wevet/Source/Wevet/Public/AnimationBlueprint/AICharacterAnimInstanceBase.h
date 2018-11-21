@@ -33,4 +33,5 @@ protected:
 	AAICharacterBase* AICharacterOwner;
 
 	virtual void SetEquip() override;
+	virtual void SetPitch();
 };

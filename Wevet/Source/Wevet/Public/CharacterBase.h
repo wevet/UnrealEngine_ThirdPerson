@@ -26,12 +26,12 @@ public:
 	virtual void OnConstruction(const FTransform& Transform) override;
 	virtual void BeginDestroy() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason);
+	virtual void Tick(float DeltaTime) override;
 
 protected:
 	virtual void BeginPlay() override;
 
 public:
-	virtual void Tick(float DeltaTime) override;
 	virtual void Jump();
 	virtual void StopJumping();
 	virtual void OnSprint();
@@ -76,22 +76,41 @@ public:
 
 public:
 	UFUNCTION(BlueprintCallable, Category = "ACharacterBase|Weapon")
-	AWeaponBase* GetSelectedWeapon() { return this->SelectedWeapon; };
-
-	UFUNCTION(BlueprintCallable, Category = "ACharacterBase|Weapon")
-	const TArray<AWeaponBase*>& GetWeaponList() { return this->WeaponList; };
-
-	UFUNCTION(BlueprintCallable, Category = "ACharacterBase|Weapon")
 	AWeaponBase* FindByWeapon(EWeaponItemType WeaponItemType);
 
-	UFUNCTION(BlueprintCallable, Category = "ACharacterBase|Variable")
-	const bool HasCrouch() { return this->IsCrouch; }
+	UFUNCTION(BlueprintCallable, Category = "ACharacterBase|Weapon")
+	AWeaponBase* GetSelectedWeapon() 
+	{
+		return this->SelectedWeapon; 
+	};
+
+	UFUNCTION(BlueprintCallable, Category = "ACharacterBase|Weapon")
+	const TArray<AWeaponBase*>& GetWeaponList() 
+	{
+		return this->WeaponList; 
+	};
 
 	UFUNCTION(BlueprintCallable, Category = "ACharacterBase|Variable")
-	const bool HasSprint() { return this->IsSprint; }
+	const bool HasCrouch() 
+	{
+		return this->IsCrouch; 
+	}
 
 	UFUNCTION(BlueprintCallable, Category = "ACharacterBase|Variable")
-	const bool HasEquipWeapon() { return this->IsEquipWeapon; }
+	const bool HasSprint() 
+	{
+		return this->IsSprint; 
+	}
+
+	UFUNCTION(BlueprintCallable, Category = "ACharacterBase|Variable")
+	const bool HasEquipWeapon() 
+	{
+		if (SelectedWeapon == nullptr)
+		{
+			return false;
+		}
+		return SelectedWeapon->Equip;
+	}
 
 	UFUNCTION(BlueprintCallable, Category = "ACharacterBase|Variable")
 	float GetHealthToWidget() const 
@@ -132,16 +151,10 @@ protected:
 	UAnimMontage* ReloadMontage;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ACharacterBase|Variable")
-	USoundBase* FireSound;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ACharacterBase|Variable")
 	bool IsCrouch;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ACharacterBase|Variable")
 	bool IsSprint;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ACharacterBase|Variable")
-	bool IsEquipWeapon;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ACharacterBase|Variable")
 	float BaseTurnRate;
@@ -160,6 +173,10 @@ protected:
 	float DefaultMaxSpeed;
 	bool DieSuccessCalled;
 
+	// get unequip weapon
+	AWeaponBase* GetUnEquipWeapon();
+
+// blueprint native event
 public:
 	UFUNCTION(BlueprintImplementableEvent, Category = "ACharacterBase|NativeEvent")
 	void BP_FirePressReceive();
@@ -170,7 +187,10 @@ public:
 	UFUNCTION(BlueprintImplementableEvent, Category = "ACharacterBase|NativeEvent")
 	void BP_ReloadReceive();
 
+// AnimMontage event
 public:
-	virtual void EquipmentMontage();
+	virtual void EquipmentActionMontage();
+	virtual void FireActionMontage();
+	virtual void ReloadActionMontage();
 
 };

@@ -68,21 +68,6 @@ void AWeaponBase::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	Super::EndPlay(EndPlayReason);
 }
 
-void AWeaponBase::SetFireSoundAsset(USoundBase* FireSoundAsset)
-{
-	this->FireSoundAsset = FireSoundAsset;
-}
-
-void AWeaponBase::SetFireAnimMontageAsset(UAnimMontage* FireAnimMontageAsset)
-{
-	this->FireAnimMontageAsset = FireAnimMontageAsset;
-}
-
-void AWeaponBase::SetReloadAnimMontageAsset(UAnimMontage* ReloadAnimMontageAsset)
-{
-	this->ReloadAnimMontageAsset = ReloadAnimMontageAsset;
-}
-
 void AWeaponBase::OnEquip(const bool Equip)
 {
 	this->Equip = Equip;
@@ -199,8 +184,9 @@ void AWeaponBase::OnFirePressedInternal()
 	}
 
 	const float ForwardOffset = 15000.f;
-	const FVector StartLocation = this->CharacterOwner->BulletTraceRelativeLocation();
-	const FVector EndLocation = StartLocation + (this->CharacterOwner->BulletTraceForwardLocation() * ForwardOffset);
+	const FVector ForwardLocation = this->CharacterOwner->BulletTraceForwardLocation();
+	const FVector StartLocation   = this->CharacterOwner->BulletTraceRelativeLocation();
+	const FVector EndLocation     = StartLocation + (ForwardLocation * ForwardOffset);
 
 	FHitResult HitData(ForceInit);
 	FCollisionQueryParams fCollisionQueryParams;
@@ -226,11 +212,11 @@ void AWeaponBase::OnFirePressedInternal()
 	const FVector MuzzleLocation  = MuzzleTransform.GetLocation();
 	const FRotator MuzzleRotation = FRotator(MuzzleTransform.GetRotation());
 
-	UGameplayStatics::PlaySoundAtLocation(World, GetFireSoundAsset(), MuzzleLocation, 1.f, 1.f, 0.f, nullptr, nullptr);
-	this->CharacterOwner->PlayAnimMontage(GetFireAnimMontageAsset());
+	UGameplayStatics::PlaySoundAtLocation(World, FireSoundAsset, MuzzleLocation, 1.f, 1.f, 0.f, nullptr, nullptr);
+	this->CharacterOwner->FireActionMontage();
 	--WeaponItemInfo.CurrentAmmo;
 
-	UGameplayStatics::PlaySoundAtLocation(World, GetFireImpactSoundAsset(), HitData.Location, 1.f, 1.f, 0.f, nullptr, nullptr);
+	UGameplayStatics::PlaySoundAtLocation(World, FireImpactSoundAsset, HitData.Location, 1.f, 1.f, 0.f, nullptr, nullptr);
 	const FVector StartPoint = MuzzleLocation;
 	const FVector EndPoint   = UKismetMathLibrary::SelectVector(HitData.ImpactPoint, HitData.TraceEnd, bSuccess);
 	const FRotator Rotation  = UKismetMathLibrary::FindLookAtRotation(StartPoint, EndPoint);
@@ -271,13 +257,13 @@ void AWeaponBase::OnFirePressedInternal()
 	const FTransform EmitterTransform = UKismetMathLibrary::MakeTransform(HitData.Location, FRotator::ZeroRotator, FVector::ZeroVector);
 	UParticleSystemComponent* ImpactMetalEmitterComponent = UGameplayStatics::SpawnEmitterAtLocation(
 		World, 
-		this->ImpactMetalEmitterTemplate, 
+		ImpactMetalEmitterTemplate, 
 		EmitterTransform, 
 		true);
 
 	// attach muzzleflash emitter
 	UParticleSystemComponent* MuzzleFlashEmitterComponent = UGameplayStatics::SpawnEmitterAttached(
-		this->MuzzleFlashEmitterTemplate, 
+		MuzzleFlashEmitterTemplate, 
 		GetSkeletalMeshComponent(),
 		GetMuzzleSocket(), 
 		MuzzleLocation,
@@ -328,7 +314,7 @@ void AWeaponBase::OnFireReleaseInternal()
 void AWeaponBase::OnReloadInternal()
 {
 	this->CanFired = false;
-	this->CharacterOwner->PlayAnimMontage(GetReloadAnimMontageAsset());
+	this->CharacterOwner->ReloadActionMontage();
 	this->NeededAmmo = (WeaponItemInfo.ClipType - WeaponItemInfo.CurrentAmmo);
 
 	if (WeaponItemInfo.MaxAmmo <= this->NeededAmmo)
@@ -346,5 +332,4 @@ void AWeaponBase::OnReloadInternal()
 void AWeaponBase::SetCharacterOwner(ACharacterBase* InCharacterOwner)
 {
 	this->CharacterOwner = InCharacterOwner;
-	check(this->CharacterOwner != nullptr);
 }

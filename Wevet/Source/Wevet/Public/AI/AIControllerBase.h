@@ -71,12 +71,6 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "AAIControllerBase|Components")
 	AWayPointBase* GetRandomAtWayPoint();
 
-	UFUNCTION(BlueprintCallable, Category = "AAIControllerBase|Components")
-	AMockCharacter* GetPlayerCharacter() const
-	{
-		return this->AICharacterOwner->GetPlayerCharacter();
-	}
-
 	virtual void SetTargetEnemy(APawn* NewTarget);
 	virtual void SetBlackboardBotType(EBotBehaviorType NewType);
 	virtual void SetBlackboardSeeActor(bool InCanSeeActor);

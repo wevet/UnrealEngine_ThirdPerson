@@ -21,9 +21,14 @@ class WEVET_API AWeaponBase : public AActor, public IWeaponControllerExecuter
 public:
 	AWeaponBase(const FObjectInitializer& ObjectInitializer);
 
+public:
+	virtual void Tick(float DeltaTime) override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason);
+
 protected:
 	virtual void BeginPlay() override;
 
+protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Variable")
 	FName MuzzleSocketName;
 
@@ -35,12 +40,6 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Variable")
 	USoundBase* FireImpactSoundAsset;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Variable")
-	UAnimMontage* FireAnimMontageAsset;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Variable")
-	UAnimMontage* ReloadAnimMontageAsset;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Variable")
 	UParticleSystem* MuzzleFlashEmitterTemplate;
@@ -73,13 +72,20 @@ protected:
 	FTimerHandle ReloadTimerHandle;
 
 public:
+	FORCEINLINE class USkeletalMeshComponent* GetSkeletalMeshComponent() const 
+	{ 
+		return this->SkeletalMeshComponent; 
+	}
 
-	virtual void Tick(float DeltaTime) override;
-	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason);
-
-	FORCEINLINE class USkeletalMeshComponent* GetSkeletalMeshComponent() const { return this->SkeletalMeshComponent; }
-	FORCEINLINE class USphereComponent* GetSphereComponent() const { return this->SphereComponent; }
-	FORCEINLINE class UWidgetComponent* GetWidgetComponent() const { return this->WidgetComponent; }
+	FORCEINLINE class USphereComponent* GetSphereComponent() const 
+	{
+		return this->SphereComponent; 
+	}
+	
+	FORCEINLINE class UWidgetComponent* GetWidgetComponent() const 
+	{
+		return this->WidgetComponent; 
+	}
 
 	UFUNCTION(BlueprintCallable, Category = "AWeaponBase|Variable")
 	virtual void OnEquip(const bool Equip);
@@ -90,7 +96,7 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "AWeaponBase|Variable")
 	virtual void SetReload(const bool Reload);
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AWeaponBase|Variable")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "AWeaponBase|Variable")
 	FWeaponItemInfo WeaponItemInfo;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AWeaponBase|Variable")
@@ -139,6 +145,7 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "AWeaponBase|API")
 	virtual void OnFireReleaseInternal();
 
+	UFUNCTION(BlueprintCallable, Category = "AWeaponBase|API")
 	virtual void OnReloadInternal();
 
 	FName GetMuzzleSocket() const { return this->MuzzleSocketName; }
@@ -147,14 +154,6 @@ public:
 	{ 
 		return this->SkeletalMeshComponent->GetSocketTransform(this->GetMuzzleSocket()); 
 	}
-
-	virtual void SetFireSoundAsset(USoundBase* FireSoundAsset);
-	virtual void SetFireAnimMontageAsset(UAnimMontage* FireAnimMontageAsset);
-	virtual void SetReloadAnimMontageAsset(UAnimMontage* ReloadAnimMontageAsset);
-	USoundBase* GetFireSoundAsset() const { return this->FireSoundAsset; }
-	USoundBase* GetFireImpactSoundAsset() const { return this->FireImpactSoundAsset; }
-	UAnimMontage* GetFireAnimMontageAsset() const  { return this->FireAnimMontageAsset;  }
-	UAnimMontage* GetReloadAnimMontageAsset() const { return this->ReloadAnimMontageAsset; }
 
 	bool HasMatchTypes(EWeaponItemType InWeaponItemType) const
 	{

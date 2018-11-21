@@ -15,18 +15,7 @@ EBTNodeResult::Type UBTTask_FindBotWaypoint::ExecuteTask(UBehaviorTreeComponent&
 
 	if (AIController)
 	{
-		AActor* NewWaypoint = nullptr;
-
-		TArray<AActor*> AllWaypoints;
-		UGameplayStatics::GetAllActorsOfClass(AIController, AWayPointBase::StaticClass(), AllWaypoints);
-
-		if (AllWaypoints.Num() <= 0)
-		{
-			return EBTNodeResult::Failed;
-		}
-
-		NewWaypoint = AllWaypoints[FMath::RandRange(0, AllWaypoints.Num() - 1)];
-
+		AWayPointBase* NewWaypoint = AIController->GetRandomAtWayPoint();
 		if (NewWaypoint)
 		{
 			OwnerComp.GetBlackboardComponent()->SetValue<UBlackboardKeyType_Object>(BlackboardKey.GetSelectedKeyID(), NewWaypoint);

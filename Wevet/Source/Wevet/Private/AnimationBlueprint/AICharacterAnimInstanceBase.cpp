@@ -21,6 +21,11 @@ void UAICharacterAnimInstanceBase::NativeUpdateAnimation(float DeltaTimeX)
 {
 	Super::NativeUpdateAnimation(DeltaTimeX);
 	this->AICharacterOwner = Cast<AAICharacterBase>(this->OwningPawn);
+
+	if (this->IsEquip)
+	{
+		SetPitch();
+	}
 }
 
 void UAICharacterAnimInstanceBase::SetEquip()
@@ -30,3 +35,14 @@ void UAICharacterAnimInstanceBase::SetEquip()
 		this->IsEquip = (this->AICharacterOwner->HasEnemyFound() && this->AICharacterOwner->HasEquipWeapon());
 	}
 }
+
+void UAICharacterAnimInstanceBase::SetPitch()
+{
+	if (this->AICharacterOwner == nullptr)
+	{
+		return;
+	}
+	// @TODO AI LookAt 
+}
+
+

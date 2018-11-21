@@ -24,48 +24,40 @@ class WEVET_API AAICharacterBase : public ACharacterBase
 
 public:
 	AAICharacterBase(const FObjectInitializer& ObjectInitializer);
-
 	virtual void OnConstruction(const FTransform& Transform) override;
-
 	virtual void PostInitializeComponents() override;
-
 	virtual void Tick(float DeltaTime) override;
 
-	virtual void Die_Implementation() override;
-
-	virtual void NotifyEquip_Implementation() override;
-
-	virtual void OnTakeDamage_Implementation(FName BoneName, float Damage, AActor* Actor) override;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AAICharacterBase|Variable")
+protected:
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Components, meta = (AllowPrivateAccess = "true"))
 	UPawnSensingComponent* PawnSensingComponent;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AAICharacterBase|Variable")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Components, meta = (AllowPrivateAccess = "true"))
 	UWidgetComponent* WidgetComponent;
 
-	UFUNCTION(BlueprintCallable, Category = "AAICharacterBase|Variable")
+public:
+	virtual void Die_Implementation() override;
+	virtual void NotifyEquip_Implementation() override;
+	virtual void OnTakeDamage_Implementation(FName BoneName, float Damage, AActor* Actor) override;
 	virtual void SetTargetActor(AActor* Actor);
+	virtual void UpdateWeaponEvent();
+	virtual void CreateWayPointList(TArray<AWayPointBase*>& OutWayPointList);
+
+	FORCEINLINE class UPawnSensingComponent* GetPawnSensingComponent() const
+	{
+		return this->PawnSensingComponent;
+	}
+
+	FORCEINLINE class UWidgetComponent* GetWidgetComponent() const
+	{
+		return this->WidgetComponent;
+	}
 
 	UFUNCTION(BlueprintCallable, Category = "AAICharacterBase|Variable")
-	virtual AActor* GetTarget()const
+	virtual AActor* GetTarget() const
 	{
 		return this->Target;
 	}
-
-	UFUNCTION(BlueprintCallable, Category = "AAICharacterBase|Variable")
-	virtual AMockCharacter* GetPlayerCharacter() const;
-
-	UFUNCTION(BlueprintCallable, Category = "AAICharacterBase|Variable")
-	const TArray<AWayPointBase*>& GetWayPointList()
-	{
-		return this->WayPointList;
-	}
-
-	UFUNCTION(BlueprintCallable, Category = "AAICharacterBase|Variable")
-	virtual void UpdateWeaponEvent();
-
-	UFUNCTION(BlueprintCallable, Category = "AAICharacterBase|Variable")
-	virtual void UpdateWayPointEvent();
 
 	UFUNCTION(BlueprintCallable, Category = "AAICharacterBase|Variable")
 	bool HasEnemyFound() const
@@ -84,16 +76,11 @@ public:
 	virtual void InitializePosses();
 
 protected:
-	AActor * Target;
+	AActor* Target;
 
 	virtual void BeginPlay() override;
 	virtual FVector BulletTraceRelativeLocation() const override;
 	virtual FVector BulletTraceForwardLocation() const override;
-
-	virtual void UpdateSensing();
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AAICharacterBase|Variable")
-	TArray<AWayPointBase*> WayPointList;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AAICharacterBase|Variable")
 	TSubclassOf<class AWeaponBase> SpawnWeapon;
@@ -103,6 +90,18 @@ protected:
 
 	UFUNCTION(BlueprintCallable, Category = "AAICharacterBase|PawnSensing")
 	virtual	void OnHearNoiseRecieve(APawn *OtherActor, const FVector &Location, float Volume);
+
+	// @NOTE
+	// for Animation Blueprint
+	UFUNCTION(BlueprintCallable, Category = "AAICharacterBase|Target")
+	ACharacterBase* GetTargetCharacter() const
+	{
+		if (Target == nullptr)
+		{
+			return nullptr;
+		}
+		return Cast<ACharacterBase>(Target);
+	}
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "AAICharacterBase|Variable")
 	float BulletDelay = 1.4f;

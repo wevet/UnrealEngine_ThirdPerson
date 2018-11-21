@@ -3,7 +3,7 @@
 #include "MockCharacter.h"
 #include "Engine.h"
 #include "Kismet/GameplayStatics.h"
-#include "Runtime/Engine/Classes/Kismet/KismetMathLibrary.h"
+#include "Kismet/KismetMathLibrary.h"
 
 AMockCharacter::AMockCharacter(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {
@@ -49,7 +49,7 @@ void AMockCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInpu
 	PlayerInputComponent->BindAction("Jump",   IE_Released,  this, &AMockCharacter::StopJumping);
 	// @NOTE 
 	// CharacterBase class
-	PlayerInputComponent->BindAction("EquipWeapon", IE_Pressed, this, &ACharacterBase::EquipmentMontage);
+	PlayerInputComponent->BindAction("EquipWeapon", IE_Pressed, this, &ACharacterBase::EquipmentActionMontage);
 	PlayerInputComponent->BindAction("SwapWeapon",  IE_Pressed, this, &AMockCharacter::UpdateWeapon);
 	PlayerInputComponent->BindAction("DropItem",    IE_Pressed, this, &AMockCharacter::ReleaseItem);
 	PlayerInputComponent->BindAction("Fire", IE_Pressed,   this, &AMockCharacter::FirePressed);
@@ -179,23 +179,6 @@ void AMockCharacter::UpdateWeapon()
 	{
 		++this->WeaponCurrentIndex;
 	}
-	//UE_LOG(LogTemp, Warning, TEXT("WeaponCurrentIndex : %d"), this->WeaponCurrentIndex);
-}
-
-AWeaponBase* AMockCharacter::GetUnEquipedWeapon()
-{
-	if (WeaponList.Num() <= 0) 
-	{
-		return nullptr;
-	}
-	for (AWeaponBase* &Weapon : WeaponList)
-	{
-		if (Weapon->Equip == false)
-		{
-			return Weapon;
-		}
-	}
-	return nullptr;
 }
 
 // death
@@ -222,12 +205,7 @@ void AMockCharacter::OnReleaseItemExecuter_Implementation()
 	const FTransform Transform = UKismetMathLibrary::MakeTransform(Forward, Rotation, FVector::OneVector);
 
 	AWeaponBase* IgnoreWeapon = ReleaseWeapon(Transform);
-
-	if (IgnoreWeapon) 
-	{
-		IgnoreWeapon->OnVisible_Implementation();
-		Super::OnReleaseItemExecuter_Implementation();
-	}
+	Super::OnReleaseItemExecuter_Implementation();
 }
 
 // pick up
@@ -330,22 +308,26 @@ AWeaponBase* AMockCharacter::ReleaseWeapon(const FTransform& Transform)
 		return nullptr;
 	}
 
-	AWeaponBase* IgnoreWeapon = GetUnEquipedWeapon();
-	if (IgnoreWeapon)
+	AWeaponBase* UnEquipWeapon = Super::GetUnEquipWeapon();
+	if (UnEquipWeapon)
 	{
-		WeaponList.Remove(IgnoreWeapon);
+		if (WeaponList.Contains(UnEquipWeapon)) 
+		{
+			WeaponList.Remove(UnEquipWeapon);
+		}
 
-		FWeaponItemInfo WeaponItemInfo = IgnoreWeapon->WeaponItemInfo;
+		FWeaponItemInfo WeaponItemInfo = UnEquipWeapon->WeaponItemInfo;
 		TSubclassOf<class AWeaponBase> WeaponClass = WeaponItemInfo.WeaponClass;
-		IgnoreWeapon->Destroy();
-		IgnoreWeapon = nullptr;
+		UnEquipWeapon->Destroy();
+		UnEquipWeapon = nullptr;
 
 		// spawn event
 		FActorSpawnParameters SpawnInfo;
 		SpawnInfo.Owner = NULL;
 		SpawnInfo.Instigator = NULL;
-		AWeaponBase* SpawningObject = World->SpawnActor<AWeaponBase>(WeaponClass, Transform.GetLocation(), Super::GetActorRotation(), SpawnInfo);
+		AWeaponBase* const SpawningObject = World->SpawnActor<AWeaponBase>(WeaponClass, Transform.GetLocation(), Super::GetActorRotation(), SpawnInfo);
 		SpawningObject->WeaponItemInfo.CopyTo(WeaponItemInfo);
+		SpawningObject->OnVisible_Implementation();
 		return SpawningObject;
 	}
 	return nullptr;
