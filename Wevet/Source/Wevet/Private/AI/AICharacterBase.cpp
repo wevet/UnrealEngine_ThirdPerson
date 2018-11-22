@@ -221,13 +221,13 @@ void AAICharacterBase::UpdateWeaponEvent()
 	// setup assets
 	Super::SelectedWeapon->SetEquip(false);
 	Super::SelectedWeapon->SetCharacterOwner(this);
-	Super::SelectedWeapon->GetSphereComponent()->DestroyComponent();
 	Super::SelectedWeapon->OffVisible_Implementation();
+	Super::SelectedWeapon->GetSphereComponent()->DestroyComponent();
 
 	FName SocketName = Super::SelectedWeapon->WeaponItemInfo.UnEquipSocketName;
 	Super::SelectedWeapon->AttachToComponent(Super::GetMesh(), { EAttachmentRule::SnapToTarget, true }, SocketName);
 
-	if (!Super::WeaponList.Contains(Super::SelectedWeapon))
+	if (Super::WeaponList.Find(Super::SelectedWeapon) == INDEX_NONE)
 	{
 		Super::WeaponList.Emplace(Super::SelectedWeapon);
 	}

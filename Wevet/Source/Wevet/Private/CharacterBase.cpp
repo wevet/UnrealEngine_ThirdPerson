@@ -88,7 +88,10 @@ void ACharacterBase::OnReleaseItemExecuter_Implementation()
 
 void ACharacterBase::OnPickupItemExecuter_Implementation(AActor* Actor)
 {
-	//
+	if (Actor)
+	{
+		UE_LOG(LogTemp, Log, TEXT("Picking : %s"), *(Actor->GetName()));
+	}
 }
 
 void ACharacterBase::NotifyEquip_Implementation()
@@ -107,7 +110,7 @@ bool ACharacterBase::IsDeath_Implementation()
 
 void ACharacterBase::OnTakeDamage_Implementation(FName BoneName, float Damage, AActor* Actor)
 {
-	if (this->IsDeath_Implementation())
+	if (IsDeath_Implementation())
 	{
 		return;
 	}
@@ -164,7 +167,7 @@ void ACharacterBase::Die_Implementation()
 			Transform.SetRotation(Rotation);
 			Transform.SetScale3D(FVector::OneVector);
 
-			if (WeaponList.Contains(this->SelectedWeapon))
+			if (WeaponList.Find(this->SelectedWeapon) != INDEX_NONE)
 			{
 				WeaponList.Remove(this->SelectedWeapon);
 			}
@@ -206,15 +209,10 @@ void ACharacterBase::UnEquipment_Implementation()
 // WeaponList Find Category
 AWeaponBase* ACharacterBase::FindByWeapon(EWeaponItemType WeaponItemType)
 {
-	if (WeaponList.Num() <= 0)/*  || this->SelectedWeapon == nullptr */ 
+	if (WeaponList.Num() <= 0)
 	{
 		return nullptr;
 	}
-
-	//if (this->SelectedWeapon && this->SelectedWeapon->HasMatchTypes(WeaponItemType))
-	//{
-	//	return this->SelectedWeapon;
-	//}
 
 	for (AWeaponBase*& Weapon : WeaponList)
 	{
@@ -226,7 +224,7 @@ AWeaponBase* ACharacterBase::FindByWeapon(EWeaponItemType WeaponItemType)
 	return nullptr;
 }
 
-// unequip weapon?
+// unequip weapon first index
 AWeaponBase* ACharacterBase::GetUnEquipWeapon()
 {
 	if (WeaponList.Num() <= 0)
@@ -235,12 +233,32 @@ AWeaponBase* ACharacterBase::GetUnEquipWeapon()
 	}
 	for (AWeaponBase* &Weapon : WeaponList)
 	{
-		if (Weapon->bEquip == false)
+		if (!Weapon->bEquip)
 		{
 			return Weapon;
 		}
 	}
 	return nullptr;
+}
+
+// out unequip weaponlist
+void ACharacterBase::OutUnEquipWeaponList(TArray<AWeaponBase*>& OutWeaponList)
+{
+	if (WeaponList.Num() <= 0) 
+	{
+		return;
+	}
+	for (AWeaponBase* &Weapon : WeaponList)
+	{
+		if (Weapon == nullptr)
+		{
+			continue;
+		}
+		if (!Weapon->bEquip)
+		{
+			OutWeaponList.Emplace(Weapon);
+		}
+	}
 }
 
 // pick already sameweapon category ?
@@ -249,14 +267,8 @@ const bool ACharacterBase::SameWeapon(AWeaponBase* Weapon)
 	AWeaponBase* InWeapon = FindByWeapon(Weapon->WeaponItemInfo.WeaponItemType);
 	if (InWeapon) 
 	{
-		bool bSame = InWeapon->WeaponItemInfo.WeaponItemType == Weapon->WeaponItemInfo.WeaponItemType;
-		if (bSame)
-		{
-			UE_LOG(LogTemp, Warning, TEXT("SameWeapon : %s"), *(InWeapon->GetName()));
-		}
-		return bSame;
+		return InWeapon->WeaponItemInfo.WeaponItemType == Weapon->WeaponItemInfo.WeaponItemType;
 	}
-
 	return false;
 }
 

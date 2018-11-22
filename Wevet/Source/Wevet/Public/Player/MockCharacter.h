@@ -66,8 +66,7 @@ protected:
 	void FireReleassed();
 	void Reload();
 
-	UFUNCTION(BlueprintCallable, Category = "AMockCharacter|Action")
-	AWeaponBase* ReleaseWeapon(const FTransform& Transform);
+	void ReleaseWeapon();
 
 	UPROPERTY(BlueprintReadOnly, Category = "AMockCharacter|Variable")
 	int32 WeaponCurrentIndex;

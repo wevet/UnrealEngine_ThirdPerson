@@ -112,7 +112,7 @@ public:
 		return SelectedWeapon->bEquip;
 	}
 
-	UFUNCTION(BlueprintCallable, Category = "ACharacterBase|Variable")
+	UFUNCTION(BlueprintCallable, Category = "ACharacterBase|CharacterModel")
 	float GetHealthToWidget() const 
 	{
 		return CharacterModel->GetHealthToWidget();
@@ -141,13 +141,13 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ACharacterBase|Weapon")
 	TArray<AWeaponBase*> WeaponList;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ACharacterBase|Variable")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ACharacterBase|Asset")
 	UAnimMontage* EquipMontage;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ACharacterBase|Variable")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ACharacterBase|Asset")
 	UAnimMontage* FireMontage;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ACharacterBase|Variable")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ACharacterBase|Asset")
 	UAnimMontage* ReloadMontage;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ACharacterBase|Variable")
@@ -177,6 +177,9 @@ protected:
 
 	/* get unequip weapon */
 	AWeaponBase* GetUnEquipWeapon();
+
+	/* get unequip weaponlist */
+	void OutUnEquipWeaponList(TArray<AWeaponBase*>& OutWeaponList);
 
 	/* same weaponList */
 	const bool SameWeapon(AWeaponBase* Weapon);

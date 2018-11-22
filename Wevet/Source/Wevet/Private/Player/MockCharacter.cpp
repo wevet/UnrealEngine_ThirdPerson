@@ -200,11 +200,7 @@ void AMockCharacter::Die_Implementation()
 // release weapon base
 void AMockCharacter::OnReleaseItemExecuter_Implementation()
 {
-	const FRotator Rotation = Super::GetActorRotation();	
-	const FVector Forward   = Super::GetActorLocation() + (Controller->GetControlRotation().Vector() * 200);
-	const FTransform Transform = UKismetMathLibrary::MakeTransform(Forward, Rotation, FVector::OneVector);
-
-	AWeaponBase* IgnoreWeapon = ReleaseWeapon(Transform);
+	ReleaseWeapon();
 	Super::OnReleaseItemExecuter_Implementation();
 }
 
@@ -217,6 +213,7 @@ void AMockCharacter::OnPickupItemExecuter_Implementation(AActor * Actor)
 		const bool bSame = Super::SameWeapon(Weapon);
 		if (bSame)
 		{
+			UE_LOG(LogTemp, Warning, TEXT("SameWeapon : %s"), *(Weapon->GetName()));
 			return;
 		}
 
@@ -243,7 +240,7 @@ void AMockCharacter::OnPickupItemExecuter_Implementation(AActor * Actor)
 		PickingWeapon->OffVisible_Implementation();
 		PickingWeapon->GetSphereComponent()->DestroyComponent();
 
-		if (!Super::WeaponList.Contains(PickingWeapon))
+		if (Super::WeaponList.Find(PickingWeapon) == INDEX_NONE)
 		{
 			Super::WeaponList.Emplace(PickingWeapon);
 		}
@@ -304,37 +301,38 @@ FVector AMockCharacter::BulletTraceForwardLocation() const
 	return GetFollowCameraComponent()->GetForwardVector();
 }
 
-AWeaponBase* AMockCharacter::ReleaseWeapon(const FTransform& Transform)
+void AMockCharacter::ReleaseWeapon()
 {
 	UWorld* World = GetWorld();
 
 	if (World == nullptr)
 	{
-		return nullptr;
+		return;
 	}
 
+	const FRotator Rotation = Super::GetActorRotation();
+	const FVector Forward   = Super::GetActorLocation() + (Controller->GetControlRotation().Vector() * 200);
+	const FTransform Transform = UKismetMathLibrary::MakeTransform(Forward, Rotation, FVector::OneVector);
 	AWeaponBase* UnEquipWeapon = Super::GetUnEquipWeapon();
+
 	if (UnEquipWeapon)
 	{
-		if (WeaponList.Contains(UnEquipWeapon)) 
+		if (WeaponList.Find(UnEquipWeapon) <= 0) 
 		{
 			WeaponList.Remove(UnEquipWeapon);
 		}
 
-		FWeaponItemInfo WeaponItemInfo = UnEquipWeapon->WeaponItemInfo;
+		FWeaponItemInfo& WeaponItemInfo = UnEquipWeapon->WeaponItemInfo;
 		TSubclassOf<class AWeaponBase> WeaponClass = WeaponItemInfo.WeaponClass;
 		UnEquipWeapon->Destroy();
 		UnEquipWeapon = nullptr;
 
-		// spawn event
 		FActorSpawnParameters SpawnInfo;
 		SpawnInfo.Owner = NULL;
 		SpawnInfo.Instigator = NULL;
 		AWeaponBase* const SpawningObject = World->SpawnActor<AWeaponBase>(WeaponClass, Transform.GetLocation(), Super::GetActorRotation(), SpawnInfo);
 		SpawningObject->WeaponItemInfo.CopyTo(WeaponItemInfo);
 		SpawningObject->OnVisible_Implementation();
-		return SpawningObject;
 	}
-	return nullptr;
 }
 
