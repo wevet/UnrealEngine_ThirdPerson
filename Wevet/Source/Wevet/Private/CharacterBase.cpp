@@ -135,6 +135,7 @@ void ACharacterBase::OnTakeDamage_Implementation(FName BoneName, float Damage, A
 	}
 }
 
+// All deploy weapon
 void ACharacterBase::Die_Implementation()
 {
 	// twice called
@@ -143,11 +144,7 @@ void ACharacterBase::Die_Implementation()
 		return;
 	}
 
-	if (this->SelectedWeapon)
-	{
-		this->SelectedWeapon->OnFireRelease_Implementation();
-		this->SelectedWeapon->SetCharacterOwner(nullptr);
-	}
+	SelectedWeapon = nullptr;
 	Super::GetMesh()->SetAllBodiesSimulatePhysics(true);
 	Super::GetMesh()->SetSimulatePhysics(true);
 	Super::GetMesh()->WakeAllRigidBodies();
@@ -155,55 +152,68 @@ void ACharacterBase::Die_Implementation()
 	Super::GetCharacterMovement()->DisableMovement();
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
-	if (this->SelectedWeapon)
+	const bool bHasWeapon = (WeaponList.Num() <= 0);
+	if (bHasWeapon)
 	{
-		UWorld* World = GetWorld();
-		if (World)
-		{
-			const FQuat Rotation = Super::GetActorRotation().Quaternion();
-			const FVector Forward = Super::GetActorLocation() + (Controller->GetControlRotation().Vector() * 200);
-			FTransform Transform;
-			Transform.SetLocation(Forward);
-			Transform.SetRotation(Rotation);
-			Transform.SetScale3D(FVector::OneVector);
+		return;
+	}
 
-			if (WeaponList.Find(this->SelectedWeapon) != INDEX_NONE)
+	const FQuat Rotation = Super::GetActorRotation().Quaternion();
+	const FVector Forward = Super::GetActorLocation() + (Controller->GetControlRotation().Vector() * 200);
+	FTransform Transform;
+	Transform.SetLocation(Forward);
+	Transform.SetRotation(Rotation);
+	Transform.SetScale3D(FVector::OneVector);
+
+	UWorld* World = GetWorld();
+	if (World)
+	{
+
+		for (AWeaponBase*& Weapon : WeaponList)
+		{
+			if (!Weapon)
 			{
-				WeaponList.Remove(this->SelectedWeapon);
+				check(0);
+				continue;
 			}
-			FWeaponItemInfo WeaponItemInfo = SelectedWeapon->WeaponItemInfo;
+			Weapon->OnFireRelease_Implementation();
+			Weapon->SetCharacterOwner(nullptr);
+			Weapon->SetEquip(false);
+
+			FWeaponItemInfo& WeaponItemInfo = Weapon->WeaponItemInfo;
 			TSubclassOf<class AWeaponBase> WeaponClass = WeaponItemInfo.WeaponClass;
-			this->SelectedWeapon->Destroy();
-			this->SelectedWeapon = nullptr;
+			Weapon->Destroy();
+			Weapon = nullptr;
 
 			// spawn event
 			FActorSpawnParameters SpawnInfo;
 			SpawnInfo.Owner = NULL;
 			SpawnInfo.Instigator = NULL;
-			AWeaponBase* const SpawningObject = World->SpawnActor<AWeaponBase>(WeaponClass, Transform.GetLocation(), Super::GetActorRotation(), SpawnInfo);
-			SpawningObject->WeaponItemInfo.CopyTo(WeaponItemInfo);
+			AWeaponBase* const SpawningObject = World->SpawnActor<AWeaponBase>(WeaponClass, Transform.GetLocation(), GetActorRotation(), SpawnInfo);
+			SpawningObject->CopyTo(WeaponItemInfo);
 			SpawningObject->OnVisible_Implementation();
 		}
+		WeaponList.Empty();
 	}
 	this->bDied = true;
 }
 
 void ACharacterBase::Equipment_Implementation()
 {
-	if (this->SelectedWeapon == nullptr) 
+	if (SelectedWeapon == nullptr) 
 	{
 		return;
 	}
-	this->SelectedWeapon->SetEquip(true);
+	SelectedWeapon->SetEquip(true);
 }
 
 void ACharacterBase::UnEquipment_Implementation()
 {
-	if (this->SelectedWeapon == nullptr)
+	if (SelectedWeapon == nullptr)
 	{
 		return;
 	}
-	this->SelectedWeapon->SetEquip(false);
+	SelectedWeapon->SetEquip(false);
 }
 
 // WeaponList Find Category
@@ -272,29 +282,31 @@ const bool ACharacterBase::SameWeapon(AWeaponBase* Weapon)
 	return false;
 }
 
+#pragma region Montage
 void ACharacterBase::EquipmentActionMontage()
 {
-	if (this->WeaponList.Num() <= 0)
+	if (WeaponList.Num() <= 0)
 	{
 		return;
 	}
-	PlayAnimMontage(this->EquipMontage, 1.6f);
+	PlayAnimMontage(EquipMontage, 1.6f);
 }
 
 void ACharacterBase::FireActionMontage()
 {
-	if (this->WeaponList.Num() <= 0 || this->SelectedWeapon == nullptr)
+	if (WeaponList.Num() <= 0 || SelectedWeapon == nullptr)
 	{
 		return;
 	}
-	PlayAnimMontage(this->FireMontage);
+	PlayAnimMontage(FireMontage);
 }
 
 void ACharacterBase::ReloadActionMontage()
 {
-	if (this->WeaponList.Num() <= 0 || this->SelectedWeapon == nullptr)
+	if (WeaponList.Num() <= 0 || SelectedWeapon == nullptr)
 	{
 		return;
 	}
-	PlayAnimMontage(this->ReloadMontage);
+	PlayAnimMontage(ReloadMontage);
 }
+#pragma endregion

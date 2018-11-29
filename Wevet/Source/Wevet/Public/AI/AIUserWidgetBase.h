@@ -28,7 +28,8 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Variable")
 	AAICharacterBase* CharacterOwner;
 
-	UCanvasPanel* CanvasPanel;
 	UProgressBar* ProgressBar;
+	UCanvasPanel* CanvasPanel;
 	const FName ProgressHealthBarKeyName = TEXT("ProgressHealthBar");
+	const FName CanvasPanelKeyName = TEXT("BasePanel");
 };

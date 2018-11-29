@@ -116,11 +116,10 @@ void AAIControllerBase::SetBlackboardSeeActor(bool InCanSeeActor)
 void AAIControllerBase::BeginPlay()
 {
 	Super::BeginPlay();
-	if (!ensure(AIPerceptionComponent))
+	if (ensure(AIPerceptionComponent))
 	{
-		return;
+		AIPerceptionComponent->OnTargetPerceptionUpdated.AddDynamic(this, &AAIControllerBase::OnTargetPerceptionUpdatedRecieve);
 	}
-	AIPerceptionComponent->OnTargetPerceptionUpdated.AddDynamic(this, &AAIControllerBase::OnTargetPerceptionUpdatedRecieve);
 }
 
 void AAIControllerBase::OnTargetPerceptionUpdatedRecieve(AActor* Actor, FAIStimulus Stimulus)

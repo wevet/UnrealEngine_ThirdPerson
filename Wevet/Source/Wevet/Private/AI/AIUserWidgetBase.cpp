@@ -12,22 +12,25 @@ UAIUserWidgetBase::UAIUserWidgetBase(const FObjectInitializer& ObjectInitializer
 void UAIUserWidgetBase::NativeConstruct()
 {
 	Super::NativeConstruct();
-	this->CanvasPanel = Cast<UCanvasPanel>(GetWidgetFromName("BasePanel"));
-	this->ProgressBar = Cast<UProgressBar>(GetWidgetFromName(ProgressHealthBarKeyName));
-	check(this->CanvasPanel);
-	check(this->ProgressBar);
+	CanvasPanel = Cast<UCanvasPanel>(GetWidgetFromName(CanvasPanelKeyName));
+	ProgressBar = Cast<UProgressBar>(GetWidgetFromName(ProgressHealthBarKeyName));
+	check(CanvasPanel);
+	check(ProgressBar);
 }
 
-void UAIUserWidgetBase::Init(AAICharacterBase * InAICharacter)
+void UAIUserWidgetBase::Init(AAICharacterBase* InAICharacter)
 {
-	this->CharacterOwner = InAICharacter;
-	check(this->CharacterOwner);
+	CharacterOwner = InAICharacter;
+	check(CharacterOwner);
 }
 
 void UAIUserWidgetBase::NativeTick(const FGeometry & MyGeometry, float InDeltaTime)
 {
+	Super::NativeTick(MyGeometry, InDeltaTime);
+
+	if (CharacterOwner && ProgressBar)
+	{
+		ProgressBar->SetPercent(CharacterOwner->GetHealthToWidget());
+	}
 
 }
-
-
-

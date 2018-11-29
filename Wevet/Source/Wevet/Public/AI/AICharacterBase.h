@@ -45,23 +45,17 @@ public:
 
 	FORCEINLINE class UPawnSensingComponent* GetPawnSensingComponent() const
 	{
-		return this->PawnSensingComponent;
+		return PawnSensingComponent;
 	}
 
 	FORCEINLINE class UWidgetComponent* GetWidgetComponent() const
 	{
-		return this->WidgetComponent;
+		return WidgetComponent;
 	}
 
 	UFUNCTION(BlueprintCallable, Category = "AAICharacterBase|Variable")
-	bool HasEnemyFound() const
-	{
-		if (TargetCharacter)
-		{
-			return true;
-		}
-		return false;
-	}
+	bool HasEnemyFound() const;
+	virtual const bool HasEquipWeapon() override;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "AAICharacterBase|Variable")
 	class UBehaviorTree* BehaviorTree;

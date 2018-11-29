@@ -43,18 +43,16 @@ void AWeaponBase::BeginPlay()
 {
 	Super::BeginPlay();
 
-	if (!ensure(WidgetComponent)) 
+	if (ensure(WidgetComponent)) 
 	{
-		return;
+		WidgetComponent->SetVisibility(false);
 	}
-	WidgetComponent->SetVisibility(false);
 
-	if (!ensure(SphereComponent)) 
+	if (ensure(SphereComponent)) 
 	{
-		return;
+		SphereComponent->OnComponentBeginOverlap.AddDynamic(this, &AWeaponBase::BeginOverlapRecieve);
+		SphereComponent->OnComponentEndOverlap.AddDynamic(this, &AWeaponBase::EndOverlapRecieve);
 	}
-	SphereComponent->OnComponentBeginOverlap.AddDynamic(this, &AWeaponBase::BeginOverlapRecieve);
-	SphereComponent->OnComponentEndOverlap.AddDynamic(this, &AWeaponBase::EndOverlapRecieve);
 }
 
 void AWeaponBase::Tick(float DeltaTime)
@@ -193,6 +191,17 @@ void AWeaponBase::OnFirePressedInternal()
 		ECollisionChannel::ECC_Visibility, 
 		fCollisionQueryParams);
 
+	// temp draw
+	DrawDebugLine(
+		World, 
+		StartLocation, 
+		HitData.Location, 
+		FColor(255, 0, 0), 
+		false, 
+		-1, 
+		0, 
+		12.333);
+
 	const FTransform MuzzleTransform = GetMuzzleTransform();
 	const FVector MuzzleLocation  = MuzzleTransform.GetLocation();
 	const FRotator MuzzleRotation = FRotator(MuzzleTransform.GetRotation());
@@ -317,4 +326,9 @@ void AWeaponBase::OnReloadInternal()
 void AWeaponBase::SetCharacterOwner(ACharacterBase* InCharacterOwner)
 {
 	this->CharacterOwner = InCharacterOwner;
+}
+
+void AWeaponBase::CopyTo(const FWeaponItemInfo & InWeaponItemInfo)
+{
+	WeaponItemInfo.CopyTo(InWeaponItemInfo);
 }

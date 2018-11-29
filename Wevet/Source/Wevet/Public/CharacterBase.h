@@ -103,7 +103,7 @@ public:
 	}
 
 	UFUNCTION(BlueprintCallable, Category = "ACharacterBase|Variable")
-	const bool HasEquipWeapon() 
+	virtual const bool HasEquipWeapon() 
 	{
 		if (SelectedWeapon == nullptr)
 		{

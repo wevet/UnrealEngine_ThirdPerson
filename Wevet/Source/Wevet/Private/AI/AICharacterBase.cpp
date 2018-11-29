@@ -46,25 +46,27 @@ void AAICharacterBase::BeginPlay()
 {
 	Super::BeginPlay();
 
-	if (!ensure(PawnSensingComponent)) 
+	if (ensure(PawnSensingComponent)) 
 	{
-		return;
+		PawnSensingComponent->OnSeePawn.AddDynamic(this, &AAICharacterBase::OnSeePawnRecieve);
+		PawnSensingComponent->OnHearNoise.AddDynamic(this, &AAICharacterBase::OnHearNoiseRecieve);
 	}
-	PawnSensingComponent->OnSeePawn.AddDynamic(this, &AAICharacterBase::OnSeePawnRecieve);
-	PawnSensingComponent->OnHearNoise.AddDynamic(this, &AAICharacterBase::OnHearNoiseRecieve);
 
-	if (!ensure(WidgetComponent)) 
+	if (ensure(WidgetComponent)) 
 	{
-		return;
+		UAIUserWidgetBase* AIWidget = Cast<UAIUserWidgetBase>(WidgetComponent->GetUserWidgetObject());
+		AIWidget->Init(this);
 	}
-	UAIUserWidgetBase* AIWidget = Cast<UAIUserWidgetBase>(WidgetComponent->GetUserWidgetObject());
-	check(AIWidget);
-	AIWidget->Init(this);
 }
 
 void AAICharacterBase::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
+	if (IsDeath_Implementation())
+	{
+		return;
+	}
 
 	UWorld* World = GetWorld();
 	if (World == nullptr)
@@ -72,6 +74,7 @@ void AAICharacterBase::Tick(float DeltaTime)
 		return;
 	}
 
+	// has weapon reload
 	bool bReload = false;
 	if (bSensedTarget)
 	{
@@ -80,45 +83,47 @@ void AAICharacterBase::Tick(float DeltaTime)
 			bReload = true;
 		}
 	}
-
 	if (bReload)
 	{
-		// weapon reload
 		return;
 	}
 
-	// target died ?
-	if (TargetCharacter && TargetCharacter->IsDeath_Implementation())
+	// attack timer finished
+	bool bStopped = false;
+	if (bSensedTarget && (World->TimeSeconds - LastSeenTime) > SenseTimeOut && (World->TimeSeconds - LastHeardTime) > SenseTimeOut)
 	{
-		bSensedTarget = false;
-		SetTargetActor(nullptr);
-		Super::EquipmentActionMontage();
+		bStopped = true;
 	}
 
-	if (bSensedTarget
-		&& (World->TimeSeconds - LastSeenTime) > SenseTimeOut
-		&& (World->TimeSeconds - LastHeardTime) > SenseTimeOut)
+	if (bStopped)
 	{
-		bSensedTarget = false;
 		SetTargetActor(nullptr);
-		Super::EquipmentActionMontage();
+		return;
 	}
-	else
+
+	// found target
+	if (TargetCharacter)
 	{
-		if (HasEquipWeapon() && HasEnemyFound())
+		if (TargetCharacter->IsDeath_Implementation())
+		{
+			SetTargetActor(nullptr);
+		}
+		else 
 		{
 			BulletInterval += DeltaTime;
 			if (BulletInterval >= BulletDelay)
 			{
-				BP_FirePressReceive();
+				//BP_FirePressReceive();
 				BulletInterval = 0.f;
+
 				// repeat sense target
-				LastSeenTime = World->GetTimeSeconds();
-				LastHeardTime = World->GetTimeSeconds();
-				bSensedTarget = true;
+				//LastSeenTime = World->GetTimeSeconds();
+				//LastHeardTime = World->GetTimeSeconds();
+				//bSensedTarget = true;
 			}
 		}
 	}
+
 }
 
 void AAICharacterBase::Die_Implementation()
@@ -128,10 +133,7 @@ void AAICharacterBase::Die_Implementation()
 		return;
 	}
 
-	if (WidgetComponent)
-	{
-		WidgetComponent->SetVisibility(false);
-	}
+	WidgetComponent->SetVisibility(false);
 	this->TargetCharacter = nullptr;
 	Super::Die_Implementation();
 
@@ -139,26 +141,29 @@ void AAICharacterBase::Die_Implementation()
 
 void AAICharacterBase::NotifyEquip_Implementation()
 {
-	if (Super::SelectedWeapon)
+	if (Super::SelectedWeapon == nullptr)
 	{
-		if (HasEnemyFound())
-		{
-			Super::SelectedWeapon->AttachToComponent(
-				Super::GetMesh(), 
-				{ EAttachmentRule::SnapToTarget, true }, 
-				Super::SelectedWeapon->WeaponItemInfo.EquipSocketName);
-			Super::Equipment_Implementation();
-		}
-		else 
-		{
-			Super::SelectedWeapon->AttachToComponent(
-				Super::GetMesh(), 
-				{ EAttachmentRule::SnapToTarget, true }, 
-				Super::SelectedWeapon->WeaponItemInfo.UnEquipSocketName);
-			Super::UnEquipment_Implementation();
-		}
-		Super::NotifyEquip_Implementation();
+		return;
 	}
+
+	if (HasEnemyFound())
+	{
+		Super::SelectedWeapon->AttachToComponent(
+			Super::GetMesh(),
+			{ EAttachmentRule::SnapToTarget, true },
+			Super::SelectedWeapon->WeaponItemInfo.EquipSocketName);
+		Super::Equipment_Implementation();
+	}
+	else
+	{
+		Super::SelectedWeapon->AttachToComponent(
+			Super::GetMesh(),
+			{ EAttachmentRule::SnapToTarget, true },
+			Super::SelectedWeapon->WeaponItemInfo.UnEquipSocketName);
+		Super::UnEquipment_Implementation();
+	}
+	Super::NotifyEquip_Implementation();
+
 }
 
 void AAICharacterBase::OnTakeDamage_Implementation(FName BoneName, float Damage, AActor* Actor)
@@ -178,7 +183,23 @@ void AAICharacterBase::SetTargetActor(ACharacterBase* NewCharacter)
 	{
 		AIController->SetBlackboardSeeActor(HasEnemyFound());
 	}
-	UE_LOG(LogTemp, Warning, TEXT("SeeActor : %s"), HasEnemyFound() ? TEXT("true") : TEXT("false"));
+	Super::EquipmentActionMontage();
+	bSensedTarget = NewCharacter == nullptr ? false : true;
+	//UE_LOG(LogTemp, Warning, TEXT("SeeActor : %s"), HasEnemyFound() ? TEXT("true") : TEXT("false"));
+}
+
+bool AAICharacterBase::HasEnemyFound() const
+{
+	if (TargetCharacter)
+	{
+		return true;
+	}
+	return false;
+}
+
+const bool AAICharacterBase::HasEquipWeapon()
+{
+	return Super::HasEquipWeapon() && HasEnemyFound();
 }
 
 void AAICharacterBase::InitializePosses()
@@ -204,7 +225,7 @@ void AAICharacterBase::UpdateWeaponEvent()
 {
 	UWorld* World = GetWorld();
 
-	if (this->SpawnWeapon == nullptr || World == nullptr)
+	if (SpawnWeapon == nullptr || World == nullptr)
 	{
 		return;
 	}
@@ -213,8 +234,8 @@ void AAICharacterBase::UpdateWeaponEvent()
 	SpawnParams.Owner = this;
 	SpawnParams.Instigator = Instigator;
 	const FTransform Transform = FTransform::Identity;
-	AActor* SpawningObject = World->SpawnActor<AActor>(this->SpawnWeapon, Transform, SpawnParams);
-	Super::SelectedWeapon = Cast<AWeaponBase>(SpawningObject);
+	AWeaponBase* const SpawningObject = World->SpawnActor<AWeaponBase>(SpawnWeapon, Transform, SpawnParams);
+	Super::SelectedWeapon = SpawningObject;
 
 	check(Super::SelectedWeapon);
 
@@ -235,10 +256,14 @@ void AAICharacterBase::UpdateWeaponEvent()
 
 void AAICharacterBase::CreateWayPointList(TArray<AWayPointBase*>& OutWayPointList)
 {
-	TArray<AActor*> FoundActor;
-	UGameplayStatics::GetAllActorsOfClass(GetWorld(), AWayPointBase::StaticClass(), FoundActor);
+	UWorld* World = GetWorld();
+	
+	if (World == nullptr)
+	{
+		return;
+	}
 
-	for (TActorIterator<AWayPointBase> ActorIterator(GetWorld()); ActorIterator; ++ActorIterator)
+	for (TActorIterator<AWayPointBase> ActorIterator(World); ActorIterator; ++ActorIterator)
 	{
 		AWayPointBase* WayPoint = *ActorIterator;
 		if (WayPoint)
@@ -266,13 +291,10 @@ void AAICharacterBase::OnSeePawnRecieve(APawn* OtherPawn)
 	}
 
 	LastSeenTime = GetWorld()->GetTimeSeconds();
-	bSensedTarget = true;
-
 	auto Player = Cast<AMockCharacter>(OtherPawn);
 	if (Player && !Player->IsDeath_Implementation())
 	{
 		SetTargetActor(Player);
-		Super::EquipmentActionMontage();
 	}
 }
 
@@ -294,13 +316,10 @@ void AAICharacterBase::OnHearNoiseRecieve(APawn* OtherActor, const FVector & Loc
 	}
 
 	LastHeardTime = GetWorld()->GetTimeSeconds();
-	bSensedTarget = true;
-
 	auto Player = Cast<AMockCharacter>(OtherActor);
 	if (Player && !Player->IsDeath_Implementation())
 	{
 		SetTargetActor(Player);
-		Super::EquipmentActionMontage();
 	}
 }
 

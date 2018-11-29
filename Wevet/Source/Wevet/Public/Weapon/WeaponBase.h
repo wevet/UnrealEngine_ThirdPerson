@@ -74,17 +74,17 @@ protected:
 public:
 	FORCEINLINE class USkeletalMeshComponent* GetSkeletalMeshComponent() const 
 	{ 
-		return this->SkeletalMeshComponent; 
+		return SkeletalMeshComponent; 
 	}
 
 	FORCEINLINE class USphereComponent* GetSphereComponent() const 
 	{
-		return this->SphereComponent; 
+		return SphereComponent; 
 	}
 	
 	FORCEINLINE class UWidgetComponent* GetWidgetComponent() const 
 	{
-		return this->WidgetComponent; 
+		return WidgetComponent; 
 	}
 
 	virtual void SetEquip(const bool Equip);
@@ -139,6 +139,7 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "AWeaponBase|API")
 	virtual void OnReloadInternal();
 
+	UFUNCTION(BlueprintCallable, Category = "AWeaponBase|API")
 	const FTransform GetMuzzleTransform()
 	{ 
 		return SkeletalMeshComponent->GetSocketTransform(MuzzleSocketName);
@@ -150,5 +151,7 @@ public:
 	}
 
 	virtual void SetCharacterOwner(ACharacterBase* InCharacterOwner);
+
+	void CopyTo(const FWeaponItemInfo& InWeaponItemInfo);
 };
 

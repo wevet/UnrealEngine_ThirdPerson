@@ -89,17 +89,17 @@ public:
 	FWeaponItemInfo();
 
 public:
-	void CopyTo(FWeaponItemInfo& InWeaponItemInfo)
+	void CopyTo(const FWeaponItemInfo& InWeaponItemInfo)
 	{
-		WeaponItemType = InWeaponItemInfo.WeaponItemType;
-		WeaponClass = InWeaponItemInfo.WeaponClass;
-		ClipType = InWeaponItemInfo.ClipType;
-		CurrentAmmo = InWeaponItemInfo.CurrentAmmo;
-		MaxAmmo = InWeaponItemInfo.MaxAmmo;
-		Damage = InWeaponItemInfo.Damage;
-		Texture = InWeaponItemInfo.Texture;
-		EquipSocketName = InWeaponItemInfo.EquipSocketName;
 		UnEquipSocketName = InWeaponItemInfo.UnEquipSocketName;
+		EquipSocketName   = InWeaponItemInfo.EquipSocketName;
+		WeaponItemType = InWeaponItemInfo.WeaponItemType;
+		WeaponClass    = InWeaponItemInfo.WeaponClass;
+		CurrentAmmo = InWeaponItemInfo.CurrentAmmo;
+		ClipType = InWeaponItemInfo.ClipType;
+		MaxAmmo  = InWeaponItemInfo.MaxAmmo;
+		Damage   = InWeaponItemInfo.Damage;
+		Texture  = InWeaponItemInfo.Texture;
 	}
 };
 
