@@ -20,9 +20,11 @@ public:
 	UUMGManager(const FObjectInitializer& ObjectInitializer);
 
 	virtual void NativeConstruct() override;
-	void BuildInitialize(AMockCharacter* Character);
+	void Init(ACharacterBase* NewCharacter);
 	
 protected:
+	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "UMGManager|Variable")
-	AMockCharacter* CharacterOwner;
+	ACharacterBase* CharacterOwner;
 };

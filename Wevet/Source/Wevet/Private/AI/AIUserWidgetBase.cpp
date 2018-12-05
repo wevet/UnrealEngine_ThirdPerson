@@ -1,5 +1,4 @@
 // Copyright 2018 wevet works All Rights Reserved.
-
 #include "AIUserWidgetBase.h"
 
 UAIUserWidgetBase::UAIUserWidgetBase(const FObjectInitializer& ObjectInitializer)
@@ -30,7 +29,12 @@ void UAIUserWidgetBase::NativeTick(const FGeometry & MyGeometry, float InDeltaTi
 
 	if (CharacterOwner && ProgressBar)
 	{
-		ProgressBar->SetPercent(CharacterOwner->GetHealthToWidget());
+		float Health = CharacterOwner->GetHealthToWidget();
+		if (CharacterOwner->IsDeath_Implementation())
+		{
+			Health = 0.f;
+		}
+		ProgressBar->SetPercent(Health);
 	}
 
 }

@@ -70,6 +70,7 @@ protected:
 
 	USceneComponent* SceneComponent;
 	FTimerHandle ReloadTimerHandle;
+	UClass* OwnerClass;
 
 public:
 	FORCEINLINE class USkeletalMeshComponent* GetSkeletalMeshComponent() const 
@@ -101,6 +102,9 @@ public:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AWeaponBase|Variable")
 	bool bReload;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AWeaponBase|Variable")
+	bool bEmpty;
 
 #pragma region interface
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AWeaponBase|Interface")

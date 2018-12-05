@@ -74,6 +74,22 @@ void AAICharacterBase::Tick(float DeltaTime)
 		return;
 	}
 
+	// has weapon empty
+	bool bEmpty = false;
+	if (bSensedTarget)
+	{
+		if (Super::SelectedWeapon && Super::SelectedWeapon->bEmpty)
+		{
+			bEmpty = true;
+		}
+	}
+	if (bEmpty)
+	{
+		SetTargetActor(nullptr);
+		BP_FireReleaseReceive();
+		return;
+	}
+
 	// has weapon reload
 	bool bReload = false;
 	if (bSensedTarget)
@@ -90,7 +106,9 @@ void AAICharacterBase::Tick(float DeltaTime)
 
 	// attack timer finished
 	bool bStopped = false;
-	if (bSensedTarget && (World->TimeSeconds - LastSeenTime) > SenseTimeOut && (World->TimeSeconds - LastHeardTime) > SenseTimeOut)
+	if (bSensedTarget 
+		&& (World->TimeSeconds - LastSeenTime) > SenseTimeOut 
+		&& (World->TimeSeconds - LastHeardTime) > SenseTimeOut)
 	{
 		bStopped = true;
 	}
@@ -98,6 +116,7 @@ void AAICharacterBase::Tick(float DeltaTime)
 	if (bStopped)
 	{
 		SetTargetActor(nullptr);
+		BP_FireReleaseReceive();
 		return;
 	}
 
@@ -107,19 +126,20 @@ void AAICharacterBase::Tick(float DeltaTime)
 		if (TargetCharacter->IsDeath_Implementation())
 		{
 			SetTargetActor(nullptr);
+			BP_FireReleaseReceive();
+			return;
 		}
 		else 
 		{
 			BulletInterval += DeltaTime;
 			if (BulletInterval >= BulletDelay)
 			{
-				//BP_FirePressReceive();
+				BP_FirePressReceive();
 				BulletInterval = 0.f;
-
 				// repeat sense target
-				//LastSeenTime = World->GetTimeSeconds();
-				//LastHeardTime = World->GetTimeSeconds();
-				//bSensedTarget = true;
+				LastSeenTime = World->GetTimeSeconds();
+				LastHeardTime = World->GetTimeSeconds();
+				bSensedTarget = true;
 			}
 		}
 	}
@@ -134,7 +154,7 @@ void AAICharacterBase::Die_Implementation()
 	}
 
 	WidgetComponent->SetVisibility(false);
-	this->TargetCharacter = nullptr;
+	TargetCharacter = nullptr;
 	Super::Die_Implementation();
 
 }
@@ -177,7 +197,7 @@ void AAICharacterBase::OnTakeDamage_Implementation(FName BoneName, float Damage,
 
 void AAICharacterBase::SetTargetActor(ACharacterBase* NewCharacter)
 {
-	this->TargetCharacter = NewCharacter;
+	TargetCharacter = NewCharacter;
 	AAIControllerBase* AIController = Cast<AAIControllerBase>(GetController());
 	if (AIController)
 	{
@@ -298,7 +318,7 @@ void AAICharacterBase::OnSeePawnRecieve(APawn* OtherPawn)
 	}
 }
 
-void AAICharacterBase::OnHearNoiseRecieve(APawn* OtherActor, const FVector & Location, float Volume)
+void AAICharacterBase::OnHearNoiseRecieve(APawn* OtherActor, const FVector& Location, float Volume)
 {
 	if (IsDeath_Implementation() || FMath::IsNearlyZero(Volume))
 	{

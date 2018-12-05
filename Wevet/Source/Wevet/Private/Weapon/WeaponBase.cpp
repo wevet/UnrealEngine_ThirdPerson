@@ -15,7 +15,8 @@ AWeaponBase::AWeaponBase(const FObjectInitializer& ObjectInitializer)
 	SkeletalMeshComponent(nullptr),
 	MuzzleSocketName(FName(TEXT("MuzzleFlash"))),
 	BulletDuration(0.1f),
-	ReloadDuration(2.f)
+	ReloadDuration(2.f),
+	bEmpty(false)
 {
 	PrimaryActorTick.bCanEverTick = true;
 
@@ -63,50 +64,50 @@ void AWeaponBase::Tick(float DeltaTime)
 void AWeaponBase::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	UWorld* World = GetWorld();
-	if (World && World->GetTimerManager().IsTimerActive(this->ReloadTimerHandle))
+	if (World && World->GetTimerManager().IsTimerActive(ReloadTimerHandle))
 	{
-		World->GetTimerManager().ClearTimer(this->ReloadTimerHandle);
+		World->GetTimerManager().ClearTimer(ReloadTimerHandle);
 	}
 	Super::EndPlay(EndPlayReason);
 }
 
 void AWeaponBase::SetEquip(const bool Equip)
 {
-	this->bEquip = Equip;
+	bEquip = Equip;
 }
 
 void AWeaponBase::SetReload(const bool Reload)
 {
-	this->bReload = Reload;
+	bReload = Reload;
 }
 
 void AWeaponBase::OnFirePress_Implementation()
 {
-	this->bFired = true;
+	bFired = true;
 }
 
 void AWeaponBase::OnFireRelease_Implementation()
 {
-	this->bFired = false;
+	bFired = false;
 }
 
 void AWeaponBase::OffVisible_Implementation()
 {
-	this->SkeletalMeshComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	this->SkeletalMeshComponent->SetSimulatePhysics(false);
-	this->WidgetComponent->SetVisibility(false);
+	SkeletalMeshComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	SkeletalMeshComponent->SetSimulatePhysics(false);
+	WidgetComponent->SetVisibility(false);
 }
 
 void AWeaponBase::OnVisible_Implementation()
 {
-	this->SkeletalMeshComponent->SetCollisionEnabled(ECollisionEnabled::PhysicsOnly);
-	this->SkeletalMeshComponent->SetSimulatePhysics(true);
-	this->WidgetComponent->SetVisibility(true);
+	SkeletalMeshComponent->SetCollisionEnabled(ECollisionEnabled::PhysicsOnly);
+	SkeletalMeshComponent->SetSimulatePhysics(true);
+	WidgetComponent->SetVisibility(true);
 }
 
 void AWeaponBase::BeginOverlapRecieve(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult)
 {
-	if (this->CharacterOwner == nullptr)
+	if (CharacterOwner == nullptr)
 	{
 		ACharacterBase* Character = Cast<ACharacterBase>(OtherActor);
 		if (Character)
@@ -115,8 +116,8 @@ void AWeaponBase::BeginOverlapRecieve(UPrimitiveComponent* OverlappedComponent, 
 		}
 	}
 
-	this->WidgetComponent->SetVisibility(true);
-	this->SkeletalMeshComponent->SetRenderCustomDepth(true);
+	WidgetComponent->SetVisibility(true);
+	SkeletalMeshComponent->SetRenderCustomDepth(true);
 
 	APlayerController* PlayerController = UGameplayStatics::GetPlayerController(this, 0);
 	if (PlayerController)
@@ -127,7 +128,7 @@ void AWeaponBase::BeginOverlapRecieve(UPrimitiveComponent* OverlappedComponent, 
 
 void AWeaponBase::EndOverlapRecieve(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
-	if (this->CharacterOwner == nullptr)
+	if (CharacterOwner == nullptr)
 	{
 		ACharacterBase* Character = Cast<ACharacterBase>(OtherActor);
 		if (Character)
@@ -136,29 +137,27 @@ void AWeaponBase::EndOverlapRecieve(UPrimitiveComponent* OverlappedComp, AActor*
 		}
 	}
 
-	this->WidgetComponent->SetVisibility(false);
-	this->SkeletalMeshComponent->SetRenderCustomDepth(false);
+	WidgetComponent->SetVisibility(false);
+	SkeletalMeshComponent->SetRenderCustomDepth(false);
 }
 
 void AWeaponBase::OnFirePressedInternal()
 {
-	UWorld* World = GetWorld();
+	UWorld* const World = GetWorld();
 
 	// not found owner
 	if (World == nullptr  
-		|| this->CharacterOwner == nullptr
-		|| (this->CharacterOwner && this->CharacterOwner->IsDeath_Implementation()))
+		|| CharacterOwner == nullptr
+		|| (CharacterOwner && CharacterOwner->IsDeath_Implementation()))
 	{
 		return;
 	}
 
-	// current weapon reloading...
-	if (this->bReload)
+	if (bEmpty || bReload)
 	{
 		return;
 	}
 
-	// empty current ammo
 	if (WeaponItemInfo.CurrentAmmo <= 0)
 	{
 		UE_LOG(LogTemp, Log, TEXT("Out Of Ammos"));
@@ -167,59 +166,49 @@ void AWeaponBase::OnFirePressedInternal()
 	}
 
 	const float ForwardOffset = 15000.f;
-	const FVector ForwardLocation = this->CharacterOwner->BulletTraceForwardLocation();
-	const FVector StartLocation   = this->CharacterOwner->BulletTraceRelativeLocation();
+	const FVector ForwardLocation = CharacterOwner->BulletTraceForwardLocation();
+	const FVector StartLocation   = CharacterOwner->BulletTraceRelativeLocation();
 	const FVector EndLocation     = StartLocation + (ForwardLocation * ForwardOffset);
 
 	FHitResult HitData(ForceInit);
-	FCollisionQueryParams fCollisionQueryParams;
-	fCollisionQueryParams.TraceTag = FName("");
-	fCollisionQueryParams.OwnerTag = FName("");
-	fCollisionQueryParams.bTraceAsyncScene = false;
-	fCollisionQueryParams.bTraceComplex = true;
-	fCollisionQueryParams.bFindInitialOverlaps = false;
-	fCollisionQueryParams.bReturnFaceIndex = false;
-	fCollisionQueryParams.bReturnPhysicalMaterial = false;
-	fCollisionQueryParams.bIgnoreBlocks = false;
-	fCollisionQueryParams.IgnoreMask = 0;
-	fCollisionQueryParams.AddIgnoredActor(this);
+	FCollisionQueryParams CollisionQueryParams;
+	CollisionQueryParams.TraceTag = FName("");
+	CollisionQueryParams.OwnerTag = FName("");
+	CollisionQueryParams.bTraceAsyncScene = false;
+	CollisionQueryParams.bTraceComplex = true;
+	CollisionQueryParams.bFindInitialOverlaps = false;
+	CollisionQueryParams.bReturnFaceIndex = false;
+	CollisionQueryParams.bReturnPhysicalMaterial = false;
+	CollisionQueryParams.bIgnoreBlocks = false;
+	CollisionQueryParams.IgnoreMask = 0;
+	CollisionQueryParams.AddIgnoredActor(this);
 
 	bool bSuccess = World->LineTraceSingleByChannel(
 		HitData, 
 		StartLocation, 
 		EndLocation, 
-		ECollisionChannel::ECC_Visibility, 
-		fCollisionQueryParams);
+		ECollisionChannel::ECC_Camera, 
+		CollisionQueryParams);
 
 	// temp draw
-	DrawDebugLine(
-		World, 
-		StartLocation, 
-		HitData.Location, 
-		FColor(255, 0, 0), 
-		false, 
-		-1, 
-		0, 
-		12.333);
+	DrawDebugLine(World, HitData.TraceStart, HitData.TraceEnd, FColor(255, 0, 0), false, -1, 0, 12.333);
 
-	const FTransform MuzzleTransform = GetMuzzleTransform();
-	const FVector MuzzleLocation  = MuzzleTransform.GetLocation();
-	const FRotator MuzzleRotation = FRotator(MuzzleTransform.GetRotation());
-
+	const FVector MuzzleLocation  = GetMuzzleTransform().GetLocation();
+	const FRotator MuzzleRotation = FRotator(GetMuzzleTransform().GetRotation());
 	UGameplayStatics::PlaySoundAtLocation(World, FireSoundAsset, MuzzleLocation, 1.f, 1.f, 0.f, nullptr, nullptr);
-	this->CharacterOwner->FireActionMontage();
+	CharacterOwner->FireActionMontage();
 	--WeaponItemInfo.CurrentAmmo;
 
 	UGameplayStatics::PlaySoundAtLocation(World, FireImpactSoundAsset, HitData.Location, 1.f, 1.f, 0.f, nullptr, nullptr);
 	const FVector StartPoint = MuzzleLocation;
 	const FVector EndPoint   = UKismetMathLibrary::SelectVector(HitData.ImpactPoint, HitData.TraceEnd, bSuccess);
 	const FRotator Rotation  = UKismetMathLibrary::FindLookAtRotation(StartPoint, EndPoint);
-	const FTransform Transform = UKismetMathLibrary::MakeTransform(StartPoint, Rotation, FVector::OneVector);
+	FTransform Transform = UKismetMathLibrary::MakeTransform(StartPoint, Rotation, FVector::OneVector);
 
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.Owner = this;
 	SpawnParams.Instigator = Instigator;
-	ABulletBase* Bullet = World->SpawnActor<ABulletBase>(this->BulletsBP, Transform, SpawnParams);
+	ABulletBase* const Bullet = World->SpawnActor<ABulletBase>(BulletsBP, Transform, SpawnParams);
 
 #if WITH_EDITOR
 	Bullet->SetFolderPath("/BulletsRoot");
@@ -238,17 +227,21 @@ void AWeaponBase::OnFirePressedInternal()
 			{
 				// @TODO
 				// owner Character Set
-				float Damage = FMath::FRandRange(10.f, 20.f);
+				auto d = WeaponItemInfo.Damage;
+				auto dHalf = d * 0.5f;
+				float Damage = FMath::FRandRange(dHalf, d);
 				CombatInterface->OnTakeDamage_Implementation(
 					HitData.BoneName, 
 					Damage, 
-					this);
+					CharacterOwner);
 			}
 		}
 	}
 
 	// spawn impact emitter
-	const FTransform EmitterTransform = UKismetMathLibrary::MakeTransform(HitData.Location, FRotator::ZeroRotator, FVector::ZeroVector);
+	FTransform EmitterTransform;
+	EmitterTransform.SetIdentity();
+	EmitterTransform.SetLocation(HitData.Location);
 	UParticleSystemComponent* ImpactMetalEmitterComponent = UGameplayStatics::SpawnEmitterAtLocation(
 		World, 
 		ImpactMetalEmitterTemplate, 
@@ -279,6 +272,7 @@ void AWeaponBase::OnReloading_Implementation()
 	if (WeaponItemInfo.MaxAmmo == 0)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Empty Ammos"));
+		bEmpty = true;
 		return;
 	}
 
@@ -297,9 +291,8 @@ void AWeaponBase::OnReloading_Implementation()
 	{
 		SetReload(false);
 	});
-	World->GetTimerManager().SetTimer(this->ReloadTimerHandle, TimerCallback, this->ReloadDuration, false);
+	World->GetTimerManager().SetTimer(ReloadTimerHandle, TimerCallback, ReloadDuration, false);
 }
-
 
 void AWeaponBase::OnFireReleaseInternal()
 {
@@ -307,25 +300,26 @@ void AWeaponBase::OnFireReleaseInternal()
 
 void AWeaponBase::OnReloadInternal()
 {
-	this->bFired = false;
-	this->CharacterOwner->ReloadActionMontage();
-	this->NeededAmmo = (WeaponItemInfo.ClipType - WeaponItemInfo.CurrentAmmo);
+	bFired = false;
+	CharacterOwner->ReloadActionMontage();
+	NeededAmmo = (WeaponItemInfo.ClipType - WeaponItemInfo.CurrentAmmo);
 
-	if (WeaponItemInfo.MaxAmmo <= this->NeededAmmo)
+	if (WeaponItemInfo.MaxAmmo <= NeededAmmo)
 	{
 		WeaponItemInfo.MaxAmmo = 0;
 		WeaponItemInfo.CurrentAmmo = (WeaponItemInfo.CurrentAmmo + WeaponItemInfo.MaxAmmo);
 	}
 	else
 	{
-		WeaponItemInfo.MaxAmmo = (WeaponItemInfo.MaxAmmo - this->NeededAmmo);
+		WeaponItemInfo.MaxAmmo = (WeaponItemInfo.MaxAmmo - NeededAmmo);
 		WeaponItemInfo.CurrentAmmo = WeaponItemInfo.ClipType;
 	}
 }
 
 void AWeaponBase::SetCharacterOwner(ACharacterBase* InCharacterOwner)
 {
-	this->CharacterOwner = InCharacterOwner;
+	CharacterOwner = InCharacterOwner;
+	OwnerClass = InCharacterOwner ? InCharacterOwner->StaticClass() : nullptr;
 }
 
 void AWeaponBase::CopyTo(const FWeaponItemInfo & InWeaponItemInfo)

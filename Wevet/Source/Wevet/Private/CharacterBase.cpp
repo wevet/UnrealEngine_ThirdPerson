@@ -133,6 +133,12 @@ void ACharacterBase::OnTakeDamage_Implementation(FName BoneName, float Damage, A
 			Die_Implementation();
 		}
 	}
+
+	//if (Actor)
+	//{
+	//	UClass* Classes = Actor->StaticClass();
+	//	UE_LOG(LogTemp, Log, TEXT("ClassName : %s"), *Classes->GetName());
+	//}
 }
 
 // All deploy weapon

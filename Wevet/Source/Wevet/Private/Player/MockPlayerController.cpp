@@ -19,23 +19,23 @@ void AMockPlayerController::Possess(APawn* Pawn)
 	AMockCharacter* Character = Cast<AMockCharacter>(Pawn);
 	if (Character)
 	{
-		this->CharacterOwner = Character;
-		check(this->CharacterOwner);
+		CharacterOwner = Character;
+		check(CharacterOwner);
 		Initialize();
 	}
 }
 
 void AMockPlayerController::Initialize()
 {
-	if (this->UMGManagerClass)
+	if (UMGManagerClass)
 	{
-		this->UMGManager = CreateWidget<UUMGManager>(this, this->UMGManagerClass);
+		UMGManager = CreateWidget<UUMGManager>(this, UMGManagerClass);
 
-		if (this->UMGManager)
+		if (UMGManager)
 		{
 			// call before event construct
-			this->UMGManager->BuildInitialize(this->CharacterOwner);
-			this->UMGManager->AddToViewport();
+			UMGManager->Init(CharacterOwner);
+			UMGManager->AddToViewport();
 		}
 
 	}
