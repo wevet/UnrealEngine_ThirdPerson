@@ -3,7 +3,9 @@
 
 UAIUserWidgetBase::UAIUserWidgetBase(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer),
-	CharacterOwner(nullptr)
+	CharacterOwner(nullptr),
+	CanvasPanel(nullptr),
+	ProgressBar(nullptr)
 {
 	//
 }
@@ -17,9 +19,9 @@ void UAIUserWidgetBase::NativeConstruct()
 	check(ProgressBar);
 }
 
-void UAIUserWidgetBase::Init(AAICharacterBase* InAICharacter)
+void UAIUserWidgetBase::Init(AAICharacterBase* NewCharacter)
 {
-	CharacterOwner = InAICharacter;
+	CharacterOwner = NewCharacter;
 	check(CharacterOwner);
 }
 

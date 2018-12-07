@@ -1,6 +1,7 @@
 // Copyright 2018 wevet works All Rights Reserved.
 
 #include "MockCharacter.h"
+#include "CharacterPickupComponent.h"
 #include "Engine.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
@@ -43,19 +44,12 @@ void AMockCharacter::BeginPlay()
 void AMockCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent)
 {
 	check(PlayerInputComponent);
+
+	// basic action
 	PlayerInputComponent->BindAction("Crouch", IE_Pressed,   this, &ACharacterBase::OnCrouch);
 	PlayerInputComponent->BindAction("Sprint", IE_Pressed,   this, &ACharacterBase::OnSprint);
 	PlayerInputComponent->BindAction("Jump",   IE_Pressed,   this, &AMockCharacter::Jump);
 	PlayerInputComponent->BindAction("Jump",   IE_Released,  this, &AMockCharacter::StopJumping);
-	// @NOTE 
-	// CharacterBase class
-	PlayerInputComponent->BindAction("EquipWeapon", IE_Pressed, this, &ACharacterBase::EquipmentActionMontage);
-	PlayerInputComponent->BindAction("SwapWeapon",  IE_Pressed, this, &AMockCharacter::UpdateWeapon);
-	PlayerInputComponent->BindAction("DropItem",    IE_Pressed, this, &AMockCharacter::ReleaseItem);
-	PlayerInputComponent->BindAction("Fire", IE_Pressed,   this, &AMockCharacter::FirePressed);
-	PlayerInputComponent->BindAction("Fire", IE_Released,  this, &AMockCharacter::FireReleassed);
-	PlayerInputComponent->BindAction("Reload", IE_Pressed, this, &AMockCharacter::Reload);
-
 	PlayerInputComponent->BindAxis("Turn",        this, &APawn::AddControllerYawInput);
 	PlayerInputComponent->BindAxis("LookUp",      this, &APawn::AddControllerPitchInput);
 	PlayerInputComponent->BindAxis("TurnRate",    this, &AMockCharacter::TurnAtRate);
@@ -64,11 +58,17 @@ void AMockCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInpu
 	PlayerInputComponent->BindAxis("MoveRight",   this, &AMockCharacter::MoveRight);
 	PlayerInputComponent->BindTouch(IE_Pressed,   this, &AMockCharacter::TouchStarted);
 	PlayerInputComponent->BindTouch(IE_Released,  this, &AMockCharacter::TouchStopped);
-}
 
-void AMockCharacter::ReleaseItem()
-{
-	OnReleaseItemExecuter_Implementation();
+	// interaction
+	PlayerInputComponent->BindAction("ReleaseObjects", IE_Pressed, this, &AMockCharacter::ReleaseObjects);
+	PlayerInputComponent->BindAction("PickupObjects",  IE_Pressed, this, &AMockCharacter::PickupObjects);
+
+	// combat action
+	PlayerInputComponent->BindAction("EquipWeapon", IE_Pressed, this, &ACharacterBase::EquipmentActionMontage);
+	PlayerInputComponent->BindAction("SwapWeapon",  IE_Pressed, this, &AMockCharacter::UpdateWeapon);
+	PlayerInputComponent->BindAction("Fire", IE_Pressed,   this, &AMockCharacter::FirePressed);
+	PlayerInputComponent->BindAction("Fire", IE_Released,  this, &AMockCharacter::FireReleassed);
+	PlayerInputComponent->BindAction("Reload", IE_Pressed, this, &AMockCharacter::Reload);
 }
 
 void AMockCharacter::TouchStarted(ETouchIndex::Type FingerIndex, FVector Location)
@@ -111,6 +111,16 @@ void AMockCharacter::MoveRight(float Value)
 		const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
 		AddMovementInput(Direction, Value);
 	}
+}
+
+void AMockCharacter::ReleaseObjects()
+{
+	OnReleaseItemExecuter_Implementation();
+}
+
+void AMockCharacter::PickupObjects()
+{
+	OnPickupItemExecuter_Implementation(GetPickupComponent()->GetPickupActor());
 }
 
 void AMockCharacter::FirePressed()
@@ -162,24 +172,24 @@ void AMockCharacter::OnCrouch()
 		GetCharacterMovement()->MaxWalkSpeed = MovementSpeed;
 	}
 }
-#pragma endregion
  
 void AMockCharacter::UpdateWeapon()
 {
-	if (this->WeaponList.Num() <= 0)
+	if (WeaponList.Num() <= 0)
 	{
 		return;
 	}
 
-	if (this->WeaponCurrentIndex >= this->WeaponList.Num() - 1) 
+	if (WeaponCurrentIndex >= WeaponList.Num() - 1) 
 	{
-		this->WeaponCurrentIndex = 0;
+		WeaponCurrentIndex = 0;
 	}
 	else 
 	{
-		++this->WeaponCurrentIndex;
+		++WeaponCurrentIndex;
 	}
 }
+#pragma endregion
 
 // death
 void AMockCharacter::Die_Implementation()
@@ -205,10 +215,14 @@ void AMockCharacter::OnReleaseItemExecuter_Implementation()
 }
 
 // pick up
-void AMockCharacter::OnPickupItemExecuter_Implementation(AActor * Actor)
+void AMockCharacter::OnPickupItemExecuter_Implementation(AActor* Actor)
 {
-	AWeaponBase* Weapon = Cast<AWeaponBase>(Actor);
-	if (Weapon) 
+	if (Actor == nullptr)
+	{
+		return;
+	}
+
+	if (AWeaponBase* Weapon = Cast<AWeaponBase>(Actor))
 	{
 		const bool bSame = Super::SameWeapon(Weapon);
 		if (bSame)
@@ -231,8 +245,8 @@ void AMockCharacter::OnPickupItemExecuter_Implementation(AActor * Actor)
 		AWeaponBase* const PickingWeapon = GetWorld()->SpawnActor<AWeaponBase>(WeaponClass, Transform, SpawnInfo);
 
 		PickingWeapon->AttachToComponent(
-			Super::GetMesh(), 
-			{ EAttachmentRule::SnapToTarget, true }, 
+			Super::GetMesh(),
+			{ EAttachmentRule::SnapToTarget, true },
 			WeaponItemInfo.UnEquipSocketName);
 
 		PickingWeapon->SetEquip(false);
@@ -246,7 +260,7 @@ void AMockCharacter::OnPickupItemExecuter_Implementation(AActor * Actor)
 		}
 		Weapon->Destroy();
 		Weapon = nullptr;
-	} 
+	}
 	Super::OnPickupItemExecuter_Implementation(Actor);
 }
 
@@ -303,7 +317,7 @@ FVector AMockCharacter::BulletTraceForwardLocation() const
 
 void AMockCharacter::ReleaseWeapon()
 {
-	UWorld* World = GetWorld();
+	UWorld* const World = GetWorld();
 
 	if (World == nullptr)
 	{
@@ -313,20 +327,17 @@ void AMockCharacter::ReleaseWeapon()
 	const FRotator Rotation = Super::GetActorRotation();
 	const FVector Forward   = Super::GetActorLocation() + (Controller->GetControlRotation().Vector() * 200);
 	const FTransform Transform = UKismetMathLibrary::MakeTransform(Forward, Rotation, FVector::OneVector);
-	AWeaponBase* UnEquipWeapon = Super::GetUnEquipWeapon();
-
-	if (UnEquipWeapon)
+	
+	if (AWeaponBase* UnEquipWeapon = Super::GetUnEquipWeapon())
 	{
-		if (WeaponList.Find(UnEquipWeapon) <= 0) 
+		if (WeaponList.Find(UnEquipWeapon) <= 0)
 		{
 			WeaponList.Remove(UnEquipWeapon);
 		}
-
 		FWeaponItemInfo& WeaponItemInfo = UnEquipWeapon->WeaponItemInfo;
 		TSubclassOf<class AWeaponBase> WeaponClass = WeaponItemInfo.WeaponClass;
 		UnEquipWeapon->Destroy();
 		UnEquipWeapon = nullptr;
-
 		FActorSpawnParameters SpawnInfo;
 		SpawnInfo.Owner = NULL;
 		SpawnInfo.Instigator = NULL;
@@ -335,4 +346,3 @@ void AMockCharacter::ReleaseWeapon()
 		SpawningObject->OnVisible_Implementation();
 	}
 }
-

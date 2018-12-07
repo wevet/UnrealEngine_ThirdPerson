@@ -2,12 +2,15 @@
 
 #include "AICharacterBase.h"
 #include "AIUserWidgetBase.h"
-#include "Engine.h"
-#include "Kismet/KismetMathLibrary.h"
-#include "Components/WidgetComponent.h"
-#include "Components/SkeletalMeshComponent.h"
+#include "WeaponBase.h"
+#include "WayPointBase.h"
+#include "MockCharacter.h"
 #include "AIControllerBase.h"
-
+#include "Kismet/KismetMathLibrary.h"
+#include "Perception/AiPerceptionComponent.h"
+#include "Perception/AISenseConfig_Hearing.h"
+#include "Perception/AISense_Hearing.h"
+#include "Engine.h"
 
 AAICharacterBase::AAICharacterBase(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer), 
@@ -15,7 +18,6 @@ AAICharacterBase::AAICharacterBase(const FObjectInitializer& ObjectInitializer)
 {
 	PrimaryActorTick.bCanEverTick = true;
 
-	// create pawnsensing
 	PawnSensingComponent = ObjectInitializer.CreateDefaultSubobject<UPawnSensingComponent>(this, TEXT("PawnSensingComponent"));
 	PawnSensingComponent->SetPeripheralVisionAngle(60.f);
 	PawnSensingComponent->SightRadius = 2000.f;

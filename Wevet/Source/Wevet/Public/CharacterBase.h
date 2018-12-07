@@ -5,19 +5,18 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "Macros.h"
-#include "WeaponBase.h"
-#include "Combat.h"
+#include "Wevet.h"
 #include "STypes.h"
+#include "Combat.h"
 #include "InteractionExecuter.h"
-#include "CharacterModel.h"
+#include "WeaponControllerExecuter.h"
 #include "CharacterBase.generated.h"
 
+class UCharacterPickupComponent;
+class UCharacterModel;
 
 UCLASS(ABSTRACT)
-class WEVET_API ACharacterBase : 
-	public ACharacter, 
-	public ICombat, 
-	public IInteractionExecuter
+class WEVET_API ACharacterBase : public ACharacter, public ICombat, public IInteractionExecuter
 {
 	GENERATED_BODY()
 
@@ -37,10 +36,22 @@ public:
 	virtual void OnSprint();
 	virtual void OnCrouch();
 
-	virtual FVector BulletTraceRelativeLocation() const { return FVector::ZeroVector; };
-	virtual FVector BulletTraceForwardLocation() const { return FVector::ZeroVector; };
-	UCharacterModel* GetCharacterModel() { return this->CharacterModel; }
+	virtual FVector BulletTraceRelativeLocation() const 
+	{
+		return FVector::ZeroVector; 
+	};
 
+	virtual FVector BulletTraceForwardLocation() const 
+	{
+		return FVector::ZeroVector; 
+	};
+
+	UCharacterModel* GetCharacterModel() 
+	{
+		return CharacterModel; 
+	}
+
+#pragma region interfaces
 public:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "ACharacterBase|IInteractionExecuter")
 	void OnReleaseItemExecuter();
@@ -73,6 +84,7 @@ public:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "ACharacterBase|ICombatExecuter")
 	void NotifyEquip();
 	virtual void NotifyEquip_Implementation() override;
+#pragma endregion
 
 public:
 	UFUNCTION(BlueprintCallable, Category = "ACharacterBase|Weapon")
@@ -81,42 +93,32 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "ACharacterBase|Weapon")
 	AWeaponBase* GetSelectedWeapon() 
 	{
-		return this->SelectedWeapon; 
+		return SelectedWeapon; 
 	};
 
 	UFUNCTION(BlueprintCallable, Category = "ACharacterBase|Weapon")
 	const TArray<AWeaponBase*>& GetWeaponList() 
 	{
-		return this->WeaponList; 
+		return WeaponList; 
 	};
 
 	UFUNCTION(BlueprintCallable, Category = "ACharacterBase|Variable")
 	const bool HasCrouch() 
 	{
-		return this->bCrouch; 
+		return bCrouch; 
 	}
 
 	UFUNCTION(BlueprintCallable, Category = "ACharacterBase|Variable")
 	const bool HasSprint() 
 	{
-		return this->bSprint; 
+		return bSprint; 
 	}
 
 	UFUNCTION(BlueprintCallable, Category = "ACharacterBase|Variable")
-	virtual const bool HasEquipWeapon() 
-	{
-		if (SelectedWeapon == nullptr)
-		{
-			return false;
-		}
-		return SelectedWeapon->bEquip;
-	}
+	virtual const bool HasEquipWeapon();
 
 	UFUNCTION(BlueprintCallable, Category = "ACharacterBase|CharacterModel")
-	float GetHealthToWidget() const 
-	{
-		return CharacterModel->GetHealthToWidget();
-	}
+	float GetHealthToWidget() const;
 
 	FORCEINLINE class UPawnNoiseEmitterComponent* GetPawnNoiseEmitterComponent() const
 	{
@@ -128,12 +130,20 @@ public:
 		return AudioComponent;
 	}
 
+	FORCEINLINE class UCharacterPickupComponent* GetPickupComponent() const
+	{
+		return PickupComponent;
+	}
+
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Components, meta = (AllowPrivateAccess = "true"))
 	class UPawnNoiseEmitterComponent* PawnNoiseEmitterComponent;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Components, meta = (AllowPrivateAccess = "true"))
 	class UAudioComponent* AudioComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Components, meta = (AllowPrivateAccess = "true"))
+	class UCharacterPickupComponent* PickupComponent;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ACharacterBase|Weapon")
 	AWeaponBase* SelectedWeapon;
@@ -173,6 +183,8 @@ protected:
 
 	UPROPERTY(EditAnywhere, Instanced, Category = "ACharacterBase|CharacterModel")
 	UCharacterModel* CharacterModel;
+
+	/* cacehd init speed */
 	float DefaultMaxSpeed;
 
 	/* get unequip weapon */
@@ -183,6 +195,12 @@ protected:
 
 	/* same weaponList */
 	const bool SameWeapon(AWeaponBase* Weapon);
+
+	/* pickup actor */
+	virtual void PickupObjects();
+
+	/* release actor */
+	virtual void ReleaseObjects();
 
 // blueprint native event
 public:

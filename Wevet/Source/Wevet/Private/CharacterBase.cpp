@@ -2,7 +2,11 @@
 
 #include "CharacterBase.h"
 #include "WeaponBase.h"
+#include "CharacterModel.h"
+#include "CharacterPickupComponent.h"
 #include "Engine.h"
+
+DEFINE_LOG_CATEGORY(LogWevetClient);
 
 ACharacterBase::ACharacterBase(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer),
@@ -20,6 +24,7 @@ ACharacterBase::ACharacterBase(const FObjectInitializer& ObjectInitializer)
 	AudioComponent->bAutoActivate = false;
 	AudioComponent->bAutoDestroy = false;
 	AudioComponent->SetupAttachment(GetMesh());
+	PickupComponent = ObjectInitializer.CreateDefaultSubobject<UCharacterPickupComponent>(this, TEXT("PickupComponent"));
 }
 
 void ACharacterBase::OnConstruction(const FTransform& Transform)
@@ -29,9 +34,9 @@ void ACharacterBase::OnConstruction(const FTransform& Transform)
 
 void ACharacterBase::BeginDestroy()
 {
-	if (this->CharacterModel)
+	if (CharacterModel)
 	{
-		this->CharacterModel->ConditionalBeginDestroy();
+		CharacterModel->ConditionalBeginDestroy();
 	}
 	Super::BeginDestroy();
 }
@@ -44,8 +49,8 @@ void ACharacterBase::EndPlay(const EEndPlayReason::Type EndPlayReason)
 void ACharacterBase::BeginPlay()
 {
 	Super::BeginPlay();
-	this->DefaultMaxSpeed = GetCharacterMovement()->MaxWalkSpeed;
-	GetCharacterMovement()->MaxWalkSpeed = this->MovementSpeed;
+	DefaultMaxSpeed = GetCharacterMovement()->MaxWalkSpeed;
+	GetCharacterMovement()->MaxWalkSpeed = MovementSpeed;
 }
 
 void ACharacterBase::Tick(float DeltaTime)
@@ -65,47 +70,45 @@ void ACharacterBase::StopJumping()
 
 void ACharacterBase::OnSprint()
 {
-	this->bSprint = !this->bSprint;
+	bSprint = !bSprint;
 
 	// now crouching slow speed
-	if (this->bCrouch)
+	if (bCrouch)
 	{
-		this->bSprint = false;
+		bSprint = false;
 	}
-	MovementSpeed = this->bSprint ? this->DefaultMaxSpeed : this->DefaultMaxSpeed *0.5f;
+	MovementSpeed = bSprint ? DefaultMaxSpeed : DefaultMaxSpeed *0.5f;
 	GetCharacterMovement()->MaxWalkSpeed = MovementSpeed;
 }
 
 void ACharacterBase::OnCrouch()
 {
-	this->bCrouch = !this->bCrouch;
+	bCrouch = !bCrouch;
 }
 
 void ACharacterBase::OnReleaseItemExecuter_Implementation()
 {
-	//
 }
 
 void ACharacterBase::OnPickupItemExecuter_Implementation(AActor* Actor)
 {
 	if (Actor)
 	{
-		UE_LOG(LogTemp, Log, TEXT("Picking : %s"), *(Actor->GetName()));
+		UE_LOG(LogWevetClient, Log, TEXT("Picking : %s"), *(Actor->GetName()));
 	}
 }
 
 void ACharacterBase::NotifyEquip_Implementation()
 {
-	//
 }
 
 bool ACharacterBase::IsDeath_Implementation()
 {
-	if (this->bDied || this->CharacterModel == nullptr)
+	if (bDied || CharacterModel == nullptr)
 	{
 		return true;
 	}
-	return this->CharacterModel->GetCurrentHealth() <= 0;
+	return CharacterModel->GetCurrentHealth() <= 0;
 }
 
 void ACharacterBase::OnTakeDamage_Implementation(FName BoneName, float Damage, AActor* Actor)
@@ -115,18 +118,18 @@ void ACharacterBase::OnTakeDamage_Implementation(FName BoneName, float Damage, A
 		return;
 	}
 
-	if (BoneName == this->HeadSocketName) 
+	if (BoneName == HeadSocketName) 
 	{
-		this->CharacterModel->SetCurrentHealthValue(0);
+		CharacterModel->SetCurrentHealthValue(0);
 		return;
 	} 
 	else
 	{
-		if (this->CharacterModel)
+		if (CharacterModel)
 		{
 			int32 TakeDamage = (int32)(FMath::Abs(Damage));
-			int32 CurrentHealth = this->CharacterModel->GetCurrentHealth();
-			this->CharacterModel->SetCurrentHealthValue(CurrentHealth - TakeDamage);
+			int32 CurrentHealth = CharacterModel->GetCurrentHealth();
+			CharacterModel->SetCurrentHealthValue(CurrentHealth - TakeDamage);
 		}
 		else
 		{
@@ -145,7 +148,7 @@ void ACharacterBase::OnTakeDamage_Implementation(FName BoneName, float Damage, A
 void ACharacterBase::Die_Implementation()
 {
 	// twice called
-	if (this->bDied)
+	if (bDied)
 	{
 		return;
 	}
@@ -171,15 +174,13 @@ void ACharacterBase::Die_Implementation()
 	Transform.SetRotation(Rotation);
 	Transform.SetScale3D(FVector::OneVector);
 
-	UWorld* World = GetWorld();
-	if (World)
+	if (UWorld* const World = GetWorld())
 	{
-
 		for (AWeaponBase*& Weapon : WeaponList)
 		{
 			if (!Weapon)
 			{
-				check(0);
+				checkSlow(0);
 				continue;
 			}
 			Weapon->OnFireRelease_Implementation();
@@ -201,25 +202,37 @@ void ACharacterBase::Die_Implementation()
 		}
 		WeaponList.Empty();
 	}
-	this->bDied = true;
+	bDied = true;
 }
 
 void ACharacterBase::Equipment_Implementation()
 {
-	if (SelectedWeapon == nullptr) 
+	if (SelectedWeapon) 
 	{
-		return;
+		SelectedWeapon->SetEquip(true);
 	}
-	SelectedWeapon->SetEquip(true);
 }
 
 void ACharacterBase::UnEquipment_Implementation()
 {
+	if (SelectedWeapon)
+	{
+		SelectedWeapon->SetEquip(false);
+	}
+}
+
+const bool ACharacterBase::HasEquipWeapon()
+{
 	if (SelectedWeapon == nullptr)
 	{
-		return;
+		return false;
 	}
-	SelectedWeapon->SetEquip(false);
+	return SelectedWeapon->bEquip;
+}
+
+float ACharacterBase::GetHealthToWidget() const
+{
+	return CharacterModel->GetHealthToWidget();
 }
 
 // WeaponList Find Category
@@ -266,8 +279,9 @@ void ACharacterBase::OutUnEquipWeaponList(TArray<AWeaponBase*>& OutWeaponList)
 	}
 	for (AWeaponBase* &Weapon : WeaponList)
 	{
-		if (Weapon == nullptr)
+		if (!Weapon)
 		{
+			checkSlow(0);
 			continue;
 		}
 		if (!Weapon->bEquip)
@@ -286,6 +300,14 @@ const bool ACharacterBase::SameWeapon(AWeaponBase* Weapon)
 		return InWeapon->WeaponItemInfo.WeaponItemType == Weapon->WeaponItemInfo.WeaponItemType;
 	}
 	return false;
+}
+
+void ACharacterBase::PickupObjects()
+{
+}
+
+void ACharacterBase::ReleaseObjects()
+{
 }
 
 #pragma region Montage

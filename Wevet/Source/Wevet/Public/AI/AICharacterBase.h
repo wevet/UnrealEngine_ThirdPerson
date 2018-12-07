@@ -4,23 +4,20 @@
 
 #include "CoreMinimal.h"
 #include "CharacterBase.h"
-#include "WeaponBase.h"
-#include "WayPointBase.h"
-#include "MockCharacter.h"
-#include "Perception/AiPerceptionComponent.h"
-#include "Perception/AISenseConfig_Hearing.h"
-#include "Perception/AISense_Hearing.h"
+#include "Components/WidgetComponent.h"
+#include "Components/SkeletalMeshComponent.h"
 #include "Perception/PawnSensingComponent.h"
 #include "AICharacterBase.generated.h"
 
-/**
-*
-*/
+
+class AWeaponBase;
+class AWayPointBase;
+
+
 UCLASS(ABSTRACT)
 class WEVET_API AAICharacterBase : public ACharacterBase
 {
 	GENERATED_BODY()
-
 
 public:
 	AAICharacterBase(const FObjectInitializer& ObjectInitializer);
@@ -58,6 +55,7 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "AAICharacterBase|Variable")
 	bool HasEnemyFound() const;
+	
 	virtual const bool HasEquipWeapon() override;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "AAICharacterBase|Variable")
@@ -73,7 +71,9 @@ public:
 	{
 		return TargetCharacter;
 	}
+
 	virtual FVector BulletTraceRelativeLocation() const override;
+	
 	virtual FVector BulletTraceForwardLocation() const override;
 
 protected:

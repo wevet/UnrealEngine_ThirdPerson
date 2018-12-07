@@ -3,6 +3,7 @@
 #include "WeaponBase.h"
 #include "CharacterBase.h"
 #include "BulletBase.h"
+#include "CharacterPickupComponent.h"
 #include "Engine.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
@@ -122,10 +123,9 @@ void AWeaponBase::BeginOverlapRecieve(
 
 	WidgetComponent->SetVisibility(true);
 	SkeletalMeshComponent->SetRenderCustomDepth(true);
-
-	if (APlayerController* PlayerController = UGameplayStatics::GetPlayerController(this, 0))
+	if (CharacterOwner)
 	{
-		Super::EnableInput(PlayerController);
+		CharacterOwner->GetPickupComponent()->SetPickupActor(this);
 	}
 }
 
@@ -145,6 +145,10 @@ void AWeaponBase::EndOverlapRecieve(
 
 	WidgetComponent->SetVisibility(false);
 	SkeletalMeshComponent->SetRenderCustomDepth(false);
+	if (CharacterOwner)
+	{
+		CharacterOwner->GetPickupComponent()->SetPickupActor(false);
+	}
 }
 
 void AWeaponBase::OnFirePressedInternal()

@@ -20,7 +20,7 @@ class WEVET_API UAIUserWidgetBase : public UUserWidget
 public:
 	UAIUserWidgetBase(const FObjectInitializer& ObjectInitializer);
 	virtual void NativeConstruct() override;
-	virtual void Init(AAICharacterBase* InAICharacter);
+	virtual void Init(AAICharacterBase* NewCharacter);
 	
 protected:
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;

@@ -52,9 +52,10 @@ protected:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 protected:
-	virtual void OnCrouch() override;
 	virtual void UpdateWeapon();
-	virtual void ReleaseItem();
+	virtual void OnCrouch() override;
+	virtual void PickupObjects() override;
+	virtual void ReleaseObjects() override;
 
 	void TouchStarted(ETouchIndex::Type FingerIndex, FVector Location);
 	void TouchStopped(ETouchIndex::Type FingerIndex, FVector Location);
