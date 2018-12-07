@@ -29,6 +29,9 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 protected:
+	virtual void BeginPlay() override;
+
+protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Components, meta = (AllowPrivateAccess = "true"))
 	UPawnSensingComponent* PawnSensingComponent;
 
@@ -63,12 +66,18 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "AAICharacterBase|Variable")
 	virtual void InitializePosses();
 
-protected:
-	ACharacterBase* TargetCharacter;
-
-	virtual void BeginPlay() override;
+	// @NOTE
+	// for Animation Blueprint
+	UFUNCTION(BlueprintCallable, Category = "AAICharacterBase|Target")
+	ACharacterBase* GetTargetCharacter() const
+	{
+		return TargetCharacter;
+	}
 	virtual FVector BulletTraceRelativeLocation() const override;
 	virtual FVector BulletTraceForwardLocation() const override;
+
+protected:
+	ACharacterBase* TargetCharacter;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AAICharacterBase|Variable")
 	TSubclassOf<class AWeaponBase> SpawnWeapon;
@@ -78,14 +87,6 @@ protected:
 
 	UFUNCTION(BlueprintCallable, Category = "AAICharacterBase|PawnSensing")
 	virtual	void OnHearNoiseRecieve(APawn *OtherActor, const FVector &Location, float Volume);
-
-	// @NOTE
-	// for Animation Blueprint
-	UFUNCTION(BlueprintCallable, Category = "AAICharacterBase|Target")
-	ACharacterBase* GetTargetCharacter() const
-	{
-		return TargetCharacter;
-	}
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "AAICharacterBase|Variable")
 	float BulletDelay = 1.4f;

@@ -5,13 +5,14 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "WeaponControllerExecuter.h"
-#include "BulletBase.h"
 #include "Classes/Animation/AnimMontage.h"
 #include "Components/SphereComponent.h"
 #include "Components/WidgetComponent.h"
+#include "Components/SkeletalMeshComponent.h"
 #include "WeaponBase.generated.h"
 
 class ACharacterBase;
+class ABulletBase;
 
 UCLASS(ABSTRACT)
 class WEVET_API AWeaponBase : public AActor, public IWeaponControllerExecuter
@@ -128,22 +129,28 @@ public:
 	virtual void OnVisible_Implementation() override;
 #pragma endregion
 
-	UFUNCTION(BlueprintCallable, Category = "AWeaponBase|Component")
-	virtual	void BeginOverlapRecieve(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult &SweepResult);
+	UFUNCTION(BlueprintCallable, Category = Component)
+	virtual	void BeginOverlapRecieve(
+		UPrimitiveComponent* OverlappedComponent, 
+		AActor* OtherActor, 
+		UPrimitiveComponent* OtherComp, 
+		int32 OtherBodyIndex, 
+		bool bFromSweep, 
+		const FHitResult &SweepResult);
 
-	UFUNCTION(BlueprintCallable, Category = "AWeaponBase|Component")
-	virtual	void EndOverlapRecieve(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+	UFUNCTION(BlueprintCallable, Category = Component)
+	virtual	void EndOverlapRecieve(
+		UPrimitiveComponent* OverlappedComp, 
+		AActor* OtherActor, 
+		UPrimitiveComponent* OtherComp, 
+		int32 OtherBodyIndex);
 
-	UFUNCTION(BlueprintCallable, Category = "AWeaponBase|API")
+	UFUNCTION(BlueprintCallable, Category = API)
 	virtual void OnFirePressedInternal();
 
-	UFUNCTION(BlueprintCallable, Category = "AWeaponBase|API")
 	virtual void OnFireReleaseInternal();
-
-	UFUNCTION(BlueprintCallable, Category = "AWeaponBase|API")
 	virtual void OnReloadInternal();
 
-	UFUNCTION(BlueprintCallable, Category = "AWeaponBase|API")
 	const FTransform GetMuzzleTransform()
 	{ 
 		return SkeletalMeshComponent->GetSocketTransform(MuzzleSocketName);

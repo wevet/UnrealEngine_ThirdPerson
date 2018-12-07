@@ -2,10 +2,10 @@
 
 #include "WeaponBase.h"
 #include "CharacterBase.h"
+#include "BulletBase.h"
 #include "Engine.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
-#include "Components/SkeletalMeshComponent.h"
 
 AWeaponBase::AWeaponBase(const FObjectInitializer& ObjectInitializer) 
 	: Super(ObjectInitializer),
@@ -16,24 +16,23 @@ AWeaponBase::AWeaponBase(const FObjectInitializer& ObjectInitializer)
 	MuzzleSocketName(FName(TEXT("MuzzleFlash"))),
 	BulletDuration(0.1f),
 	ReloadDuration(2.f),
-	bEmpty(false)
+	bEmpty(false),
+	bEquip(false),
+	bReload(false),
+	bFired(false)
 {
 	PrimaryActorTick.bCanEverTick = true;
 
-	// setup scene component
 	SceneComponent = ObjectInitializer.CreateDefaultSubobject<USceneComponent>(this, TEXT("SceneComponent"));
 	RootComponent  = SceneComponent;
 
-	// set skeletal
 	SkeletalMeshComponent = ObjectInitializer.CreateDefaultSubobject<USkeletalMeshComponent>(this, TEXT("SkeletalMeshComponent"));
 	SkeletalMeshComponent->SetupAttachment(RootComponent);
 
-	// parent component at skeletalmeshcomponent
 	SphereComponent = ObjectInitializer.CreateDefaultSubobject<USphereComponent>(this, TEXT("SphereComponent"));
 	SphereComponent->SetSphereRadius(90.0f);
 	SphereComponent->SetupAttachment(SkeletalMeshComponent);
 
-	// weapon umg
 	WidgetComponent = ObjectInitializer.CreateDefaultSubobject<UWidgetComponent>(this, TEXT("WidgetComponent"));
 	WidgetComponent->SetDrawSize(FVector2D(180.f, 70.f));
 	WidgetComponent->SetWorldLocation(FVector(0.f, 0.f, 60.f));
@@ -44,12 +43,12 @@ void AWeaponBase::BeginPlay()
 {
 	Super::BeginPlay();
 
-	if (ensure(WidgetComponent)) 
+	if (ensure(WidgetComponent && WidgetComponent->IsValidLowLevel())) 
 	{
 		WidgetComponent->SetVisibility(false);
 	}
 
-	if (ensure(SphereComponent)) 
+	if (ensure(SphereComponent && SphereComponent->IsValidLowLevel())) 
 	{
 		SphereComponent->OnComponentBeginOverlap.AddDynamic(this, &AWeaponBase::BeginOverlapRecieve);
 		SphereComponent->OnComponentEndOverlap.AddDynamic(this, &AWeaponBase::EndOverlapRecieve);
@@ -63,7 +62,7 @@ void AWeaponBase::Tick(float DeltaTime)
 
 void AWeaponBase::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
-	UWorld* World = GetWorld();
+	UWorld* const World = GetWorld();
 	if (World && World->GetTimerManager().IsTimerActive(ReloadTimerHandle))
 	{
 		World->GetTimerManager().ClearTimer(ReloadTimerHandle);
@@ -105,12 +104,17 @@ void AWeaponBase::OnVisible_Implementation()
 	WidgetComponent->SetVisibility(true);
 }
 
-void AWeaponBase::BeginOverlapRecieve(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult)
+void AWeaponBase::BeginOverlapRecieve(
+	UPrimitiveComponent* OverlappedComponent, 
+	AActor* OtherActor, 
+	UPrimitiveComponent* OtherComp, 
+	int32 OtherBodyIndex, 
+	bool bFromSweep, 
+	const FHitResult & SweepResult)
 {
 	if (CharacterOwner == nullptr)
 	{
-		ACharacterBase* Character = Cast<ACharacterBase>(OtherActor);
-		if (Character)
+		if (ACharacterBase* Character = Cast<ACharacterBase>(OtherActor))
 		{
 			SetCharacterOwner(Character);
 		}
@@ -119,19 +123,21 @@ void AWeaponBase::BeginOverlapRecieve(UPrimitiveComponent* OverlappedComponent, 
 	WidgetComponent->SetVisibility(true);
 	SkeletalMeshComponent->SetRenderCustomDepth(true);
 
-	APlayerController* PlayerController = UGameplayStatics::GetPlayerController(this, 0);
-	if (PlayerController)
+	if (APlayerController* PlayerController = UGameplayStatics::GetPlayerController(this, 0))
 	{
 		Super::EnableInput(PlayerController);
 	}
 }
 
-void AWeaponBase::EndOverlapRecieve(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+void AWeaponBase::EndOverlapRecieve(
+	UPrimitiveComponent* OverlappedComp, 
+	AActor* OtherActor, 
+	UPrimitiveComponent* OtherComp, 
+	int32 OtherBodyIndex)
 {
 	if (CharacterOwner == nullptr)
 	{
-		ACharacterBase* Character = Cast<ACharacterBase>(OtherActor);
-		if (Character)
+		if (ACharacterBase* Character = Cast<ACharacterBase>(OtherActor))
 		{
 			SetCharacterOwner(Character);
 		}
@@ -189,9 +195,6 @@ void AWeaponBase::OnFirePressedInternal()
 		EndLocation, 
 		ECollisionChannel::ECC_Camera, 
 		CollisionQueryParams);
-
-	// temp draw
-	DrawDebugLine(World, HitData.TraceStart, HitData.TraceEnd, FColor(255, 0, 0), false, -1, 0, 12.333);
 
 	const FVector MuzzleLocation  = GetMuzzleTransform().GetLocation();
 	const FRotator MuzzleRotation = FRotator(GetMuzzleTransform().GetRotation());
