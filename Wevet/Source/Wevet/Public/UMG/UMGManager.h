@@ -7,9 +7,10 @@
 #include "MockCharacter.h"
 #include "UMGManager.generated.h"
 
-/**
- * 
- */
+class UProgressBar;
+class UCanvasPanel;
+class UImage;
+
 UCLASS()
 class WEVET_API UUMGManager : public UUserWidget
 {
@@ -27,4 +28,13 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "UMGManager|Variable")
 	ACharacterBase* CharacterOwner;
+
+	UImage* ProgressBar;
+	UCanvasPanel* CanvasPanel;
+	/* widget item name */
+	const FName ProgressHealthBarKeyName = TEXT("RadialProgressImage");
+	const FName CanvasPanelKeyName = TEXT("BasePanel");
+
+	/* material param name */
+	const FName HealthParameterName = TEXT("FillAmount");
 };

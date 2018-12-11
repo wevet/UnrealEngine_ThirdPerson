@@ -129,7 +129,7 @@ public:
 	virtual void OnVisible_Implementation() override;
 #pragma endregion
 
-	UFUNCTION(BlueprintCallable, Category = Component)
+	UFUNCTION(BlueprintCallable, Category = Components)
 	virtual	void BeginOverlapRecieve(
 		UPrimitiveComponent* OverlappedComponent, 
 		AActor* OtherActor, 
@@ -138,7 +138,7 @@ public:
 		bool bFromSweep, 
 		const FHitResult &SweepResult);
 
-	UFUNCTION(BlueprintCallable, Category = Component)
+	UFUNCTION(BlueprintCallable, Category = Components)
 	virtual	void EndOverlapRecieve(
 		UPrimitiveComponent* OverlappedComp, 
 		AActor* OtherActor, 

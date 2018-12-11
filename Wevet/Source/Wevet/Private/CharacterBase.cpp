@@ -8,6 +8,8 @@
 
 DEFINE_LOG_CATEGORY(LogWevetClient);
 
+using namespace Wevet;
+
 ACharacterBase::ACharacterBase(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer),
 	BaseTurnRate(45.f),
@@ -137,17 +139,16 @@ void ACharacterBase::OnTakeDamage_Implementation(FName BoneName, float Damage, A
 		}
 	}
 
-	//if (Actor)
-	//{
-	//	UClass* Classes = Actor->StaticClass();
-	//	UE_LOG(LogTemp, Log, TEXT("ClassName : %s"), *Classes->GetName());
-	//}
+	if (Actor)
+	{
+		UClass* Classes = Actor->StaticClass();
+		UE_LOG(LogWevetClient, Log, TEXT("ClassName : %s"), *Classes->GetName());
+	}
 }
 
 // All deploy weapon
 void ACharacterBase::Die_Implementation()
 {
-	// twice called
 	if (bDied)
 	{
 		return;
@@ -161,8 +162,8 @@ void ACharacterBase::Die_Implementation()
 	Super::GetCharacterMovement()->DisableMovement();
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
-	const bool bHasWeapon = (WeaponList.Num() <= 0);
-	if (bHasWeapon)
+	const bool bEmptyWeapon = ArrayExtension::NullOrEmpty(WeaponList);
+	if (bEmptyWeapon)
 	{
 		return;
 	}
@@ -238,7 +239,7 @@ float ACharacterBase::GetHealthToWidget() const
 // WeaponList Find Category
 AWeaponBase* ACharacterBase::FindByWeapon(EWeaponItemType WeaponItemType)
 {
-	if (WeaponList.Num() <= 0)
+	if (ArrayExtension::NullOrEmpty(WeaponList))
 	{
 		return nullptr;
 	}
@@ -256,7 +257,7 @@ AWeaponBase* ACharacterBase::FindByWeapon(EWeaponItemType WeaponItemType)
 // unequip weapon first index
 AWeaponBase* ACharacterBase::GetUnEquipWeapon()
 {
-	if (WeaponList.Num() <= 0)
+	if (ArrayExtension::NullOrEmpty(WeaponList))
 	{
 		return nullptr;
 	}
@@ -273,7 +274,7 @@ AWeaponBase* ACharacterBase::GetUnEquipWeapon()
 // out unequip weaponlist
 void ACharacterBase::OutUnEquipWeaponList(TArray<AWeaponBase*>& OutWeaponList)
 {
-	if (WeaponList.Num() <= 0) 
+	if (ArrayExtension::NullOrEmpty(WeaponList))
 	{
 		return;
 	}
@@ -294,8 +295,7 @@ void ACharacterBase::OutUnEquipWeaponList(TArray<AWeaponBase*>& OutWeaponList)
 // pick already sameweapon category ?
 const bool ACharacterBase::SameWeapon(AWeaponBase* Weapon)
 {
-	AWeaponBase* InWeapon = FindByWeapon(Weapon->WeaponItemInfo.WeaponItemType);
-	if (InWeapon) 
+	if (AWeaponBase* InWeapon = FindByWeapon(Weapon->WeaponItemInfo.WeaponItemType))
 	{
 		return InWeapon->WeaponItemInfo.WeaponItemType == Weapon->WeaponItemInfo.WeaponItemType;
 	}
@@ -310,10 +310,13 @@ void ACharacterBase::ReleaseObjects()
 {
 }
 
-#pragma region Montage
+/*********************************
+CharacterBaseClass
+AnimationMontage Event
+*********************************/
 void ACharacterBase::EquipmentActionMontage()
 {
-	if (WeaponList.Num() <= 0)
+	if (ArrayExtension::NullOrEmpty(WeaponList))
 	{
 		return;
 	}
@@ -322,7 +325,7 @@ void ACharacterBase::EquipmentActionMontage()
 
 void ACharacterBase::FireActionMontage()
 {
-	if (WeaponList.Num() <= 0 || SelectedWeapon == nullptr)
+	if (ArrayExtension::NullOrEmpty(WeaponList) || SelectedWeapon == nullptr)
 	{
 		return;
 	}
@@ -331,10 +334,9 @@ void ACharacterBase::FireActionMontage()
 
 void ACharacterBase::ReloadActionMontage()
 {
-	if (WeaponList.Num() <= 0 || SelectedWeapon == nullptr)
+	if (ArrayExtension::NullOrEmpty(WeaponList) || SelectedWeapon == nullptr)
 	{
 		return;
 	}
 	PlayAnimMontage(ReloadMontage);
 }
-#pragma endregion

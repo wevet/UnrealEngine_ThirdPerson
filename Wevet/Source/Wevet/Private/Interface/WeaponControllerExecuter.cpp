@@ -11,6 +11,7 @@ UWeaponControllerExecuter::UWeaponControllerExecuter(const class FObjectInitiali
 FWeaponItemInfo::FWeaponItemInfo()
 {
 	this->EquipSocketName = FName(TEXT("Lancer_Root_Socket"));
+	this->Damage = 20.f;
 }
 
 

@@ -120,10 +120,12 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "ACharacterBase|CharacterModel")
 	float GetHealthToWidget() const;
 
-	FORCEINLINE class UPawnNoiseEmitterComponent* GetPawnNoiseEmitterComponent() const
-	{
-		return PawnNoiseEmitterComponent;
-	}
+	// @NOTE
+	// GetSuper class
+	//FORCEINLINE class UPawnNoiseEmitterComponent* GetPawnNoiseEmitterComponent() const
+	//{
+	//	return PawnNoiseEmitterComponent;
+	//}
 
 	FORCEINLINE class UAudioComponent* GetAudioComponent() const
 	{

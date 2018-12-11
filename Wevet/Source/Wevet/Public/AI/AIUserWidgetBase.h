@@ -5,13 +5,11 @@
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
 #include "AICharacterBase.h"
-#include "Components/CanvasPanel.h"
-#include "Components/ProgressBar.h"
 #include "AIUserWidgetBase.generated.h"
 
-/**
- * 
- */
+class UProgressBar;
+class UCanvasPanel;
+
 UCLASS(ABSTRACT)
 class WEVET_API UAIUserWidgetBase : public UUserWidget
 {

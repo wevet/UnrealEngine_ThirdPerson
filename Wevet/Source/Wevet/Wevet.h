@@ -10,3 +10,39 @@ DECLARE_LOG_CATEGORY_EXTERN(LogWevetClient, Verbose, All);
 	if (!bSilent) { UE_LOG(LogWevetClient, Warning, FormatString, __VA_ARGS__); }
 #define SPRITER_IMPORT_WARNING(FormatString, ...) \
 	if (!bSilent) { UE_LOG(LogWevetClient, Warning, FormatString, __VA_ARGS__); }
+
+
+namespace Wevet
+{
+	class WEVET_API ArrayExtension
+	{
+
+	public:
+		template<typename T>
+		static FORCEINLINE T* GetAssetFromAssetLibrary(const TArray<T*> AssetLibrary, const FString& AssetID)
+		{
+			for (const UObject* Asset : AssetLibrary)
+			{
+				T* AssetPtr = Cast<T>(Asset);
+				if (!AssetPtr)
+				{
+					continue;
+				}
+
+				if (AssetPtr == AssetID)
+				{
+					return AssetPtr;
+				}
+			}
+			return nullptr;
+		}
+
+		template<typename T>
+		static FORCEINLINE bool NullOrEmpty(const TArray<T*> Array)
+		{
+			return (Array.Num() <= 0);
+		}
+	};
+
+}
+

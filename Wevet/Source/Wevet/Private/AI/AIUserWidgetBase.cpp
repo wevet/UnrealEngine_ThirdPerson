@@ -1,5 +1,7 @@
 // Copyright 2018 wevet works All Rights Reserved.
 #include "AIUserWidgetBase.h"
+#include "Components/CanvasPanel.h"
+#include "Components/ProgressBar.h"
 
 UAIUserWidgetBase::UAIUserWidgetBase(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer),
@@ -15,8 +17,7 @@ void UAIUserWidgetBase::NativeConstruct()
 	Super::NativeConstruct();
 	CanvasPanel = Cast<UCanvasPanel>(GetWidgetFromName(CanvasPanelKeyName));
 	ProgressBar = Cast<UProgressBar>(GetWidgetFromName(ProgressHealthBarKeyName));
-	check(CanvasPanel);
-	check(ProgressBar);
+	check(CanvasPanel && ProgressBar);
 }
 
 void UAIUserWidgetBase::Init(AAICharacterBase* NewCharacter)
@@ -29,7 +30,13 @@ void UAIUserWidgetBase::NativeTick(const FGeometry & MyGeometry, float InDeltaTi
 {
 	Super::NativeTick(MyGeometry, InDeltaTime);
 
-	if (CharacterOwner && ProgressBar)
+	if (CharacterOwner == nullptr)
+	{
+		return;
+	}
+
+	// health
+	if (ProgressBar)
 	{
 		float Health = CharacterOwner->GetHealthToWidget();
 		if (CharacterOwner->IsDeath_Implementation())
@@ -38,5 +45,4 @@ void UAIUserWidgetBase::NativeTick(const FGeometry & MyGeometry, float InDeltaTi
 		}
 		ProgressBar->SetPercent(Health);
 	}
-
 }
