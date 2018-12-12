@@ -44,6 +44,7 @@ public:
 	virtual void OnPickupItemExecuter_Implementation(AActor* Actor) override;
 	virtual void OnTakeDamage_Implementation(FName BoneName, float Damage, AActor* Actor) override;
 	virtual void NotifyEquip_Implementation() override;
+	virtual UClass* GetOwnerClass_Implementation() const override;
 	virtual FVector BulletTraceRelativeLocation() const override;
 	virtual FVector BulletTraceForwardLocation() const override;
 

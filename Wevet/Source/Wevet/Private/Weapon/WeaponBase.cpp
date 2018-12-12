@@ -223,24 +223,14 @@ void AWeaponBase::OnFirePressedInternal()
 
 	if (HitData.Actor.IsValid())
 	{
-		ICombat* CombatInterface = Cast<ICombat>(HitData.Actor);
-		if (bSuccess && CombatInterface)
+		if (ICombat* CombatInterface = Cast<ICombat>(HitData.Actor))
 		{
-			if (CombatInterface->IsDeath_Implementation())
+			if (!CombatInterface->IsDeath_Implementation())
 			{
-				CombatInterface->Die_Implementation();
-			}
-			else
-			{
-				// @TODO
-				// owner Character Set
 				auto d = WeaponItemInfo.Damage;
-				auto dHalf = d * 0.5f;
+				auto dHalf = d * 0.05f;
 				float Damage = FMath::FRandRange(dHalf, d);
-				CombatInterface->OnTakeDamage_Implementation(
-					HitData.BoneName, 
-					Damage, 
-					CharacterOwner);
+				CombatInterface->OnTakeDamage_Implementation(HitData.BoneName, Damage, CharacterOwner);
 			}
 		}
 	}
@@ -326,10 +316,10 @@ void AWeaponBase::OnReloadInternal()
 void AWeaponBase::SetCharacterOwner(ACharacterBase* InCharacterOwner)
 {
 	CharacterOwner = InCharacterOwner;
-	OwnerClass = InCharacterOwner ? InCharacterOwner->StaticClass() : nullptr;
 }
 
-void AWeaponBase::CopyTo(const FWeaponItemInfo & InWeaponItemInfo)
+void AWeaponBase::CopyTo(const FWeaponItemInfo& InWeaponItemInfo)
 {
-	WeaponItemInfo.CopyTo(InWeaponItemInfo);
+	//InWeaponItemInfo << WeaponItemInfo;
+	//WeaponItemInfo.CopyTo(InWeaponItemInfo);
 }

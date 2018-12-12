@@ -15,6 +15,8 @@
 class UCharacterPickupComponent;
 class UCharacterModel;
 
+using namespace Wevet;
+
 UCLASS(ABSTRACT)
 class WEVET_API ACharacterBase : public ACharacter, public ICombat, public IInteractionExecuter
 {
@@ -45,11 +47,6 @@ public:
 	{
 		return FVector::ZeroVector; 
 	};
-
-	UCharacterModel* GetCharacterModel() 
-	{
-		return CharacterModel; 
-	}
 
 #pragma region interfaces
 public:
@@ -84,6 +81,10 @@ public:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "ACharacterBase|ICombatExecuter")
 	void NotifyEquip();
 	virtual void NotifyEquip_Implementation() override;
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "ACharacterBase|ICombatExecuter")
+	UClass* GetOwnerClass() const;
+	virtual UClass* GetOwnerClass_Implementation() const override;
 #pragma endregion
 
 public:

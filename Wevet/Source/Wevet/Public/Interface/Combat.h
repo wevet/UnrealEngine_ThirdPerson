@@ -39,4 +39,6 @@ public:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "ICombatExecuter")
 	void UnEquipment();
 
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "ICombatExecuter")
+	UClass* GetOwnerClass() const;
 };

@@ -141,7 +141,7 @@ void AAICharacterBase::Tick(float DeltaTime)
 				// repeat sense target
 				LastSeenTime = World->GetTimeSeconds();
 				LastHeardTime = World->GetTimeSeconds();
-				bSensedTarget = true;
+				//bSensedTarget = true;
 			}
 		}
 	}
@@ -197,6 +197,11 @@ void AAICharacterBase::OnTakeDamage_Implementation(FName BoneName, float Damage,
 	}
 }
 
+UClass* AAICharacterBase::GetOwnerClass_Implementation() const
+{
+	return GetClass()->StaticClass();
+}
+
 void AAICharacterBase::SetTargetActor(ACharacterBase* NewCharacter)
 {
 	TargetCharacter = NewCharacter;
@@ -206,7 +211,7 @@ void AAICharacterBase::SetTargetActor(ACharacterBase* NewCharacter)
 		AIController->SetBlackboardSeeActor(HasEnemyFound());
 	}
 	Super::EquipmentActionMontage();
-	bSensedTarget = NewCharacter == nullptr ? false : true;
+	bSensedTarget = TargetCharacter == nullptr ? false : true;
 	//UE_LOG(LogTemp, Warning, TEXT("SeeActor : %s"), HasEnemyFound() ? TEXT("true") : TEXT("false"));
 }
 
@@ -245,7 +250,7 @@ FVector AAICharacterBase::BulletTraceForwardLocation() const
 
 void AAICharacterBase::UpdateWeaponEvent()
 {
-	UWorld* World = GetWorld();
+	UWorld* const World = GetWorld();
 
 	if (SpawnWeapon == nullptr || World == nullptr)
 	{

@@ -9,6 +9,7 @@
 
 class UProgressBar;
 class UCanvasPanel;
+class UUniformGridPanel;
 class UImage;
 
 UCLASS()
@@ -27,14 +28,34 @@ protected:
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "UMGManager|Variable")
-	ACharacterBase* CharacterOwner;
+	class ACharacterBase* CharacterOwner;
 
-	UImage* ProgressBar;
-	UCanvasPanel* CanvasPanel;
-	/* widget item name */
-	const FName ProgressHealthBarKeyName = TEXT("RadialProgressImage");
-	const FName CanvasPanelKeyName = TEXT("BasePanel");
+	class UImage* RadialProgressImage;
+	class UCanvasPanel* BasePanel;
+	class UCanvasPanel* FocusPanel;
+	class UUniformGridPanel* WeaponGridPanel;
+	class UImage* WeaponItemImage;
 
-	/* material param name */
-	const FName HealthParameterName = TEXT("FillAmount");
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "UMGManager|Variable")
+	FName RadialProgressImageKeyName;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "UMGManager|Variable")
+	FName BasePanelKeyName;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "UMGManager|Variable")
+	FName FocusPanelKeyName;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "UMGManager|Variable")
+	FName WeaponGridPanelKeyName;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "UMGManager|Variable")
+	FName WeaponItemImageKeyName;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "UMGManager|MaterialParameter")
+	FName HealthScalarParameterValueName;
+
+	virtual void SetHealth();
+	virtual void SetVisibilityWeapon();
+	virtual void SetVisibilityWeaponDetail();
+	bool bHasWeapon;
 };

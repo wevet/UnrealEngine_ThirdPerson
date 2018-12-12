@@ -168,14 +168,14 @@ void AMockCharacter::OnCrouch()
 	if (Super::bCrouch)
 	{
 		Super::bSprint = false;
-		MovementSpeed = this->DefaultMaxSpeed *0.5f;
+		MovementSpeed = DefaultMaxSpeed *0.5f;
 		GetCharacterMovement()->MaxWalkSpeed = MovementSpeed;
 	}
 }
  
 void AMockCharacter::UpdateWeapon()
 {
-	if (WeaponList.Num() <= 0)
+	if (ArrayExtension::NullOrEmpty(WeaponList))
 	{
 		return;
 	}
@@ -224,8 +224,7 @@ void AMockCharacter::OnPickupItemExecuter_Implementation(AActor* Actor)
 
 	if (AWeaponBase* Weapon = Cast<AWeaponBase>(Actor))
 	{
-		const bool bSame = Super::SameWeapon(Weapon);
-		if (bSame)
+		if (Super::SameWeapon(Weapon))
 		{
 			UE_LOG(LogTemp, Warning, TEXT("SameWeapon : %s"), *(Weapon->GetName()));
 			return;
@@ -303,6 +302,11 @@ void AMockCharacter::NotifyEquip_Implementation()
 		Super::bUseControllerRotationYaw = true;
 	}
 	Super::NotifyEquip_Implementation();
+}
+
+UClass* AMockCharacter::GetOwnerClass_Implementation() const
+{
+	return GetClass()->StaticClass();
 }
 
 FVector AMockCharacter::BulletTraceRelativeLocation() const

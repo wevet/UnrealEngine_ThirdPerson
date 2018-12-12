@@ -71,7 +71,6 @@ protected:
 
 	USceneComponent* SceneComponent;
 	FTimerHandle ReloadTimerHandle;
-	UClass* OwnerClass;
 
 public:
 	FORCEINLINE class USkeletalMeshComponent* GetSkeletalMeshComponent() const 

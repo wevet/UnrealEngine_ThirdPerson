@@ -8,8 +8,6 @@
 
 DEFINE_LOG_CATEGORY(LogWevetClient);
 
-using namespace Wevet;
-
 ACharacterBase::ACharacterBase(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer),
 	BaseTurnRate(45.f),
@@ -88,7 +86,7 @@ void ACharacterBase::OnCrouch()
 	bCrouch = !bCrouch;
 }
 
-void ACharacterBase::OnReleaseItemExecuter_Implementation()
+void ACharacterBase::OnReleaseItemExecuter_Implementation() 
 {
 }
 
@@ -100,8 +98,13 @@ void ACharacterBase::OnPickupItemExecuter_Implementation(AActor* Actor)
 	}
 }
 
-void ACharacterBase::NotifyEquip_Implementation()
+void ACharacterBase::NotifyEquip_Implementation() 
 {
+}
+
+UClass* ACharacterBase::GetOwnerClass_Implementation() const
+{
+	return GetClass()->StaticClass();
 }
 
 bool ACharacterBase::IsDeath_Implementation()
@@ -120,30 +123,29 @@ void ACharacterBase::OnTakeDamage_Implementation(FName BoneName, float Damage, A
 		return;
 	}
 
-	if (BoneName == HeadSocketName) 
+	// Character & Target Same Class
+	if (ICombat* Combat = Cast<ICombat>(Actor))
 	{
-		CharacterModel->SetCurrentHealthValue(0);
-		return;
-	} 
-	else
-	{
-		if (CharacterModel)
+		if (GetOwnerClass_Implementation() == Combat->GetOwnerClass_Implementation())
 		{
-			int32 TakeDamage = (int32)(FMath::Abs(Damage));
-			int32 CurrentHealth = CharacterModel->GetCurrentHealth();
-			CharacterModel->SetCurrentHealthValue(CurrentHealth - TakeDamage);
-		}
-		else
-		{
-			Die_Implementation();
+			return;
 		}
 	}
 
-	if (Actor)
+	// Finish Kill
+	if (BoneName == HeadSocketName) 
 	{
-		UClass* Classes = Actor->StaticClass();
-		UE_LOG(LogWevetClient, Log, TEXT("ClassName : %s"), *Classes->GetName());
+		CharacterModel->SetCurrentHealthValue(0);
+		Die_Implementation();
+	} 
+	else
+	{
+		int32 TakeDamage = (int32)(FMath::Abs(Damage));
+		int32 CurrentHealth = CharacterModel->GetCurrentHealth();
+		CharacterModel->SetCurrentHealthValue(CurrentHealth - TakeDamage);
 	}
+
+	UE_LOG(LogWevetClient, Log, TEXT("ClassName : %s"), *GetClass()->GetName());
 }
 
 // All deploy weapon
@@ -162,8 +164,7 @@ void ACharacterBase::Die_Implementation()
 	Super::GetCharacterMovement()->DisableMovement();
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
-	const bool bEmptyWeapon = ArrayExtension::NullOrEmpty(WeaponList);
-	if (bEmptyWeapon)
+	if (ArrayExtension::NullOrEmpty(WeaponList))
 	{
 		return;
 	}

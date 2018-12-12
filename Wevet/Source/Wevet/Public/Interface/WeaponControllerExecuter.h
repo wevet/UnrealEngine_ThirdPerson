@@ -89,6 +89,21 @@ public:
 	FWeaponItemInfo();
 
 public:
+	friend FArchive& operator<<(FArchive& Ar, FWeaponItemInfo& TheStruct)
+	{
+		Ar << TheStruct.WeaponItemType;
+		Ar << TheStruct.WeaponClass;
+		Ar << TheStruct.ClipType;
+		Ar << TheStruct.CurrentAmmo;
+		Ar << TheStruct.MaxAmmo;
+		Ar << TheStruct.Damage;
+		Ar << TheStruct.Texture;
+		Ar << TheStruct.EquipSocketName;
+		Ar << TheStruct.UnEquipSocketName;
+		return Ar;
+	}
+
+public:
 	void CopyTo(const FWeaponItemInfo& InWeaponItemInfo)
 	{
 		UnEquipSocketName = InWeaponItemInfo.UnEquipSocketName;
