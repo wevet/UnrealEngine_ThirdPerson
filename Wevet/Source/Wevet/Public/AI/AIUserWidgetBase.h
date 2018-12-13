@@ -18,16 +18,23 @@ class WEVET_API UAIUserWidgetBase : public UUserWidget
 public:
 	UAIUserWidgetBase(const FObjectInitializer& ObjectInitializer);
 	virtual void NativeConstruct() override;
-	virtual void Init(AAICharacterBase* NewCharacter);
 	
 protected:
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Variable")
-	AAICharacterBase* CharacterOwner;
+public:
+	virtual void Init(AAICharacterBase* NewCharacter);
 
-	UProgressBar* ProgressBar;
-	UCanvasPanel* CanvasPanel;
-	const FName ProgressHealthBarKeyName = TEXT("ProgressHealthBar");
-	const FName CanvasPanelKeyName = TEXT("BasePanel");
+protected:
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "UAIUserWidgetBase|Variable")
+	class AAICharacterBase* CharacterOwner;
+
+	class UProgressBar* ProgressBar;
+	class UCanvasPanel* CanvasPanel;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "UAIUserWidgetBase|Variable")
+	FName ProgressHealthBarKeyName;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "UAIUserWidgetBase|Variable")
+	FName CanvasPanelKeyName;
 };

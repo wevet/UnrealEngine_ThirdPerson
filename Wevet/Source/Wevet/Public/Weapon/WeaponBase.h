@@ -106,7 +106,6 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AWeaponBase|Variable")
 	bool bEmpty;
 
-#pragma region interface
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AWeaponBase|Interface")
 	void OnFirePress();
 	virtual void OnFirePress_Implementation() override;
@@ -126,7 +125,6 @@ public:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AWeaponBase|Interface")
 	void OnVisible();
 	virtual void OnVisible_Implementation() override;
-#pragma endregion
 
 	UFUNCTION(BlueprintCallable, Category = Components)
 	virtual	void BeginOverlapRecieve(

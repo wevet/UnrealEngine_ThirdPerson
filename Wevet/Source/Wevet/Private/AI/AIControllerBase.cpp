@@ -1,6 +1,13 @@
 // Copyright 2018 wevet works All Rights Reserved.
-
 #include "AIControllerBase.h"
+#include "MockCharacter.h"
+#include "AICharacterBase.h"
+#include "WayPointBase.h"
+
+#include "Perception/AIPerceptionComponent.h"
+#include "BehaviorTree/BlackboardComponent.h"
+#include "BehaviorTree/BehaviorTreeComponent.h"
+
 #include "Blueprint/AIBlueprintHelperLibrary.h"
 
 

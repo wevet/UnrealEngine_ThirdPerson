@@ -197,11 +197,6 @@ void AAICharacterBase::OnTakeDamage_Implementation(FName BoneName, float Damage,
 	}
 }
 
-UClass* AAICharacterBase::GetOwnerClass_Implementation() const
-{
-	return GetClass()->StaticClass();
-}
-
 void AAICharacterBase::SetTargetActor(ACharacterBase* NewCharacter)
 {
 	TargetCharacter = NewCharacter;
@@ -283,17 +278,11 @@ void AAICharacterBase::UpdateWeaponEvent()
 
 void AAICharacterBase::CreateWayPointList(TArray<AWayPointBase*>& OutWayPointList)
 {
-	UWorld* World = GetWorld();
+	check(GetWorld());
 	
-	if (World == nullptr)
+	for (TActorIterator<AWayPointBase> ActorIterator(GetWorld()); ActorIterator; ++ActorIterator)
 	{
-		return;
-	}
-
-	for (TActorIterator<AWayPointBase> ActorIterator(World); ActorIterator; ++ActorIterator)
-	{
-		AWayPointBase* WayPoint = *ActorIterator;
-		if (WayPoint)
+		if (AWayPointBase* WayPoint = *ActorIterator)
 		{
 			OutWayPointList.Emplace(WayPoint);
 		}
@@ -349,4 +338,3 @@ void AAICharacterBase::OnHearNoiseRecieve(APawn* OtherActor, const FVector& Loca
 		SetTargetActor(Player);
 	}
 }
-

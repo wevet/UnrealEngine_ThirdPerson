@@ -20,6 +20,15 @@ enum class EBotBehaviorType : uint8
 	Patrolling,
 };
 
+UENUM()
+enum class EUMGLayerType : int32
+{
+	None = -1,
+	Base = 0,
+	Main = 1,
+	Num,
+};
+
 USTRUCT()
 struct FTakeHitInfo
 {

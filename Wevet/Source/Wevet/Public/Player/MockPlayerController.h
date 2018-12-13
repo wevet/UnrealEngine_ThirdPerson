@@ -20,12 +20,17 @@ public:
 	AMockPlayerController(const FObjectInitializer& ObjectInitializer);
 	virtual void Possess(APawn* Pawn) override;
 
+public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AMockPlayerController|Variable")
 	TSubclassOf<class UUMGManager> UMGManagerClass;
 
-	AMockCharacter* CharacterOwner;
-	UUMGManager* UMGManager;
+private:
+	class AMockCharacter* CharacterOwner;
+	class UUMGManager* UMGManager;
 
-	virtual void Initialize();
+protected:
+	virtual void Initializer();
 	
+public:
+	UUMGManager* GetPlayerHUD() const;
 };

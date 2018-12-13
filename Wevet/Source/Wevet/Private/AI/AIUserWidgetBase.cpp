@@ -7,7 +7,9 @@ UAIUserWidgetBase::UAIUserWidgetBase(const FObjectInitializer& ObjectInitializer
 	: Super(ObjectInitializer),
 	CharacterOwner(nullptr),
 	CanvasPanel(nullptr),
-	ProgressBar(nullptr)
+	ProgressBar(nullptr),
+	ProgressHealthBarKeyName(TEXT("ProgressHealthBar")),
+	CanvasPanelKeyName(TEXT("BasePanel"))
 {
 	//
 }

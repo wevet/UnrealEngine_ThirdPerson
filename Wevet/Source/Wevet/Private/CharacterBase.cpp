@@ -5,6 +5,7 @@
 #include "CharacterModel.h"
 #include "CharacterPickupComponent.h"
 #include "Engine.h"
+#include "Kismet/GameplayStatics.h"
 
 DEFINE_LOG_CATEGORY(LogWevetClient);
 
@@ -102,9 +103,17 @@ void ACharacterBase::NotifyEquip_Implementation()
 {
 }
 
-UClass* ACharacterBase::GetOwnerClass_Implementation() const
+void ACharacterBase::ReportNoise_Implementation(USoundBase* Sound, float Volume)
 {
-	return GetClass()->StaticClass();
+	UWorld* const World = GetWorld();
+	float InVolume = (GetCharacterMovement()->MaxWalkSpeed / MovementSpeed);
+	UE_LOG(LogWevetClient, Log, TEXT("Vol : %f"), InVolume);
+
+	if (Sound && World)
+	{
+		UGameplayStatics::PlaySoundAtLocation(World, Sound, GetActorLocation());
+		MakeNoise(Volume, this, GetActorLocation());
+	}
 }
 
 bool ACharacterBase::IsDeath_Implementation()
@@ -124,19 +133,19 @@ void ACharacterBase::OnTakeDamage_Implementation(FName BoneName, float Damage, A
 	}
 
 	// Character & Target Same Class
-	if (ICombat* Combat = Cast<ICombat>(Actor))
+	if (ICombatExecuter* Combat = Cast<ICombatExecuter>(Actor))
 	{
-		if (GetOwnerClass_Implementation() == Combat->GetOwnerClass_Implementation())
-		{
-			return;
-		}
+		UE_LOG(LogWevetClient, Warning, TEXT("Victim : %s"), *Actor->GetName());
+		UE_LOG(LogWevetClient, Warning, TEXT("Receive Name : %s"), *GetName());
+		//if (GetOwnerClass_Implementation() == Combat->GetOwnerClass_Implementation())
+		//{
+		//	return;
+		//}
 	}
 
-	// Finish Kill
 	if (BoneName == HeadSocketName) 
 	{
 		CharacterModel->SetCurrentHealthValue(0);
-		Die_Implementation();
 	} 
 	else
 	{
@@ -145,7 +154,6 @@ void ACharacterBase::OnTakeDamage_Implementation(FName BoneName, float Damage, A
 		CharacterModel->SetCurrentHealthValue(CurrentHealth - TakeDamage);
 	}
 
-	UE_LOG(LogWevetClient, Log, TEXT("ClassName : %s"), *GetClass()->GetName());
 }
 
 // All deploy weapon

@@ -147,7 +147,7 @@ void AWeaponBase::EndOverlapRecieve(
 	SkeletalMeshComponent->SetRenderCustomDepth(false);
 	if (CharacterOwner)
 	{
-		CharacterOwner->GetPickupComponent()->SetPickupActor(false);
+		CharacterOwner->GetPickupComponent()->SetPickupActor(nullptr);
 	}
 }
 
@@ -223,7 +223,7 @@ void AWeaponBase::OnFirePressedInternal()
 
 	if (HitData.Actor.IsValid())
 	{
-		if (ICombat* CombatInterface = Cast<ICombat>(HitData.Actor))
+		if (ICombatExecuter* CombatInterface = Cast<ICombatExecuter>(HitData.Actor))
 		{
 			if (!CombatInterface->IsDeath_Implementation())
 			{

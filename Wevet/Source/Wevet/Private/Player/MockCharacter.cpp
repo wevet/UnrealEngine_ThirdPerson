@@ -259,6 +259,7 @@ void AMockCharacter::OnPickupItemExecuter_Implementation(AActor* Actor)
 		}
 		Weapon->Destroy();
 		Weapon = nullptr;
+		Actor = nullptr;
 	}
 	Super::OnPickupItemExecuter_Implementation(Actor);
 }
@@ -302,11 +303,6 @@ void AMockCharacter::NotifyEquip_Implementation()
 		Super::bUseControllerRotationYaw = true;
 	}
 	Super::NotifyEquip_Implementation();
-}
-
-UClass* AMockCharacter::GetOwnerClass_Implementation() const
-{
-	return GetClass()->StaticClass();
 }
 
 FVector AMockCharacter::BulletTraceRelativeLocation() const

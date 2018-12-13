@@ -7,7 +7,7 @@
 #include "Macros.h"
 #include "Wevet.h"
 #include "STypes.h"
-#include "Combat.h"
+#include "CombatExecuter.h"
 #include "InteractionExecuter.h"
 #include "WeaponControllerExecuter.h"
 #include "CharacterBase.generated.h"
@@ -18,7 +18,7 @@ class UCharacterModel;
 using namespace Wevet;
 
 UCLASS(ABSTRACT)
-class WEVET_API ACharacterBase : public ACharacter, public ICombat, public IInteractionExecuter
+class WEVET_API ACharacterBase : public ACharacter, public ICombatExecuter, public IInteractionExecuter
 {
 	GENERATED_BODY()
 
@@ -48,7 +48,6 @@ public:
 		return FVector::ZeroVector; 
 	};
 
-#pragma region interfaces
 public:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "ACharacterBase|IInteractionExecuter")
 	void OnReleaseItemExecuter();
@@ -83,9 +82,8 @@ public:
 	virtual void NotifyEquip_Implementation() override;
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "ACharacterBase|ICombatExecuter")
-	UClass* GetOwnerClass() const;
-	virtual UClass* GetOwnerClass_Implementation() const override;
-#pragma endregion
+	void ReportNoise(USoundBase* Sound, float Volume);
+	virtual void ReportNoise_Implementation(USoundBase* Sound, float Volume) override;
 
 public:
 	UFUNCTION(BlueprintCallable, Category = "ACharacterBase|Weapon")
@@ -120,13 +118,6 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "ACharacterBase|CharacterModel")
 	float GetHealthToWidget() const;
-
-	// @NOTE
-	// GetSuper class
-	//FORCEINLINE class UPawnNoiseEmitterComponent* GetPawnNoiseEmitterComponent() const
-	//{
-	//	return PawnNoiseEmitterComponent;
-	//}
 
 	FORCEINLINE class UAudioComponent* GetAudioComponent() const
 	{

@@ -2,32 +2,38 @@
 
 #pragma once
 
-
 #include "CoreMinimal.h"
 #include "AIController.h"
-#include "Perception/AIPerceptionComponent.h"
 #include "Perception/AISenseConfig_Sight.h"
 #include "Perception/AISenseConfig_Hearing.h"
-#include "BehaviorTree/BlackboardComponent.h"
-#include "BehaviorTree/BehaviorTreeComponent.h"
 #include "BehaviorTree/BehaviorTree.h"
 #include "Macros.h"
-#include "MockCharacter.h"
-#include "AICharacterBase.h"
-#include "WayPointBase.h"
-#include "AICombatControllerExecuter.h"
+#include "STypes.h"
+#include "AICombatExecuter.h"
 #include "AIControllerBase.generated.h"
 
 class UBehaviorTreeComponent;
+class AAICharacterBase;
+class AWayPointBase;
+
+class UBehaviorTreeComponent;
+class UBlackboardComponent;
+class UAIPerceptionComponent;
+
 
 UCLASS(ABSTRACT)
-class WEVET_API AAIControllerBase :  public AAIController, public IAICombatControllerExecuter
+class WEVET_API AAIControllerBase :  public AAIController, public IAICombatExecuter
 {
 	GENERATED_BODY()
 
-	UBehaviorTreeComponent* BehaviorTreeComponent;
-	UBlackboardComponent* BlackboardComponent;
-	UAIPerceptionComponent* AIPerceptionComponent;
+public:
+	AAIControllerBase(const FObjectInitializer& ObjectInitializer);
+	virtual void Possess(APawn* Pawn) override;
+	virtual void UnPossess() override;
+
+protected:
+	virtual void BeginPlay() override;
+	FGenericTeamId GetGenericTeamId() const override;
 
 public:
 	FORCEINLINE class UBehaviorTreeComponent* GetBehaviorTreeComponent()
@@ -46,10 +52,6 @@ public:
 	}
 
 public:
-	AAIControllerBase(const FObjectInitializer& ObjectInitializer);
-	virtual void Possess(APawn* Pawn) override;
-	virtual void UnPossess() override;
-
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AAIControllerBase|Interface")
 	void Patrolling();
 	virtual void Patrolling_Implementation() override;
@@ -76,16 +78,15 @@ public:
 	virtual void SetBlackboardSeeActor(bool InCanSeeActor);
 
 protected:
+	class UBehaviorTreeComponent * BehaviorTreeComponent;
+	class UBlackboardComponent* BlackboardComponent;
+	class UAIPerceptionComponent* AIPerceptionComponent;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AAIControllerBase|Variable")
 	FName CanSeePlayerKey;
 
-	virtual void BeginPlay() override;
-
 	UFUNCTION(BlueprintCallable, Category = "AAIControllerBase|Perception")
 	virtual void OnTargetPerceptionUpdatedRecieve(AActor* Actor, FAIStimulus Stimulus);
-
-	FGenericTeamId GetGenericTeamId() const override;
 
 	AAICharacterBase* AICharacterOwner;
 
