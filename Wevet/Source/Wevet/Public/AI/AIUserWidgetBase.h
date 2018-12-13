@@ -23,7 +23,7 @@ protected:
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 
 public:
-	virtual void Init(AAICharacterBase* NewCharacter);
+	virtual void Initializer(AAICharacterBase* NewCharacter);
 
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "UAIUserWidgetBase|Variable")

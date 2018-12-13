@@ -44,5 +44,28 @@ namespace Wevet
 		}
 	};
 
+	class WEVET_API ComponentExtension
+	{
+	public :
+
+		// usage
+		// auto Components = ComponentExtension::GetComponentsArray<USkeletalMeshComponent>(this);
+		template<typename T>
+		static FORCEINLINE TArray<T*> GetComponentsArray(const AActor* Owner)
+		{
+			TArray<T*> Array;
+			TArray<UActorComponent*> Components = Owner->GetComponentsByClass(T::StaticClass());
+			for (UActorComponent* Component : Components)
+			{
+				if (T* CustomComp = Cast<T>(Component))
+				{
+					Array.Add(CustomComp);
+				}
+			}
+			return Array;
+		}
+
+
+	};
 }
 

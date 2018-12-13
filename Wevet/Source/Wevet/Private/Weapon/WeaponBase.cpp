@@ -29,11 +29,9 @@ AWeaponBase::AWeaponBase(const FObjectInitializer& ObjectInitializer)
 
 	SkeletalMeshComponent = ObjectInitializer.CreateDefaultSubobject<USkeletalMeshComponent>(this, TEXT("SkeletalMeshComponent"));
 	SkeletalMeshComponent->SetupAttachment(RootComponent);
-
 	SphereComponent = ObjectInitializer.CreateDefaultSubobject<USphereComponent>(this, TEXT("SphereComponent"));
 	SphereComponent->SetSphereRadius(90.0f);
 	SphereComponent->SetupAttachment(SkeletalMeshComponent);
-
 	WidgetComponent = ObjectInitializer.CreateDefaultSubobject<UWidgetComponent>(this, TEXT("WidgetComponent"));
 	WidgetComponent->SetDrawSize(FVector2D(180.f, 70.f));
 	WidgetComponent->SetWorldLocation(FVector(0.f, 0.f, 60.f));
@@ -313,13 +311,19 @@ void AWeaponBase::OnReloadInternal()
 	}
 }
 
-void AWeaponBase::SetCharacterOwner(ACharacterBase* InCharacterOwner)
+void AWeaponBase::SetCharacterOwner(ACharacterBase* NewCharacter)
 {
-	CharacterOwner = InCharacterOwner;
+	CharacterOwner = NewCharacter;
+	//auto A = &NewCharacter;
+	//auto B = (*A);
+	//(*B).Equipment();
+	//(*A)->Equipment();
 }
 
 void AWeaponBase::CopyTo(const FWeaponItemInfo& InWeaponItemInfo)
 {
+	WeaponItemInfo = InWeaponItemInfo;
 	//InWeaponItemInfo << WeaponItemInfo;
 	//WeaponItemInfo.CopyTo(InWeaponItemInfo);
+	UE_LOG(LogWevetClient, Log, TEXT("WeaponCopy : %s \n MaxAmmo : %d"), *GetName(), WeaponItemInfo.MaxAmmo);
 }

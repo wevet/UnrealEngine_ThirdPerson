@@ -19,13 +19,17 @@ class WEVET_API ICombatExecuter
 	GENERATED_IINTERFACE_BODY()
 
 public:
-	// AnimationBlueprint NotifyEvent
+	// AnimBP NotifyEvent
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "ICombatExecuter")
 	void NotifyEquip();
 
-	// AnimationBlueprint NotifyEvent
+	// Ignore FootStep AnimBP NotifyEvent
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "ICombatExecuter")
 	void ReportNoise(USoundBase* Sound, float Volume);
+
+	// FootStep NotifyEvent
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "ICombatExecuter")
+	void FootStep(USoundBase* Sound, float Volume);
 
 	// TakeDamage
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "ICombatExecuter")

@@ -106,13 +106,35 @@ void ACharacterBase::NotifyEquip_Implementation()
 void ACharacterBase::ReportNoise_Implementation(USoundBase* Sound, float Volume)
 {
 	UWorld* const World = GetWorld();
-	float InVolume = (GetCharacterMovement()->MaxWalkSpeed / MovementSpeed);
-	UE_LOG(LogWevetClient, Log, TEXT("Vol : %f"), InVolume);
+	if (World == nullptr)
+	{
+		return;
+	}
 
-	if (Sound && World)
+	if (Sound)
 	{
 		UGameplayStatics::PlaySoundAtLocation(World, Sound, GetActorLocation());
 		MakeNoise(Volume, this, GetActorLocation());
+	}
+}
+
+void ACharacterBase::FootStep_Implementation(USoundBase* Sound, float Volume)
+{
+	UWorld* const World = GetWorld();
+	if (World == nullptr)
+	{
+		return;
+	}
+
+	const float Speed = GetVelocity().Size();
+	const float InVolume = (Speed / GetCharacterMovement()->MaxWalkSpeed);
+	UE_LOG(LogWevetClient, Log, TEXT("Vol : %f"), InVolume);
+
+	USoundBase* InSound = Sound ? Sound : FootStepSoundAsset;
+	if (InSound)
+	{
+		UGameplayStatics::PlaySoundAtLocation(World, InSound, GetActorLocation());
+		MakeNoise(InVolume, this, GetActorLocation());
 	}
 }
 
@@ -245,7 +267,6 @@ float ACharacterBase::GetHealthToWidget() const
 	return CharacterModel->GetHealthToWidget();
 }
 
-// WeaponList Find Category
 AWeaponBase* ACharacterBase::FindByWeapon(EWeaponItemType WeaponItemType)
 {
 	if (ArrayExtension::NullOrEmpty(WeaponList))
@@ -263,7 +284,6 @@ AWeaponBase* ACharacterBase::FindByWeapon(EWeaponItemType WeaponItemType)
 	return nullptr;
 }
 
-// unequip weapon first index
 AWeaponBase* ACharacterBase::GetUnEquipWeapon()
 {
 	if (ArrayExtension::NullOrEmpty(WeaponList))
@@ -280,7 +300,6 @@ AWeaponBase* ACharacterBase::GetUnEquipWeapon()
 	return nullptr;
 }
 
-// out unequip weaponlist
 void ACharacterBase::OutUnEquipWeaponList(TArray<AWeaponBase*>& OutWeaponList)
 {
 	if (ArrayExtension::NullOrEmpty(WeaponList))
@@ -301,7 +320,6 @@ void ACharacterBase::OutUnEquipWeaponList(TArray<AWeaponBase*>& OutWeaponList)
 	}
 }
 
-// pick already sameweapon category ?
 const bool ACharacterBase::SameWeapon(AWeaponBase* Weapon)
 {
 	if (AWeaponBase* InWeapon = FindByWeapon(Weapon->WeaponItemInfo.WeaponItemType))

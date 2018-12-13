@@ -85,6 +85,10 @@ public:
 	void ReportNoise(USoundBase* Sound, float Volume);
 	virtual void ReportNoise_Implementation(USoundBase* Sound, float Volume) override;
 
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "ACharacterBase|ICombatExecuter")
+	void FootStep(USoundBase* Sound, float Volume);
+	virtual void FootStep_Implementation(USoundBase* Sound, float Volume) override;
+
 public:
 	UFUNCTION(BlueprintCallable, Category = "ACharacterBase|Weapon")
 	AWeaponBase* FindByWeapon(EWeaponItemType WeaponItemType);
@@ -140,19 +144,22 @@ protected:
 	class UCharacterPickupComponent* PickupComponent;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ACharacterBase|Weapon")
-	AWeaponBase* SelectedWeapon;
+	class AWeaponBase* SelectedWeapon;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ACharacterBase|Weapon")
 	TArray<AWeaponBase*> WeaponList;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ACharacterBase|Asset")
-	UAnimMontage* EquipMontage;
+	class UAnimMontage* EquipMontage;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ACharacterBase|Asset")
-	UAnimMontage* FireMontage;
+	class UAnimMontage* FireMontage;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ACharacterBase|Asset")
-	UAnimMontage* ReloadMontage;
+	class UAnimMontage* ReloadMontage;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ACharacterBase|Asset")
+	class USoundBase* FootStepSoundAsset;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ACharacterBase|Variable")
 	bool bCrouch;

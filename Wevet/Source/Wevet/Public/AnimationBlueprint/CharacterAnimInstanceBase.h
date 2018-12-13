@@ -17,13 +17,11 @@ class WEVET_API UCharacterAnimInstanceBase : public UAnimInstance
 	
 public:
 	UCharacterAnimInstanceBase(const FObjectInitializer& ObjectInitializer);
-
 	virtual void NativeInitializeAnimation() override;
-
 	virtual void NativeUpdateAnimation(float DeltaTimeX) override;
 
 protected:
-	APawn * OwningPawn;
+	APawn* OwningPawn;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Variable")
 	ACharacterBase* Owner;

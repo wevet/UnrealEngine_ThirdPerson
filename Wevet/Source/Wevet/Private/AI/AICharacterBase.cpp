@@ -56,8 +56,10 @@ void AAICharacterBase::BeginPlay()
 
 	if (ensure(WidgetComponent)) 
 	{
-		UAIUserWidgetBase* AIWidget = Cast<UAIUserWidgetBase>(WidgetComponent->GetUserWidgetObject());
-		AIWidget->Init(this);
+		if (UAIUserWidgetBase* AIWidget = Cast<UAIUserWidgetBase>(WidgetComponent->GetUserWidgetObject()))
+		{
+			AIWidget->Initializer(this);
+		}
 	}
 }
 
@@ -226,7 +228,7 @@ const bool AAICharacterBase::HasEquipWeapon()
 
 void AAICharacterBase::InitializePosses()
 {
-	UpdateWeaponEvent();
+	CreateWeaponInstance();
 }
 
 FVector AAICharacterBase::BulletTraceRelativeLocation() const
@@ -243,7 +245,7 @@ FVector AAICharacterBase::BulletTraceForwardLocation() const
 	return GetControlRotation().Vector();
 }
 
-void AAICharacterBase::UpdateWeaponEvent()
+void AAICharacterBase::CreateWeaponInstance()
 {
 	UWorld* const World = GetWorld();
 
@@ -258,7 +260,6 @@ void AAICharacterBase::UpdateWeaponEvent()
 	const FTransform Transform = FTransform::Identity;
 	AWeaponBase* const SpawningObject = World->SpawnActor<AWeaponBase>(SpawnWeapon, Transform, SpawnParams);
 	Super::SelectedWeapon = SpawningObject;
-
 	check(Super::SelectedWeapon);
 
 	// setup assets
@@ -291,23 +292,13 @@ void AAICharacterBase::CreateWayPointList(TArray<AWayPointBase*>& OutWayPointLis
 
 void AAICharacterBase::OnSeePawnRecieve(APawn* OtherPawn)
 {
-	if (IsDeath_Implementation())
+	if (IsDeath_Implementation() || bSensedTarget)
 	{
-		return;
-	}
-
-	if (!bSensedTarget)
-	{
-		//
-	}
-	else
-	{
-		// bAlready Sense Target
 		return;
 	}
 
 	LastSeenTime = GetWorld()->GetTimeSeconds();
-	auto Player = Cast<AMockCharacter>(OtherPawn);
+	auto Player  = Cast<AMockCharacter>(OtherPawn);
 	if (Player && !Player->IsDeath_Implementation())
 	{
 		SetTargetActor(Player);
@@ -316,25 +307,16 @@ void AAICharacterBase::OnSeePawnRecieve(APawn* OtherPawn)
 
 void AAICharacterBase::OnHearNoiseRecieve(APawn* OtherActor, const FVector& Location, float Volume)
 {
-	if (IsDeath_Implementation() || FMath::IsNearlyZero(Volume))
+	if (IsDeath_Implementation() || FMath::IsNearlyZero(Volume) || bSensedTarget)
 	{
-		return;
-	}
-
-	if (!bSensedTarget)
-	{
-		//
-	}
-	else
-	{
-		// bAlready Sense Target
 		return;
 	}
 
 	LastHeardTime = GetWorld()->GetTimeSeconds();
-	auto Player = Cast<AMockCharacter>(OtherActor);
-	if (Player && !Player->IsDeath_Implementation())
-	{
-		SetTargetActor(Player);
-	}
+	UE_LOG(LogWevetClient, Warning, TEXT("Heard : %s \n Vol : %f"), *OtherActor->GetName(), Volume);
+	//auto Player = Cast<AMockCharacter>(OtherActor);
+	//if (Player && !Player->IsDeath_Implementation())
+	//{
+	//	SetTargetActor(Player);
+	//}
 }

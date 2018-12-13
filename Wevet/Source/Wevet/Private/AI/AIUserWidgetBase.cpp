@@ -22,29 +22,20 @@ void UAIUserWidgetBase::NativeConstruct()
 	check(CanvasPanel && ProgressBar);
 }
 
-void UAIUserWidgetBase::Init(AAICharacterBase* NewCharacter)
+void UAIUserWidgetBase::Initializer(AAICharacterBase* NewCharacter)
 {
 	CharacterOwner = NewCharacter;
 	check(CharacterOwner);
 }
 
-void UAIUserWidgetBase::NativeTick(const FGeometry & MyGeometry, float InDeltaTime)
+void UAIUserWidgetBase::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 {
 	Super::NativeTick(MyGeometry, InDeltaTime);
 
-	if (CharacterOwner == nullptr)
+	if (CharacterOwner == nullptr || ProgressBar == nullptr)
 	{
 		return;
 	}
 
-	// health
-	if (ProgressBar)
-	{
-		float Health = CharacterOwner->GetHealthToWidget();
-		if (CharacterOwner->IsDeath_Implementation())
-		{
-			Health = 0.f;
-		}
-		ProgressBar->SetPercent(Health);
-	}
+	ProgressBar->SetPercent(CharacterOwner->IsDeath_Implementation() ? 0.f : CharacterOwner->GetHealthToWidget());
 }

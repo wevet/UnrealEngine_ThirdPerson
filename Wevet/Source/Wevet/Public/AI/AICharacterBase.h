@@ -40,8 +40,8 @@ public:
 	virtual void NotifyEquip_Implementation() override;
 	virtual void OnTakeDamage_Implementation(FName BoneName, float Damage, AActor* Actor) override;
 	virtual void SetTargetActor(ACharacterBase* NewCharacter);
-	virtual void UpdateWeaponEvent();
 	virtual void CreateWayPointList(TArray<AWayPointBase*>& OutWayPointList);
+	virtual void CreateWeaponInstance();
 
 	FORCEINLINE class UPawnSensingComponent* GetPawnSensingComponent() const
 	{

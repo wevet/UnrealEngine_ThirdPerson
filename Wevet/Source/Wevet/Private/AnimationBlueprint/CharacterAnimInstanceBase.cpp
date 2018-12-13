@@ -14,44 +14,43 @@ UCharacterAnimInstanceBase::UCharacterAnimInstanceBase(const FObjectInitializer&
 void UCharacterAnimInstanceBase::NativeInitializeAnimation()
 {
 	Super::NativeInitializeAnimation();
-
-	this->OwningPawn = TryGetPawnOwner();
+	OwningPawn = TryGetPawnOwner();
 }
 
 void UCharacterAnimInstanceBase::NativeUpdateAnimation(float DeltaTimeX)
 {
 	Super::NativeUpdateAnimation(DeltaTimeX);
 
-	if (this->OwningPawn == nullptr) 
+	if (OwningPawn == nullptr) 
 	{
 		return;
 	}
 
-	this->Owner = Cast<ACharacterBase>(this->OwningPawn);
-	this->IsMoving = (this->OwningPawn->GetVelocity().SizeSquared() > 25);
-	this->Speed = this->OwningPawn->GetVelocity().Size();
+	Owner = Cast<ACharacterBase>(OwningPawn);
+	IsMoving = (OwningPawn->GetVelocity().SizeSquared() > 25);
+	Speed = OwningPawn->GetVelocity().Size();
 
-	UPawnMovementComponent* MovementComponent = this->OwningPawn->GetMovementComponent();
+	UPawnMovementComponent* MovementComponent = OwningPawn->GetMovementComponent();
 	
 	if (MovementComponent)
 	{
-		this->IsFalling = MovementComponent->IsFalling();
+		IsFalling = MovementComponent->IsFalling();
 		//const bool isInAir = MovementComponent->MovementMode == EMovementMode::MOVE_Falling;
 		//const float Velocity = MovementComponent->GetVelocity();
 	}
 
-	const FRotator ControlRotation = this->OwningPawn->GetControlRotation();
-	const FRotator Rotation = this->OwningPawn->GetActorRotation();
-	const FVector Velocity  = this->OwningPawn->GetVelocity();
-	this->Direction = Super::CalculateDirection(Velocity, Rotation);
+	const FRotator ControlRotation = OwningPawn->GetControlRotation();
+	const FRotator Rotation = OwningPawn->GetActorRotation();
+	const FVector Velocity  = OwningPawn->GetVelocity();
+	Direction = Super::CalculateDirection(Velocity, Rotation);
 
 	const FRotator ResultRotation = NormalizedDeltaRotator(ControlRotation, Rotation);
-	this->Yaw = ResultRotation.Yaw;
-	this->Pitch = ResultRotation.Pitch;
+	Yaw = ResultRotation.Yaw;
+	Pitch = ResultRotation.Pitch;
 
 	SetCrouch();
 	SetEquip();
-	this->BlendWeight = (this->IsEquip) ? 0.8f : 0.f;
+	BlendWeight = (IsEquip) ? 0.8f : 0.f;
 }
 
 FRotator UCharacterAnimInstanceBase::NormalizedDeltaRotator(FRotator A, FRotator B) const

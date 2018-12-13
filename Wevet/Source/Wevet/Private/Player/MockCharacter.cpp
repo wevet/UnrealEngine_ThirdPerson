@@ -40,7 +40,6 @@ void AMockCharacter::BeginPlay()
 	Super::BeginPlay();
 }
 
-#pragma region InputAction
 void AMockCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent)
 {
 	check(PlayerInputComponent);
@@ -189,9 +188,7 @@ void AMockCharacter::UpdateWeapon()
 		++WeaponCurrentIndex;
 	}
 }
-#pragma endregion
 
-// death
 void AMockCharacter::Die_Implementation()
 {
 	if (Super::bDied)
@@ -207,14 +204,12 @@ void AMockCharacter::Die_Implementation()
 	Super::Die_Implementation();
 }
 
-// release weapon base
 void AMockCharacter::OnReleaseItemExecuter_Implementation()
 {
 	ReleaseWeapon();
 	Super::OnReleaseItemExecuter_Implementation();
 }
 
-// pick up
 void AMockCharacter::OnPickupItemExecuter_Implementation(AActor* Actor)
 {
 	if (Actor == nullptr)

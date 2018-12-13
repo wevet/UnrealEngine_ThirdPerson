@@ -6,9 +6,10 @@
 
 
 UAICharacterAnimInstanceBase::UAICharacterAnimInstanceBase(const FObjectInitializer& ObjectInitializer) 
-	: Super(ObjectInitializer)
+	: Super(ObjectInitializer),
+	TargetSocketName(TEXT("Spine_03"))
 {
-	this->TargetSocketName = FName(TEXT("Spine_03"));
+	//
 }
 
 void UAICharacterAnimInstanceBase::NativeInitializeAnimation()
@@ -16,12 +17,11 @@ void UAICharacterAnimInstanceBase::NativeInitializeAnimation()
 	Super::NativeInitializeAnimation();
 }
 
-
 void UAICharacterAnimInstanceBase::NativeUpdateAnimation(float DeltaTimeX)
 {
-	this->AICharacterOwner = Cast<AAICharacterBase>(this->OwningPawn);
+	AICharacterOwner = Cast<AAICharacterBase>(OwningPawn);
 
-	if (this->IsEquip)
+	if (IsEquip)
 	{
 		SetPitch();
 	}
@@ -30,7 +30,7 @@ void UAICharacterAnimInstanceBase::NativeUpdateAnimation(float DeltaTimeX)
 
 void UAICharacterAnimInstanceBase::SetPitch()
 {
-	if (this->AICharacterOwner == nullptr)
+	if (AICharacterOwner == nullptr)
 	{
 		return;
 	}

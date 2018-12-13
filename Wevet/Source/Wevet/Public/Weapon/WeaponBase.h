@@ -158,7 +158,7 @@ public:
 		return WeaponItemInfo.WeaponItemType == InWeaponItemType;
 	}
 
-	virtual void SetCharacterOwner(ACharacterBase* InCharacterOwner);
+	virtual void SetCharacterOwner(ACharacterBase* NewCharacter);
 
 	void CopyTo(const FWeaponItemInfo& InWeaponItemInfo);
 };
