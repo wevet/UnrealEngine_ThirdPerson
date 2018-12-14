@@ -106,16 +106,10 @@ public:
 	};
 
 	UFUNCTION(BlueprintCallable, Category = "ACharacterBase|Variable")
-	const bool HasCrouch() 
-	{
-		return bCrouch; 
-	}
+	const bool HasCrouch() { return bCrouch; }
 
 	UFUNCTION(BlueprintCallable, Category = "ACharacterBase|Variable")
-	const bool HasSprint() 
-	{
-		return bSprint; 
-	}
+	const bool HasSprint() { return bSprint; }
 
 	UFUNCTION(BlueprintCallable, Category = "ACharacterBase|Variable")
 	virtual const bool HasEquipWeapon();
@@ -123,15 +117,8 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "ACharacterBase|CharacterModel")
 	float GetHealthToWidget() const;
 
-	FORCEINLINE class UAudioComponent* GetAudioComponent() const
-	{
-		return AudioComponent;
-	}
-
-	FORCEINLINE class UCharacterPickupComponent* GetPickupComponent() const
-	{
-		return PickupComponent;
-	}
+	FORCEINLINE class UAudioComponent* GetAudioComponent() const { return AudioComponent; }
+	FORCEINLINE class UCharacterPickupComponent* GetPickupComponent() const { return PickupComponent; }
 
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Components, meta = (AllowPrivateAccess = "true"))
@@ -203,7 +190,6 @@ protected:
 	/* release actor */
 	virtual void ReleaseObjects();
 
-// blueprint native event
 public:
 	UFUNCTION(BlueprintImplementableEvent, Category = "ACharacterBase|NativeEvent")
 	void BP_FirePressReceive();
@@ -214,7 +200,6 @@ public:
 	UFUNCTION(BlueprintImplementableEvent, Category = "ACharacterBase|NativeEvent")
 	void BP_ReloadReceive();
 
-// AnimMontage event
 public:
 	virtual void EquipmentActionMontage();
 	virtual void FireActionMontage();

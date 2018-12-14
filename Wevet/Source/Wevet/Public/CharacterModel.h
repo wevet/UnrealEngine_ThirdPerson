@@ -18,39 +18,39 @@ public:
 	UCharacterModel(const FObjectInitializer& ObjectInitializer);
 
 	UFUNCTION(BlueprintCallable, Category = "CharacterCondition")
-	int32 GetMaxHealth() const { return this->MaxHealth; }
+	int32 GetMaxHealth() const { return MaxHealth; }
 
 	UFUNCTION(BlueprintCallable, Category = "CharacterCondition")
-	int32 GetCurrentHealth() const { return this->CurrentHealth; }
+	int32 GetCurrentHealth() const { return CurrentHealth; }
 
 	UFUNCTION(BlueprintCallable, Category = "CharacterCondition")
-	int32 GetAttach() const { return this->Attack; }
+	int32 GetAttach() const { return Attack; }
 
 	UFUNCTION(BlueprintCallable, Category = "CharacterCondition")
-	int32 GetDefence() const { return this->Defence; }
+	int32 GetDefence() const { return Defence; }
 
 	UFUNCTION(BlueprintCallable, Category = "CharacterCondition")
-	int32 GetWisdom() const { return this->Wisdom; }
+	int32 GetWisdom() const { return Wisdom; }
 
 	UFUNCTION(BlueprintCallable, Category = "CharacterCondition")
-	virtual void SetCurrentHealthValue(int32 Health);
+	virtual void SetCurrentHealthValue(int32 NewHealth);
 
 	UFUNCTION(BlueprintCallable, Category = "CharacterCondition")
-	virtual void SetMaxHealthValue(int32 Health);
+	virtual void SetMaxHealthValue(int32 NewHealth);
 
 	UFUNCTION(BlueprintCallable, Category = "CharacterCondition")
-	virtual void SetAttackValue(int32 Attack);
+	virtual void SetAttackValue(int32 NewAttack);
 
 	UFUNCTION(BlueprintCallable, Category = "CharacterCondition")
-	virtual void SetDefenceValue(int32 Defence);
+	virtual void SetDefenceValue(int32 NewDefence);
 
 	UFUNCTION(BlueprintCallable, Category = "CharacterCondition")
-	virtual void SetWisdomValue(int32 Wisdom);
+	virtual void SetWisdomValue(int32 NewWisdom);
 
 	UFUNCTION(BlueprintCallable, Category = "CharacterCondition")
 	float GetHealthToWidget() const
 	{
-		return (float)this->CurrentHealth / (float)this->MaxHealth;
+		return (float)CurrentHealth / (float)MaxHealth;
 	}
 
 protected:

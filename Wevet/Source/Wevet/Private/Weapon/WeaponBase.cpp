@@ -103,13 +103,7 @@ void AWeaponBase::OnVisible_Implementation()
 	WidgetComponent->SetVisibility(true);
 }
 
-void AWeaponBase::BeginOverlapRecieve(
-	UPrimitiveComponent* OverlappedComponent, 
-	AActor* OtherActor, 
-	UPrimitiveComponent* OtherComp, 
-	int32 OtherBodyIndex, 
-	bool bFromSweep, 
-	const FHitResult & SweepResult)
+void AWeaponBase::BeginOverlapRecieve(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult)
 {
 	if (CharacterOwner == nullptr)
 	{
@@ -127,11 +121,7 @@ void AWeaponBase::BeginOverlapRecieve(
 	}
 }
 
-void AWeaponBase::EndOverlapRecieve(
-	UPrimitiveComponent* OverlappedComp, 
-	AActor* OtherActor, 
-	UPrimitiveComponent* OtherComp, 
-	int32 OtherBodyIndex)
+void AWeaponBase::EndOverlapRecieve(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
 	if (CharacterOwner == nullptr)
 	{
@@ -154,9 +144,7 @@ void AWeaponBase::OnFirePressedInternal()
 	UWorld* const World = GetWorld();
 
 	// not found owner
-	if (World == nullptr  
-		|| CharacterOwner == nullptr
-		|| (CharacterOwner && CharacterOwner->IsDeath_Implementation()))
+	if (World == nullptr || CharacterOwner == nullptr || (CharacterOwner && CharacterOwner->IsDeath_Implementation()))
 	{
 		return;
 	}
@@ -191,7 +179,7 @@ void AWeaponBase::OnFirePressedInternal()
 	CollisionQueryParams.IgnoreMask = 0;
 	CollisionQueryParams.AddIgnoredActor(this);
 
-	bool bSuccess = World->LineTraceSingleByChannel(
+	const bool bSuccess = World->LineTraceSingleByChannel(
 		HitData, 
 		StartLocation, 
 		EndLocation, 
@@ -219,21 +207,8 @@ void AWeaponBase::OnFirePressedInternal()
 	Bullet->SetFolderPath("/BulletsRoot");
 #endif
 
-	if (HitData.Actor.IsValid())
-	{
-		if (ICombatExecuter* CombatInterface = Cast<ICombatExecuter>(HitData.Actor))
-		{
-			if (!CombatInterface->IsDeath_Implementation())
-			{
-				auto d = WeaponItemInfo.Damage;
-				auto dHalf = d * 0.05f;
-				float Damage = FMath::FRandRange(dHalf, d);
-				CombatInterface->OnTakeDamage_Implementation(HitData.BoneName, Damage, CharacterOwner);
-			}
-		}
-	}
+	TakeHitDamage(HitData);
 
-	// spawn impact emitter
 	FTransform EmitterTransform;
 	EmitterTransform.SetIdentity();
 	EmitterTransform.SetLocation(HitData.Location);
@@ -243,7 +218,6 @@ void AWeaponBase::OnFirePressedInternal()
 		EmitterTransform, 
 		true);
 
-	// attach muzzleflash emitter
 	UParticleSystemComponent* MuzzleFlashEmitterComponent = UGameplayStatics::SpawnEmitterAttached(
 		MuzzleFlashEmitterTemplate, 
 		GetSkeletalMeshComponent(),
@@ -254,11 +228,28 @@ void AWeaponBase::OnFirePressedInternal()
 		true);
 }
 
+void AWeaponBase::TakeHitDamage(const FHitResult HitResult)
+{
+	if (!ensure(HitResult.Actor.IsValid()))
+	{
+		return;
+	}
+
+	if (ICombatExecuter* CombatInterface = Cast<ICombatExecuter>(HitResult.Actor))
+	{
+		if (!CombatInterface->IsDeath_Implementation())
+		{
+			auto d = WeaponItemInfo.Damage;
+			auto dHalf = d * 0.05f;
+			float Damage = FMath::FRandRange(dHalf, d);
+			CombatInterface->OnTakeDamage_Implementation(HitResult.BoneName, Damage, CharacterOwner);
+		}
+	}
+}
 
 void AWeaponBase::OnReloading_Implementation()
 {
-	UWorld* World = GetWorld();
-
+	UWorld* const World = GetWorld();
 	if (World == nullptr)
 	{
 		return;
@@ -322,8 +313,23 @@ void AWeaponBase::SetCharacterOwner(ACharacterBase* NewCharacter)
 
 void AWeaponBase::CopyTo(const FWeaponItemInfo& InWeaponItemInfo)
 {
-	WeaponItemInfo = InWeaponItemInfo;
+	//WeaponItemInfo = InWeaponItemInfo;
 	//InWeaponItemInfo << WeaponItemInfo;
 	//WeaponItemInfo.CopyTo(InWeaponItemInfo);
-	UE_LOG(LogWevetClient, Log, TEXT("WeaponCopy : %s \n MaxAmmo : %d"), *GetName(), WeaponItemInfo.MaxAmmo);
+	//CloneTo(WeaponItemInfo, InWeaponItemInfo);
+	//UE_LOG(LogWevetClient, Log, TEXT("WeaponCopy : %s \n MaxAmmo : %d"), *GetName(), WeaponItemInfo.MaxAmmo);
+}
+
+// @TODO
+void AWeaponBase::CloneTo(FWeaponItemInfo& OutWeaponItemInfo, const FWeaponItemInfo& InWeaponItemInfo)
+{
+	OutWeaponItemInfo.UnEquipSocketName = InWeaponItemInfo.UnEquipSocketName;
+	OutWeaponItemInfo.EquipSocketName   = InWeaponItemInfo.EquipSocketName;
+	OutWeaponItemInfo.WeaponItemType    = InWeaponItemInfo.WeaponItemType;
+	OutWeaponItemInfo.WeaponClass = InWeaponItemInfo.WeaponClass;
+	OutWeaponItemInfo.CurrentAmmo = InWeaponItemInfo.CurrentAmmo;
+	OutWeaponItemInfo.ClipType = InWeaponItemInfo.ClipType;
+	OutWeaponItemInfo.MaxAmmo  = InWeaponItemInfo.MaxAmmo;
+	OutWeaponItemInfo.Damage   = InWeaponItemInfo.Damage;
+	OutWeaponItemInfo.Texture  = InWeaponItemInfo.Texture;
 }

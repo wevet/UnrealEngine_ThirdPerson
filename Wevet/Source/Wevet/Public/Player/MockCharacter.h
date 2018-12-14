@@ -19,6 +19,11 @@ class WEVET_API AMockCharacter : public ACharacterBase
 public:
 	AMockCharacter(const FObjectInitializer& ObjectInitializer);
 	virtual void OnConstruction(const FTransform& Transform) override;
+	virtual void Tick(float DeltaTime) override;
+
+protected:
+	virtual void BeginPlay() override;
+	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Components, meta = (AllowPrivateAccess = "true"))
@@ -48,10 +53,6 @@ public:
 	virtual FVector BulletTraceForwardLocation() const override;
 
 protected:
-	virtual void BeginPlay() override;
-	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
-
-protected:
 	virtual void UpdateWeapon();
 	virtual void OnCrouch() override;
 	virtual void PickupObjects() override;
@@ -66,11 +67,8 @@ protected:
 	void FirePressed();
 	void FireReleassed();
 	void Reload();
-
 	void ReleaseWeapon();
-
 	UPROPERTY(BlueprintReadOnly, Category = "AMockCharacter|Variable")
 	int32 WeaponCurrentIndex;
-
 };
 

@@ -5,32 +5,36 @@
 
 UCharacterModel::UCharacterModel(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer),
-	CurrentHealth(100), MaxHealth(100), Attack(100), Defence(100), Wisdom(100)
+	CurrentHealth(100), 
+	MaxHealth(100), 
+	Attack(100), 
+	Defence(100), 
+	Wisdom(100)
 {
 	//
 }
 
-void UCharacterModel::SetCurrentHealthValue(int32 Health)
+void UCharacterModel::SetCurrentHealthValue(int32 NewHealth)
 {
-	this->CurrentHealth = Health;
+	CurrentHealth = NewHealth;
 }
 
-void UCharacterModel::SetMaxHealthValue(int32 Health)
+void UCharacterModel::SetMaxHealthValue(int32 NewHealth)
 {
-	this->MaxHealth = Health;
+	MaxHealth = NewHealth;
 }
 
-void UCharacterModel::SetAttackValue(int32 Attack)
+void UCharacterModel::SetAttackValue(int32 NewAttack)
 {
-	this->Attack = Attack;
+	Attack = NewAttack;
 }
 
-void UCharacterModel::SetDefenceValue(int32 Defence)
+void UCharacterModel::SetDefenceValue(int32 NewDefence)
 {
-	this->Defence = Defence;
+	Defence = NewDefence;
 }
 
-void UCharacterModel::SetWisdomValue(int32 Wisdom)
+void UCharacterModel::SetWisdomValue(int32 NewWisdom)
 {
-	this->Wisdom = Wisdom;
+	Wisdom = NewWisdom;
 }

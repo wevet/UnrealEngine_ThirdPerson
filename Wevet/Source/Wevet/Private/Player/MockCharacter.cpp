@@ -5,6 +5,7 @@
 #include "Engine.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "ShaderCompiler.h"
 
 AMockCharacter::AMockCharacter(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {
@@ -68,6 +69,25 @@ void AMockCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInpu
 	PlayerInputComponent->BindAction("Fire", IE_Pressed,   this, &AMockCharacter::FirePressed);
 	PlayerInputComponent->BindAction("Fire", IE_Released,  this, &AMockCharacter::FireReleassed);
 	PlayerInputComponent->BindAction("Reload", IE_Pressed, this, &AMockCharacter::Reload);
+}
+
+void AMockCharacter::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+
+	//auto M = GShaderCompilingManager;
+	//if (M == NULL)
+	//{
+	//	return;
+	//}
+	//if (M->IsCompiling())
+	//{
+	//	UE_LOG(LogWevetClient, Warning, TEXT("Compiling"));
+	//}
+	//else
+	//{
+	//	UE_LOG(LogWevetClient, Log, TEXT("Success"));
+	//}
 }
 
 void AMockCharacter::TouchStarted(ETouchIndex::Type FingerIndex, FVector Location)
@@ -171,7 +191,7 @@ void AMockCharacter::OnCrouch()
 		GetCharacterMovement()->MaxWalkSpeed = MovementSpeed;
 	}
 }
- 
+
 void AMockCharacter::UpdateWeapon()
 {
 	if (ArrayExtension::NullOrEmpty(WeaponList))
@@ -196,8 +216,7 @@ void AMockCharacter::Die_Implementation()
 		return;
 	}
 
-	auto Controller = UGameplayStatics::GetPlayerController(this, 0);
-	if (Controller)
+	if (APlayerController* Controller = UGameplayStatics::GetPlayerController(this, 0))
 	{
 		Super::DisableInput(Controller);
 	}
@@ -212,7 +231,9 @@ void AMockCharacter::OnReleaseItemExecuter_Implementation()
 
 void AMockCharacter::OnPickupItemExecuter_Implementation(AActor* Actor)
 {
-	if (Actor == nullptr)
+	UWorld* const World = GetWorld();
+
+	if (Actor == nullptr || World == nullptr)
 	{
 		return;
 	}
@@ -236,7 +257,7 @@ void AMockCharacter::OnPickupItemExecuter_Implementation(AActor* Actor)
 		SpawnInfo.Owner = NULL;
 		SpawnInfo.Instigator = NULL;
 		const FTransform Transform = Super::GetMesh()->GetSocketTransform(WeaponItemInfo.UnEquipSocketName);
-		AWeaponBase* const PickingWeapon = GetWorld()->SpawnActor<AWeaponBase>(WeaponClass, Transform, SpawnInfo);
+		AWeaponBase* const PickingWeapon = World->SpawnActor<AWeaponBase>(WeaponClass, Transform, SpawnInfo);
 
 		PickingWeapon->AttachToComponent(
 			Super::GetMesh(),
@@ -270,6 +291,7 @@ void AMockCharacter::OnTakeDamage_Implementation(FName BoneName, float Damage, A
 
 void AMockCharacter::NotifyEquip_Implementation()
 {
+	//FAttachmentTransformRules& AttachmentRules = FAttachmentTransformRules()
 
 	if (Super::SelectedWeapon) 
 	{
@@ -287,7 +309,7 @@ void AMockCharacter::NotifyEquip_Implementation()
 	else
 	{
 		// attach weapon
-		Super::SelectedWeapon = this->WeaponList[this->WeaponCurrentIndex];
+		Super::SelectedWeapon = WeaponList[WeaponCurrentIndex];
 		Super::SelectedWeapon->AttachToComponent(
 			Super::GetMesh(), 
 			{ EAttachmentRule::SnapToTarget, true }, 
@@ -321,23 +343,36 @@ void AMockCharacter::ReleaseWeapon()
 
 	const FRotator Rotation = Super::GetActorRotation();
 	const FVector Forward   = Super::GetActorLocation() + (Controller->GetControlRotation().Vector() * 200);
-	const FTransform Transform = UKismetMathLibrary::MakeTransform(Forward, Rotation, FVector::OneVector);
+	const FTransform Transform  = UKismetMathLibrary::MakeTransform(Forward, Rotation, FVector::OneVector);
 	
-	if (AWeaponBase* UnEquipWeapon = Super::GetUnEquipWeapon())
+	if (AWeaponBase* Weapon = Super::GetUnEquipWeapon())
 	{
-		if (WeaponList.Find(UnEquipWeapon) <= 0)
+		if (WeaponList.Find(Weapon) <= 0)
 		{
-			WeaponList.Remove(UnEquipWeapon);
+			WeaponList.Remove(Weapon);
 		}
-		FWeaponItemInfo& WeaponItemInfo = UnEquipWeapon->WeaponItemInfo;
+		FWeaponItemInfo& WeaponItemInfo = Weapon->WeaponItemInfo;
 		TSubclassOf<class AWeaponBase> WeaponClass = WeaponItemInfo.WeaponClass;
-		UnEquipWeapon->Destroy();
-		UnEquipWeapon = nullptr;
-		FActorSpawnParameters SpawnInfo;
-		SpawnInfo.Owner = NULL;
-		SpawnInfo.Instigator = NULL;
-		AWeaponBase* const SpawningObject = World->SpawnActor<AWeaponBase>(WeaponClass, Transform.GetLocation(), Super::GetActorRotation(), SpawnInfo);
+		Weapon->OnFireRelease_Implementation();
+		Weapon->SetCharacterOwner(nullptr);
+		Weapon->SetEquip(false);
+		Weapon->Destroy();
+		Weapon = nullptr;
+
+		//UE_LOG(LogWevetClient, Warning, TEXT("BeforeAmmo : %d"), WeaponItemInfo.CurrentAmmo);
+		AWeaponBase* const SpawningObject = World->SpawnActorDeferred<AWeaponBase>(
+			WeaponClass,
+			Transform,
+			nullptr,
+			nullptr,
+			ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
 		SpawningObject->WeaponItemInfo.CopyTo(WeaponItemInfo);
 		SpawningObject->OnVisible_Implementation();
+		SpawningObject->FinishSpawning(Transform);
+
+		//UE_LOG(LogWevetClient, Warning, TEXT("AfterAmmo : %d"), SpawningObject->WeaponItemInfo.CurrentAmmo);
+		//UnEquipWeapon->DetachFromActor({ EDetachmentRule::KeepRelative, true });
+		//UnEquipWeapon->OnVisible_Implementation();
+		//UnEquipWeapon->SetActorTransform(Transform);
 	}
 }
