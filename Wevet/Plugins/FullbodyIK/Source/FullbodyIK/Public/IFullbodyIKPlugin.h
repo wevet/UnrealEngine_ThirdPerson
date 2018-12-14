@@ -8,10 +8,10 @@
 
 
 /**
- * The public interface to this module.  In most cases, this interface is only public to sibling modules 
+ * The public interface to this module.  In most cases, this interface is only public to sibling modules
  * within this plugin.
  */
-class IFullbodyIK : public IModuleInterface
+class FULLBODYIK_API IFullbodyIKPlugin : public IModuleInterface
 {
 
 public:
@@ -22,9 +22,9 @@ public:
 	 *
 	 * @return Returns singleton instance, loading the module on demand if needed
 	 */
-	static inline IFullbodyIK& Get()
+	static inline IFullbodyIKPlugin& Get()
 	{
-		return FModuleManager::LoadModuleChecked< IFullbodyIK >( "FullbodyIK" );
+		return FModuleManager::LoadModuleChecked< IFullbodyIKPlugin >( "FullbodyIKPlugin" );
 	}
 
 	/**
@@ -34,7 +34,7 @@ public:
 	 */
 	static inline bool IsAvailable()
 	{
-		return FModuleManager::Get().IsModuleLoaded( "FullbodyIK" );
+		return FModuleManager::Get().IsModuleLoaded( "FullbodyIKPlugin" );
 	}
 };
 

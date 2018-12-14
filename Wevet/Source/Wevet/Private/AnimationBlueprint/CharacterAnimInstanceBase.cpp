@@ -6,7 +6,8 @@
 #include "GameFramework/PawnMovementComponent.h"
 
 UCharacterAnimInstanceBase::UCharacterAnimInstanceBase(const FObjectInitializer& ObjectInitializer) 
-	: Super(ObjectInitializer)
+	: Super(ObjectInitializer),
+	MaxBlendWeight(0.8f)
 {
 
 }
@@ -30,15 +31,13 @@ void UCharacterAnimInstanceBase::NativeUpdateAnimation(float DeltaTimeX)
 	IsMoving = (OwningPawn->GetVelocity().SizeSquared() > 25);
 	Speed = OwningPawn->GetVelocity().Size();
 
-	UPawnMovementComponent* MovementComponent = OwningPawn->GetMovementComponent();
-	
-	if (MovementComponent)
+	if (UPawnMovementComponent* MovementComponent = OwningPawn->GetMovementComponent())
 	{
 		IsFalling = MovementComponent->IsFalling();
 		//const bool isInAir = MovementComponent->MovementMode == EMovementMode::MOVE_Falling;
 		//const float Velocity = MovementComponent->GetVelocity();
 	}
-
+	
 	const FRotator ControlRotation = OwningPawn->GetControlRotation();
 	const FRotator Rotation = OwningPawn->GetActorRotation();
 	const FVector Velocity  = OwningPawn->GetVelocity();
@@ -50,7 +49,7 @@ void UCharacterAnimInstanceBase::NativeUpdateAnimation(float DeltaTimeX)
 
 	SetCrouch();
 	SetEquip();
-	BlendWeight = (IsEquip) ? 0.8f : 0.f;
+	BlendWeight = (IsEquip) ? MaxBlendWeight : 0.f;
 }
 
 FRotator UCharacterAnimInstanceBase::NormalizedDeltaRotator(FRotator A, FRotator B) const
@@ -62,16 +61,16 @@ FRotator UCharacterAnimInstanceBase::NormalizedDeltaRotator(FRotator A, FRotator
 
 void UCharacterAnimInstanceBase::SetCrouch()
 {
-	if (this->Owner)
+	if (Owner)
 	{
-		this->IsCrouch = this->Owner->HasCrouch();
+		IsCrouch = Owner->HasCrouch();
 	}
 }
 
 void UCharacterAnimInstanceBase::SetEquip()
 {
-	if (this->Owner)
+	if (Owner)
 	{
-		this->IsEquip = this->Owner->HasEquipWeapon();
+		IsEquip = Owner->HasEquipWeapon();
 	}
 }

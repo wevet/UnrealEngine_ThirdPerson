@@ -53,6 +53,9 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Variable")
 	float BlendWeight;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Variable")
+	float MaxBlendWeight;
+
 	// FRotator Delta
 	virtual FRotator NormalizedDeltaRotator(FRotator A, FRotator B) const;
 

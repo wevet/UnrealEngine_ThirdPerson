@@ -4,12 +4,12 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/GameModeBase.h"
-#include "MockPlayerController.h"
 #include "WevetGameModeBase.generated.h"
 
-/**
- * 
- */
+
+class ACharacterBase;
+class AMockCharacter;
+
 UCLASS()
 class WEVET_API AWevetGameModeBase : public AGameModeBase
 {
@@ -23,4 +23,7 @@ public:
 	virtual void StartPlay() override;
 	
 
+private:
+	TArray<ACharacterBase*> Characters;
+	AMockCharacter* Player;
 };

@@ -6,6 +6,8 @@ namespace UnrealBuildTool.Rules
 	{
 		public FullbodyIK(ReadOnlyTargetRules Target) : base(Target)
 		{
+			PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
+
 			PublicIncludePaths.AddRange(
 				new string[] {
 					"FullbodyIK/Public"

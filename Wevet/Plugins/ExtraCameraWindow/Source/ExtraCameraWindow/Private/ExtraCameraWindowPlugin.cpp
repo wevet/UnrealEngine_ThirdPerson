@@ -10,10 +10,10 @@ IMPLEMENT_MODULE(FExtraCameraWindowPlugin, ExtraCameraWindow)
 
 void FExtraCameraWindowPlugin::StartupModule()
 {
-	
+
 }
 
 void FExtraCameraWindowPlugin::ShutdownModule()
 {
-	
+
 }

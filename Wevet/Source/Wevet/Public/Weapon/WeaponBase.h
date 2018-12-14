@@ -76,19 +76,19 @@ protected:
 	virtual void TakeHitDamage(const FHitResult HitResult);
 
 public:
-	FORCEINLINE class USkeletalMeshComponent* GetSkeletalMeshComponent() const 
-	{ 
-		return SkeletalMeshComponent; 
+	FORCEINLINE class USkeletalMeshComponent* GetSkeletalMeshComponent() const
+	{
+		return SkeletalMeshComponent;
 	}
 
-	FORCEINLINE class USphereComponent* GetSphereComponent() const 
+	FORCEINLINE class USphereComponent* GetSphereComponent() const
 	{
-		return SphereComponent; 
+		return SphereComponent;
 	}
-	
-	FORCEINLINE class UWidgetComponent* GetWidgetComponent() const 
+
+	FORCEINLINE class UWidgetComponent* GetWidgetComponent() const
 	{
-		return WidgetComponent; 
+		return WidgetComponent;
 	}
 
 	virtual void SetEquip(const bool Equip);
@@ -131,18 +131,18 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = Components)
 	virtual	void BeginOverlapRecieve(
-		UPrimitiveComponent* OverlappedComponent, 
-		AActor* OtherActor, 
-		UPrimitiveComponent* OtherComp, 
-		int32 OtherBodyIndex, 
-		bool bFromSweep, 
+		UPrimitiveComponent* OverlappedComponent,
+		AActor* OtherActor,
+		UPrimitiveComponent* OtherComp,
+		int32 OtherBodyIndex,
+		bool bFromSweep,
 		const FHitResult &SweepResult);
 
 	UFUNCTION(BlueprintCallable, Category = Components)
 	virtual	void EndOverlapRecieve(
-		UPrimitiveComponent* OverlappedComp, 
-		AActor* OtherActor, 
-		UPrimitiveComponent* OtherComp, 
+		UPrimitiveComponent* OverlappedComp,
+		AActor* OtherActor,
+		UPrimitiveComponent* OtherComp,
 		int32 OtherBodyIndex);
 
 	UFUNCTION(BlueprintCallable, Category = API)
@@ -152,7 +152,7 @@ public:
 	virtual void OnReloadInternal();
 
 	const FTransform GetMuzzleTransform()
-	{ 
+	{
 		return SkeletalMeshComponent->GetSocketTransform(MuzzleSocketName);
 	}
 
