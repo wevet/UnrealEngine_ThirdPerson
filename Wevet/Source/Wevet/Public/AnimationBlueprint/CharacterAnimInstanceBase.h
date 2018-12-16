@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Animation/AnimInstance.h"
+#include "AnimInstanceFullbodyIK.h"
 #include "CharacterBase.h"
 #include "CharacterAnimInstanceBase.generated.h"
 
@@ -11,7 +11,7 @@
  * 
  */
 UCLASS(transient, Blueprintable, hideCategories = AnimInstance, BlueprintType)
-class WEVET_API UCharacterAnimInstanceBase : public UAnimInstance
+class WEVET_API UCharacterAnimInstanceBase : public UAnimInstanceFullbodyIK
 {
 	GENERATED_BODY()
 	

@@ -17,7 +17,9 @@ void UAnimInstanceFullbodyIK::InitializeBoneOffset_Implementation(int32 BoneInde
 	}
 }
 
-void UAnimInstanceFullbodyIK::SetBoneLocationOffset_Implementation(int32 BoneIndex, const FVector& Location)
+void UAnimInstanceFullbodyIK::SetBoneLocationOffset_Implementation(
+	int32 BoneIndex, 
+	const FVector& Location)
 {
 	OffsetLocations[BoneIndex] = Location;
 }
@@ -27,7 +29,9 @@ FVector UAnimInstanceFullbodyIK::GetBoneLocationOffset_Implementation(int32 Bone
 	return OffsetLocations[BoneIndex];
 }
 
-void UAnimInstanceFullbodyIK::SetBoneRotationOffset_Implementation(int32 BoneIndex, const FRotator& Rotation)
+void UAnimInstanceFullbodyIK::SetBoneRotationOffset_Implementation(
+	int32 BoneIndex, 
+	const FRotator& Rotation)
 {
 	OffsetRotations[BoneIndex] = Rotation;
 }

@@ -24,6 +24,7 @@ public class Wevet : ModuleRules
 				"ShaderCore",
 				"RenderCore",
 				"RHI",
+				"FullbodyIK",
 			}
 		);
 
