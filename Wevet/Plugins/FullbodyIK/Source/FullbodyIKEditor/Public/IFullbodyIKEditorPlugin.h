@@ -6,12 +6,14 @@
 #include "Modules/ModuleInterface.h"
 #include "Modules/ModuleManager.h"
 
+
 /**
  * The public interface to this module.  In most cases, this interface is only public to sibling modules
  * within this plugin.
  */
-class FULLBODYIK_API IFullbodyIKPlugin : public IModuleInterface
+class FULLBODYIKEDITOR_API IFullbodyIKEditorPlugin : public IModuleInterface
 {
+
 public:
 
 	/**
@@ -20,9 +22,9 @@ public:
 	 *
 	 * @return Returns singleton instance, loading the module on demand if needed
 	 */
-	static inline IFullbodyIKPlugin& Get()
+	static inline IFullbodyIKEditorPlugin& Get()
 	{
-		return FModuleManager::LoadModuleChecked< IFullbodyIKPlugin >( "FullbodyIKPlugin" );
+		return FModuleManager::LoadModuleChecked< IFullbodyIKEditorPlugin >( "FullbodyIKEditorPlugin" );
 	}
 
 	/**
@@ -32,7 +34,6 @@ public:
 	 */
 	static inline bool IsAvailable()
 	{
-		return FModuleManager::Get().IsModuleLoaded( "FullbodyIKPlugin" );
+		return FModuleManager::Get().IsModuleLoaded( "FullbodyIKEditorPlugin" );
 	}
 };
-

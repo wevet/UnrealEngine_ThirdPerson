@@ -380,7 +380,8 @@ void FAnimNode_FullbodyIK::EvaluateSkeletalControl_AnyThread(FComponentSpacePose
 	TArray<FEffectorInternal> EffectorInternals;
 	for (const FAnimNode_FullbodyIkEffector& Effector : Effectors.Effectors)
 	{
-		if (Effector.EffectorBoneName == NAME_None || Effector.RootBoneName == NAME_None)
+		if (Effector.EffectorBoneName == NAME_None || 
+			Effector.RootBoneName == NAME_None)
 		{
 			continue;
 		}
@@ -605,7 +606,7 @@ void FAnimNode_FullbodyIK::EvaluateSkeletalControl_AnyThread(FComponentSpacePose
 					const FSolverInternal& SolverInternal = SolverInternals[Effector.EffectorBoneIndex];
 					FTransform InitWorldTransform = SolverInternal.InitComponentTransform * CachedComponentTransform;
 
-					// Transform更新
+					// Transform update
 					SolveSolver(0, FTransform::Identity,
 						[&](int32 BoneIndex, FVector& SavedOffsetLocation, FVector& CurrentOffsetLocation)
 						{
@@ -637,7 +638,7 @@ void FAnimNode_FullbodyIK::EvaluateSkeletalControl_AnyThread(FComponentSpacePose
 					const FSolverInternal& SolverInternal = SolverInternals[Effector.EffectorBoneIndex];
 					FTransform InitWorldTransform = SolverInternal.InitComponentTransform * CachedComponentTransform;
 
-					// update transform
+					// Transform update
 					SolveSolver(0, FTransform::Identity,
 						[&](int32 BoneIndex, FVector& SavedOffsetLocation, FVector& CurrentOffsetLocation)
 						{
@@ -691,23 +692,23 @@ void FAnimNode_FullbodyIK::EvaluateSkeletalControl_AnyThread(FComponentSpacePose
 
 			EtaStep /= Setting->StepSize;
 
-			auto J = FBuffer(ElementsJ.GetData(), DisplacementCount, AXIS_COUNT);
-			auto Jt = FBuffer(ElementsJt.GetData(), AXIS_COUNT, DisplacementCount);
-			auto JtJ = FBuffer(ElementsJtJ.GetData(), AXIS_COUNT, AXIS_COUNT);
-			auto JtJi = FBuffer(ElementsJtJi.GetData(), AXIS_COUNT, AXIS_COUNT);
-			auto Jp = FBuffer(ElementsJp.GetData(), AXIS_COUNT, DisplacementCount);
-			auto W0 = FBuffer(ElementsW0.GetData(), BoneAxisCount);
-			auto Wi = FBuffer(ElementsWi.GetData(), DisplacementCount, DisplacementCount);
-			auto JtWi = FBuffer(ElementsJtWi.GetData(), AXIS_COUNT, DisplacementCount);
-			auto JtWiJ = FBuffer(ElementsJtWiJ.GetData(), AXIS_COUNT, AXIS_COUNT);
-			auto JtWiJi = FBuffer(ElementsJtWiJi.GetData(), AXIS_COUNT, AXIS_COUNT);
-			auto JtWiJiJt = FBuffer(ElementsJtWiJiJt.GetData(), AXIS_COUNT, DisplacementCount);
-			auto Jwp = FBuffer(ElementsJwp.GetData(), AXIS_COUNT, DisplacementCount);
-			auto Rt1 = FBuffer(ElementsRt1.GetData(), BoneAxisCount);
-			auto Eta = FBuffer(ElementsEta.GetData(), BoneAxisCount);
-			auto EtaJ = FBuffer(ElementsEtaJ.GetData(), AXIS_COUNT);
-			auto EtaJJp = FBuffer(ElementsEtaJJp.GetData(), BoneAxisCount);
-			auto Rt2 = FBuffer(ElementsRt2.GetData(), BoneAxisCount);
+			FBuffer J    = FBuffer(ElementsJ.GetData(), DisplacementCount, AXIS_COUNT);
+			FBuffer Jt   = FBuffer(ElementsJt.GetData(), AXIS_COUNT, DisplacementCount);
+			FBuffer JtJ  = FBuffer(ElementsJtJ.GetData(), AXIS_COUNT, AXIS_COUNT);
+			FBuffer JtJi = FBuffer(ElementsJtJi.GetData(), AXIS_COUNT, AXIS_COUNT);
+			FBuffer Jp   = FBuffer(ElementsJp.GetData(), AXIS_COUNT, DisplacementCount);
+			FBuffer W0   = FBuffer(ElementsW0.GetData(), BoneAxisCount);
+			FBuffer Wi   = FBuffer(ElementsWi.GetData(), DisplacementCount, DisplacementCount);
+			FBuffer JtWi     = FBuffer(ElementsJtWi.GetData(), AXIS_COUNT, DisplacementCount);
+			FBuffer JtWiJ    = FBuffer(ElementsJtWiJ.GetData(), AXIS_COUNT, AXIS_COUNT);
+			FBuffer JtWiJi   = FBuffer(ElementsJtWiJi.GetData(), AXIS_COUNT, AXIS_COUNT);
+			FBuffer JtWiJiJt = FBuffer(ElementsJtWiJiJt.GetData(), AXIS_COUNT, DisplacementCount);
+			FBuffer Jwp    = FBuffer(ElementsJwp.GetData(), AXIS_COUNT, DisplacementCount);
+			FBuffer Rt1    = FBuffer(ElementsRt1.GetData(), BoneAxisCount);
+			FBuffer Eta    = FBuffer(ElementsEta.GetData(), BoneAxisCount);
+			FBuffer EtaJ   = FBuffer(ElementsEtaJ.GetData(), AXIS_COUNT);
+			FBuffer EtaJJp = FBuffer(ElementsEtaJJp.GetData(), BoneAxisCount);
+			FBuffer Rt2    = FBuffer(ElementsRt2.GetData(), BoneAxisCount);
 
 			// J
 			// auto J = FBuffer(DisplacementCount, AXIS_COUNT);
@@ -973,28 +974,28 @@ void FAnimNode_FullbodyIK::EvaluateSkeletalControl_AnyThread(FComponentSpacePose
 		OutBoneTransforms.Add(FBoneTransform(FCompactPoseBoneIndex(BoneIndex), SolverInternals[BoneIndex].ComponentTransform));
 	}
 
-	for (const FName& BoneName : DebugDumpBoneNames)
-	{
-		int32 BoneIndex = SkeletalMeshComponent->GetBoneIndex(BoneName);
-		if (SolverInternals.Contains(BoneIndex))
-		{
-			UE_LOG(LogTemp, Log, TEXT("%s (%d) -----------------"), *BoneName.ToString(), BoneIndex);
-			UE_LOG(LogTemp, Log, TEXT("ComponentSpace : %s"), *SolverInternals[BoneIndex].ComponentTransform.ToString());
-			UE_LOG(LogTemp, Log, TEXT("    LocalSpace : %s"), *SolverInternals[BoneIndex].LocalTransform.ToString());
-			UE_LOG(LogTemp, Log, TEXT("       Rotator : %s"), *SolverInternals[BoneIndex].LocalTransform.Rotator().ToString());
-			UE_LOG(LogTemp, Log, TEXT(""));
-		}
-	}
+	//for (const FName& BoneName : DebugDumpBoneNames)
+	//{
+	//	int32 BoneIndex = SkeletalMeshComponent->GetBoneIndex(BoneName);
+	//	if (SolverInternals.Contains(BoneIndex))
+	//	{
+	//		UE_LOG(LogTemp, Log, TEXT("%s (%d) -----------------"), *BoneName.ToString(), BoneIndex);
+	//		UE_LOG(LogTemp, Log, TEXT("ComponentSpace : %s"), *SolverInternals[BoneIndex].ComponentTransform.ToString());
+	//		UE_LOG(LogTemp, Log, TEXT("    LocalSpace : %s"), *SolverInternals[BoneIndex].LocalTransform.ToString());
+	//		UE_LOG(LogTemp, Log, TEXT("       Rotator : %s"), *SolverInternals[BoneIndex].LocalTransform.Rotator().ToString());
+	//		UE_LOG(LogTemp, Log, TEXT(""));
+	//	}
+	//}
 
-	if (DebugShowCenterOfMassRadius > 0.f)
-	{
-		DrawDebugSphere(SkeletalMeshComponent->GetWorld(), CenterOfMass, DebugShowCenterOfMassRadius, 16, FColor::Red);
-	}
+	//if (DebugShowCenterOfMassRadius > 0.f)
+	//{
+	//	DrawDebugSphere(SkeletalMeshComponent->GetWorld(), CenterOfMass, DebugShowCenterOfMassRadius, 16, FColor::Red);
+	//}
 
-	if (bDebugShowEffectiveCount)
-	{
-		GEngine->AddOnScreenDebugMessage(-1, 0.1f, FColor::Red, FString::Printf(TEXT("Effective Count : %d"), EffectiveCount));
-	}
+	//if (bDebugShowEffectiveCount)
+	//{
+	//	GEngine->AddOnScreenDebugMessage(-1, 0.1f, FColor::Red, FString::Printf(TEXT("Effective Count : %d"), EffectiveCount));
+	//}
 }
 
 bool FAnimNode_FullbodyIK::IsValidToEvaluate(
@@ -1131,7 +1132,8 @@ void FAnimNode_FullbodyIK::CalcJacobian(
 			}
 		}
 
-		if (BoneIndex == EffectorInternal.RootBoneIndex || ParentBoneIndex == INDEX_NONE)
+		if (BoneIndex == EffectorInternal.RootBoneIndex || 
+			ParentBoneIndex == INDEX_NONE)
 		{
 			break;
 		}

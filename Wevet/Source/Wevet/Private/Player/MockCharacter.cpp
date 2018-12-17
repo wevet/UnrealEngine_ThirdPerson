@@ -351,28 +351,6 @@ void AMockCharacter::ReleaseWeapon()
 		{
 			WeaponList.Remove(Weapon);
 		}
-		FWeaponItemInfo& WeaponItemInfo = Weapon->WeaponItemInfo;
-		TSubclassOf<class AWeaponBase> WeaponClass = WeaponItemInfo.WeaponClass;
-		Weapon->OnFireRelease_Implementation();
-		Weapon->SetCharacterOwner(nullptr);
-		Weapon->SetEquip(false);
-		Weapon->Destroy();
-		Weapon = nullptr;
-
-		//UE_LOG(LogWevetClient, Warning, TEXT("BeforeAmmo : %d"), WeaponItemInfo.CurrentAmmo);
-		AWeaponBase* const SpawningObject = World->SpawnActorDeferred<AWeaponBase>(
-			WeaponClass,
-			Transform,
-			nullptr,
-			nullptr,
-			ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
-		SpawningObject->WeaponItemInfo.CopyTo(WeaponItemInfo);
-		SpawningObject->OnVisible_Implementation();
-		SpawningObject->FinishSpawning(Transform);
-
-		//UE_LOG(LogWevetClient, Warning, TEXT("AfterAmmo : %d"), SpawningObject->WeaponItemInfo.CurrentAmmo);
-		//UnEquipWeapon->DetachFromActor({ EDetachmentRule::KeepRelative, true });
-		//UnEquipWeapon->OnVisible_Implementation();
-		//UnEquipWeapon->SetActorTransform(Transform);
+		Super::ReleaseWeaponToWorld(Transform, Weapon);
 	}
 }

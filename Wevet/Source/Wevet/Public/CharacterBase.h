@@ -99,6 +99,11 @@ public:
 		return SelectedWeapon; 
 	};
 
+	UCharacterModel* GetCharacterModel() const
+	{
+		return CharacterModel;
+	};
+
 	UFUNCTION(BlueprintCallable, Category = "ACharacterBase|Weapon")
 	const TArray<AWeaponBase*>& GetWeaponList() 
 	{
@@ -116,6 +121,9 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "ACharacterBase|CharacterModel")
 	float GetHealthToWidget() const;
+
+	UFUNCTION(BlueprintCallable, Category = "ACharacterBase|Variable")
+	virtual void ReleaseWeaponToWorld(const FTransform Transform, AWeaponBase* Weapon);
 
 	FORCEINLINE class UAudioComponent* GetAudioComponent() const { return AudioComponent; }
 	FORCEINLINE class UCharacterPickupComponent* GetPickupComponent() const { return PickupComponent; }

@@ -160,10 +160,6 @@ void ACharacterBase::OnTakeDamage_Implementation(FName BoneName, float Damage, A
 	{
 		UE_LOG(LogWevetClient, Warning, TEXT("Victim : %s"), *Actor->GetName());
 		UE_LOG(LogWevetClient, Warning, TEXT("Receive Name : %s"), *GetName());
-		//if (GetOwnerClass_Implementation() == Combat->GetOwnerClass_Implementation())
-		//{
-		//	return;
-		//}
 	}
 
 	if (BoneName == HeadSocketName) 
@@ -176,7 +172,6 @@ void ACharacterBase::OnTakeDamage_Implementation(FName BoneName, float Damage, A
 		int32 CurrentHealth = CharacterModel->GetCurrentHealth();
 		CharacterModel->SetCurrentHealthValue(CurrentHealth - TakeDamage);
 	}
-
 }
 
 // All deploy item
@@ -209,26 +204,9 @@ void ACharacterBase::Die_Implementation()
 		{
 			if (!Weapon)
 			{
-				checkSlow(0);
 				continue;
 			}
-			FWeaponItemInfo& WeaponItemInfo = Weapon->WeaponItemInfo;
-			TSubclassOf<class AWeaponBase> WeaponClass = WeaponItemInfo.WeaponClass;
-			Weapon->OnFireRelease_Implementation();
-			Weapon->SetCharacterOwner(nullptr);
-			Weapon->SetEquip(false);
-			Weapon->Destroy();
-			Weapon = nullptr;
-
-			AWeaponBase* const SpawningObject = World->SpawnActorDeferred<AWeaponBase>(
-				WeaponClass, 
-				Transform, 
-				nullptr, 
-				nullptr, 
-				ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
-			SpawningObject->WeaponItemInfo.CopyTo(WeaponItemInfo);
-			SpawningObject->OnVisible_Implementation();
-			SpawningObject->FinishSpawning(Transform);
+			ReleaseWeaponToWorld(Transform, Weapon);
 		}
 		WeaponList.Empty();
 	}
@@ -263,6 +241,38 @@ const bool ACharacterBase::HasEquipWeapon()
 float ACharacterBase::GetHealthToWidget() const
 {
 	return CharacterModel->GetHealthToWidget();
+}
+
+void ACharacterBase::ReleaseWeaponToWorld(const FTransform Transform, AWeaponBase* Weapon)
+{
+	UWorld* const World = GetWorld();
+
+	if (World == nullptr)
+	{
+		return;
+	}
+
+	const FWeaponItemInfo& WeaponItemInfo = Weapon->WeaponItemInfo;
+	TSubclassOf<class AWeaponBase> WeaponClass = WeaponItemInfo.WeaponClass;
+	Weapon->OnFireRelease_Implementation();
+	Weapon->SetCharacterOwner(nullptr);
+	Weapon->SetEquip(false);
+	Weapon->Destroy();
+	Weapon = nullptr;
+
+	AWeaponBase* const SpawningObject = World->SpawnActorDeferred<AWeaponBase>(
+		WeaponClass,
+		Transform,
+		nullptr,
+		nullptr,
+		ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
+	SpawningObject->WeaponItemInfo.CopyTo(WeaponItemInfo);
+	SpawningObject->OnVisible_Implementation();
+	SpawningObject->FinishSpawning(Transform);
+
+	//Weapon->DetachFromActor({ EDetachmentRule::KeepRelative, true });
+	//Weapon->OnVisible_Implementation();
+	//Weapon->SetActorTransform(Transform);
 }
 
 AWeaponBase* ACharacterBase::FindByWeapon(EWeaponItemType WeaponItemType)

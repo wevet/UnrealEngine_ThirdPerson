@@ -247,9 +247,9 @@ FVector AAICharacterBase::BulletTraceForwardLocation() const
 
 void AAICharacterBase::CreateWeaponInstance()
 {
-	UWorld* const World = GetWorld();
+	check(GetWorld());
 
-	if (SpawnWeapon == nullptr || World == nullptr)
+	if (SpawnWeapon == nullptr)
 	{
 		return;
 	}
@@ -258,7 +258,7 @@ void AAICharacterBase::CreateWeaponInstance()
 	SpawnParams.Owner = this;
 	SpawnParams.Instigator = Instigator;
 	const FTransform Transform = FTransform::Identity;
-	AWeaponBase* const SpawningObject = World->SpawnActor<AWeaponBase>(SpawnWeapon, Transform, SpawnParams);
+	AWeaponBase* const SpawningObject = GetWorld()->SpawnActor<AWeaponBase>(SpawnWeapon, Transform, SpawnParams);
 	Super::SelectedWeapon = SpawningObject;
 	check(Super::SelectedWeapon);
 

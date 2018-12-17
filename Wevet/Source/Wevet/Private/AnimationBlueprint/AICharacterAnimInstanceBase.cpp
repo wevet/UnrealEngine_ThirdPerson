@@ -3,7 +3,7 @@
 #include "AICharacterAnimInstanceBase.h"
 #include "GameFramework/Pawn.h"
 #include "AICharacterBase.h"
-
+#include "Kismet/KismetMathLibrary.h"
 
 UAICharacterAnimInstanceBase::UAICharacterAnimInstanceBase(const FObjectInitializer& ObjectInitializer) 
 	: Super(ObjectInitializer),
@@ -30,11 +30,15 @@ void UAICharacterAnimInstanceBase::NativeUpdateAnimation(float DeltaTimeX)
 
 void UAICharacterAnimInstanceBase::SetPitch()
 {
-	if (AICharacterOwner == nullptr)
+	if (AICharacterOwner)
 	{
-		return;
+		const FVector Start = AICharacterOwner->GetActorLocation();
+		const FVector End   = AICharacterOwner->GetTargetCharacter()->GetActorLocation();
+		const FRotator LookAtRotation = UKismetMathLibrary::FindLookAtRotation(Start, End);
+		FRotator Rot = FRotator::ZeroRotator;
+		Pitch   = LookAtRotation.Pitch;
+		Rot.Yaw = LookAtRotation.Yaw;
+		AICharacterOwner->SetActorRelativeRotation(Rot);
 	}
-	// @TODO AI LookAt 
+
 }
-
-

@@ -74,6 +74,7 @@ protected:
 
 	void CloneTo(FWeaponItemInfo& OutWeaponItemInfo, const FWeaponItemInfo& InWeaponItemInfo);
 	virtual void TakeHitDamage(const FHitResult HitResult);
+	virtual void PlayBulletEffect(const FHitResult HitResult);
 
 public:
 	FORCEINLINE class USkeletalMeshComponent* GetSkeletalMeshComponent() const

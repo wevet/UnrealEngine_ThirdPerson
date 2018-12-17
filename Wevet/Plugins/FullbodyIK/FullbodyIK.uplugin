@@ -15,10 +15,15 @@
 	"Installed" : false,
 	"Modules" :
 	[
-		{
-			"Name" : "FullbodyIK",
-			"Type" : "Runtime",
-			"LoadingPhase" : "Default"
-		}
+    {
+      "Name": "FullbodyIK",
+      "Type": "Runtime",
+      "LoadingPhase": "Default"
+    },
+    {
+      "Name": "FullbodyIKEditor",
+      "Type": "Editor",
+      "LoadingPhase": "Default"
+    }
 	]
 }

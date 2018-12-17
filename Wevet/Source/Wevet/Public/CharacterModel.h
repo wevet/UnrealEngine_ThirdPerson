@@ -24,7 +24,7 @@ public:
 	int32 GetCurrentHealth() const { return CurrentHealth; }
 
 	UFUNCTION(BlueprintCallable, Category = "CharacterCondition")
-	int32 GetAttach() const { return Attack; }
+	int32 GetAttack() const { return Attack; }
 
 	UFUNCTION(BlueprintCallable, Category = "CharacterCondition")
 	int32 GetDefence() const { return Defence; }

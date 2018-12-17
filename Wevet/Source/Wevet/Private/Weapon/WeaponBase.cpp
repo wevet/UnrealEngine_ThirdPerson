@@ -4,6 +4,7 @@
 #include "CharacterBase.h"
 #include "BulletBase.h"
 #include "CharacterPickupComponent.h"
+#include "CharacterModel.h"
 #include "Engine.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
@@ -208,28 +209,43 @@ void AWeaponBase::OnFirePressedInternal()
 #endif
 
 	TakeHitDamage(HitData);
+	PlayBulletEffect(HitData);
+}
+
+void AWeaponBase::PlayBulletEffect(const FHitResult HitResult)
+{
+	UWorld* const World = GetWorld();
+	if (World == nullptr)
+	{
+		return;
+	}
 
 	FTransform EmitterTransform;
 	EmitterTransform.SetIdentity();
-	EmitterTransform.SetLocation(HitData.Location);
+	EmitterTransform.SetLocation(HitResult.Location);
+
 	UParticleSystemComponent* ImpactMetalEmitterComponent = UGameplayStatics::SpawnEmitterAtLocation(
-		World, 
-		ImpactMetalEmitterTemplate, 
-		EmitterTransform, 
+		World,
+		ImpactMetalEmitterTemplate,
+		EmitterTransform,
 		true);
 
 	UParticleSystemComponent* MuzzleFlashEmitterComponent = UGameplayStatics::SpawnEmitterAttached(
-		MuzzleFlashEmitterTemplate, 
+		MuzzleFlashEmitterTemplate,
 		GetSkeletalMeshComponent(),
-		MuzzleSocketName, 
-		MuzzleLocation,
-		MuzzleRotation,
-		EAttachLocation::KeepWorldPosition, 
+		MuzzleSocketName,
+		GetMuzzleTransform().GetLocation(),
+		FRotator(GetMuzzleTransform().GetRotation()),
+		EAttachLocation::KeepWorldPosition,
 		true);
 }
 
 void AWeaponBase::TakeHitDamage(const FHitResult HitResult)
 {
+	if (HitResult.Actor == nullptr)
+	{
+		return;
+	}
 	if (!ensure(HitResult.Actor.IsValid()))
 	{
 		return;
@@ -239,9 +255,11 @@ void AWeaponBase::TakeHitDamage(const FHitResult HitResult)
 	{
 		if (!CombatInterface->IsDeath_Implementation())
 		{
-			auto d = WeaponItemInfo.Damage;
-			auto dHalf = d * 0.05f;
-			float Damage = FMath::FRandRange(dHalf, d);
+			float Offset = 0.05f;
+			int32 CharacterAttack = CharacterOwner->GetCharacterModel()->GetAttack();
+			float WeaponDamage = WeaponItemInfo.Damage;
+			float Total  = ((float)CharacterAttack + WeaponDamage);
+			float Damage = FMath::FRandRange((Total * Offset), Total);
 			CombatInterface->OnTakeDamage_Implementation(HitResult.BoneName, Damage, CharacterOwner);
 		}
 	}
