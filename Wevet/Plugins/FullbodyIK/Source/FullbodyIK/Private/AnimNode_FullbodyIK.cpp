@@ -1013,7 +1013,7 @@ FFullbodyIKSolver FAnimNode_FullbodyIK::GetSolver(FName BoneName) const
 {
 	check(Setting);
 
-	for (auto& Solver : Setting->Solvers)
+	for (FFullbodyIKSolver& Solver : Setting->Solvers)
 	{
 		if (Solver.BoneName == BoneName)
 		{
@@ -1150,7 +1150,7 @@ void FAnimNode_FullbodyIK::SolveSolver(
 {
 	SCOPE_CYCLE_COUNTER(STAT_FullbodyIK_SolveSolver);
 
-	auto& SolverInternal = SolverInternals[BoneIndex];
+	FSolverInternal& SolverInternal = SolverInternals[BoneIndex];
 
 	if (SolverInternal.bTranslation)
 	{
@@ -1264,7 +1264,7 @@ void FAnimNode_FullbodyIK::SolveSolver(
 
 	if (SolverTree.Contains(BoneIndex))
 	{
-		for (auto ChildBoneIndex : SolverTree[BoneIndex])
+		for (int32 ChildBoneIndex : SolverTree[BoneIndex])
 		{
 			SolveSolver(ChildBoneIndex, SolverInternal.ComponentTransform, LocationOffsetProcess, RotationOffsetProcess);
 		}
@@ -1295,12 +1295,8 @@ void FAnimNode_FullbodyIK::UpdateCenterOfMass()
 	CenterOfMass /= MassSum;
 }
 
-#if WITH_EDITOR
-// can't use World Draw functions because this is called from Render of viewport, AFTER ticking component,
-// which means LineBatcher already has ticked, so it won't render anymore
-// to use World Draw functions, we have to call this from tick of actor
-void FAnimNode_FullbodyIK::ConditionalDebugDraw(FPrimitiveDrawInterface* PDI, USkeletalMeshComponent* MeshComp) const
-{
-	// TODO
-}
-#endif // WITH_EDITOR
+//#if WITH_EDITOR
+//void FAnimNode_FullbodyIK::ConditionalDebugDraw(FPrimitiveDrawInterface* PDI, USkeletalMeshComponent* MeshComp) const
+//{
+//}
+//#endif

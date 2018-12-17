@@ -5,7 +5,9 @@
 #include "MainUIController.h"
 
 
-UUMGManager::UUMGManager(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
+UUMGManager::UUMGManager(const FObjectInitializer& ObjectInitializer)
+	: Super(ObjectInitializer),
+	MainUIController(nullptr)
 {
 }
 
@@ -14,9 +16,13 @@ void UUMGManager::NativeConstruct()
 	Super::NativeConstruct();
 }
 
+void UUMGManager::BeginDestroy()
+{
+	Super::BeginDestroy();
+}
+
 void UUMGManager::Initializer(ACharacterBase* NewCharacter)
 {
-	check(MainUIControllerTemp);
 	MainUIController = CreateWidget<UMainUIController>(this, MainUIControllerTemp);
 	if (MainUIController)
 	{

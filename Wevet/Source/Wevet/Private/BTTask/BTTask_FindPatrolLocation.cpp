@@ -11,12 +11,10 @@
 
 EBTNodeResult::Type UBTTask_FindPatrolLocation::ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory)
 {
-	AAIControllerBase* AIController = Cast<AAIControllerBase>(OwnerComp.GetAIOwner());
-
-	if (AIController)
+	bool bSuccess = false;
+	if (AAIControllerBase* AIController = Cast<AAIControllerBase>(OwnerComp.GetAIOwner()))
 	{
-		AWayPointBase* WayPoint = AIController->GetRandomAtWayPoint();
-		if (WayPoint)
+		if (AWayPointBase* WayPoint = AIController->GetRandomAtWayPoint())
 		{
 			const float SearchRadius = 200.f;
 			const FVector SearchOrigin = WayPoint->GetActorLocation();
@@ -27,9 +25,9 @@ EBTNodeResult::Type UBTTask_FindPatrolLocation::ExecuteTask(UBehaviorTreeCompone
 			if (NavSystem && NavSystem->GetRandomPointInNavigableRadius(SearchOrigin, SearchRadius, ResultLocation))
 			{
 				OwnerComp.GetBlackboardComponent()->SetValue<UBlackboardKeyType_Vector>(BlackboardKey.GetSelectedKeyID(), ResultLocation.Location);
-				return EBTNodeResult::Succeeded;
+				bSuccess = true;
 			}
 		}
 	}
-	return EBTNodeResult::Failed;
+	return bSuccess ? EBTNodeResult::Succeeded : EBTNodeResult::Failed;
 }

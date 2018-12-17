@@ -18,7 +18,7 @@ void AExtraCameraWindowActor::BeginPlay()
 
 	CameraManager = nullptr;
 
-	UWorld* World = this->GetWorld();
+	UWorld* World = GetWorld();
 
 	if (World)
 	{
@@ -116,18 +116,17 @@ void AExtraCameraWindowActor::BeginPlay()
 
 		if (MainViewportSize.X != NewViewportSize.X || MainViewportSize.Y != NewViewportSize.Y)
 		{
-			SceneViewport->ResizeFrame(MainViewportSize.X, MainViewportSize.Y, EWindowMode::Windowed, 0, 0);
+			SceneViewport->ResizeFrame(MainViewportSize.X, MainViewportSize.Y, EWindowMode::Windowed);
 		}
 	}));
 
-
-	if (this->GetWorld()->WorldType == EWorldType::Game)
+	StandaloneGame = false;
+	if (World)
 	{
-		StandaloneGame = true;
-	}
-	else
-	{
-		StandaloneGame = false;
+		if (World->WorldType == EWorldType::Game)
+		{
+			StandaloneGame = true;
+		}
 	}
 
 	Super::BeginPlay();
@@ -136,7 +135,7 @@ void AExtraCameraWindowActor::BeginPlay()
 
 bool AExtraCameraWindowActor::AddWidgetToExtraCamera(UUserWidget* InWidget, int32 ZOrder /* = -1 */)
 {
-	if (ViewportOverlayWidget.IsValid() == false)
+	if (!ViewportOverlayWidget.IsValid())
 	{
 		return false;
 	}
@@ -151,7 +150,7 @@ bool AExtraCameraWindowActor::AddWidgetToExtraCamera(UUserWidget* InWidget, int3
 
 bool AExtraCameraWindowActor::RemoveWidgetFromExtraCamera(UUserWidget* InWidget)
 {
-	if (ViewportOverlayWidget.IsValid() == false)
+	if (!ViewportOverlayWidget.IsValid())
 	{
 		return false;
 	}
@@ -165,7 +164,7 @@ bool AExtraCameraWindowActor::RemoveWidgetFromExtraCameraCurrentWidget()
 	{
 		return false;
 	}
-	if (ViewportOverlayWidget.IsValid() == false)
+	if (!ViewportOverlayWidget.IsValid())
 	{
 		return false;
 	}
@@ -198,7 +197,8 @@ void AExtraCameraWindowActor::Tick(float DeltaTime)
 
 void AExtraCameraWindowActor::AddChildWidget(UUserWidget * ChildWidget)
 {
-	if (this->PanelWidgets.Find(ChildWidget) >= 0) {
+	if (this->PanelWidgets.Find(ChildWidget) >= 0) 
+	{
 		return;
 	}
 	this->PanelWidgets.Add(ChildWidget);

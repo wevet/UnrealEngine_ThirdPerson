@@ -103,9 +103,12 @@ public:
 	virtual void GatherDebugData(FNodeDebugData& DebugData) override;
 	virtual void EvaluateSkeletalControl_AnyThread(FComponentSpacePoseContext& Output, TArray<FBoneTransform>& OutBoneTransforms) override;
 	virtual bool IsValidToEvaluate(const USkeleton* Skeleton, const FBoneContainer& RequiredBones) override;
-#if WITH_EDITOR
-	void ConditionalDebugDraw(FPrimitiveDrawInterface* PDI, USkeletalMeshComponent* MeshComp) const;
-#endif
+//#if WITH_EDITOR
+	// can't use World Draw functions because this is called from Render of viewport, AFTER ticking component,
+	// which means LineBatcher already has ticked, so it won't render anymore
+	// to use World Draw functions, we have to call this from tick of actor
+	//void ConditionalDebugDraw(FPrimitiveDrawInterface* PDI, USkeletalMeshComponent* MeshComp) const;
+//#endif
 
 private:
 	struct FBuffer

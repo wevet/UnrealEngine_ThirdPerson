@@ -28,7 +28,10 @@ void UAnimGraphNode_FullbodyIK::CopyNodeDataToPreviewNode(FAnimNode_Base* InPrev
 	FAnimNode_FullbodyIK* FullbodyIK = static_cast<FAnimNode_FullbodyIK*>(InPreviewNode);
 
 	// copies Pin values from the internal node to get data which are not compiled yet
-	FullbodyIK->Effectors = Node.Effectors;
+	if (FullbodyIK)
+	{
+		FullbodyIK->Effectors = Node.Effectors;
+	}
 }
 
 void UAnimGraphNode_FullbodyIK::CopyPinDefaultsToNodeData(UEdGraphPin* InPin)
@@ -52,13 +55,13 @@ void UAnimGraphNode_FullbodyIK::Serialize(FArchive& Ar)
 
 void UAnimGraphNode_FullbodyIK::Draw(FPrimitiveDrawInterface* PDI, USkeletalMeshComponent* SkelMeshComp) const
 {
-	if (bEnableDebugDraw && SkelMeshComp)
-	{
-		if (FAnimNode_FullbodyIK* ActiveNode = GetActiveInstanceNode<FAnimNode_FullbodyIK>(SkelMeshComp->GetAnimInstance()))
-		{
-			ActiveNode->ConditionalDebugDraw(PDI, SkelMeshComp);
-		}
-	}
+	//if (bEnableDebugDraw && SkelMeshComp)
+	//{
+	//	if (FAnimNode_FullbodyIK* ActiveNode = GetActiveInstanceNode<FAnimNode_FullbodyIK>(SkelMeshComp->GetAnimInstance()))
+	//	{
+	//		ActiveNode->ConditionalDebugDraw(PDI, SkelMeshComp);
+	//	}
+	//}
 }
 
 #undef LOCTEXT_NAMESPACE

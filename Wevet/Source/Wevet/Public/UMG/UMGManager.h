@@ -18,6 +18,7 @@ class WEVET_API UUMGManager : public UUserWidget
 public:
 	UUMGManager(const FObjectInitializer& ObjectInitializer);
 	virtual void NativeConstruct() override;
+	virtual void BeginDestroy() override;
 	
 protected:
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;

@@ -11,17 +11,14 @@
 
 EBTNodeResult::Type UBTTask_FindBotWaypoint::ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory)
 {
-	AAIControllerBase* AIController = Cast<AAIControllerBase>(OwnerComp.GetAIOwner());
-
-	if (AIController)
+	bool bSuccess = false;
+	if (AAIControllerBase* AIController = Cast<AAIControllerBase>(OwnerComp.GetAIOwner()))
 	{
-		AWayPointBase* NewWaypoint = AIController->GetRandomAtWayPoint();
-		if (NewWaypoint)
+		if (AWayPointBase* NewWaypoint = AIController->GetRandomAtWayPoint())
 		{
 			OwnerComp.GetBlackboardComponent()->SetValue<UBlackboardKeyType_Object>(BlackboardKey.GetSelectedKeyID(), NewWaypoint);
-			return EBTNodeResult::Succeeded;
+			bSuccess = true;
 		}
 	}
-
-	return EBTNodeResult::Failed;
+	return bSuccess ? EBTNodeResult::Succeeded : EBTNodeResult::Failed;
 }
