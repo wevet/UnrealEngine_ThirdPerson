@@ -123,7 +123,7 @@ public:
 	float GetHealthToWidget() const;
 
 	UFUNCTION(BlueprintCallable, Category = "ACharacterBase|Variable")
-	virtual void ReleaseWeaponToWorld(const FTransform Transform, AWeaponBase* Weapon);
+	virtual void ReleaseWeaponToWorld(const FTransform Transform, AWeaponBase* &Weapon);
 
 	FORCEINLINE class UAudioComponent* GetAudioComponent() const { return AudioComponent; }
 	FORCEINLINE class UCharacterPickupComponent* GetPickupComponent() const { return PickupComponent; }

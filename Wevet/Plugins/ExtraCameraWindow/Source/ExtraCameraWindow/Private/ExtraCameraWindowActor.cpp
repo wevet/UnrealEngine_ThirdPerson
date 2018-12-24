@@ -1,12 +1,12 @@
-#include "IExtraCameraWindowPlugin.h"
 #include "ExtraCameraWindowActor.h"
-#include "Runtime/Engine/Public/GameDelegates.h"
+#include "IExtraCameraWindowPlugin.h"
+#include "GameDelegates.h"
 
 
 AExtraCameraWindowActor::AExtraCameraWindowActor()
 {
 	PrimaryActorTick.bCanEverTick = true;
-	this->MaxGridSize = 10;
+	MaxGridSize = 10;
 }
 
 void AExtraCameraWindowActor::BeginPlay()
@@ -18,7 +18,7 @@ void AExtraCameraWindowActor::BeginPlay()
 
 	CameraManager = nullptr;
 
-	UWorld* World = GetWorld();
+	UWorld* const World = GetWorld();
 
 	if (World)
 	{
@@ -87,7 +87,6 @@ void AExtraCameraWindowActor::BeginPlay()
 	SceneViewport = MakeShareable(new FSceneViewport(GEngine->GameViewport, Viewport));
 
 	Viewport->SetViewportInterface(SceneViewport.ToSharedRef());
-
 
 	ExtraWindow->SetContent(Viewport.ToSharedRef());
 	ExtraWindow->ShowWindow();
@@ -197,11 +196,11 @@ void AExtraCameraWindowActor::Tick(float DeltaTime)
 
 void AExtraCameraWindowActor::AddChildWidget(UUserWidget * ChildWidget)
 {
-	if (this->PanelWidgets.Find(ChildWidget) >= 0) 
+	if (PanelWidgets.Find(ChildWidget) >= 0) 
 	{
 		return;
 	}
-	this->PanelWidgets.Add(ChildWidget);
+	PanelWidgets.Add(ChildWidget);
 }
 
 void AExtraCameraWindowActor::BeginDestroy()

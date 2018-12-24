@@ -95,6 +95,7 @@ void AWeaponBase::OffVisible_Implementation()
 	SkeletalMeshComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	SkeletalMeshComponent->SetSimulatePhysics(false);
 	WidgetComponent->SetVisibility(false);
+	SphereComponent->Deactivate();
 }
 
 void AWeaponBase::OnVisible_Implementation()
@@ -102,41 +103,37 @@ void AWeaponBase::OnVisible_Implementation()
 	SkeletalMeshComponent->SetCollisionEnabled(ECollisionEnabled::PhysicsOnly);
 	SkeletalMeshComponent->SetSimulatePhysics(true);
 	WidgetComponent->SetVisibility(true);
+	SphereComponent->Activate();
 }
 
-void AWeaponBase::BeginOverlapRecieve(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult)
+void AWeaponBase::BeginOverlapRecieve(
+	UPrimitiveComponent* OverlappedComponent, 
+	AActor* OtherActor, 
+	UPrimitiveComponent* OtherComp, 
+	int32 OtherBodyIndex, 
+	bool bFromSweep, 
+	const FHitResult & SweepResult)
 {
-	if (CharacterOwner == nullptr)
-	{
-		if (ACharacterBase* Character = Cast<ACharacterBase>(OtherActor))
-		{
-			SetCharacterOwner(Character);
-		}
-	}
-
 	WidgetComponent->SetVisibility(true);
 	SkeletalMeshComponent->SetRenderCustomDepth(true);
-	if (CharacterOwner)
+
+	if (ACharacterBase* Character = Cast<ACharacterBase>(OtherActor))
 	{
-		CharacterOwner->GetPickupComponent()->SetPickupActor(this);
+		Character->GetPickupComponent()->SetPickupActor(this);
 	}
 }
 
-void AWeaponBase::EndOverlapRecieve(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+void AWeaponBase::EndOverlapRecieve(
+	UPrimitiveComponent* OverlappedComp, 
+	AActor* OtherActor, 
+	UPrimitiveComponent* OtherComp, 
+	int32 OtherBodyIndex)
 {
-	if (CharacterOwner == nullptr)
-	{
-		if (ACharacterBase* Character = Cast<ACharacterBase>(OtherActor))
-		{
-			SetCharacterOwner(Character);
-		}
-	}
-
 	WidgetComponent->SetVisibility(false);
 	SkeletalMeshComponent->SetRenderCustomDepth(false);
-	if (CharacterOwner)
+	if (ACharacterBase* Character = Cast<ACharacterBase>(OtherActor))
 	{
-		CharacterOwner->GetPickupComponent()->SetPickupActor(nullptr);
+		Character->GetPickupComponent()->SetPickupActor(nullptr);
 	}
 }
 
@@ -257,8 +254,9 @@ void AWeaponBase::TakeHitDamage(const FHitResult HitResult)
 		{
 			float Offset = 0.05f;
 			int32 CharacterAttack = CharacterOwner->GetCharacterModel()->GetAttack();
+			int32 Wisdom = CharacterOwner->GetCharacterModel()->GetWisdom();
 			float WeaponDamage = WeaponItemInfo.Damage;
-			float Total  = ((float)CharacterAttack + WeaponDamage);
+			float Total  = ((float)CharacterAttack + WeaponDamage) / ((float)Wisdom * 0.2f);
 			float Damage = FMath::FRandRange((Total * Offset), Total);
 			CombatInterface->OnTakeDamage_Implementation(HitResult.BoneName, Damage, CharacterOwner);
 		}
@@ -319,6 +317,33 @@ void AWeaponBase::OnReloadInternal()
 		WeaponItemInfo.CurrentAmmo = WeaponItemInfo.ClipType;
 	}
 }
+
+void AWeaponBase::Take(ACharacterBase* NewCharacter)
+{
+	SetCharacterOwner(NewCharacter);
+	SetEquip(false);
+	OffVisible_Implementation();
+
+	if (ensure(SphereComponent && SphereComponent->IsValidLowLevel()))
+	{
+		SphereComponent->OnComponentBeginOverlap.RemoveDynamic(this, &AWeaponBase::BeginOverlapRecieve);
+		SphereComponent->OnComponentEndOverlap.RemoveDynamic(this, &AWeaponBase::EndOverlapRecieve);
+	}
+}
+
+void AWeaponBase::Release(ACharacterBase* NewCharacter)
+{
+	SetCharacterOwner(NewCharacter);
+	SetEquip(false);
+	OnVisible_Implementation();
+
+	if (ensure(SphereComponent && SphereComponent->IsValidLowLevel()))
+	{
+		SphereComponent->OnComponentBeginOverlap.AddDynamic(this, &AWeaponBase::BeginOverlapRecieve);
+		SphereComponent->OnComponentEndOverlap.AddDynamic(this, &AWeaponBase::EndOverlapRecieve);
+	}
+}
+
 
 void AWeaponBase::SetCharacterOwner(ACharacterBase* NewCharacter)
 {

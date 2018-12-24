@@ -6,7 +6,7 @@ namespace UnrealBuildTool.Rules
 		public ExtraCameraWindow(ReadOnlyTargetRules Target) : base(Target)
 		{
 
-			//PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
+			PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
 
 			PublicIncludePaths.AddRange(
 				new string[] 

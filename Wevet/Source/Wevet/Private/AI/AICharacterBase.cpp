@@ -72,7 +72,7 @@ void AAICharacterBase::Tick(float DeltaTime)
 		return;
 	}
 
-	UWorld* World = GetWorld();
+	UWorld* const World = GetWorld();
 	if (World == nullptr)
 	{
 		return;
@@ -109,20 +109,14 @@ void AAICharacterBase::Tick(float DeltaTime)
 	}
 
 	// attack timer finished
-	bool bStopped = false;
 	if (bSensedTarget 
 		&& (World->TimeSeconds - LastSeenTime) > SenseTimeOut 
 		&& (World->TimeSeconds - LastHeardTime) > SenseTimeOut)
 	{
-		bStopped = true;
-	}
-
-	if (bStopped)
-	{
 		SetTargetActor(nullptr);
 		BP_FireReleaseReceive();
-		return;
 	}
+
 
 	// found target
 	if (TargetCharacter)
@@ -141,8 +135,8 @@ void AAICharacterBase::Tick(float DeltaTime)
 				BP_FirePressReceive();
 				BulletInterval = 0.f;
 				// repeat sense target
-				LastSeenTime = World->GetTimeSeconds();
-				LastHeardTime = World->GetTimeSeconds();
+				//LastSeenTime = World->GetTimeSeconds();
+				//LastHeardTime = World->GetTimeSeconds();
 				//bSensedTarget = true;
 			}
 		}
@@ -202,8 +196,7 @@ void AAICharacterBase::OnTakeDamage_Implementation(FName BoneName, float Damage,
 void AAICharacterBase::SetTargetActor(ACharacterBase* NewCharacter)
 {
 	TargetCharacter = NewCharacter;
-	AAIControllerBase* AIController = Cast<AAIControllerBase>(GetController());
-	if (AIController)
+	if (AAIControllerBase* AIController = Cast<AAIControllerBase>(GetController()))
 	{
 		AIController->SetBlackboardSeeActor(HasEnemyFound());
 	}
@@ -260,16 +253,13 @@ void AAICharacterBase::CreateWeaponInstance()
 	const FTransform Transform = FTransform::Identity;
 	AWeaponBase* const SpawningObject = GetWorld()->SpawnActor<AWeaponBase>(SpawnWeapon, Transform, SpawnParams);
 	Super::SelectedWeapon = SpawningObject;
-	check(Super::SelectedWeapon);
 
-	// setup assets
-	Super::SelectedWeapon->SetEquip(false);
-	Super::SelectedWeapon->SetCharacterOwner(this);
-	Super::SelectedWeapon->OffVisible_Implementation();
+	Super::SelectedWeapon->AttachToComponent(
+		Super::GetMesh(), 
+		{ EAttachmentRule::SnapToTarget, true }, 
+		Super::SelectedWeapon->WeaponItemInfo.UnEquipSocketName);
+	Super::SelectedWeapon->Take(this);
 	Super::SelectedWeapon->GetSphereComponent()->DestroyComponent();
-
-	FName SocketName = Super::SelectedWeapon->WeaponItemInfo.UnEquipSocketName;
-	Super::SelectedWeapon->AttachToComponent(Super::GetMesh(), { EAttachmentRule::SnapToTarget, true }, SocketName);
 
 	if (Super::WeaponList.Find(Super::SelectedWeapon) == INDEX_NONE)
 	{
@@ -307,7 +297,7 @@ void AAICharacterBase::OnSeePawnRecieve(APawn* OtherPawn)
 
 void AAICharacterBase::OnHearNoiseRecieve(APawn* OtherActor, const FVector& Location, float Volume)
 {
-	if (IsDeath_Implementation() || FMath::IsNearlyZero(Volume) || bSensedTarget)
+	if (IsDeath_Implementation() || bSensedTarget)
 	{
 		return;
 	}

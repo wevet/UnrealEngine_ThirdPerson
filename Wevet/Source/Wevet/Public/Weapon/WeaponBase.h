@@ -151,6 +151,8 @@ public:
 
 	virtual void OnFireReleaseInternal();
 	virtual void OnReloadInternal();
+	virtual void Take(ACharacterBase* NewCharacter);
+	virtual void Release(ACharacterBase* NewCharacter);
 
 	const FTransform GetMuzzleTransform()
 	{

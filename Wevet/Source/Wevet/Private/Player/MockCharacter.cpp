@@ -252,6 +252,7 @@ void AMockCharacter::OnPickupItemExecuter_Implementation(AActor* Actor)
 			UE_LOG(LogTemp, Warning, TEXT("UnKnownItemType : %s"), *(Weapon->GetName()));
 			return;
 		}
+
 		TSubclassOf<class AWeaponBase> WeaponClass = WeaponItemInfo.WeaponClass;
 		FActorSpawnParameters SpawnInfo;
 		SpawnInfo.Owner = NULL;
@@ -264,10 +265,7 @@ void AMockCharacter::OnPickupItemExecuter_Implementation(AActor* Actor)
 			{ EAttachmentRule::SnapToTarget, true },
 			WeaponItemInfo.UnEquipSocketName);
 
-		PickingWeapon->SetEquip(false);
-		PickingWeapon->SetCharacterOwner(this);
-		PickingWeapon->OffVisible_Implementation();
-		PickingWeapon->GetSphereComponent()->DestroyComponent();
+		PickingWeapon->Take(this);
 
 		if (Super::WeaponList.Find(PickingWeapon) == INDEX_NONE)
 		{
@@ -275,6 +273,21 @@ void AMockCharacter::OnPickupItemExecuter_Implementation(AActor* Actor)
 		}
 		Weapon->Destroy();
 		Weapon = nullptr;
+
+		//Weapon->AttachToComponent(
+		//	Super::GetMesh(),
+		//	{ EAttachmentRule::SnapToTarget, true },
+		//	WeaponItemInfo.UnEquipSocketName);
+
+		//Weapon->SetEquip(false);
+		//Weapon->SetCharacterOwner(this);
+		//Weapon->OffVisible_Implementation();
+
+		//if (Super::WeaponList.Find(Weapon) == INDEX_NONE)
+		//{
+		//	Super::WeaponList.Emplace(Weapon);
+		//}
+
 		Actor = nullptr;
 	}
 	Super::OnPickupItemExecuter_Implementation(Actor);

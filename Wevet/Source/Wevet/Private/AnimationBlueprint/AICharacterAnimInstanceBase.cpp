@@ -30,7 +30,7 @@ void UAICharacterAnimInstanceBase::NativeUpdateAnimation(float DeltaTimeX)
 
 void UAICharacterAnimInstanceBase::SetPitch()
 {
-	if (AICharacterOwner)
+	if (AICharacterOwner && AICharacterOwner->GetTargetCharacter())
 	{
 		const FVector Start = AICharacterOwner->GetActorLocation();
 		const FVector End   = AICharacterOwner->GetTargetCharacter()->GetActorLocation();

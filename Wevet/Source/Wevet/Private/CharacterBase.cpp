@@ -128,8 +128,8 @@ void ACharacterBase::FootStep_Implementation(USoundBase* Sound, float Volume)
 	}
 
 	const float Speed = GetVelocity().Size();
-	const float InVolume = (Speed / GetCharacterMovement()->MaxWalkSpeed);
-	UE_LOG(LogWevetClient, Log, TEXT("Vol : %f"), InVolume);
+	const float InVolume = FMath::Clamp<float>((Speed / GetCharacterMovement()->MaxWalkSpeed), 0.f, 1.f);
+	//UE_LOG(LogWevetClient, Log, TEXT("Vol : %f"), InVolume);
 
 	USoundBase* InSound = Sound ? Sound : FootStepSoundAsset;
 	if (InSound)
@@ -208,6 +208,14 @@ void ACharacterBase::Die_Implementation()
 			}
 			ReleaseWeaponToWorld(Transform, Weapon);
 		}
+		
+		for (AWeaponBase*& Weapon : WeaponList)
+		{
+			if (Weapon)
+			{
+				UE_LOG(LogWevetClient, Warning, TEXT("Found Weapon"), *Weapon->GetName());
+			}
+		}
 		WeaponList.Empty();
 	}
 	bDied = true;
@@ -231,11 +239,11 @@ void ACharacterBase::UnEquipment_Implementation()
 
 const bool ACharacterBase::HasEquipWeapon()
 {
-	if (SelectedWeapon == nullptr)
+	if (SelectedWeapon)
 	{
-		return false;
+		SelectedWeapon->bEquip;
 	}
-	return SelectedWeapon->bEquip;
+	return false;
 }
 
 float ACharacterBase::GetHealthToWidget() const
@@ -243,7 +251,7 @@ float ACharacterBase::GetHealthToWidget() const
 	return CharacterModel->GetHealthToWidget();
 }
 
-void ACharacterBase::ReleaseWeaponToWorld(const FTransform Transform, AWeaponBase* Weapon)
+void ACharacterBase::ReleaseWeaponToWorld(const FTransform Transform, AWeaponBase* &Weapon)
 {
 	UWorld* const World = GetWorld();
 
@@ -252,11 +260,16 @@ void ACharacterBase::ReleaseWeaponToWorld(const FTransform Transform, AWeaponBas
 		return;
 	}
 
+	//Weapon->OnFireRelease_Implementation();
+	//Weapon->SetCharacterOwner(nullptr);
+	//Weapon->SetEquip(false);
+	//Weapon->DetachRootComponentFromParent();
+	//Weapon->OnVisible_Implementation();
+
 	const FWeaponItemInfo& WeaponItemInfo = Weapon->WeaponItemInfo;
 	TSubclassOf<class AWeaponBase> WeaponClass = WeaponItemInfo.WeaponClass;
-	Weapon->OnFireRelease_Implementation();
-	Weapon->SetCharacterOwner(nullptr);
-	Weapon->SetEquip(false);
+	//Weapon->Release(nullptr);
+	//Weapon->OnFireRelease_Implementation();
 	Weapon->Destroy();
 	Weapon = nullptr;
 
@@ -267,12 +280,7 @@ void ACharacterBase::ReleaseWeaponToWorld(const FTransform Transform, AWeaponBas
 		nullptr,
 		ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
 	SpawningObject->WeaponItemInfo.CopyTo(WeaponItemInfo);
-	SpawningObject->OnVisible_Implementation();
 	SpawningObject->FinishSpawning(Transform);
-
-	//Weapon->DetachFromActor({ EDetachmentRule::KeepRelative, true });
-	//Weapon->OnVisible_Implementation();
-	//Weapon->SetActorTransform(Transform);
 }
 
 AWeaponBase* ACharacterBase::FindByWeapon(EWeaponItemType WeaponItemType)
@@ -300,7 +308,7 @@ AWeaponBase* ACharacterBase::GetUnEquipWeapon()
 	}
 	for (AWeaponBase* &Weapon : WeaponList)
 	{
-		if (!Weapon->bEquip)
+		if (Weapon && !Weapon->bEquip)
 		{
 			return Weapon;
 		}
@@ -316,12 +324,7 @@ void ACharacterBase::OutUnEquipWeaponList(TArray<AWeaponBase*>& OutWeaponList)
 	}
 	for (AWeaponBase* &Weapon : WeaponList)
 	{
-		if (!Weapon)
-		{
-			checkSlow(0);
-			continue;
-		}
-		if (!Weapon->bEquip)
+		if (Weapon && !Weapon->bEquip)
 		{
 			OutWeaponList.Emplace(Weapon);
 		}

@@ -4,6 +4,7 @@
 #include "UObject/ObjectMacros.h"
 #include "Templates/SubclassOf.h"
 #include "Engine/EngineTypes.h"
+#include "Camera/CameraActor.h"
 #include "Blueprint/UserWidget.h"
 #include "ExtraCameraWindowActor.generated.h"
 
