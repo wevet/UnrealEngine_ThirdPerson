@@ -139,6 +139,16 @@ void ACharacterBase::FootStep_Implementation(USoundBase* Sound, float Volume)
 	}
 }
 
+FVector ACharacterBase::BulletTraceRelativeLocation() const
+{
+	return FVector::ZeroVector;
+}
+
+FVector ACharacterBase::BulletTraceForwardLocation() const
+{
+	return FVector::ZeroVector;
+}
+
 bool ACharacterBase::IsDeath_Implementation()
 {
 	if (bDied || CharacterModel == nullptr)
@@ -155,11 +165,10 @@ void ACharacterBase::OnTakeDamage_Implementation(FName BoneName, float Damage, A
 		return;
 	}
 
-	// Character & Target Same Class
 	if (ICombatExecuter* Combat = Cast<ICombatExecuter>(Actor))
 	{
-		UE_LOG(LogWevetClient, Warning, TEXT("Victim : %s"), *Actor->GetName());
-		UE_LOG(LogWevetClient, Warning, TEXT("Receive Name : %s"), *GetName());
+		//UE_LOG(LogWevetClient, Warning, TEXT("Victim : %s"), *Actor->GetName());
+		//UE_LOG(LogWevetClient, Warning, TEXT("Receive Name : %s"), *GetName());
 	}
 
 	if (BoneName == HeadSocketName) 
@@ -174,7 +183,6 @@ void ACharacterBase::OnTakeDamage_Implementation(FName BoneName, float Damage, A
 	}
 }
 
-// All deploy item
 void ACharacterBase::Die_Implementation()
 {
 	if (bDied)
@@ -213,7 +221,11 @@ void ACharacterBase::Die_Implementation()
 		{
 			if (Weapon)
 			{
-				UE_LOG(LogWevetClient, Warning, TEXT("Found Weapon"), *Weapon->GetName());
+				UE_LOG(LogWevetClient, Warning, TEXT("not remove instance : %s"), *Weapon->GetName());
+			}
+			else
+			{
+				UE_LOG(LogWevetClient, Log, TEXT("remove instance Owner : %s"), *GetName());
 			}
 		}
 		WeaponList.Empty();
@@ -239,11 +251,11 @@ void ACharacterBase::UnEquipment_Implementation()
 
 const bool ACharacterBase::HasEquipWeapon()
 {
-	if (SelectedWeapon)
+	if (SelectedWeapon == nullptr)
 	{
-		SelectedWeapon->bEquip;
+		return false;
 	}
-	return false;
+	return SelectedWeapon->bEquip;
 }
 
 float ACharacterBase::GetHealthToWidget() const
@@ -298,6 +310,31 @@ AWeaponBase* ACharacterBase::FindByWeapon(EWeaponItemType WeaponItemType)
 		}
 	}
 	return nullptr;
+}
+
+AWeaponBase* ACharacterBase::GetSelectedWeapon()
+{
+	return SelectedWeapon;
+}
+
+UCharacterModel* ACharacterBase::GetCharacterModel() const
+{
+	return CharacterModel;
+}
+
+const TArray<AWeaponBase*>& ACharacterBase::GetWeaponList()
+{
+	return WeaponList;
+}
+
+const bool ACharacterBase::HasCrouch()
+{
+	return bCrouch;
+}
+
+const bool ACharacterBase::HasSprint()
+{
+	return bSprint;
 }
 
 AWeaponBase* ACharacterBase::GetUnEquipWeapon()

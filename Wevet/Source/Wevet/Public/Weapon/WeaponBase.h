@@ -72,7 +72,6 @@ protected:
 	USceneComponent* SceneComponent;
 	FTimerHandle ReloadTimerHandle;
 
-	void CloneTo(FWeaponItemInfo& OutWeaponItemInfo, const FWeaponItemInfo& InWeaponItemInfo);
 	virtual void TakeHitDamage(const FHitResult HitResult);
 	virtual void PlayBulletEffect(const FHitResult HitResult);
 
@@ -97,16 +96,12 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "AWeaponBase|Variable")
 	FWeaponItemInfo WeaponItemInfo;
-
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AWeaponBase|Variable")
 	bool bEquip;
-
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AWeaponBase|Variable")
 	bool bFired;
-
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AWeaponBase|Variable")
 	bool bReload;
-
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AWeaponBase|Variable")
 	bool bEmpty;
 
@@ -165,7 +160,5 @@ public:
 	}
 
 	virtual void SetCharacterOwner(ACharacterBase* NewCharacter);
-
-	void CopyTo(const FWeaponItemInfo& InWeaponItemInfo);
 };
 

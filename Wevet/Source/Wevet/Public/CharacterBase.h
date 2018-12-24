@@ -38,16 +38,6 @@ public:
 	virtual void OnSprint();
 	virtual void OnCrouch();
 
-	virtual FVector BulletTraceRelativeLocation() const 
-	{
-		return FVector::ZeroVector; 
-	};
-
-	virtual FVector BulletTraceForwardLocation() const 
-	{
-		return FVector::ZeroVector; 
-	};
-
 public:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "ACharacterBase|IInteractionExecuter")
 	void OnReleaseItemExecuter();
@@ -90,31 +80,25 @@ public:
 	virtual void FootStep_Implementation(USoundBase* Sound, float Volume) override;
 
 public:
+	virtual FVector BulletTraceRelativeLocation() const;
+	virtual FVector BulletTraceForwardLocation() const;
+
 	UFUNCTION(BlueprintCallable, Category = "ACharacterBase|Weapon")
 	AWeaponBase* FindByWeapon(EWeaponItemType WeaponItemType);
 
 	UFUNCTION(BlueprintCallable, Category = "ACharacterBase|Weapon")
-	AWeaponBase* GetSelectedWeapon() 
-	{
-		return SelectedWeapon; 
-	};
+	AWeaponBase* GetSelectedWeapon();
 
-	UCharacterModel* GetCharacterModel() const
-	{
-		return CharacterModel;
-	};
+	UCharacterModel* GetCharacterModel() const;
 
 	UFUNCTION(BlueprintCallable, Category = "ACharacterBase|Weapon")
-	const TArray<AWeaponBase*>& GetWeaponList() 
-	{
-		return WeaponList; 
-	};
+	const TArray<AWeaponBase*>& GetWeaponList();
 
 	UFUNCTION(BlueprintCallable, Category = "ACharacterBase|Variable")
-	const bool HasCrouch() { return bCrouch; }
+	const bool HasCrouch();
 
 	UFUNCTION(BlueprintCallable, Category = "ACharacterBase|Variable")
-	const bool HasSprint() { return bSprint; }
+	const bool HasSprint();
 
 	UFUNCTION(BlueprintCallable, Category = "ACharacterBase|Variable")
 	virtual const bool HasEquipWeapon();

@@ -5,15 +5,6 @@
 
 
 UENUM()
-enum class EInventorySlot : uint8
-{
-
-	Hands,
-	Primary,
-	Secondary,
-};
-
-UENUM()
 enum class EBotBehaviorType : uint8
 {
 	Passive,

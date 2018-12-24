@@ -344,7 +344,6 @@ void AWeaponBase::Release(ACharacterBase* NewCharacter)
 	}
 }
 
-
 void AWeaponBase::SetCharacterOwner(ACharacterBase* NewCharacter)
 {
 	CharacterOwner = NewCharacter;
@@ -352,27 +351,4 @@ void AWeaponBase::SetCharacterOwner(ACharacterBase* NewCharacter)
 	//auto B = (*A);
 	//(*B).Equipment();
 	//(*A)->Equipment();
-}
-
-void AWeaponBase::CopyTo(const FWeaponItemInfo& InWeaponItemInfo)
-{
-	//WeaponItemInfo = InWeaponItemInfo;
-	//InWeaponItemInfo << WeaponItemInfo;
-	//WeaponItemInfo.CopyTo(InWeaponItemInfo);
-	//CloneTo(WeaponItemInfo, InWeaponItemInfo);
-	//UE_LOG(LogWevetClient, Log, TEXT("WeaponCopy : %s \n MaxAmmo : %d"), *GetName(), WeaponItemInfo.MaxAmmo);
-}
-
-// @TODO
-void AWeaponBase::CloneTo(FWeaponItemInfo& OutWeaponItemInfo, const FWeaponItemInfo& InWeaponItemInfo)
-{
-	OutWeaponItemInfo.UnEquipSocketName = InWeaponItemInfo.UnEquipSocketName;
-	OutWeaponItemInfo.EquipSocketName   = InWeaponItemInfo.EquipSocketName;
-	OutWeaponItemInfo.WeaponItemType    = InWeaponItemInfo.WeaponItemType;
-	OutWeaponItemInfo.WeaponClass = InWeaponItemInfo.WeaponClass;
-	OutWeaponItemInfo.CurrentAmmo = InWeaponItemInfo.CurrentAmmo;
-	OutWeaponItemInfo.ClipType = InWeaponItemInfo.ClipType;
-	OutWeaponItemInfo.MaxAmmo  = InWeaponItemInfo.MaxAmmo;
-	OutWeaponItemInfo.Damage   = InWeaponItemInfo.Damage;
-	OutWeaponItemInfo.Texture  = InWeaponItemInfo.Texture;
 }
