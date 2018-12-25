@@ -53,6 +53,11 @@ void ACharacterBase::BeginPlay()
 	Super::BeginPlay();
 	DefaultMaxSpeed = GetCharacterMovement()->MaxWalkSpeed;
 	GetCharacterMovement()->MaxWalkSpeed = MovementSpeed;
+
+	if (ensure(PawnNoiseEmitterComponent && PawnNoiseEmitterComponent->IsValidLowLevel()))
+	{
+		//PawnNoiseEmitterComponent.on
+	}
 }
 
 void ACharacterBase::Tick(float DeltaTime)
@@ -115,7 +120,8 @@ void ACharacterBase::ReportNoise_Implementation(USoundBase* Sound, float Volume)
 	if (Sound)
 	{
 		UGameplayStatics::PlaySoundAtLocation(World, Sound, GetActorLocation());
-		MakeNoise(Volume, this, GetActorLocation());
+		//MakeNoise(Volume, this, GetActorLocation());
+		PawnNoiseEmitterComponent->MakeNoise(this, Volume, GetActorLocation());
 	}
 }
 
@@ -135,7 +141,8 @@ void ACharacterBase::FootStep_Implementation(USoundBase* Sound, float Volume)
 	if (InSound)
 	{
 		UGameplayStatics::PlaySoundAtLocation(World, InSound, GetActorLocation());
-		MakeNoise(InVolume, this, GetActorLocation());
+		//MakeNoise(InVolume, this, GetActorLocation());
+		PawnNoiseEmitterComponent->MakeNoise(this, InVolume, GetActorLocation());
 	}
 }
 

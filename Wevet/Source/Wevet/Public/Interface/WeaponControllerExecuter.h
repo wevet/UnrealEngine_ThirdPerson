@@ -6,9 +6,9 @@
 #include "UObject/NoExportTypes.h"
 #include "WeaponControllerExecuter.generated.h"
 
-/**
-*
-*/
+class AWeaponBase;
+class UTexture2D;
+
 UINTERFACE(BlueprintType)
 class WEVET_API UWeaponControllerExecuter : public UInterface
 {
@@ -86,7 +86,11 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
 	FName UnEquipSocketName;
 
-	FWeaponItemInfo();
+	FWeaponItemInfo()
+	{
+		EquipSocketName = FName(TEXT("Lancer_Root_Socket"));
+		Damage = 20.f;
+	}
 
 public:
 	friend FArchive& operator<<(FArchive& Ar, FWeaponItemInfo& TheStruct)

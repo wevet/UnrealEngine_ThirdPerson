@@ -72,9 +72,9 @@ public:
 		return TargetCharacter;
 	}
 
-	virtual FVector BulletTraceRelativeLocation() const override;
-	
+	virtual FVector BulletTraceRelativeLocation() const override;	
 	virtual FVector BulletTraceForwardLocation() const override;
+	virtual void MainLoop(float DeltaTime);
 
 protected:
 	ACharacterBase* TargetCharacter;

@@ -131,41 +131,38 @@ void AAIControllerBase::BeginPlay()
 
 void AAIControllerBase::OnTargetPerceptionUpdatedRecieve(AActor* Actor, FAIStimulus Stimulus)
 {
-	//if (this->AICharacterOwner == nullptr 
-	//	|| (this->AICharacterOwner && this->AICharacterOwner->IsDeath_Implementation()))
-	//{
-	//	return;
-	//}
+	if (AICharacterOwner == nullptr 
+		|| (AICharacterOwner && AICharacterOwner->IsDeath_Implementation()))
+	{
+		return;
+	}
 
-	//AMockCharacter* MockCharacter = Cast<AMockCharacter>(Actor);
+	AMockCharacter* MockCharacter = Cast<AMockCharacter>(Actor);
 
-	//if (MockCharacter == nullptr 
-	//	|| (MockCharacter && MockCharacter->IsDeath_Implementation()))
-	//{
-	//	return;
-	//}
+	if (MockCharacter == nullptr)
+	{
+		BlackboardComponent->SetValueAsBool(CanSeePlayerKey, false);
+		return;
+	}
 
-	//if (BlackboardComponent)
-	//{	
-	//	bool Success = (MockCharacter->IsDeath_Implementation() == false) 
-	//		&& Stimulus.WasSuccessfullySensed() ? true : false;
-	//	if (this->AICharacterOwner->HasEnemyFound())
-	//	{
-	//		if (MockCharacter->IsDeath_Implementation())
-	//		{
-	//			this->AICharacterOwner->SetTargetActor(nullptr);
-	//			this->AICharacterOwner->SetEnemyFound(false);
-	//			BlackboardComponent->SetValueAsBool(CanSeePlayerKey, Success);
-	//		}
-	//		return;
-	//	}
-	//	else
-	//	{
-	//		this->AICharacterOwner->SetTargetActor(MockCharacter);
-	//		this->AICharacterOwner->SetEnemyFound(Success);
-	//		BlackboardComponent->SetValueAsBool(CanSeePlayerKey, Success);
-	//	}
-	//}
+	if (BlackboardComponent)
+	{	
+		bool Success = (MockCharacter->IsDeath_Implementation() == false) 
+			&& Stimulus.WasSuccessfullySensed() ? true : false;
+		if (AICharacterOwner->HasEnemyFound())
+		{
+			if (MockCharacter->IsDeath_Implementation())
+			{
+				AICharacterOwner->SetTargetActor(nullptr);
+				BlackboardComponent->SetValueAsBool(CanSeePlayerKey, Success);
+			}
+		}
+		else
+		{
+			AICharacterOwner->SetTargetActor(MockCharacter);
+			BlackboardComponent->SetValueAsBool(CanSeePlayerKey, Success);
+		}
+	}
 
 }
 

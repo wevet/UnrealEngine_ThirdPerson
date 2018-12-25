@@ -66,59 +66,46 @@ void AAICharacterBase::BeginPlay()
 void AAICharacterBase::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
 	if (IsDeath_Implementation())
 	{
 		return;
 	}
+	MainLoop(DeltaTime);
+}
 
+void AAICharacterBase::MainLoop(float DeltaTime)
+{
 	UWorld* const World = GetWorld();
 	if (World == nullptr)
 	{
 		return;
 	}
 
-	// has weapon empty
-	bool bEmpty = false;
 	if (bSensedTarget)
 	{
+		// empty weapon
 		if (Super::SelectedWeapon && Super::SelectedWeapon->bEmpty)
 		{
-			bEmpty = true;
+			SetTargetActor(nullptr);
+			BP_FireReleaseReceive();
+			return;
 		}
-	}
-	if (bEmpty)
-	{
-		SetTargetActor(nullptr);
-		BP_FireReleaseReceive();
-		return;
-	}
-
-	// has weapon reload
-	bool bReload = false;
-	if (bSensedTarget)
-	{
+		// reload weapon
 		if (Super::SelectedWeapon && Super::SelectedWeapon->bReload)
 		{
-			bReload = true;
+			return;
 		}
-	}
-	if (bReload)
-	{
-		return;
 	}
 
 	// attack timer finished
-	if (bSensedTarget 
-		&& (World->TimeSeconds - LastSeenTime) > SenseTimeOut 
+	if (bSensedTarget
+		&& (World->TimeSeconds - LastSeenTime) > SenseTimeOut
 		&& (World->TimeSeconds - LastHeardTime) > SenseTimeOut)
 	{
 		SetTargetActor(nullptr);
 		BP_FireReleaseReceive();
 	}
 
-
-	// found target
 	if (TargetCharacter)
 	{
 		if (TargetCharacter->IsDeath_Implementation())
@@ -127,7 +114,7 @@ void AAICharacterBase::Tick(float DeltaTime)
 			BP_FireReleaseReceive();
 			return;
 		}
-		else 
+		else
 		{
 			BulletInterval += DeltaTime;
 			if (BulletInterval >= BulletDelay)
@@ -288,11 +275,12 @@ void AAICharacterBase::OnSeePawnRecieve(APawn* OtherPawn)
 	}
 
 	LastSeenTime = GetWorld()->GetTimeSeconds();
-	auto Player  = Cast<AMockCharacter>(OtherPawn);
-	if (Player && !Player->IsDeath_Implementation())
-	{
-		SetTargetActor(Player);
-	}
+	UE_LOG(LogWevetClient, Warning, TEXT("SeePawn : %s \n"), *OtherPawn->GetName());
+	//auto Player  = Cast<AMockCharacter>(OtherPawn);
+	//if (Player && !Player->IsDeath_Implementation())
+	//{
+	//	SetTargetActor(Player);
+	//}
 }
 
 void AAICharacterBase::OnHearNoiseRecieve(APawn* OtherActor, const FVector& Location, float Volume)
