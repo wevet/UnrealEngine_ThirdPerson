@@ -137,11 +137,16 @@ void AAIControllerBase::OnTargetPerceptionUpdatedRecieve(AActor* Actor, FAIStimu
 		return;
 	}
 
+	if (AICharacterOwner->GetTargetCharacter())
+	{
+		return;
+	}
+
 	AMockCharacter* MockCharacter = Cast<AMockCharacter>(Actor);
 
 	if (MockCharacter == nullptr)
 	{
-		BlackboardComponent->SetValueAsBool(CanSeePlayerKey, false);
+		//BlackboardComponent->SetValueAsBool(CanSeePlayerKey, false);
 		return;
 	}
 
@@ -153,14 +158,12 @@ void AAIControllerBase::OnTargetPerceptionUpdatedRecieve(AActor* Actor, FAIStimu
 		{
 			if (MockCharacter->IsDeath_Implementation())
 			{
-				AICharacterOwner->SetTargetActor(nullptr);
-				BlackboardComponent->SetValueAsBool(CanSeePlayerKey, Success);
+				//AICharacterOwner->SetTargetActor(nullptr);
 			}
 		}
 		else
 		{
-			AICharacterOwner->SetTargetActor(MockCharacter);
-			BlackboardComponent->SetValueAsBool(CanSeePlayerKey, Success);
+			//AICharacterOwner->SetTargetActor(MockCharacter);
 		}
 	}
 

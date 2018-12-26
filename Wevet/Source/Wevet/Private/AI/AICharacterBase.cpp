@@ -188,7 +188,7 @@ void AAICharacterBase::SetTargetActor(ACharacterBase* NewCharacter)
 		AIController->SetBlackboardSeeActor(HasEnemyFound());
 	}
 	Super::EquipmentActionMontage();
-	bSensedTarget = TargetCharacter == nullptr ? false : true;
+	bSensedTarget = (TargetCharacter != nullptr);
 	//UE_LOG(LogTemp, Warning, TEXT("SeeActor : %s"), HasEnemyFound() ? TEXT("true") : TEXT("false"));
 }
 
@@ -275,12 +275,11 @@ void AAICharacterBase::OnSeePawnRecieve(APawn* OtherPawn)
 	}
 
 	LastSeenTime = GetWorld()->GetTimeSeconds();
-	UE_LOG(LogWevetClient, Warning, TEXT("SeePawn : %s \n"), *OtherPawn->GetName());
-	//auto Player  = Cast<AMockCharacter>(OtherPawn);
-	//if (Player && !Player->IsDeath_Implementation())
-	//{
-	//	SetTargetActor(Player);
-	//}
+	auto Player  = Cast<AMockCharacter>(OtherPawn);
+	if (Player && !Player->IsDeath_Implementation())
+	{
+		SetTargetActor(Player);
+	}
 }
 
 void AAICharacterBase::OnHearNoiseRecieve(APawn* OtherActor, const FVector& Location, float Volume)
@@ -291,10 +290,13 @@ void AAICharacterBase::OnHearNoiseRecieve(APawn* OtherActor, const FVector& Loca
 	}
 
 	LastHeardTime = GetWorld()->GetTimeSeconds();
-	UE_LOG(LogWevetClient, Warning, TEXT("Heard : %s \n Vol : %f"), *OtherActor->GetName(), Volume);
-	//auto Player = Cast<AMockCharacter>(OtherActor);
-	//if (Player && !Player->IsDeath_Implementation())
-	//{
-	//	SetTargetActor(Player);
-	//}
+	UE_LOG(LogWevetClient, Warning, TEXT("Heard\n from : %s \n to : %s \n Vol : %f"), 
+		*GetName(), 
+		*OtherActor->GetName(), 
+		Volume);
+	auto Player = Cast<AMockCharacter>(OtherActor);
+	if (Player && !Player->IsDeath_Implementation())
+	{
+		SetTargetActor(Player);
+	}
 }

@@ -54,9 +54,9 @@ void ACharacterBase::BeginPlay()
 	DefaultMaxSpeed = GetCharacterMovement()->MaxWalkSpeed;
 	GetCharacterMovement()->MaxWalkSpeed = MovementSpeed;
 
-	if (ensure(PawnNoiseEmitterComponent && PawnNoiseEmitterComponent->IsValidLowLevel()))
+	if (ComponentExtension::HasValid(PawnNoiseEmitterComponent))
 	{
-		//PawnNoiseEmitterComponent.on
+		//
 	}
 }
 

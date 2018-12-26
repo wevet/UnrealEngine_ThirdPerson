@@ -239,11 +239,7 @@ void AWeaponBase::PlayBulletEffect(const FHitResult HitResult)
 
 void AWeaponBase::TakeHitDamage(const FHitResult HitResult)
 {
-	if (HitResult.Actor == nullptr)
-	{
-		return;
-	}
-	if (!ensure(HitResult.Actor.IsValid()))
+	if (!HitResult.Actor.IsValid())
 	{
 		return;
 	}
@@ -256,9 +252,10 @@ void AWeaponBase::TakeHitDamage(const FHitResult HitResult)
 			int32 CharacterAttack = CharacterOwner->GetCharacterModel()->GetAttack();
 			int32 Wisdom = CharacterOwner->GetCharacterModel()->GetWisdom();
 			float WeaponDamage = WeaponItemInfo.Damage;
-			float Total  = ((float)CharacterAttack + WeaponDamage) / ((float)Wisdom * 0.2f);
+			float Total  = (float)(CharacterAttack + Wisdom) + WeaponDamage;
 			float Damage = FMath::FRandRange((Total * Offset), Total);
-			CombatInterface->OnTakeDamage_Implementation(HitResult.BoneName, Damage, CharacterOwner);
+			UE_LOG(LogWevetClient, Log, TEXT("TakeDamage : %f"), Damage);
+			//ICombatExecuter::Execute_OnTakeDamage(HitResult.Actor.Get(), HitResult.BoneName, Damage, CharacterOwner);
 		}
 	}
 }
@@ -271,9 +268,8 @@ void AWeaponBase::OnReloading_Implementation()
 		return;
 	}
 
-	if (WeaponItemInfo.MaxAmmo == 0)
+	if (WeaponItemInfo.MaxAmmo <= 0)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Empty Ammos"));
 		bEmpty = true;
 		return;
 	}

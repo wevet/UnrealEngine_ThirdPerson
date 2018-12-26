@@ -65,6 +65,10 @@ namespace Wevet
 			return Array;
 		}
 
+		static FORCEINLINE bool HasValid(const UActorComponent* Component)
+		{
+			return Component && Component->IsValidLowLevel();
+		}
 
 	};
 }
