@@ -285,7 +285,7 @@ void ACharacterBase::ReleaseWeaponToWorld(const FTransform Transform, AWeaponBas
 	//Weapon->DetachRootComponentFromParent();
 	//Weapon->OnVisible_Implementation();
 
-	const FWeaponItemInfo& WeaponItemInfo = Weapon->WeaponItemInfo;
+	const FWeaponItemInfo WeaponItemInfo = Weapon->WeaponItemInfo;
 	TSubclassOf<class AWeaponBase> WeaponClass = WeaponItemInfo.WeaponClass;
 	//Weapon->Release(nullptr);
 	//Weapon->OnFireRelease_Implementation();
@@ -298,7 +298,7 @@ void ACharacterBase::ReleaseWeaponToWorld(const FTransform Transform, AWeaponBas
 		nullptr,
 		nullptr,
 		ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
-	SpawningObject->WeaponItemInfo.CopyTo(WeaponItemInfo);
+	SpawningObject->CopyWeaponItemInfo(WeaponItemInfo);
 	SpawningObject->FinishSpawning(Transform);
 }
 

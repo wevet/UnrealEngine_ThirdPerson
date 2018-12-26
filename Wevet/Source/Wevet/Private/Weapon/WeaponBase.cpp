@@ -352,3 +352,16 @@ void AWeaponBase::SetCharacterOwner(ACharacterBase* NewCharacter)
 	//(*B).Equipment();
 	//(*A)->Equipment();
 }
+
+void AWeaponBase::CopyWeaponItemInfo(const FWeaponItemInfo RefWeaponItemInfo)
+{
+	WeaponItemInfo.UnEquipSocketName = RefWeaponItemInfo.UnEquipSocketName;
+	WeaponItemInfo.EquipSocketName = RefWeaponItemInfo.EquipSocketName;
+	WeaponItemInfo.WeaponItemType  = RefWeaponItemInfo.WeaponItemType;
+	WeaponItemInfo.WeaponClass = RefWeaponItemInfo.WeaponClass;
+	WeaponItemInfo.CurrentAmmo = RefWeaponItemInfo.CurrentAmmo;
+	WeaponItemInfo.ClipType = RefWeaponItemInfo.ClipType;
+	WeaponItemInfo.MaxAmmo  = RefWeaponItemInfo.MaxAmmo;
+	WeaponItemInfo.Damage   = RefWeaponItemInfo.Damage;
+	WeaponItemInfo.Texture  = RefWeaponItemInfo.Texture;
+}

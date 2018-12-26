@@ -160,5 +160,6 @@ public:
 	}
 
 	virtual void SetCharacterOwner(ACharacterBase* NewCharacter);
+	void CopyWeaponItemInfo(const FWeaponItemInfo RefWeaponItemInfo);
 };
 

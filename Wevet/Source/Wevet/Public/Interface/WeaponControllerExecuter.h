@@ -120,6 +120,7 @@ public:
 		Damage   = InWeaponItemInfo.Damage;
 		Texture  = InWeaponItemInfo.Texture;
 	}
+
 };
 
 
