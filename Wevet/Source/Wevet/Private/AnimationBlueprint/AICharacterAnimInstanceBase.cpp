@@ -23,12 +23,12 @@ void UAICharacterAnimInstanceBase::NativeUpdateAnimation(float DeltaTimeX)
 
 	if (IsEquip)
 	{
-		SetPitch();
+		UpdateLookAtLocation();
 	}
 	Super::NativeUpdateAnimation(DeltaTimeX);
 }
 
-void UAICharacterAnimInstanceBase::SetPitch()
+void UAICharacterAnimInstanceBase::UpdateLookAtLocation()
 {
 	if (AICharacterOwner && AICharacterOwner->GetTargetCharacter())
 	{
@@ -37,6 +37,7 @@ void UAICharacterAnimInstanceBase::SetPitch()
 		const FRotator LookAtRotation = UKismetMathLibrary::FindLookAtRotation(Start, End);
 		FRotator Rot = FRotator::ZeroRotator;
 		Pitch   = LookAtRotation.Pitch;
+		Yaw = LookAtRotation.Yaw;
 		Rot.Yaw = LookAtRotation.Yaw;
 		AICharacterOwner->SetActorRelativeRotation(Rot);
 	}

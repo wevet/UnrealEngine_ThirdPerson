@@ -14,10 +14,10 @@
 AAIControllerBase::AAIControllerBase(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer), 
 	BotTypeKeyName(FName(TEXT("BotType"))),
-	CanSeePlayerKey(FName(TEXT("CanSeePlayer"))),
+	CanSeePlayerKeyName(FName(TEXT("CanSeePlayer"))),
+	CanHearPlayerKeyName(FName(TEXT("CanHearPlayer"))),
 	TargetEnemyKeyName(FName(TEXT("TargetEnemy"))),
-	PatrolLocationKeyName(FName(TEXT("PatrolLocation"))),
-	CurrentWaypointKeyName(FName(TEXT("CurrentWaypoint")))
+	PatrolLocationKeyName(FName(TEXT("PatrolLocation")))
 {
 
 	BehaviorTreeComponent = ObjectInitializer.CreateDefaultSubobject<UBehaviorTreeComponent>(this, TEXT("BehaviorTreeComponent"));
@@ -92,7 +92,7 @@ AWayPointBase* AAIControllerBase::GetRandomAtWayPoint()
 	{
 		return nullptr;
 	}
-	int32 RandomIndex = FMath::RandRange(0, WayPointList.Num() - 1);
+	const int32 RandomIndex = FMath::RandRange(0, WayPointList.Num() - 1);
 	return WayPointList[RandomIndex];
 }
 
@@ -104,6 +104,15 @@ void AAIControllerBase::SetTargetEnemy(APawn * NewTarget)
 	}
 }
 
+void AAIControllerBase::SetWayPoint(AWayPointBase* NewWayPoint)
+{
+	if (BlackboardComponent)
+	{
+		//@TODO
+		//BlackboardComponent->SetValueAsObject(TargetEnemyKeyName, NewWayPoint);
+	}
+}
+
 void AAIControllerBase::SetBlackboardBotType(EBotBehaviorType NewType)
 {
 	if (BlackboardComponent)
@@ -112,11 +121,27 @@ void AAIControllerBase::SetBlackboardBotType(EBotBehaviorType NewType)
 	}
 }
 
-void AAIControllerBase::SetBlackboardSeeActor(bool InCanSeeActor)
+void AAIControllerBase::SetBlackboardSeeActor(const bool NewCanSeeActor)
 {
 	if (BlackboardComponent)
 	{
-		BlackboardComponent->SetValueAsBool(CanSeePlayerKey, InCanSeeActor);
+		BlackboardComponent->SetValueAsBool(CanSeePlayerKeyName, NewCanSeeActor);
+	}
+}
+
+void AAIControllerBase::SetBlackboardHearActor(const bool NewCanHearActor)
+{
+	if (BlackboardComponent)
+	{
+		BlackboardComponent->SetValueAsBool(CanHearPlayerKeyName, NewCanHearActor);
+	}
+}
+
+void AAIControllerBase::SetBlackboardPatrolLocation(const FVector NewLocation)
+{
+	if (BlackboardComponent)
+	{
+		BlackboardComponent->SetValueAsVector(PatrolLocationKeyName, NewLocation);
 	}
 }
 

@@ -71,13 +71,17 @@ public:
 	void NotifyEquip();
 	virtual void NotifyEquip_Implementation() override;
 
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "ACharacterBase|ICombatExecuter")
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "ACharacterBase|IInteractionExecuter")
 	void ReportNoise(USoundBase* Sound, float Volume);
 	virtual void ReportNoise_Implementation(USoundBase* Sound, float Volume) override;
 
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "ACharacterBase|ICombatExecuter")
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "ACharacterBase|IInteractionExecuter")
 	void FootStep(USoundBase* Sound, float Volume);
 	virtual void FootStep_Implementation(USoundBase* Sound, float Volume) override;
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "IInteractionExecuter")
+	void ReportNoiseOther(AActor* Actor, USoundBase* Sound, const float Volume, const FVector Location);
+	virtual void ReportNoiseOther_Implementation(AActor* Actor, USoundBase* Sound, const float Volume, const FVector Location) override;
 
 public:
 	virtual FVector BulletTraceRelativeLocation() const;

@@ -12,7 +12,7 @@
 
 class AWeaponBase;
 class AWayPointBase;
-
+class AAIControllerBase;
 
 UCLASS(ABSTRACT)
 class WEVET_API AAICharacterBase : public ACharacterBase
@@ -56,8 +56,6 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "AAICharacterBase|Variable")
 	bool HasEnemyFound() const;
 	
-	virtual const bool HasEquipWeapon() override;
-
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "AAICharacterBase|Variable")
 	class UBehaviorTree* BehaviorTree;
 
@@ -78,6 +76,7 @@ public:
 
 protected:
 	ACharacterBase* TargetCharacter;
+	AAIControllerBase* AIController;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AAICharacterBase|Variable")
 	TSubclassOf<class AWeaponBase> SpawnWeapon;
@@ -89,7 +88,7 @@ protected:
 	virtual	void OnHearNoiseRecieve(APawn *OtherActor, const FVector &Location, float Volume);
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "AAICharacterBase|Variable")
-	float BulletDelay = 1.4f;
+	float BulletDelay;
 
 	/* Last bullet action after interval */
 	float BulletInterval;
@@ -108,5 +107,6 @@ protected:
 	float SenseTimeOut;
 
 	/* Resets after sense time-out to avoid unnecessary clearing of target each tick */
-	bool bSensedTarget;
+	bool bSeeTarget;
+	bool bHearTarget;
 };

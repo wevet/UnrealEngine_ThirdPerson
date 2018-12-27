@@ -154,7 +154,7 @@ void AWeaponBase::OnFirePressedInternal()
 
 	if (WeaponItemInfo.CurrentAmmo <= 0)
 	{
-		UE_LOG(LogTemp, Log, TEXT("Out Of Ammos"));
+		UE_LOG(LogWevetClient, Log, TEXT("Out Of Ammos"));
 		OnReloading_Implementation();
 		return;
 	}
@@ -186,11 +186,15 @@ void AWeaponBase::OnFirePressedInternal()
 
 	const FVector MuzzleLocation  = GetMuzzleTransform().GetLocation();
 	const FRotator MuzzleRotation = FRotator(GetMuzzleTransform().GetRotation());
-	UGameplayStatics::PlaySoundAtLocation(World, FireSoundAsset, MuzzleLocation, 1.f, 1.f, 0.f, nullptr, nullptr);
+	const float Volume = 1.0f;
+
+	// make noise fire
+	IInteractionExecuter::Execute_ReportNoiseOther(CharacterOwner, this, FireSoundAsset, Volume, MuzzleLocation);
 	CharacterOwner->FireActionMontage();
 	--WeaponItemInfo.CurrentAmmo;
 
-	UGameplayStatics::PlaySoundAtLocation(World, FireImpactSoundAsset, HitData.Location, 1.f, 1.f, 0.f, nullptr, nullptr);
+	// make noise impact
+	IInteractionExecuter::Execute_ReportNoiseOther(CharacterOwner, this, FireImpactSoundAsset, Volume, HitData.Location);
 	const FVector StartPoint = MuzzleLocation;
 	const FVector EndPoint   = UKismetMathLibrary::SelectVector(HitData.ImpactPoint, HitData.TraceEnd, bSuccess);
 	const FRotator Rotation  = UKismetMathLibrary::FindLookAtRotation(StartPoint, EndPoint);
@@ -244,20 +248,23 @@ void AWeaponBase::TakeHitDamage(const FHitResult HitResult)
 		return;
 	}
 
-	if (ICombatExecuter* CombatInterface = Cast<ICombatExecuter>(HitResult.Actor))
+	ICombatExecuter* CombatExecuter = Cast<ICombatExecuter>(HitResult.GetActor());
+	if (CombatExecuter == nullptr)
 	{
-		if (!CombatInterface->IsDeath_Implementation())
-		{
-			float Offset = 0.05f;
-			int32 CharacterAttack = CharacterOwner->GetCharacterModel()->GetAttack();
-			int32 Wisdom = CharacterOwner->GetCharacterModel()->GetWisdom();
-			float WeaponDamage = WeaponItemInfo.Damage;
-			float Total  = (float)(CharacterAttack + Wisdom) + WeaponDamage;
-			float Damage = FMath::FRandRange((Total * Offset), Total);
-			UE_LOG(LogWevetClient, Log, TEXT("TakeDamage : %f"), Damage);
-			//ICombatExecuter::Execute_OnTakeDamage(HitResult.Actor.Get(), HitResult.BoneName, Damage, CharacterOwner);
-		}
+		return;
 	}
+	if (CombatExecuter->Execute_IsDeath(HitResult.GetActor()))
+	{
+		return;
+	}
+
+	const float Offset = 0.05f;
+	const int32 Attack = CharacterOwner->GetCharacterModel()->GetAttack();
+	const int32 Wisdom = CharacterOwner->GetCharacterModel()->GetWisdom();
+	const float WeaponDamage = WeaponItemInfo.Damage;
+	const float Total = (float)(Attack / Wisdom) + WeaponDamage;
+	const float Damage = FMath::FRandRange((Total * Offset), Total);
+	CombatExecuter->Execute_OnTakeDamage(HitResult.GetActor(), HitResult.BoneName, Damage, CharacterOwner);
 }
 
 void AWeaponBase::OnReloading_Implementation()
@@ -270,13 +277,16 @@ void AWeaponBase::OnReloading_Implementation()
 
 	if (WeaponItemInfo.MaxAmmo <= 0)
 	{
+		UE_LOG(LogWevetClient, Log, TEXT("Empty Ammos Current:%d, ClipType:%d"),
+			WeaponItemInfo.CurrentAmmo,
+			WeaponItemInfo.ClipType);
 		bEmpty = true;
 		return;
 	}
 
 	if (WeaponItemInfo.CurrentAmmo >= WeaponItemInfo.ClipType)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Full Ammos Current:%d, ClipType:%d"), 
+		UE_LOG(LogWevetClient, Log, TEXT("Full Ammos Current:%d, ClipType:%d"),
 			WeaponItemInfo.CurrentAmmo, 
 			WeaponItemInfo.ClipType);
 		return;

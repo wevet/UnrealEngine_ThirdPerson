@@ -119,9 +119,10 @@ void ACharacterBase::ReportNoise_Implementation(USoundBase* Sound, float Volume)
 
 	if (Sound)
 	{
-		UGameplayStatics::PlaySoundAtLocation(World, Sound, GetActorLocation());
 		//MakeNoise(Volume, this, GetActorLocation());
-		PawnNoiseEmitterComponent->MakeNoise(this, Volume, GetActorLocation());
+		const float InVolume = FMath::Clamp<float>(Volume, 0.0f, 1.0f);
+		UGameplayStatics::PlaySoundAtLocation(World, Sound, GetActorLocation(), InVolume, 1.0f, 0.0f, nullptr, nullptr);
+		PawnNoiseEmitterComponent->MakeNoise(this, InVolume, GetActorLocation());
 	}
 }
 
@@ -135,14 +136,28 @@ void ACharacterBase::FootStep_Implementation(USoundBase* Sound, float Volume)
 
 	const float Speed = GetVelocity().Size();
 	const float InVolume = FMath::Clamp<float>((Speed / GetCharacterMovement()->MaxWalkSpeed), 0.f, 1.f);
-	//UE_LOG(LogWevetClient, Log, TEXT("Vol : %f"), InVolume);
 
 	USoundBase* InSound = Sound ? Sound : FootStepSoundAsset;
 	if (InSound)
 	{
-		UGameplayStatics::PlaySoundAtLocation(World, InSound, GetActorLocation());
 		//MakeNoise(InVolume, this, GetActorLocation());
+		UGameplayStatics::PlaySoundAtLocation(World, InSound, GetActorLocation(), InVolume, 1.0f, 0.0f, nullptr, nullptr);
 		PawnNoiseEmitterComponent->MakeNoise(this, InVolume, GetActorLocation());
+	}
+}
+
+void ACharacterBase::ReportNoiseOther_Implementation(AActor* Actor, USoundBase* Sound, const float Volume, const FVector Location)
+{
+	UWorld* const World = GetWorld();
+	if (World == nullptr)
+	{
+		return;
+	}
+	if (Sound)
+	{
+		const float InVolume = FMath::Clamp<float>(Volume, 0.0f, 1.0f);
+		UGameplayStatics::PlaySoundAtLocation(World, Sound, Location, InVolume, 1.0f, 0.0f, nullptr, nullptr);
+		PawnNoiseEmitterComponent->MakeNoise(Actor, InVolume, Location);
 	}
 }
 
@@ -258,11 +273,11 @@ void ACharacterBase::UnEquipment_Implementation()
 
 const bool ACharacterBase::HasEquipWeapon()
 {
-	if (SelectedWeapon == nullptr)
+	if (SelectedWeapon)
 	{
-		return false;
+		return SelectedWeapon->bEquip;
 	}
-	return SelectedWeapon->bEquip;
+	return false;
 }
 
 float ACharacterBase::GetHealthToWidget() const

@@ -32,5 +32,5 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Variable")
 	AAICharacterBase* AICharacterOwner;
 
-	virtual void SetPitch();
+	virtual void UpdateLookAtLocation();
 };

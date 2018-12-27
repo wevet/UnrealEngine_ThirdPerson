@@ -23,14 +23,6 @@ public:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "ICombatExecuter")
 	void NotifyEquip();
 
-	// Ignore FootStep AnimBP NotifyEvent
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "ICombatExecuter")
-	void ReportNoise(USoundBase* Sound, float Volume);
-
-	// FootStep NotifyEvent
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "ICombatExecuter")
-	void FootStep(USoundBase* Sound, float Volume);
-
 	// TakeDamage
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "ICombatExecuter")
 	void OnTakeDamage(FName BoneName, float Damage, AActor* Actor);

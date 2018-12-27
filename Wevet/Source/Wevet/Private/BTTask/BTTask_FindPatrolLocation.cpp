@@ -18,13 +18,12 @@ EBTNodeResult::Type UBTTask_FindPatrolLocation::ExecuteTask(UBehaviorTreeCompone
 		{
 			const float SearchRadius = 200.f;
 			const FVector SearchOrigin = WayPoint->GetActorLocation();
-
 			FNavLocation ResultLocation;
 
 			UNavigationSystemV1* NavSystem = UNavigationSystemV1::GetNavigationSystem(AIController);
 			if (NavSystem && NavSystem->GetRandomPointInNavigableRadius(SearchOrigin, SearchRadius, ResultLocation))
 			{
-				OwnerComp.GetBlackboardComponent()->SetValue<UBlackboardKeyType_Vector>(BlackboardKey.GetSelectedKeyID(), ResultLocation.Location);
+				AIController->SetBlackboardPatrolLocation(ResultLocation.Location);
 				bSuccess = true;
 			}
 		}

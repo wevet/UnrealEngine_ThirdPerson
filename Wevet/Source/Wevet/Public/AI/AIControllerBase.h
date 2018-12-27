@@ -67,23 +67,23 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "AAIControllerBase|Variable")
 	AAICharacterBase* GetAICharacter() const
 	{
-		return this->AICharacterOwner;
+		return AICharacterOwner;
 	}
 
 	UFUNCTION(BlueprintCallable, Category = "AAIControllerBase|Components")
 	AWayPointBase* GetRandomAtWayPoint();
 
 	virtual void SetTargetEnemy(APawn* NewTarget);
+	virtual void SetWayPoint(AWayPointBase* NewWayPoint);
 	virtual void SetBlackboardBotType(EBotBehaviorType NewType);
-	virtual void SetBlackboardSeeActor(bool InCanSeeActor);
+	virtual void SetBlackboardSeeActor(const bool NewCanSeeActor);
+	virtual void SetBlackboardHearActor(const bool NewCanHearActor);
+	virtual void SetBlackboardPatrolLocation(const FVector NewLocation);
 
 protected:
 	class UBehaviorTreeComponent * BehaviorTreeComponent;
 	class UBlackboardComponent* BlackboardComponent;
 	class UAIPerceptionComponent* AIPerceptionComponent;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AAIControllerBase|Variable")
-	FName CanSeePlayerKey;
 
 	UFUNCTION(BlueprintCallable, Category = "AAIControllerBase|Perception")
 	virtual void OnTargetPerceptionUpdatedRecieve(AActor* Actor, FAIStimulus Stimulus);
@@ -97,13 +97,16 @@ protected:
 	class UAISenseConfig_Hearing* HearConfig;
 
 	UPROPERTY(EditDefaultsOnly, Category = "AAIControllerBase|Variable")
+	FName CanSeePlayerKeyName;
+
+	UPROPERTY(EditDefaultsOnly, Category = "AAIControllerBase|Variable")
+	FName CanHearPlayerKeyName;
+
+	UPROPERTY(EditDefaultsOnly, Category = "AAIControllerBase|Variable")
 	FName TargetEnemyKeyName;
 
 	UPROPERTY(EditDefaultsOnly, Category = "AAIControllerBase|Variable")
 	FName PatrolLocationKeyName;
-
-	UPROPERTY(EditDefaultsOnly, Category = "AAIControllerBase|Variable")
-	FName CurrentWaypointKeyName;
 
 	UPROPERTY(EditDefaultsOnly, Category = "AAIControllerBase|Variable")
 	FName BotTypeKeyName;

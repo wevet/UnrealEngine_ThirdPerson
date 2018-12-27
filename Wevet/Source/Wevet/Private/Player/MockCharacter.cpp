@@ -242,14 +242,14 @@ void AMockCharacter::OnPickupItemExecuter_Implementation(AActor* Actor)
 	{
 		if (Super::SameWeapon(Weapon))
 		{
-			UE_LOG(LogTemp, Warning, TEXT("SameWeapon : %s"), *(Weapon->GetName()));
+			UE_LOG(LogWevetClient, Warning, TEXT("SameWeapon : %s"), *(Weapon->GetName()));
 			return;
 		}
 
 		FWeaponItemInfo WeaponItemInfo = Weapon->WeaponItemInfo;
 		if (WeaponItemInfo.WeaponItemType == EWeaponItemType::None)
 		{
-			UE_LOG(LogTemp, Warning, TEXT("UnKnownItemType : %s"), *(Weapon->GetName()));
+			UE_LOG(LogWevetClient, Warning, TEXT("UnKnownItemType : %s"), *(Weapon->GetName()));
 			return;
 		}
 
@@ -273,21 +273,6 @@ void AMockCharacter::OnPickupItemExecuter_Implementation(AActor* Actor)
 		}
 		Weapon->Destroy();
 		Weapon = nullptr;
-
-		//Weapon->AttachToComponent(
-		//	Super::GetMesh(),
-		//	{ EAttachmentRule::SnapToTarget, true },
-		//	WeaponItemInfo.UnEquipSocketName);
-
-		//Weapon->SetEquip(false);
-		//Weapon->SetCharacterOwner(this);
-		//Weapon->OffVisible_Implementation();
-
-		//if (Super::WeaponList.Find(Weapon) == INDEX_NONE)
-		//{
-		//	Super::WeaponList.Emplace(Weapon);
-		//}
-
 		Actor = nullptr;
 	}
 	Super::OnPickupItemExecuter_Implementation(Actor);

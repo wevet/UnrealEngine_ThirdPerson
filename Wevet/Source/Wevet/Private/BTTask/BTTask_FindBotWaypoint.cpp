@@ -16,7 +16,7 @@ EBTNodeResult::Type UBTTask_FindBotWaypoint::ExecuteTask(UBehaviorTreeComponent&
 	{
 		if (AWayPointBase* NewWaypoint = AIController->GetRandomAtWayPoint())
 		{
-			OwnerComp.GetBlackboardComponent()->SetValue<UBlackboardKeyType_Object>(BlackboardKey.GetSelectedKeyID(), NewWaypoint);
+			AIController->SetWayPoint(NewWaypoint);
 			bSuccess = true;
 		}
 	}

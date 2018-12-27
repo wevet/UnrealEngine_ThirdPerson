@@ -11,10 +11,14 @@
 #include "Perception/AISenseConfig_Hearing.h"
 #include "Perception/AISense_Hearing.h"
 #include "Engine.h"
+#include "Kismet/KismetMathLibrary.h"
 
 AAICharacterBase::AAICharacterBase(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer), 
-	SenseTimeOut(4.f)
+	BulletDelay(1.4f),
+	SenseTimeOut(4.f),
+	bSeeTarget(false),
+	bHearTarget(false)
 {
 	PrimaryActorTick.bCanEverTick = true;
 
@@ -61,6 +65,10 @@ void AAICharacterBase::BeginPlay()
 			AIWidget->Initializer(this);
 		}
 	}
+	if (AAIControllerBase* Controller = Cast<AAIControllerBase>(GetController()))
+	{
+		AIController = Controller;
+	}
 }
 
 void AAICharacterBase::Tick(float DeltaTime)
@@ -81,7 +89,7 @@ void AAICharacterBase::MainLoop(float DeltaTime)
 		return;
 	}
 
-	if (bSensedTarget)
+	if (bSeeTarget || bHearTarget)
 	{
 		// empty weapon
 		if (Super::SelectedWeapon && Super::SelectedWeapon->bEmpty)
@@ -98,17 +106,20 @@ void AAICharacterBase::MainLoop(float DeltaTime)
 	}
 
 	// attack timer finished
-	if (bSensedTarget
-		&& (World->TimeSeconds - LastSeenTime) > SenseTimeOut
-		&& (World->TimeSeconds - LastHeardTime) > SenseTimeOut)
+	if (bSeeTarget && (World->TimeSeconds - LastSeenTime) > SenseTimeOut)
 	{
 		SetTargetActor(nullptr);
 		BP_FireReleaseReceive();
 	}
+	// @TODO
+	if (bHearTarget && (World->TimeSeconds - LastHeardTime) > SenseTimeOut)
+	{
+		bHearTarget = false;
+	}
 
 	if (TargetCharacter)
 	{
-		if (TargetCharacter->IsDeath_Implementation())
+		if (ICombatExecuter::Execute_IsDeath(TargetCharacter))
 		{
 			SetTargetActor(nullptr);
 			BP_FireReleaseReceive();
@@ -124,7 +135,6 @@ void AAICharacterBase::MainLoop(float DeltaTime)
 				// repeat sense target
 				//LastSeenTime = World->GetTimeSeconds();
 				//LastHeardTime = World->GetTimeSeconds();
-				//bSensedTarget = true;
 			}
 		}
 	}
@@ -151,7 +161,7 @@ void AAICharacterBase::NotifyEquip_Implementation()
 		return;
 	}
 
-	if (HasEnemyFound())
+	if (bSeeTarget || bHearTarget)
 	{
 		Super::SelectedWeapon->AttachToComponent(
 			Super::GetMesh(),
@@ -183,13 +193,10 @@ void AAICharacterBase::OnTakeDamage_Implementation(FName BoneName, float Damage,
 void AAICharacterBase::SetTargetActor(ACharacterBase* NewCharacter)
 {
 	TargetCharacter = NewCharacter;
-	if (AAIControllerBase* AIController = Cast<AAIControllerBase>(GetController()))
-	{
-		AIController->SetBlackboardSeeActor(HasEnemyFound());
-	}
+	bSeeTarget = (TargetCharacter != nullptr);
+	AIController->SetBlackboardSeeActor(HasEnemyFound());
+	AIController->SetTargetEnemy(TargetCharacter);
 	Super::EquipmentActionMontage();
-	bSensedTarget = (TargetCharacter != nullptr);
-	//UE_LOG(LogTemp, Warning, TEXT("SeeActor : %s"), HasEnemyFound() ? TEXT("true") : TEXT("false"));
 }
 
 bool AAICharacterBase::HasEnemyFound() const
@@ -199,11 +206,6 @@ bool AAICharacterBase::HasEnemyFound() const
 		return true;
 	}
 	return false;
-}
-
-const bool AAICharacterBase::HasEquipWeapon()
-{
-	return Super::HasEquipWeapon() && HasEnemyFound();
 }
 
 void AAICharacterBase::InitializePosses()
@@ -269,22 +271,21 @@ void AAICharacterBase::CreateWayPointList(TArray<AWayPointBase*>& OutWayPointLis
 
 void AAICharacterBase::OnSeePawnRecieve(APawn* OtherPawn)
 {
-	if (IsDeath_Implementation() || bSensedTarget)
+	if (ICombatExecuter::Execute_IsDeath(this) || bSeeTarget)
 	{
 		return;
 	}
 
 	LastSeenTime = GetWorld()->GetTimeSeconds();
-	auto Player  = Cast<AMockCharacter>(OtherPawn);
-	if (Player && !Player->IsDeath_Implementation())
+	if (AMockCharacter* Character = Cast<AMockCharacter>(OtherPawn))
 	{
-		SetTargetActor(Player);
+		SetTargetActor(Character);
 	}
 }
 
 void AAICharacterBase::OnHearNoiseRecieve(APawn* OtherActor, const FVector& Location, float Volume)
 {
-	if (IsDeath_Implementation() || bSensedTarget)
+	if (ICombatExecuter::Execute_IsDeath(this) || bHearTarget)
 	{
 		return;
 	}
@@ -294,9 +295,12 @@ void AAICharacterBase::OnHearNoiseRecieve(APawn* OtherActor, const FVector& Loca
 		*GetName(), 
 		*OtherActor->GetName(), 
 		Volume);
-	auto Player = Cast<AMockCharacter>(OtherActor);
-	if (Player && !Player->IsDeath_Implementation())
-	{
-		SetTargetActor(Player);
-	}
+
+	const FVector Start = GetActorLocation();
+	const FVector End = OtherActor->GetActorLocation();
+	const FRotator LookAtRotation = UKismetMathLibrary::FindLookAtRotation(Start, End);
+
+	bHearTarget = true;
+	Super::EquipmentActionMontage();
+	SetActorRotation(LookAtRotation);
 }
