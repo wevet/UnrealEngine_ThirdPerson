@@ -73,7 +73,7 @@ protected:
 	FTimerHandle ReloadTimerHandle;
 
 	virtual void TakeHitDamage(const FHitResult HitResult);
-	virtual void PlayBulletEffect(const FHitResult HitResult);
+	virtual void PlayBulletEffect(UWorld* const World, const FHitResult HitResult);
 
 public:
 	FORCEINLINE class USkeletalMeshComponent* GetSkeletalMeshComponent() const

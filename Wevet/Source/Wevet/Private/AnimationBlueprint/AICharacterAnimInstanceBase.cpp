@@ -20,26 +20,26 @@ void UAICharacterAnimInstanceBase::NativeInitializeAnimation()
 void UAICharacterAnimInstanceBase::NativeUpdateAnimation(float DeltaTimeX)
 {
 	AICharacterOwner = Cast<AAICharacterBase>(OwningPawn);
-
-	if (IsEquip)
-	{
-		UpdateLookAtLocation();
-	}
 	Super::NativeUpdateAnimation(DeltaTimeX);
 }
 
-void UAICharacterAnimInstanceBase::UpdateLookAtLocation()
+void UAICharacterAnimInstanceBase::SetRotator()
 {
-	if (AICharacterOwner && AICharacterOwner->GetTargetCharacter())
+	Super::SetRotator();
+	if (AICharacterOwner == nullptr)
 	{
-		const FVector Start = AICharacterOwner->GetActorLocation();
-		const FVector End   = AICharacterOwner->GetTargetCharacter()->GetActorLocation();
-		const FRotator LookAtRotation = UKismetMathLibrary::FindLookAtRotation(Start, End);
+		return;
+	}
+
+	if (AICharacterOwner->GetTargetCharacter() && IsEquip)
+	{
+		const FVector Start  = AICharacterOwner->GetActorLocation();
+		const FVector Target = AICharacterOwner->GetTargetCharacter()->GetActorLocation();
+		const FRotator LookAtRotation = UKismetMathLibrary::FindLookAtRotation(Start, Target);
 		FRotator Rot = FRotator::ZeroRotator;
-		Pitch   = LookAtRotation.Pitch;
-		Yaw = LookAtRotation.Yaw;
+		Pitch = LookAtRotation.Pitch;
+		//Yaw = LookAtRotation.Yaw;
 		Rot.Yaw = LookAtRotation.Yaw;
 		AICharacterOwner->SetActorRelativeRotation(Rot);
 	}
-
 }

@@ -16,7 +16,7 @@
 AAICharacterBase::AAICharacterBase(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer), 
 	BulletDelay(1.4f),
-	SenseTimeOut(4.f),
+	SenseTimeOut(8.f),
 	bSeeTarget(false),
 	bHearTarget(false)
 {
@@ -89,56 +89,44 @@ void AAICharacterBase::MainLoop(float DeltaTime)
 		return;
 	}
 
-	if (bSeeTarget || bHearTarget)
+	if (Super::SelectedWeapon && Super::SelectedWeapon->bEmpty)
 	{
-		// empty weapon
-		if (Super::SelectedWeapon && Super::SelectedWeapon->bEmpty)
-		{
-			SetTargetActor(nullptr);
-			BP_FireReleaseReceive();
-			return;
-		}
-		// reload weapon
-		if (Super::SelectedWeapon && Super::SelectedWeapon->bReload)
-		{
-			return;
-		}
 	}
 
-	// attack timer finished
+	if (Super::SelectedWeapon && Super::SelectedWeapon->bReload)
+	{
+	}
+
 	if (bSeeTarget && (World->TimeSeconds - LastSeenTime) > SenseTimeOut)
 	{
-		SetTargetActor(nullptr);
-		BP_FireReleaseReceive();
+		bSeeTarget = false;
+		SetSeeTargetActor(nullptr);
 	}
-	// @TODO
+
 	if (bHearTarget && (World->TimeSeconds - LastHeardTime) > SenseTimeOut)
 	{
 		bHearTarget = false;
+		SetHearTargetActor(nullptr);
 	}
 
-	if (TargetCharacter)
+	// only see target
+	if (HasEnemyFound())
 	{
-		if (ICombatExecuter::Execute_IsDeath(TargetCharacter))
-		{
-			SetTargetActor(nullptr);
-			BP_FireReleaseReceive();
-			return;
-		}
-		else
+		// both not target death & Equipment
+		if (!ICombatExecuter::Execute_IsDeath(TargetCharacter) && HasEquipWeapon())
 		{
 			BulletInterval += DeltaTime;
 			if (BulletInterval >= BulletDelay)
 			{
 				BP_FirePressReceive();
 				BulletInterval = 0.f;
-				// repeat sense target
-				//LastSeenTime = World->GetTimeSeconds();
-				//LastHeardTime = World->GetTimeSeconds();
 			}
 		}
 	}
-
+	else
+	{
+		//
+	}
 }
 
 void AAICharacterBase::Die_Implementation()
@@ -161,7 +149,7 @@ void AAICharacterBase::NotifyEquip_Implementation()
 		return;
 	}
 
-	if (bSeeTarget || bHearTarget)
+	if (!HasEquipWeapon())
 	{
 		Super::SelectedWeapon->AttachToComponent(
 			Super::GetMesh(),
@@ -171,6 +159,10 @@ void AAICharacterBase::NotifyEquip_Implementation()
 	}
 	else
 	{
+		if (bSeeTarget || bHearTarget)
+		{
+			return;
+		}
 		Super::SelectedWeapon->AttachToComponent(
 			Super::GetMesh(),
 			{ EAttachmentRule::SnapToTarget, true },
@@ -188,24 +180,20 @@ void AAICharacterBase::OnTakeDamage_Implementation(FName BoneName, float Damage,
 	{
 		Die_Implementation();
 	}
-}
-
-void AAICharacterBase::SetTargetActor(ACharacterBase* NewCharacter)
-{
-	TargetCharacter = NewCharacter;
-	bSeeTarget = (TargetCharacter != nullptr);
-	AIController->SetBlackboardSeeActor(HasEnemyFound());
-	AIController->SetTargetEnemy(TargetCharacter);
-	Super::EquipmentActionMontage();
+	else 
+	{
+		if (ACharacterBase* Character = Cast<ACharacterBase>(Actor))
+		{
+			UE_LOG(LogWevetClient, Log, TEXT("Pained\n from : %s\n to : %s\n"), 
+				*Character->GetName(), 
+				*GetName());
+		}
+	}
 }
 
 bool AAICharacterBase::HasEnemyFound() const
 {
-	if (TargetCharacter)
-	{
-		return true;
-	}
-	return false;
+	return (TargetCharacter && bSeeTarget) ? true : false;
 }
 
 void AAICharacterBase::InitializePosses()
@@ -224,7 +212,11 @@ FVector AAICharacterBase::BulletTraceRelativeLocation() const
 
 FVector AAICharacterBase::BulletTraceForwardLocation() const
 {
-	return GetControlRotation().Vector();
+	if (Super::SelectedWeapon)
+	{
+		return Super::SelectedWeapon->GetMuzzleTransform().GetRotation().GetForwardVector();
+	}
+	return FVector::ForwardVector;
 }
 
 void AAICharacterBase::CreateWeaponInstance()
@@ -271,21 +263,55 @@ void AAICharacterBase::CreateWayPointList(TArray<AWayPointBase*>& OutWayPointLis
 
 void AAICharacterBase::OnSeePawnRecieve(APawn* OtherPawn)
 {
-	if (ICombatExecuter::Execute_IsDeath(this) || bSeeTarget)
+	if (ICombatExecuter::Execute_IsDeath(this))
 	{
 		return;
 	}
 
 	LastSeenTime = GetWorld()->GetTimeSeconds();
-	if (AMockCharacter* Character = Cast<AMockCharacter>(OtherPawn))
+	UE_LOG(LogWevetClient, Warning, TEXT("See\n from : %s \n to : %s \n"),
+		*GetName(),
+		*OtherPawn->GetName());
+
+	if (!bSeeTarget)
 	{
-		SetTargetActor(Character);
+		bSeeTarget = true;
+		if (AMockCharacter* Character = Cast<AMockCharacter>(OtherPawn))
+		{
+			SetSeeTargetActor(Character);
+		}
 	}
+}
+
+void AAICharacterBase::SetSeeTargetActor(ACharacterBase* NewCharacter)
+{
+	TargetCharacter = NewCharacter;
+	AIController->SetBlackboardSeeActor(HasEnemyFound());
+	AIController->SetTargetEnemy(TargetCharacter);
+	if (!NewCharacter)
+	{
+		BP_FireReleaseReceive();
+	}
+	Super::EquipmentActionMontage();
+}
+
+void AAICharacterBase::SetHearTargetActor(AActor* OtherActor)
+{
+	AIController->SetBlackboardHearActor(bHearTarget);
+	if (OtherActor)
+	{
+		const FVector Start = GetActorLocation();
+		const FVector Target = OtherActor->GetActorLocation();
+		const FRotator LookAtRotation = UKismetMathLibrary::FindLookAtRotation(Start, Target);
+		SetActorRotation(LookAtRotation);
+		AIController->SetBlackboardPatrolLocation(Target);
+	}
+	Super::EquipmentActionMontage();
 }
 
 void AAICharacterBase::OnHearNoiseRecieve(APawn* OtherActor, const FVector& Location, float Volume)
 {
-	if (ICombatExecuter::Execute_IsDeath(this) || bHearTarget)
+	if (ICombatExecuter::Execute_IsDeath(this))
 	{
 		return;
 	}
@@ -296,11 +322,9 @@ void AAICharacterBase::OnHearNoiseRecieve(APawn* OtherActor, const FVector& Loca
 		*OtherActor->GetName(), 
 		Volume);
 
-	const FVector Start = GetActorLocation();
-	const FVector End = OtherActor->GetActorLocation();
-	const FRotator LookAtRotation = UKismetMathLibrary::FindLookAtRotation(Start, End);
-
-	bHearTarget = true;
-	Super::EquipmentActionMontage();
-	SetActorRotation(LookAtRotation);
+	if (!bHearTarget)
+	{
+		bHearTarget = true;
+		SetHearTargetActor(OtherActor);
+	}
 }

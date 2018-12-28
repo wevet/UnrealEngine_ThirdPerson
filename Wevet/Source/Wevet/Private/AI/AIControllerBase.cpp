@@ -24,7 +24,6 @@ AAIControllerBase::AAIControllerBase(const FObjectInitializer& ObjectInitializer
 	BlackboardComponent   = ObjectInitializer.CreateDefaultSubobject<UBlackboardComponent>(this, TEXT("BlackboardComponent"));
 	AIPerceptionComponent = ObjectInitializer.CreateDefaultSubobject<UAIPerceptionComponent>(this, TEXT("AIPerceptionComponent"));
 
-	// sight create
 	SightConfig = ObjectInitializer.CreateDefaultSubobject<UAISenseConfig_Sight>(this, TEXT("SightConfig"));
 	SightConfig->SightRadius = 3000.f;
 	SightConfig->LoseSightRadius = 3500.f;
@@ -35,14 +34,13 @@ AAIControllerBase::AAIControllerBase(const FObjectInitializer& ObjectInitializer
 	AIPerceptionComponent->ConfigureSense(*SightConfig);
 	AIPerceptionComponent->SetDominantSense(SightConfig->GetSenseImplementation());
 
-	// hear create
-	HearConfig = ObjectInitializer.CreateDefaultSubobject<UAISenseConfig_Hearing>(this, TEXT("HearConfig"));
-	HearConfig->HearingRange = 1000.f;
-	HearConfig->DetectionByAffiliation.bDetectEnemies    = true;
-	HearConfig->DetectionByAffiliation.bDetectFriendlies = true;
-	HearConfig->DetectionByAffiliation.bDetectNeutrals   = true;
-	AIPerceptionComponent->ConfigureSense(*HearConfig);
-	AIPerceptionComponent->SetDominantSense(HearConfig->GetSenseImplementation());
+	//HearConfig = ObjectInitializer.CreateDefaultSubobject<UAISenseConfig_Hearing>(this, TEXT("HearConfig"));
+	//HearConfig->HearingRange = 1000.f;
+	//HearConfig->DetectionByAffiliation.bDetectEnemies    = true;
+	//HearConfig->DetectionByAffiliation.bDetectFriendlies = true;
+	//HearConfig->DetectionByAffiliation.bDetectNeutrals   = true;
+	//AIPerceptionComponent->ConfigureSense(*HearConfig);
+	//AIPerceptionComponent->SetDominantSense(HearConfig->GetSenseImplementation());
 }
 
 void AAIControllerBase::Possess(APawn* Pawn)
@@ -148,7 +146,7 @@ void AAIControllerBase::SetBlackboardPatrolLocation(const FVector NewLocation)
 void AAIControllerBase::BeginPlay()
 {
 	Super::BeginPlay();
-	if (ensure(AIPerceptionComponent))
+	if (ensure(AIPerceptionComponent && AIPerceptionComponent->IsValidLowLevel()))
 	{
 		AIPerceptionComponent->OnTargetPerceptionUpdated.AddDynamic(this, &AAIControllerBase::OnTargetPerceptionUpdatedRecieve);
 	}
@@ -156,42 +154,22 @@ void AAIControllerBase::BeginPlay()
 
 void AAIControllerBase::OnTargetPerceptionUpdatedRecieve(AActor* Actor, FAIStimulus Stimulus)
 {
-	if (AICharacterOwner == nullptr 
-		|| (AICharacterOwner && AICharacterOwner->IsDeath_Implementation()))
+	if (AICharacterOwner == nullptr)
 	{
 		return;
 	}
 
-	if (AICharacterOwner->GetTargetCharacter())
+	if (ICombatExecuter::Execute_IsDeath(AICharacterOwner) || AICharacterOwner->GetTargetCharacter())
 	{
 		return;
 	}
 
-	AMockCharacter* MockCharacter = Cast<AMockCharacter>(Actor);
-
-	if (MockCharacter == nullptr)
+	if (AMockCharacter* MockCharacter = Cast<AMockCharacter>(Actor))
 	{
-		//BlackboardComponent->SetValueAsBool(CanSeePlayerKey, false);
-		return;
-	}
+		bool bSuccess = (ICombatExecuter::Execute_IsDeath(MockCharacter)) && Stimulus.WasSuccessfullySensed() ? true : false;
+		UE_LOG(LogWevetClient, Log, TEXT("WasSuccessfullySensed : %s"), bSuccess ? TEXT("True") : TEXT("false"));
 
-	if (BlackboardComponent)
-	{	
-		bool Success = (MockCharacter->IsDeath_Implementation() == false) 
-			&& Stimulus.WasSuccessfullySensed() ? true : false;
-		if (AICharacterOwner->HasEnemyFound())
-		{
-			if (MockCharacter->IsDeath_Implementation())
-			{
-				//AICharacterOwner->SetTargetActor(nullptr);
-			}
-		}
-		else
-		{
-			//AICharacterOwner->SetTargetActor(MockCharacter);
-		}
 	}
-
 }
 
 

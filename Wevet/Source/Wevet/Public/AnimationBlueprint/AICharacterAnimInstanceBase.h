@@ -32,5 +32,5 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Variable")
 	AAICharacterBase* AICharacterOwner;
 
-	virtual void UpdateLookAtLocation();
+	virtual void SetRotator() override;
 };

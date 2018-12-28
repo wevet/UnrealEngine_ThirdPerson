@@ -39,7 +39,6 @@ public:
 	virtual void Die_Implementation() override;
 	virtual void NotifyEquip_Implementation() override;
 	virtual void OnTakeDamage_Implementation(FName BoneName, float Damage, AActor* Actor) override;
-	virtual void SetTargetActor(ACharacterBase* NewCharacter);
 	virtual void CreateWayPointList(TArray<AWayPointBase*>& OutWayPointList);
 	virtual void CreateWeaponInstance();
 
@@ -70,9 +69,11 @@ public:
 		return TargetCharacter;
 	}
 
-	virtual FVector BulletTraceRelativeLocation() const override;	
+	virtual FVector BulletTraceRelativeLocation() const override;
 	virtual FVector BulletTraceForwardLocation() const override;
 	virtual void MainLoop(float DeltaTime);
+	virtual void SetSeeTargetActor(ACharacterBase* NewCharacter);
+	virtual void SetHearTargetActor(AActor* OtherActor);
 
 protected:
 	ACharacterBase* TargetCharacter;

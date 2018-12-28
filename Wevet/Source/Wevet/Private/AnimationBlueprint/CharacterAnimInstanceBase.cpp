@@ -37,26 +37,23 @@ void UCharacterAnimInstanceBase::NativeUpdateAnimation(float DeltaTimeX)
 		//const bool isInAir = MovementComponent->MovementMode == EMovementMode::MOVE_Falling;
 		//const float Velocity = MovementComponent->GetVelocity();
 	}
-	
-	const FRotator ControlRotation = OwningPawn->GetControlRotation();
-	const FRotator Rotation = OwningPawn->GetActorRotation();
-	const FVector Velocity  = OwningPawn->GetVelocity();
-	Direction = Super::CalculateDirection(Velocity, Rotation);
 
-	const FRotator ResultRotation = NormalizedDeltaRotator(ControlRotation, Rotation);
-	Yaw = ResultRotation.Yaw;
-	Pitch = ResultRotation.Pitch;
-
+	SetRotator();
 	SetCrouch();
 	SetEquip();
 	BlendWeight = (IsEquip) ? MaxBlendWeight : 0.f;
 }
 
-FRotator UCharacterAnimInstanceBase::NormalizedDeltaRotator(FRotator A, FRotator B) const
+void UCharacterAnimInstanceBase::SetRotator()
 {
-	FRotator Diff = A - B;
-	Diff.Normalize();
-	return Diff;
+	const FRotator ControlRotation = OwningPawn->GetControlRotation();
+	const FRotator Rotation = OwningPawn->GetActorRotation();
+	const FVector Velocity = OwningPawn->GetVelocity();
+	Direction = Super::CalculateDirection(Velocity, Rotation);
+
+	const FRotator ResultRotation = NormalizedDeltaRotator(ControlRotation, Rotation);
+	Yaw = ResultRotation.Yaw;
+	Pitch = ResultRotation.Pitch;
 }
 
 void UCharacterAnimInstanceBase::SetCrouch()
@@ -73,4 +70,11 @@ void UCharacterAnimInstanceBase::SetEquip()
 	{
 		IsEquip = Owner->HasEquipWeapon();
 	}
+}
+
+FRotator UCharacterAnimInstanceBase::NormalizedDeltaRotator(FRotator A, FRotator B) const
+{
+	FRotator Diff = A - B;
+	Diff.Normalize();
+	return Diff;
 }

@@ -59,6 +59,7 @@ protected:
 	// FRotator Delta
 	virtual FRotator NormalizedDeltaRotator(FRotator A, FRotator B) const;
 
+	virtual void SetRotator();
 	virtual void SetCrouch();
 	virtual void SetEquip();
 };

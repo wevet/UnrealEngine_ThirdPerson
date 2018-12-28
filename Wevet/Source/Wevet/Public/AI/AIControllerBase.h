@@ -70,9 +70,7 @@ public:
 		return AICharacterOwner;
 	}
 
-	UFUNCTION(BlueprintCallable, Category = "AAIControllerBase|Components")
 	AWayPointBase* GetRandomAtWayPoint();
-
 	virtual void SetTargetEnemy(APawn* NewTarget);
 	virtual void SetWayPoint(AWayPointBase* NewWayPoint);
 	virtual void SetBlackboardBotType(EBotBehaviorType NewType);
@@ -81,16 +79,19 @@ public:
 	virtual void SetBlackboardPatrolLocation(const FVector NewLocation);
 
 protected:
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Components, meta = (AllowPrivateAccess = "true"))
 	class UBehaviorTreeComponent * BehaviorTreeComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Components, meta = (AllowPrivateAccess = "true"))
 	class UBlackboardComponent* BlackboardComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Components, meta = (AllowPrivateAccess = "true"))
 	class UAIPerceptionComponent* AIPerceptionComponent;
 
 	UFUNCTION(BlueprintCallable, Category = "AAIControllerBase|Perception")
 	virtual void OnTargetPerceptionUpdatedRecieve(AActor* Actor, FAIStimulus Stimulus);
 
 	AAICharacterBase* AICharacterOwner;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "AAIControllerBase|Variable")
 	TArray<AWayPointBase*> WayPointList;
 
 	class UAISenseConfig_Sight* SightConfig;

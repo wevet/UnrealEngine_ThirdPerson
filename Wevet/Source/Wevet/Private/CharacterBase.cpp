@@ -273,11 +273,11 @@ void ACharacterBase::UnEquipment_Implementation()
 
 const bool ACharacterBase::HasEquipWeapon()
 {
-	if (SelectedWeapon)
+	if (SelectedWeapon == nullptr)
 	{
-		return SelectedWeapon->bEquip;
+		return false;
 	}
-	return false;
+	return SelectedWeapon->bEquip;
 }
 
 float ACharacterBase::GetHealthToWidget() const

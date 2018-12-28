@@ -142,7 +142,7 @@ void AWeaponBase::OnFirePressedInternal()
 	UWorld* const World = GetWorld();
 
 	// not found owner
-	if (World == nullptr || CharacterOwner == nullptr || (CharacterOwner && CharacterOwner->IsDeath_Implementation()))
+	if (World == nullptr || CharacterOwner == nullptr || (CharacterOwner && ICombatExecuter::Execute_IsDeath(CharacterOwner)))
 	{
 		return;
 	}
@@ -159,10 +159,9 @@ void AWeaponBase::OnFirePressedInternal()
 		return;
 	}
 
-	const float ForwardOffset = 15000.f;
-	const FVector ForwardLocation = CharacterOwner->BulletTraceForwardLocation();
 	const FVector StartLocation   = CharacterOwner->BulletTraceRelativeLocation();
-	const FVector EndLocation     = StartLocation + (ForwardLocation * ForwardOffset);
+	const FVector ForwardLocation = CharacterOwner->BulletTraceForwardLocation();
+	const FVector EndLocation     = StartLocation + (ForwardLocation * WeaponItemInfo.TraceDistance);
 
 	FHitResult HitData(ForceInit);
 	FCollisionQueryParams CollisionQueryParams;
@@ -210,17 +209,11 @@ void AWeaponBase::OnFirePressedInternal()
 #endif
 
 	TakeHitDamage(HitData);
-	PlayBulletEffect(HitData);
+	PlayBulletEffect(World, HitData);
 }
 
-void AWeaponBase::PlayBulletEffect(const FHitResult HitResult)
+void AWeaponBase::PlayBulletEffect(UWorld* const World, const FHitResult HitResult)
 {
-	UWorld* const World = GetWorld();
-	if (World == nullptr)
-	{
-		return;
-	}
-
 	FTransform EmitterTransform;
 	EmitterTransform.SetIdentity();
 	EmitterTransform.SetLocation(HitResult.Location);

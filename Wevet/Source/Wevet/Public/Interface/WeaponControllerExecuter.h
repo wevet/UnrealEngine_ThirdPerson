@@ -78,6 +78,9 @@ public:
 	float Damage;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
+	float TraceDistance;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
 	UTexture2D* Texture;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
@@ -90,6 +93,7 @@ public:
 	{
 		EquipSocketName = FName(TEXT("Lancer_Root_Socket"));
 		Damage = 20.f;
+		TraceDistance = 15000.f;
 	}
 
 public:
