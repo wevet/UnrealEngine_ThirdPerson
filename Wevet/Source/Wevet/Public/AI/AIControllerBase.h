@@ -6,6 +6,7 @@
 #include "AIController.h"
 #include "Perception/AISenseConfig_Sight.h"
 #include "Perception/AISenseConfig_Hearing.h"
+#include "Perception/AISenseConfig_Prediction.h"
 #include "BehaviorTree/BehaviorTree.h"
 #include "Macros.h"
 #include "STypes.h"
@@ -96,6 +97,7 @@ protected:
 
 	class UAISenseConfig_Sight* SightConfig;
 	class UAISenseConfig_Hearing* HearConfig;
+	class UAISenseConfig_Prediction* PredictionConfig;
 
 	UPROPERTY(EditDefaultsOnly, Category = "AAIControllerBase|Variable")
 	FName CanSeePlayerKeyName;

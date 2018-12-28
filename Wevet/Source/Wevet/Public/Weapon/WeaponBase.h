@@ -5,7 +5,6 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "WeaponControllerExecuter.h"
-#include "Classes/Animation/AnimMontage.h"
 #include "Components/SphereComponent.h"
 #include "Components/WidgetComponent.h"
 #include "Components/SkeletalMeshComponent.h"
@@ -41,6 +40,9 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Variable")
 	USoundBase* FireImpactSoundAsset;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Variable")
+	USoundBase* PickupSoundAsset;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Variable")
 	UParticleSystem* MuzzleFlashEmitterTemplate;

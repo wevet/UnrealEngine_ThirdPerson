@@ -328,24 +328,27 @@ void AWeaponBase::Take(ACharacterBase* NewCharacter)
 		SphereComponent->OnComponentBeginOverlap.RemoveDynamic(this, &AWeaponBase::BeginOverlapRecieve);
 		SphereComponent->OnComponentEndOverlap.RemoveDynamic(this, &AWeaponBase::EndOverlapRecieve);
 	}
+	check(GetWorld());
+	UGameplayStatics::PlaySoundAtLocation(GetWorld(), PickupSoundAsset, CharacterOwner ? CharacterOwner->GetActorLocation() : GetActorLocation());
 }
 
 void AWeaponBase::Release(ACharacterBase* NewCharacter)
 {
 	SetCharacterOwner(NewCharacter);
 	SetEquip(false);
-	OnVisible_Implementation();
-
-	if (ensure(SphereComponent && SphereComponent->IsValidLowLevel()))
-	{
-		SphereComponent->OnComponentBeginOverlap.AddDynamic(this, &AWeaponBase::BeginOverlapRecieve);
-		SphereComponent->OnComponentEndOverlap.AddDynamic(this, &AWeaponBase::EndOverlapRecieve);
-	}
+	//OnVisible_Implementation();
+	//if (ensure(SphereComponent && SphereComponent->IsValidLowLevel()))
+	//{
+	//	SphereComponent->OnComponentBeginOverlap.AddDynamic(this, &AWeaponBase::BeginOverlapRecieve);
+	//	SphereComponent->OnComponentEndOverlap.AddDynamic(this, &AWeaponBase::EndOverlapRecieve);
+	//}
+	Super::Destroy();
 }
 
 void AWeaponBase::SetCharacterOwner(ACharacterBase* NewCharacter)
 {
 	CharacterOwner = NewCharacter;
+	SetOwner(CharacterOwner);
 	//auto A = &NewCharacter;
 	//auto B = (*A);
 	//(*B).Equipment();

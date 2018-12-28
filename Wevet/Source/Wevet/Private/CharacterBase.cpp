@@ -227,7 +227,6 @@ void ACharacterBase::Die_Implementation()
 	const FVector Forward   = Super::GetActorLocation() + (Controller->GetControlRotation().Vector() * 200);
 	const FTransform Transform  = UKismetMathLibrary::MakeTransform(Forward, Rotation, FVector::OneVector);
 
-	// bNeeded Weapon
 	if (!ArrayExtension::NullOrEmpty(WeaponList))
 	{
 		for (AWeaponBase*& Weapon : WeaponList)
@@ -237,18 +236,6 @@ void ACharacterBase::Die_Implementation()
 				continue;
 			}
 			ReleaseWeaponToWorld(Transform, Weapon);
-		}
-		
-		for (AWeaponBase*& Weapon : WeaponList)
-		{
-			if (Weapon)
-			{
-				UE_LOG(LogWevetClient, Warning, TEXT("not remove instance : %s"), *Weapon->GetName());
-			}
-			else
-			{
-				UE_LOG(LogWevetClient, Log, TEXT("remove instance Owner : %s"), *GetName());
-			}
 		}
 		WeaponList.Empty();
 	}
@@ -302,9 +289,7 @@ void ACharacterBase::ReleaseWeaponToWorld(const FTransform Transform, AWeaponBas
 
 	const FWeaponItemInfo WeaponItemInfo = Weapon->WeaponItemInfo;
 	TSubclassOf<class AWeaponBase> WeaponClass = WeaponItemInfo.WeaponClass;
-	//Weapon->Release(nullptr);
-	//Weapon->OnFireRelease_Implementation();
-	Weapon->Destroy();
+	Weapon->Release(nullptr);
 	Weapon = nullptr;
 
 	AWeaponBase* const SpawningObject = World->SpawnActorDeferred<AWeaponBase>(
@@ -313,6 +298,7 @@ void ACharacterBase::ReleaseWeaponToWorld(const FTransform Transform, AWeaponBas
 		nullptr,
 		nullptr,
 		ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
+
 	SpawningObject->CopyWeaponItemInfo(WeaponItemInfo);
 	SpawningObject->FinishSpawning(Transform);
 }

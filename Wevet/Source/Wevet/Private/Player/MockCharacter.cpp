@@ -254,26 +254,29 @@ void AMockCharacter::OnPickupItemExecuter_Implementation(AActor* Actor)
 		}
 
 		TSubclassOf<class AWeaponBase> WeaponClass = WeaponItemInfo.WeaponClass;
-		FActorSpawnParameters SpawnInfo;
-		SpawnInfo.Owner = NULL;
-		SpawnInfo.Instigator = NULL;
 		const FTransform Transform = Super::GetMesh()->GetSocketTransform(WeaponItemInfo.UnEquipSocketName);
-		AWeaponBase* const PickingWeapon = World->SpawnActor<AWeaponBase>(WeaponClass, Transform, SpawnInfo);
+		AWeaponBase* const SpawningObject = World->SpawnActorDeferred<AWeaponBase>(
+			WeaponClass,
+			Transform,
+			nullptr,
+			nullptr,
+			ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
 
-		PickingWeapon->AttachToComponent(
+		SpawningObject->CopyWeaponItemInfo(WeaponItemInfo);
+		SpawningObject->FinishSpawning(Transform);
+		SpawningObject->AttachToComponent(
 			Super::GetMesh(),
 			{ EAttachmentRule::SnapToTarget, true },
 			WeaponItemInfo.UnEquipSocketName);
+		SpawningObject->Take(this);
 
-		PickingWeapon->Take(this);
-
-		if (Super::WeaponList.Find(PickingWeapon) == INDEX_NONE)
+		if (Super::WeaponList.Find(SpawningObject) == INDEX_NONE)
 		{
-			Super::WeaponList.Emplace(PickingWeapon);
+			Super::WeaponList.Emplace(SpawningObject);
 		}
 		Weapon->Destroy();
 		Weapon = nullptr;
-		Actor = nullptr;
+		Actor  = nullptr;
 	}
 	Super::OnPickupItemExecuter_Implementation(Actor);
 }
@@ -281,7 +284,7 @@ void AMockCharacter::OnPickupItemExecuter_Implementation(AActor* Actor)
 void AMockCharacter::OnTakeDamage_Implementation(FName BoneName, float Damage, AActor* Actor)
 {
 	Super::OnTakeDamage_Implementation(BoneName, Damage, Actor);
-	if (Super::IsDeath_Implementation())
+	if (ICombatExecuter::Execute_IsDeath(this))
 	{
 		Die_Implementation();
 	}

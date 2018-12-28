@@ -7,7 +7,6 @@
 #include "Perception/AIPerceptionComponent.h"
 #include "BehaviorTree/BlackboardComponent.h"
 #include "BehaviorTree/BehaviorTreeComponent.h"
-
 #include "Blueprint/AIBlueprintHelperLibrary.h"
 
 
@@ -17,7 +16,10 @@ AAIControllerBase::AAIControllerBase(const FObjectInitializer& ObjectInitializer
 	CanSeePlayerKeyName(FName(TEXT("CanSeePlayer"))),
 	CanHearPlayerKeyName(FName(TEXT("CanHearPlayer"))),
 	TargetEnemyKeyName(FName(TEXT("TargetEnemy"))),
-	PatrolLocationKeyName(FName(TEXT("PatrolLocation")))
+	PatrolLocationKeyName(FName(TEXT("PatrolLocation"))),
+	SightConfig(nullptr),
+	HearConfig(nullptr),
+	PredictionConfig(nullptr)
 {
 
 	BehaviorTreeComponent = ObjectInitializer.CreateDefaultSubobject<UBehaviorTreeComponent>(this, TEXT("BehaviorTreeComponent"));
@@ -32,15 +34,17 @@ AAIControllerBase::AAIControllerBase(const FObjectInitializer& ObjectInitializer
 	SightConfig->DetectionByAffiliation.bDetectNeutrals   = true;
 	SightConfig->DetectionByAffiliation.bDetectFriendlies = true;
 	AIPerceptionComponent->ConfigureSense(*SightConfig);
-	AIPerceptionComponent->SetDominantSense(SightConfig->GetSenseImplementation());
 
-	//HearConfig = ObjectInitializer.CreateDefaultSubobject<UAISenseConfig_Hearing>(this, TEXT("HearConfig"));
-	//HearConfig->HearingRange = 1000.f;
-	//HearConfig->DetectionByAffiliation.bDetectEnemies    = true;
-	//HearConfig->DetectionByAffiliation.bDetectFriendlies = true;
-	//HearConfig->DetectionByAffiliation.bDetectNeutrals   = true;
-	//AIPerceptionComponent->ConfigureSense(*HearConfig);
-	//AIPerceptionComponent->SetDominantSense(HearConfig->GetSenseImplementation());
+	HearConfig = ObjectInitializer.CreateDefaultSubobject<UAISenseConfig_Hearing>(this, TEXT("HearConfig"));
+	HearConfig->HearingRange = 1000.f;
+	HearConfig->DetectionByAffiliation.bDetectEnemies    = true;
+	HearConfig->DetectionByAffiliation.bDetectFriendlies = true;
+	HearConfig->DetectionByAffiliation.bDetectNeutrals   = true;
+	AIPerceptionComponent->ConfigureSense(*HearConfig);
+
+	PredictionConfig = ObjectInitializer.CreateDefaultSubobject<UAISenseConfig_Prediction>(this, TEXT("PredictionConfig"));
+	AIPerceptionComponent->ConfigureSense(*PredictionConfig);
+	AIPerceptionComponent->SetDominantSense(SightConfig->GetSenseImplementation());
 }
 
 void AAIControllerBase::Possess(APawn* Pawn)

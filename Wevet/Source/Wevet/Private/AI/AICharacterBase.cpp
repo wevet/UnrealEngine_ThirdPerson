@@ -74,7 +74,7 @@ void AAICharacterBase::BeginPlay()
 void AAICharacterBase::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	if (IsDeath_Implementation())
+	if (ICombatExecuter::Execute_IsDeath(this))
 	{
 		return;
 	}
@@ -176,7 +176,7 @@ void AAICharacterBase::NotifyEquip_Implementation()
 void AAICharacterBase::OnTakeDamage_Implementation(FName BoneName, float Damage, AActor* Actor)
 {
 	Super::OnTakeDamage_Implementation(BoneName, Damage, Actor);
-	if (Super::IsDeath_Implementation())
+	if (ICombatExecuter::Execute_IsDeath(this))
 	{
 		Die_Implementation();
 	}
@@ -275,10 +275,13 @@ void AAICharacterBase::OnSeePawnRecieve(APawn* OtherPawn)
 
 	if (!bSeeTarget)
 	{
-		bSeeTarget = true;
 		if (AMockCharacter* Character = Cast<AMockCharacter>(OtherPawn))
 		{
-			SetSeeTargetActor(Character);
+			if (!ICombatExecuter::Execute_IsDeath(Character))
+			{
+				bSeeTarget = true;
+				SetSeeTargetActor(Character);
+			}
 		}
 	}
 }
@@ -291,20 +294,6 @@ void AAICharacterBase::SetSeeTargetActor(ACharacterBase* NewCharacter)
 	if (!NewCharacter)
 	{
 		BP_FireReleaseReceive();
-	}
-	Super::EquipmentActionMontage();
-}
-
-void AAICharacterBase::SetHearTargetActor(AActor* OtherActor)
-{
-	AIController->SetBlackboardHearActor(bHearTarget);
-	if (OtherActor)
-	{
-		const FVector Start = GetActorLocation();
-		const FVector Target = OtherActor->GetActorLocation();
-		const FRotator LookAtRotation = UKismetMathLibrary::FindLookAtRotation(Start, Target);
-		SetActorRotation(LookAtRotation);
-		AIController->SetBlackboardPatrolLocation(Target);
 	}
 	Super::EquipmentActionMontage();
 }
@@ -327,4 +316,18 @@ void AAICharacterBase::OnHearNoiseRecieve(APawn* OtherActor, const FVector& Loca
 		bHearTarget = true;
 		SetHearTargetActor(OtherActor);
 	}
+}
+
+void AAICharacterBase::SetHearTargetActor(AActor* OtherActor)
+{
+	AIController->SetBlackboardHearActor(bHearTarget);
+	if (OtherActor)
+	{
+		const FVector Start  = GetActorLocation();
+		const FVector Target = OtherActor->GetActorLocation();
+		const FRotator LookAtRotation = UKismetMathLibrary::FindLookAtRotation(Start, Target);
+		SetActorRotation(LookAtRotation);
+		AIController->SetBlackboardPatrolLocation(Target);
+	}
+	Super::EquipmentActionMontage();
 }
