@@ -5,8 +5,8 @@
 #include "CoreMinimal.h"
 #include "CharacterBase.h"
 #include "WeaponBase.h"
+#include "ItemBase.h"
 #include "MockCharacter.generated.h"
-
 
 /**
  * 

@@ -2,6 +2,7 @@
 
 #include "CharacterBase.h"
 #include "WeaponBase.h"
+#include "ItemBase.h"
 #include "CharacterModel.h"
 #include "CharacterPickupComponent.h"
 #include "Engine.h"
@@ -303,7 +304,7 @@ void ACharacterBase::ReleaseWeaponToWorld(const FTransform Transform, AWeaponBas
 	SpawningObject->FinishSpawning(Transform);
 }
 
-AWeaponBase* ACharacterBase::FindByWeapon(EWeaponItemType WeaponItemType)
+AWeaponBase* ACharacterBase::FindByWeapon(const EWeaponItemType WeaponItemType)
 {
 	if (ArrayExtension::NullOrEmpty(WeaponList))
 	{

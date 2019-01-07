@@ -345,6 +345,22 @@ void AWeaponBase::Release(ACharacterBase* NewCharacter)
 	Super::Destroy();
 }
 
+void AWeaponBase::Recover(const FWeaponItemInfo RefWeaponItemInfo)
+{
+	WeaponItemInfo.MaxAmmo += RefWeaponItemInfo.MaxAmmo;
+	NeededAmmo = (WeaponItemInfo.ClipType - WeaponItemInfo.CurrentAmmo);
+	if (WeaponItemInfo.MaxAmmo <= NeededAmmo)
+	{
+		WeaponItemInfo.MaxAmmo = 0;
+		WeaponItemInfo.CurrentAmmo = (WeaponItemInfo.CurrentAmmo + WeaponItemInfo.MaxAmmo);
+	}
+	else
+	{
+		WeaponItemInfo.MaxAmmo = (WeaponItemInfo.MaxAmmo - NeededAmmo);
+		WeaponItemInfo.CurrentAmmo = WeaponItemInfo.ClipType;
+	}
+}
+
 void AWeaponBase::SetCharacterOwner(ACharacterBase* NewCharacter)
 {
 	CharacterOwner = NewCharacter;

@@ -150,6 +150,7 @@ public:
 	virtual void OnReloadInternal();
 	virtual void Take(ACharacterBase* NewCharacter);
 	virtual void Release(ACharacterBase* NewCharacter);
+	virtual void Recover(const FWeaponItemInfo RefWeaponItemInfo);
 
 	const FTransform GetMuzzleTransform()
 	{

@@ -88,7 +88,7 @@ public:
 	virtual FVector BulletTraceForwardLocation() const;
 
 	UFUNCTION(BlueprintCallable, Category = "ACharacterBase|Weapon")
-	AWeaponBase* FindByWeapon(EWeaponItemType WeaponItemType);
+	AWeaponBase* FindByWeapon(const EWeaponItemType WeaponItemType);
 
 	UFUNCTION(BlueprintCallable, Category = "ACharacterBase|Weapon")
 	AWeaponBase* GetSelectedWeapon();

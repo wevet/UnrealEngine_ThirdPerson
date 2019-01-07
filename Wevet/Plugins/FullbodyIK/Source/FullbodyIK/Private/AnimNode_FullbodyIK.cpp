@@ -175,7 +175,11 @@ static FORCEINLINE void MatrixMultiply(float* DstMatrix, const float* SrcMatrix1
 {
 	SCOPE_CYCLE_COUNTER(STAT_FullbodyIK_MatrixMultiply);
 
-	check(Col1 == Row2);
+	//check(Col1 == Row2);
+	if (Col1 != Row2)
+	{
+		return;
+	}
 
 	for (int32 i = 0; i < Row1; ++i)
 	{
@@ -327,9 +331,7 @@ void FAnimNode_FullbodyIK::Initialize_AnyThread(const FAnimationInitializeContex
 	ElementsEtaJJp.SetNumZeroed(BoneAxisCount);
 	ElementsRt2.SetNumZeroed(BoneAxisCount);
 
-	// W0
-	// https://staff.aist.go.jp/t.ihara/weight.html
-	auto W0 = FBuffer(ElementsW0.GetData(), BoneAxisCount);
+	FBuffer W0 = FBuffer(ElementsW0.GetData(), BoneAxisCount);
 	for (int32 i = 0; i < BoneCount; ++i)
 	{
 		int32 BoneIndex = BoneIndices[i];
@@ -348,9 +350,13 @@ void FAnimNode_FullbodyIK::EvaluateSkeletalControl_AnyThread(FComponentSpacePose
 {
 	SCOPE_CYCLE_COUNTER(STAT_FullbodyIK_Eval);
 
-	check(OutBoneTransforms.Num() == 0);
+	//check(OutBoneTransforms.Num() == 0);
+	if (OutBoneTransforms.Num() != 0)
+	{
+		return;
+	}
 
-	if (!Setting)
+	if (Setting == nullptr)
 	{
 		return;
 	}
@@ -507,7 +513,6 @@ void FAnimNode_FullbodyIK::EvaluateSkeletalControl_AnyThread(FComponentSpacePose
 				{
 					const FSolverInternal& SolverInternal = SolverInternals[Effector.EffectorBoneIndex];
 
-					// update transform
 					SolveSolver(0, FTransform::Identity,
 						[&](int32 BoneIndex, FVector& SavedOffsetLocation, FVector& CurrentOffsetLocation)
 						{
@@ -538,7 +543,6 @@ void FAnimNode_FullbodyIK::EvaluateSkeletalControl_AnyThread(FComponentSpacePose
 				{
 					const FSolverInternal& SolverInternal = SolverInternals[Effector.EffectorBoneIndex];
 
-					// update transform
 					SolveSolver(0, FTransform::Identity,
 						[&](int32 BoneIndex, FVector& SavedOffsetLocation, FVector& CurrentOffsetLocation)
 						{
@@ -606,7 +610,6 @@ void FAnimNode_FullbodyIK::EvaluateSkeletalControl_AnyThread(FComponentSpacePose
 					const FSolverInternal& SolverInternal = SolverInternals[Effector.EffectorBoneIndex];
 					FTransform InitWorldTransform = SolverInternal.InitComponentTransform * CachedComponentTransform;
 
-					// Transform update
 					SolveSolver(0, FTransform::Identity,
 						[&](int32 BoneIndex, FVector& SavedOffsetLocation, FVector& CurrentOffsetLocation)
 						{
@@ -638,7 +641,6 @@ void FAnimNode_FullbodyIK::EvaluateSkeletalControl_AnyThread(FComponentSpacePose
 					const FSolverInternal& SolverInternal = SolverInternals[Effector.EffectorBoneIndex];
 					FTransform InitWorldTransform = SolverInternal.InitComponentTransform * CachedComponentTransform;
 
-					// Transform update
 					SolveSolver(0, FTransform::Identity,
 						[&](int32 BoneIndex, FVector& SavedOffsetLocation, FVector& CurrentOffsetLocation)
 						{
@@ -1011,13 +1013,14 @@ void FAnimNode_FullbodyIK::InitializeBoneReferences(const FBoneContainer& Requir
 
 FFullbodyIKSolver FAnimNode_FullbodyIK::GetSolver(FName BoneName) const
 {
-	check(Setting);
-
-	for (FFullbodyIKSolver& Solver : Setting->Solvers)
+	if (Setting)
 	{
-		if (Solver.BoneName == BoneName)
+		for (FFullbodyIKSolver& Solver : Setting->Solvers)
 		{
-			return Solver;
+			if (Solver.BoneName == BoneName)
+			{
+				return Solver;
+			}
 		}
 	}
 

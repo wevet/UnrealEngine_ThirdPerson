@@ -5,7 +5,7 @@
 #include "Engine.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
-#include "ShaderCompiler.h"
+//#include "ShaderCompiler.h"
 
 AMockCharacter::AMockCharacter(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {
@@ -278,6 +278,29 @@ void AMockCharacter::OnPickupItemExecuter_Implementation(AActor* Actor)
 		Weapon = nullptr;
 		Actor  = nullptr;
 	}
+
+	if (AItemBase* Item = Cast<AItemBase>(Actor))
+	{
+		const EItemType ItemType = Item->GetItemType();
+		switch (ItemType)
+		{
+		case EItemType::Weapon:
+			{
+				const FWeaponItemInfo ItemInfo = Item->WeaponItemInfo;
+				if (auto Weapon = Super::FindByWeapon(ItemInfo.WeaponItemType))
+				{
+					Weapon->Recover(ItemInfo);
+					Item->TakeResult();
+					Item  = nullptr;
+					Actor = nullptr;
+				}
+			}
+			break;
+		case EItemType::Health:
+			// @TODO
+			break;
+		}
+	}
 	Super::OnPickupItemExecuter_Implementation(Actor);
 }
 
@@ -292,7 +315,7 @@ void AMockCharacter::OnTakeDamage_Implementation(FName BoneName, float Damage, A
 
 void AMockCharacter::NotifyEquip_Implementation()
 {
-	//FAttachmentTransformRules& AttachmentRules = FAttachmentTransformRules()
+	//const FAttachmentTransformRules& AttachmentRules(EAttachmentRule::SnapToTarget, true);
 
 	if (Super::SelectedWeapon) 
 	{
