@@ -51,6 +51,7 @@ public:
 	virtual void NotifyEquip_Implementation() override;
 	virtual FVector BulletTraceRelativeLocation() const override;
 	virtual FVector BulletTraceForwardLocation() const override;
+	virtual void EquipmentActionMontage() override;
 
 protected:
 	virtual void UpdateWeapon();

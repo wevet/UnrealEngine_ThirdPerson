@@ -37,7 +37,7 @@ void ACharacterBase::OnConstruction(const FTransform& Transform)
 
 void ACharacterBase::BeginDestroy()
 {
-	if (CharacterModel)
+	if (CharacterModel && CharacterModel->IsValidLowLevel())
 	{
 		CharacterModel->ConditionalBeginDestroy();
 	}
@@ -213,6 +213,11 @@ void ACharacterBase::Die_Implementation()
 		return;
 	}
 
+	bDied = true;
+	if (CharacterModel && CharacterModel->IsValidLowLevel())
+	{
+		CharacterModel->ConditionalBeginDestroy();
+	}
 	SelectedWeapon = nullptr;
 	Super::GetMesh()->SetAllBodiesSimulatePhysics(true);
 	Super::GetMesh()->SetSimulatePhysics(true);
@@ -240,7 +245,6 @@ void ACharacterBase::Die_Implementation()
 		}
 		WeaponList.Empty();
 	}
-	bDied = true;
 }
 
 void ACharacterBase::Equipment_Implementation()
@@ -394,10 +398,6 @@ void ACharacterBase::ReleaseObjects()
 {
 }
 
-/*********************************
-CharacterBaseClass
-AnimationMontage Event
-*********************************/
 void ACharacterBase::EquipmentActionMontage()
 {
 	if (ArrayExtension::NullOrEmpty(WeaponList))
@@ -408,13 +408,43 @@ void ACharacterBase::EquipmentActionMontage()
 	PlayAnimMontage(EquipMontage, Delay);
 }
 
+void ACharacterBase::UnEquipmentActionMontage()
+{
+	if (ArrayExtension::NullOrEmpty(WeaponList))
+	{
+		return;
+	}
+	const float Delay = 1.6f;
+	PlayAnimMontage(UnEquipMontage, Delay);
+}
+
 void ACharacterBase::FireActionMontage()
 {
 	if (ArrayExtension::NullOrEmpty(WeaponList) || SelectedWeapon == nullptr)
 	{
 		return;
 	}
-	PlayAnimMontage(FireMontage);
+	EWeaponItemType WeaponType = SelectedWeapon->WeaponItemInfo.WeaponItemType;
+	switch (WeaponType)
+	{
+		case EWeaponItemType::Rifle:
+		case EWeaponItemType::Sniper:
+		{
+			PlayAnimMontage(FireMontage);
+		}
+		break;
+		case EWeaponItemType::Bomb:
+		{
+			//
+		}
+		break;
+		case EWeaponItemType::Pistol:
+		{
+			//
+		}
+		break;
+	}
+
 }
 
 void ACharacterBase::ReloadActionMontage()
@@ -423,5 +453,26 @@ void ACharacterBase::ReloadActionMontage()
 	{
 		return;
 	}
-	PlayAnimMontage(ReloadMontage);
+
+	EWeaponItemType WeaponType = SelectedWeapon->WeaponItemInfo.WeaponItemType;
+	switch (WeaponType)
+	{
+		case EWeaponItemType::Rifle:
+		case EWeaponItemType::Sniper:
+		{
+			PlayAnimMontage(ReloadMontage);
+		}
+		break;
+		case EWeaponItemType::Bomb:
+		{
+			//
+		}
+		break;
+		case EWeaponItemType::Pistol:
+		{
+			//
+		}
+		break;
+	}
+
 }

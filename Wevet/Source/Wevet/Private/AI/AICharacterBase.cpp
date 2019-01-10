@@ -268,16 +268,16 @@ void AAICharacterBase::OnSeePawnRecieve(APawn* OtherPawn)
 		return;
 	}
 
-	LastSeenTime = GetWorld()->GetTimeSeconds();
-	UE_LOG(LogWevetClient, Warning, TEXT("See\n from : %s \n to : %s \n"),
-		*GetName(),
-		*OtherPawn->GetName());
-
-	if (!bSeeTarget)
+	if (AMockCharacter* Character = Cast<AMockCharacter>(OtherPawn))
 	{
-		if (AMockCharacter* Character = Cast<AMockCharacter>(OtherPawn))
+		if (!ICombatExecuter::Execute_IsDeath(Character))
 		{
-			if (!ICombatExecuter::Execute_IsDeath(Character))
+			LastSeenTime = GetWorld()->GetTimeSeconds();
+			UE_LOG(LogWevetClient, Warning, TEXT("See\n from : %s \n to : %s \n"),
+				*GetName(),
+				*OtherPawn->GetName());
+
+			if (!bSeeTarget)
 			{
 				bSeeTarget = true;
 				SetSeeTargetActor(Character);

@@ -97,7 +97,6 @@ public:
 		return Ar;
 	}
 
-public:
 	void CopyTo(const FWeaponItemInfo& InWeaponItemInfo)
 	{
 		UnEquipSocketName = InWeaponItemInfo.UnEquipSocketName;
@@ -114,8 +113,8 @@ public:
 };
 
 
-USTRUCT()
-struct FTakeHitInfo
+USTRUCT(BlueprintType)
+struct WEVET_API FTakeHitInfo
 {
 	GENERATED_USTRUCT_BODY()
 

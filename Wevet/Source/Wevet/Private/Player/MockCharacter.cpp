@@ -64,7 +64,7 @@ void AMockCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInpu
 	PlayerInputComponent->BindAction("PickupObjects",  IE_Pressed, this, &AMockCharacter::PickupObjects);
 
 	// combat action
-	PlayerInputComponent->BindAction("EquipWeapon", IE_Pressed, this, &ACharacterBase::EquipmentActionMontage);
+	PlayerInputComponent->BindAction("EquipWeapon", IE_Pressed, this, &AMockCharacter::EquipmentActionMontage);
 	PlayerInputComponent->BindAction("SwapWeapon",  IE_Pressed, this, &AMockCharacter::UpdateWeapon);
 	PlayerInputComponent->BindAction("Fire", IE_Pressed,   this, &AMockCharacter::FirePressed);
 	PlayerInputComponent->BindAction("Fire", IE_Released,  this, &AMockCharacter::FireReleassed);
@@ -274,8 +274,7 @@ void AMockCharacter::OnPickupItemExecuter_Implementation(AActor* Actor)
 		{
 			Super::WeaponList.Emplace(SpawningObject);
 		}
-		Weapon->Destroy();
-		Weapon = nullptr;
+		Weapon->Release(nullptr);
 		Actor  = nullptr;
 	}
 
@@ -291,7 +290,6 @@ void AMockCharacter::OnPickupItemExecuter_Implementation(AActor* Actor)
 				{
 					Weapon->Recover(ItemInfo);
 					Item->TakeResult();
-					Item  = nullptr;
 					Actor = nullptr;
 				}
 			}
@@ -315,8 +313,6 @@ void AMockCharacter::OnTakeDamage_Implementation(FName BoneName, float Damage, A
 
 void AMockCharacter::NotifyEquip_Implementation()
 {
-	//const FAttachmentTransformRules& AttachmentRules(EAttachmentRule::SnapToTarget, true);
-
 	if (Super::SelectedWeapon) 
 	{
 		// detach weapon
@@ -354,6 +350,18 @@ FVector AMockCharacter::BulletTraceRelativeLocation() const
 FVector AMockCharacter::BulletTraceForwardLocation() const
 {
 	return GetFollowCameraComponent()->GetForwardVector();
+}
+
+void AMockCharacter::EquipmentActionMontage()
+{
+	if (SelectedWeapon)
+	{
+		Super::UnEquipmentActionMontage();
+	}
+	else
+	{
+		Super::EquipmentActionMontage();
+	}
 }
 
 void AMockCharacter::ReleaseWeapon()

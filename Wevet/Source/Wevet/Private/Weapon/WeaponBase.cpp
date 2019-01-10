@@ -342,7 +342,11 @@ void AWeaponBase::Release(ACharacterBase* NewCharacter)
 	//	SphereComponent->OnComponentBeginOverlap.AddDynamic(this, &AWeaponBase::BeginOverlapRecieve);
 	//	SphereComponent->OnComponentEndOverlap.AddDynamic(this, &AWeaponBase::EndOverlapRecieve);
 	//}
-	Super::Destroy();
+	if (IsValidLowLevel())
+	{
+		Super::Destroy();
+		Super::ConditionalBeginDestroy();
+	}
 }
 
 void AWeaponBase::Recover(const FWeaponItemInfo RefWeaponItemInfo)

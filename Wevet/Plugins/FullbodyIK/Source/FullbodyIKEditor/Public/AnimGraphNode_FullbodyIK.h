@@ -27,33 +27,22 @@ class UAnimGraphNode_FullbodyIK : public UAnimGraphNode_SkeletalControlBase
 	bool bEnableDebugDraw;
 
 public:
-	// UObject interface
 	virtual void Serialize(FArchive& Ar) override;
-	// End of UObject interface
 
-	// UEdGraphNode interface
 	virtual FText GetNodeTitle(ENodeTitleType::Type TitleType) const override;
 	virtual FText GetTooltipText() const override;
-	// End of UEdGraphNode interface
 
-	// UAnimGraphNode_Base interface
 	virtual void CustomizeDetails(class IDetailLayoutBuilder& DetailBuilder) override;
 	virtual FEditorModeID GetEditorMode() const;
 	virtual void CopyNodeDataToPreviewNode(FAnimNode_Base* InPreviewNode) override;
 	virtual void CopyPinDefaultsToNodeData(UEdGraphPin* InPin) override;
-	// End of UAnimGraphNode_Base interface
 
-	// UAnimGraphNode_SkeletalControlBase interface
 	virtual const FAnimNode_SkeletalControlBase* GetNode() const override { return &Node; }
-	// End of UAnimGraphNode_SkeletalControlBase interface
 
 protected:
-	// UAnimGraphNode_SkeletalControlBase interface
 	virtual void Draw(FPrimitiveDrawInterface* PDI, USkeletalMeshComponent* SkelMeshComp) const override;
 	virtual FText GetControllerDescription() const override;
-	// End of UAnimGraphNode_SkeletalControlBase interface
 
 private:
-	/** Constructing FText strings can be costly, so we cache the node's title */
 	FNodeTitleTextTable CachedNodeTitles;
 };

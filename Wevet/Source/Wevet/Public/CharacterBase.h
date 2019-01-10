@@ -136,6 +136,9 @@ protected:
 	class UAnimMontage* EquipMontage;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ACharacterBase|Asset")
+	class UAnimMontage* UnEquipMontage;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ACharacterBase|Asset")
 	class UAnimMontage* FireMontage;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ACharacterBase|Asset")
@@ -198,6 +201,7 @@ public:
 
 public:
 	virtual void EquipmentActionMontage();
+	virtual void UnEquipmentActionMontage();
 	virtual void FireActionMontage();
 	virtual void ReloadActionMontage();
 

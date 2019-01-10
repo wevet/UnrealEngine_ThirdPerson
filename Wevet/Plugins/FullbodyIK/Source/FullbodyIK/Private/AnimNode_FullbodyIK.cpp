@@ -976,18 +976,18 @@ void FAnimNode_FullbodyIK::EvaluateSkeletalControl_AnyThread(FComponentSpacePose
 		OutBoneTransforms.Add(FBoneTransform(FCompactPoseBoneIndex(BoneIndex), SolverInternals[BoneIndex].ComponentTransform));
 	}
 
-	//for (const FName& BoneName : DebugDumpBoneNames)
-	//{
-	//	int32 BoneIndex = SkeletalMeshComponent->GetBoneIndex(BoneName);
-	//	if (SolverInternals.Contains(BoneIndex))
-	//	{
-	//		UE_LOG(LogTemp, Log, TEXT("%s (%d) -----------------"), *BoneName.ToString(), BoneIndex);
-	//		UE_LOG(LogTemp, Log, TEXT("ComponentSpace : %s"), *SolverInternals[BoneIndex].ComponentTransform.ToString());
-	//		UE_LOG(LogTemp, Log, TEXT("    LocalSpace : %s"), *SolverInternals[BoneIndex].LocalTransform.ToString());
-	//		UE_LOG(LogTemp, Log, TEXT("       Rotator : %s"), *SolverInternals[BoneIndex].LocalTransform.Rotator().ToString());
-	//		UE_LOG(LogTemp, Log, TEXT(""));
-	//	}
-	//}
+	for (const FName& BoneName : DebugDumpBoneNames)
+	{
+		int32 BoneIndex = SkeletalMeshComponent->GetBoneIndex(BoneName);
+		if (SolverInternals.Contains(BoneIndex))
+		{
+			UE_LOG(LogTemp, Log, TEXT("%s (%d) -----------------"), *BoneName.ToString(), BoneIndex);
+			UE_LOG(LogTemp, Log, TEXT("ComponentSpace : %s"), *SolverInternals[BoneIndex].ComponentTransform.ToString());
+			UE_LOG(LogTemp, Log, TEXT("    LocalSpace : %s"), *SolverInternals[BoneIndex].LocalTransform.ToString());
+			UE_LOG(LogTemp, Log, TEXT("       Rotator : %s"), *SolverInternals[BoneIndex].LocalTransform.Rotator().ToString());
+			UE_LOG(LogTemp, Log, TEXT(""));
+		}
+	}
 
 	//if (DebugShowCenterOfMassRadius > 0.f)
 	//{
