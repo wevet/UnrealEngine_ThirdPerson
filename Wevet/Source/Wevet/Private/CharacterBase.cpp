@@ -106,10 +106,6 @@ void ACharacterBase::OnPickupItemExecuter_Implementation(AActor* Actor)
 	}
 }
 
-void ACharacterBase::NotifyEquip_Implementation() 
-{
-}
-
 void ACharacterBase::ReportNoise_Implementation(USoundBase* Sound, float Volume)
 {
 	UWorld* const World = GetWorld();
@@ -214,10 +210,6 @@ void ACharacterBase::Die_Implementation()
 	}
 
 	bDied = true;
-	if (CharacterModel && CharacterModel->IsValidLowLevel())
-	{
-		CharacterModel->ConditionalBeginDestroy();
-	}
 	SelectedWeapon = nullptr;
 	Super::GetMesh()->SetAllBodiesSimulatePhysics(true);
 	Super::GetMesh()->SetSimulatePhysics(true);
@@ -285,12 +277,6 @@ void ACharacterBase::ReleaseWeaponToWorld(const FTransform Transform, AWeaponBas
 	{
 		return;
 	}
-
-	//Weapon->OnFireRelease_Implementation();
-	//Weapon->SetCharacterOwner(nullptr);
-	//Weapon->SetEquip(false);
-	//Weapon->DetachRootComponentFromParent();
-	//Weapon->OnVisible_Implementation();
 
 	const FWeaponItemInfo WeaponItemInfo = Weapon->WeaponItemInfo;
 	TSubclassOf<class AWeaponBase> WeaponClass = WeaponItemInfo.WeaponClass;

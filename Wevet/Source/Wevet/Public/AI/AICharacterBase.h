@@ -30,14 +30,15 @@ protected:
 
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Components, meta = (AllowPrivateAccess = "true"))
-	UPawnSensingComponent* PawnSensingComponent;
+	class UPawnSensingComponent* PawnSensingComponent;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Components, meta = (AllowPrivateAccess = "true"))
-	UWidgetComponent* WidgetComponent;
+	class UWidgetComponent* WidgetComponent;
 
 public:
 	virtual void Die_Implementation() override;
-	virtual void NotifyEquip_Implementation() override;
+	virtual void Equipment_Implementation() override;
+	virtual void UnEquipment_Implementation() override;
 	virtual void OnTakeDamage_Implementation(FName BoneName, float Damage, AActor* Actor) override;
 	virtual void CreateWayPointList(TArray<AWayPointBase*>& OutWayPointList);
 	virtual void CreateWeaponInstance();

@@ -19,10 +19,6 @@ class WEVET_API ICombatExecuter
 	GENERATED_IINTERFACE_BODY()
 
 public:
-	// AnimBP NotifyEvent
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "ICombatExecuter")
-	void NotifyEquip();
-
 	// TakeDamage
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "ICombatExecuter")
 	void OnTakeDamage(FName BoneName, float Damage, AActor* Actor);

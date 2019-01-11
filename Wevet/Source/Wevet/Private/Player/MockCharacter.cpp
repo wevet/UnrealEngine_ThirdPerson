@@ -64,7 +64,7 @@ void AMockCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInpu
 	PlayerInputComponent->BindAction("PickupObjects",  IE_Pressed, this, &AMockCharacter::PickupObjects);
 
 	// combat action
-	PlayerInputComponent->BindAction("EquipWeapon", IE_Pressed, this, &AMockCharacter::EquipmentActionMontage);
+	PlayerInputComponent->BindAction("EquipWeapon", IE_Pressed, this, &AMockCharacter::EquipmentHandleEvent);
 	PlayerInputComponent->BindAction("SwapWeapon",  IE_Pressed, this, &AMockCharacter::UpdateWeapon);
 	PlayerInputComponent->BindAction("Fire", IE_Pressed,   this, &AMockCharacter::FirePressed);
 	PlayerInputComponent->BindAction("Fire", IE_Released,  this, &AMockCharacter::FireReleassed);
@@ -311,35 +311,30 @@ void AMockCharacter::OnTakeDamage_Implementation(FName BoneName, float Damage, A
 	}
 }
 
-void AMockCharacter::NotifyEquip_Implementation()
+void AMockCharacter::Equipment_Implementation()
 {
-	if (Super::SelectedWeapon) 
-	{
-		// detach weapon
-		Super::SelectedWeapon->AttachToComponent(
-			Super::GetMesh(), 
-			{ EAttachmentRule::SnapToTarget, true }, 
-			Super::SelectedWeapon->WeaponItemInfo.UnEquipSocketName);
-		
-		Super::UnEquipment_Implementation();
-		GetCharacterMovement()->bOrientRotationToMovement = true;
-		Super::bUseControllerRotationYaw = false;
-		Super::SelectedWeapon = nullptr;
-	}  
-	else
-	{
-		// attach weapon
-		Super::SelectedWeapon = WeaponList[WeaponCurrentIndex];
-		Super::SelectedWeapon->AttachToComponent(
-			Super::GetMesh(), 
-			{ EAttachmentRule::SnapToTarget, true }, 
-			Super::SelectedWeapon->WeaponItemInfo.EquipSocketName);
+	SelectedWeapon = WeaponList[WeaponCurrentIndex];
+	check(SelectedWeapon);
+	Super::Equipment_Implementation();
+	SelectedWeapon->AttachToComponent(
+		Super::GetMesh(),
+		{ EAttachmentRule::SnapToTarget, true },
+		Super::SelectedWeapon->WeaponItemInfo.EquipSocketName);
+	GetCharacterMovement()->bOrientRotationToMovement = false;
+	Super::bUseControllerRotationYaw = true;
+}
 
-		Super::Equipment_Implementation();
-		GetCharacterMovement()->bOrientRotationToMovement = false;
-		Super::bUseControllerRotationYaw = true;
-	}
-	Super::NotifyEquip_Implementation();
+void AMockCharacter::UnEquipment_Implementation()
+{
+	check(SelectedWeapon);
+	Super::UnEquipment_Implementation();
+	SelectedWeapon->AttachToComponent(
+		Super::GetMesh(),
+		{ EAttachmentRule::SnapToTarget, true },
+		SelectedWeapon->WeaponItemInfo.UnEquipSocketName);
+	GetCharacterMovement()->bOrientRotationToMovement = true;
+	Super::bUseControllerRotationYaw = false;
+	SelectedWeapon = nullptr;
 }
 
 FVector AMockCharacter::BulletTraceRelativeLocation() const
@@ -352,7 +347,8 @@ FVector AMockCharacter::BulletTraceForwardLocation() const
 	return GetFollowCameraComponent()->GetForwardVector();
 }
 
-void AMockCharacter::EquipmentActionMontage()
+//‘•’…,”ñ‘•’…‚Ì”»’è
+void AMockCharacter::EquipmentHandleEvent()
 {
 	if (SelectedWeapon)
 	{

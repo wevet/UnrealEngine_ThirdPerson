@@ -5,6 +5,7 @@
 #include "SceneManagement.h"
 #include "AnimInstanceInterface_FullbodyIK.h"
 #include "DrawDebugHelpers.h"
+#include <iostream>
 
 DECLARE_CYCLE_STAT(TEXT("FullbodyIK Eval"), STAT_FullbodyIK_Eval, STATGROUP_Anim);
 DECLARE_CYCLE_STAT(TEXT("FullbodyIK MatrixInverse"), STAT_FullbodyIK_MatrixInverse, STATGROUP_Anim);
@@ -22,12 +23,22 @@ static const int32 AXIS_COUNT = 3;
 
 static FORCEINLINE float SinD(float X) 
 { 
-	return FMath::Sin(FMath::DegreesToRadians(X)); 
+	auto Value = FMath::Sin(FMath::DegreesToRadians(X));
+	if (FMath::IsNaN(Value))
+	{
+		return Value;
+	}
+	return 0.f; 
 }
 
 static FORCEINLINE float CosD(float X) 
 {
-	return FMath::Cos(FMath::DegreesToRadians(X)); 
+	auto Value = FMath::Cos(FMath::DegreesToRadians(X)); 
+	if (FMath::IsNaN(Value))
+	{
+		return Value;
+	}
+	return 0.f;
 }
 
 static FORCEINLINE FMatrix RotX(float Roll)
@@ -229,6 +240,7 @@ static FORCEINLINE float GetMappedRangeEaseInClamped(
 	const float& Value)
 {
 	float Pct = FMath::Clamp((Value - InRangeMin) / (InRangeMax - InRangeMin), 0.f, 1.f);
+	Pct = FMath::IsNaN(Pct) ? Pct : 0.f;
 	return FMath::InterpEaseIn(OutRangeMin, OutRangeMax, Pct, Exp);
 }
 #pragma endregion
@@ -287,7 +299,7 @@ void FAnimNode_FullbodyIK::Initialize_AnyThread(const FAnimationInitializeContex
 			SolverInternal.X = Solver.X;
 			SolverInternal.Y = Solver.Y;
 			SolverInternal.Z = Solver.Z;
-
+			
 			if (ParentBoneIndex >= 0)
 			{
 				if (!SolverTree.Contains(ParentBoneIndex))
@@ -876,7 +888,7 @@ void FAnimNode_FullbodyIK::EvaluateSkeletalControl_AnyThread(FComponentSpacePose
 						{
 							CurrentAngle += FMath::RadiansToDegrees(Rt1.Ref(i * AXIS_COUNT + Axis));
 							float DeltaAngle = FRotator::NormalizeAxis(CurrentAngle - InputAngle);
-							if (!FMath::IsNearlyZero(DeltaAngle))
+							if (FMath::IsNaN(DeltaAngle) && !FMath::IsNearlyZero(DeltaAngle))
 							{
 								Eta.Ref(i * AXIS_COUNT + Axis) = GetMappedRangeEaseInClamped(
 									0, 90,
@@ -989,15 +1001,15 @@ void FAnimNode_FullbodyIK::EvaluateSkeletalControl_AnyThread(FComponentSpacePose
 		}
 	}
 
-	//if (DebugShowCenterOfMassRadius > 0.f)
-	//{
-	//	DrawDebugSphere(SkeletalMeshComponent->GetWorld(), CenterOfMass, DebugShowCenterOfMassRadius, 16, FColor::Red);
-	//}
+	if (DebugShowCenterOfMassRadius > 0.f)
+	{
+		DrawDebugSphere(SkeletalMeshComponent->GetWorld(), CenterOfMass, DebugShowCenterOfMassRadius, 16, FColor::Red);
+	}
 
-	//if (bDebugShowEffectiveCount)
-	//{
-	//	GEngine->AddOnScreenDebugMessage(-1, 0.1f, FColor::Red, FString::Printf(TEXT("Effective Count : %d"), EffectiveCount));
-	//}
+	if (bDebugShowEffectiveCount)
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 0.1f, FColor::Red, FString::Printf(TEXT("Effective Count : %d"), EffectiveCount));
+	}
 }
 
 bool FAnimNode_FullbodyIK::IsValidToEvaluate(

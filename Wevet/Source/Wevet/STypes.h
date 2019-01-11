@@ -30,6 +30,15 @@ enum class EWeaponItemType : uint8
 	Bomb   UMETA(DisplayName = "Bomb"),
 };
 
+UENUM()
+enum class EWeaponSizeType : uint8
+{
+	None   UMETA(DisplayName = "None"),
+	Short  UMETA(DisplayName = "Short"),
+	Middle UMETA(DisplayName = "Middle"),
+	Large  UMETA(DisplayName = "Large"),
+};
+
 UENUM(BlueprintType)
 enum class EItemType : uint8
 {
@@ -74,6 +83,8 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
 	FName UnEquipSocketName;
+
+	EWeaponSizeType SizeType;
 
 	FWeaponItemInfo()
 	{

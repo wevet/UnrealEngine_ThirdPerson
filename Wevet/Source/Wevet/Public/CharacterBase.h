@@ -67,10 +67,6 @@ public:
 	void UnEquipment();
 	virtual void UnEquipment_Implementation() override;
 
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "ACharacterBase|ICombatExecuter")
-	void NotifyEquip();
-	virtual void NotifyEquip_Implementation() override;
-
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "ACharacterBase|IInteractionExecuter")
 	void ReportNoise(USoundBase* Sound, float Volume);
 	virtual void ReportNoise_Implementation(USoundBase* Sound, float Volume) override;
@@ -86,32 +82,20 @@ public:
 public:
 	virtual FVector BulletTraceRelativeLocation() const;
 	virtual FVector BulletTraceForwardLocation() const;
-
-	UFUNCTION(BlueprintCallable, Category = "ACharacterBase|Weapon")
 	AWeaponBase* FindByWeapon(const EWeaponItemType WeaponItemType);
+	UCharacterModel* GetCharacterModel() const;
 
 	UFUNCTION(BlueprintCallable, Category = "ACharacterBase|Weapon")
 	AWeaponBase* GetSelectedWeapon();
 
-	UCharacterModel* GetCharacterModel() const;
-
-	UFUNCTION(BlueprintCallable, Category = "ACharacterBase|Weapon")
 	const TArray<AWeaponBase*>& GetWeaponList();
-
-	UFUNCTION(BlueprintCallable, Category = "ACharacterBase|Variable")
 	const bool HasCrouch();
-
-	UFUNCTION(BlueprintCallable, Category = "ACharacterBase|Variable")
 	const bool HasSprint();
-
-	UFUNCTION(BlueprintCallable, Category = "ACharacterBase|Variable")
 	virtual const bool HasEquipWeapon();
+	virtual void ReleaseWeaponToWorld(const FTransform Transform, AWeaponBase* &Weapon);
 
 	UFUNCTION(BlueprintCallable, Category = "ACharacterBase|CharacterModel")
 	float GetHealthToWidget() const;
-
-	UFUNCTION(BlueprintCallable, Category = "ACharacterBase|Variable")
-	virtual void ReleaseWeaponToWorld(const FTransform Transform, AWeaponBase* &Weapon);
 
 	FORCEINLINE class UAudioComponent* GetAudioComponent() const { return AudioComponent; }
 	FORCEINLINE class UCharacterPickupComponent* GetPickupComponent() const { return PickupComponent; }
@@ -132,16 +116,17 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ACharacterBase|Weapon")
 	TArray<AWeaponBase*> WeaponList;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ACharacterBase|Asset")
+	//Rifle,SniperRidle,Rancher etc..
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ACharacterBase|Asset|LargeWeapon")
 	class UAnimMontage* EquipMontage;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ACharacterBase|Asset")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ACharacterBase|Asset|LargeWeapon")
 	class UAnimMontage* UnEquipMontage;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ACharacterBase|Asset")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ACharacterBase|Asset|LargeWeapon")
 	class UAnimMontage* FireMontage;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ACharacterBase|Asset")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ACharacterBase|Asset|LargeWeapon")
 	class UAnimMontage* ReloadMontage;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ACharacterBase|Asset")

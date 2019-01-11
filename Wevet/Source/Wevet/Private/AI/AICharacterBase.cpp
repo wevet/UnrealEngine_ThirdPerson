@@ -89,12 +89,10 @@ void AAICharacterBase::MainLoop(float DeltaTime)
 		return;
 	}
 
-	if (Super::SelectedWeapon && Super::SelectedWeapon->bEmpty)
+	if ((Super::SelectedWeapon && Super::SelectedWeapon->bEmpty)
+		|| (Super::SelectedWeapon && Super::SelectedWeapon->bReload))
 	{
-	}
-
-	if (Super::SelectedWeapon && Super::SelectedWeapon->bReload)
-	{
+		return;
 	}
 
 	if (bSeeTarget && (World->TimeSeconds - LastSeenTime) > SenseTimeOut)
@@ -142,35 +140,31 @@ void AAICharacterBase::Die_Implementation()
 
 }
 
-void AAICharacterBase::NotifyEquip_Implementation()
+void AAICharacterBase::Equipment_Implementation()
 {
-	if (Super::SelectedWeapon == nullptr)
-	{
-		return;
-	}
-
 	if (!HasEquipWeapon())
 	{
+		check(SelectedWeapon);
+		Super::Equipment_Implementation();
 		Super::SelectedWeapon->AttachToComponent(
 			Super::GetMesh(),
 			{ EAttachmentRule::SnapToTarget, true },
 			Super::SelectedWeapon->WeaponItemInfo.EquipSocketName);
-		Super::Equipment_Implementation();
 	}
-	else
-	{
-		if (bSeeTarget || bHearTarget)
-		{
-			return;
-		}
-		Super::SelectedWeapon->AttachToComponent(
-			Super::GetMesh(),
-			{ EAttachmentRule::SnapToTarget, true },
-			Super::SelectedWeapon->WeaponItemInfo.UnEquipSocketName);
-		Super::UnEquipment_Implementation();
-	}
-	Super::NotifyEquip_Implementation();
+}
 
+void AAICharacterBase::UnEquipment_Implementation()
+{
+	if (bSeeTarget || bHearTarget)
+	{
+		return;
+	}
+	check(SelectedWeapon);
+	Super::UnEquipment_Implementation();
+	Super::SelectedWeapon->AttachToComponent(
+		Super::GetMesh(),
+		{ EAttachmentRule::SnapToTarget, true },
+		Super::SelectedWeapon->WeaponItemInfo.UnEquipSocketName);
 }
 
 void AAICharacterBase::OnTakeDamage_Implementation(FName BoneName, float Damage, AActor* Actor)
@@ -182,12 +176,10 @@ void AAICharacterBase::OnTakeDamage_Implementation(FName BoneName, float Damage,
 	}
 	else 
 	{
-		if (ACharacterBase* Character = Cast<ACharacterBase>(Actor))
-		{
-			UE_LOG(LogWevetClient, Log, TEXT("Pained\n from : %s\n to : %s\n"), 
-				*Character->GetName(), 
-				*GetName());
-		}
+		//if (ACharacterBase* Character = Cast<ACharacterBase>(Actor))
+		//{
+		//	UE_LOG(LogWevetClient, Log, TEXT("Pained\n from : %s\n to : %s\n"), *Character->GetName(), *GetName());
+		//}
 	}
 }
 
@@ -273,9 +265,7 @@ void AAICharacterBase::OnSeePawnRecieve(APawn* OtherPawn)
 		if (!ICombatExecuter::Execute_IsDeath(Character))
 		{
 			LastSeenTime = GetWorld()->GetTimeSeconds();
-			UE_LOG(LogWevetClient, Warning, TEXT("See\n from : %s \n to : %s \n"),
-				*GetName(),
-				*OtherPawn->GetName());
+			//UE_LOG(LogWevetClient, Warning, TEXT("See\n from : %s \n to : %s \n"), *GetName(), *OtherPawn->GetName());
 
 			if (!bSeeTarget)
 			{
@@ -294,6 +284,8 @@ void AAICharacterBase::SetSeeTargetActor(ACharacterBase* NewCharacter)
 	if (!NewCharacter)
 	{
 		BP_FireReleaseReceive();
+		Super::UnEquipmentActionMontage();
+		return;
 	}
 	Super::EquipmentActionMontage();
 }
@@ -306,10 +298,7 @@ void AAICharacterBase::OnHearNoiseRecieve(APawn* OtherActor, const FVector& Loca
 	}
 
 	LastHeardTime = GetWorld()->GetTimeSeconds();
-	UE_LOG(LogWevetClient, Warning, TEXT("Heard\n from : %s \n to : %s \n Vol : %f"), 
-		*GetName(), 
-		*OtherActor->GetName(), 
-		Volume);
+	//UE_LOG(LogWevetClient, Warning, TEXT("Heard\n from : %s \n to : %s \n Vol : %f"), *GetName(), *OtherActor->GetName(), Volume);
 
 	if (!bHearTarget)
 	{
@@ -328,6 +317,10 @@ void AAICharacterBase::SetHearTargetActor(AActor* OtherActor)
 		const FRotator LookAtRotation = UKismetMathLibrary::FindLookAtRotation(Start, Target);
 		SetActorRotation(LookAtRotation);
 		AIController->SetBlackboardPatrolLocation(Target);
+		Super::EquipmentActionMontage();
 	}
-	Super::EquipmentActionMontage();
+	else
+	{
+		Super::UnEquipmentActionMontage();
+	}
 }

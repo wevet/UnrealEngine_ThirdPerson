@@ -48,10 +48,10 @@ public:
 	virtual void OnReleaseItemExecuter_Implementation() override;
 	virtual void OnPickupItemExecuter_Implementation(AActor* Actor) override;
 	virtual void OnTakeDamage_Implementation(FName BoneName, float Damage, AActor* Actor) override;
-	virtual void NotifyEquip_Implementation() override;
+	virtual void Equipment_Implementation() override;
+	virtual void UnEquipment_Implementation() override;
 	virtual FVector BulletTraceRelativeLocation() const override;
 	virtual FVector BulletTraceForwardLocation() const override;
-	virtual void EquipmentActionMontage() override;
 
 protected:
 	virtual void UpdateWeapon();
@@ -69,7 +69,9 @@ protected:
 	void FireReleassed();
 	void Reload();
 	void ReleaseWeapon();
-	UPROPERTY(BlueprintReadOnly, Category = "AMockCharacter|Variable")
+	void EquipmentHandleEvent();
+
+private:
 	int32 WeaponCurrentIndex;
 };
 
