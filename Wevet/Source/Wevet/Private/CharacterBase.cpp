@@ -281,6 +281,14 @@ void ACharacterBase::ReleaseWeaponToWorld(const FTransform Transform, AWeaponBas
 	const FWeaponItemInfo WeaponItemInfo = Weapon->WeaponItemInfo;
 	TSubclassOf<class AWeaponBase> WeaponClass = WeaponItemInfo.WeaponClass;
 	Weapon->Release(nullptr);
+	if (Weapon->IsPendingKill())
+	{
+		UE_LOG(LogWevetClient, Log, TEXT("Yes PendingKill"));
+	}
+	else
+	{
+		UE_LOG(LogWevetClient, Warning, TEXT("Not PendingKill"));
+	}
 	Weapon = nullptr;
 
 	AWeaponBase* const SpawningObject = World->SpawnActorDeferred<AWeaponBase>(

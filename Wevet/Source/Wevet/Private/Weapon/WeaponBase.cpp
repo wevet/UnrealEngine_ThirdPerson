@@ -23,20 +23,21 @@ AWeaponBase::AWeaponBase(const FObjectInitializer& ObjectInitializer)
 	bReload(false),
 	bFired(false)
 {
-	PrimaryActorTick.bCanEverTick = true;
-
+	PrimaryActorTick.bCanEverTick = false;
 	SceneComponent = ObjectInitializer.CreateDefaultSubobject<USceneComponent>(this, TEXT("SceneComponent"));
 	RootComponent  = SceneComponent;
 
-	SkeletalMeshComponent = ObjectInitializer.CreateDefaultSubobject<USkeletalMeshComponent>(this, TEXT("SkeletalMeshComponent"));
-	SkeletalMeshComponent->SetupAttachment(RootComponent);
 	SphereComponent = ObjectInitializer.CreateDefaultSubobject<USphereComponent>(this, TEXT("SphereComponent"));
 	SphereComponent->SetSphereRadius(90.0f);
-	SphereComponent->SetupAttachment(SkeletalMeshComponent);
+	SphereComponent->SetupAttachment(RootComponent);
+
+	SkeletalMeshComponent = ObjectInitializer.CreateDefaultSubobject<USkeletalMeshComponent>(this, TEXT("SkeletalMeshComponent"));
+	SkeletalMeshComponent->SetupAttachment(SphereComponent);
+
 	WidgetComponent = ObjectInitializer.CreateDefaultSubobject<UWidgetComponent>(this, TEXT("WidgetComponent"));
 	WidgetComponent->SetDrawSize(FVector2D(180.f, 70.f));
 	WidgetComponent->SetWorldLocation(FVector(0.f, 0.f, 60.f));
-	WidgetComponent->SetupAttachment(SkeletalMeshComponent);
+	WidgetComponent->SetupAttachment(SphereComponent);
 }
 
 void AWeaponBase::BeginPlay()
