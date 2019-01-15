@@ -52,13 +52,13 @@ void AAICharacterBase::BeginPlay()
 {
 	Super::BeginPlay();
 
-	if (ensure(PawnSensingComponent)) 
+	if (ensure(PawnSensingComponent && PawnSensingComponent->IsValidLowLevel())) 
 	{
 		PawnSensingComponent->OnSeePawn.AddDynamic(this, &AAICharacterBase::OnSeePawnRecieve);
 		PawnSensingComponent->OnHearNoise.AddDynamic(this, &AAICharacterBase::OnHearNoiseRecieve);
 	}
 
-	if (ensure(WidgetComponent)) 
+	if (ensure(WidgetComponent && WidgetComponent->IsValidLowLevel())) 
 	{
 		if (UAIUserWidgetBase* AIWidget = Cast<UAIUserWidgetBase>(WidgetComponent->GetUserWidgetObject()))
 		{

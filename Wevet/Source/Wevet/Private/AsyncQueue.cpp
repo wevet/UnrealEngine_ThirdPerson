@@ -10,7 +10,10 @@ FAsyncDelegate FAsyncQueue::MakeParallel(const TArray<FAsyncDelegate>& ParallelD
 		{
 			//Every delegate will decrement the counter, the last one will execute the callback
 			--(*ParallelCallbacksCounter);
-			if (*ParallelCallbacksCounter <= 0) Callback.Execute();
+			if (*ParallelCallbacksCounter <= 0)
+			{
+				Callback.Execute();
+			}
 		});
 
 		for (auto& Delegate : ParallelDelegates)
@@ -58,11 +61,11 @@ FAsyncDelegate FAsyncQueue::MakeSync(const FCallbackDelegate& SyncDelegate)
 	});
 }
 
-TSharedRef<FAsyncQueue, ESPMode::ThreadSafe> FAsyncQueue::Create() {
+TSharedRef<FAsyncQueue, ESPMode::ThreadSafe> FAsyncQueue::Create() 
+{
 	TSharedRef<FAsyncQueue, ESPMode::ThreadSafe> Result(new FAsyncQueue());
 	return Result;
 }
-
 
 FAsyncQueue::FAsyncQueue()
 	: TSharedFromThis()
@@ -74,12 +77,10 @@ void FAsyncQueue::Add(const FAsyncDelegate& AsyncDelegate)
 	Queue.Enqueue(AsyncDelegate);
 }
 
-
 void FAsyncQueue::StoreHardReferenceToSelf(TSharedRef<FAsyncQueue, ESPMode::ThreadSafe> HardReferenceToSelf)
 {
 	this->HardReferenceToSelf = TSharedPtr<FAsyncQueue, ESPMode::ThreadSafe>(HardReferenceToSelf);
 }
-
 
 void FAsyncQueue::ReleaseHardReferenceToSelf()
 {
@@ -90,7 +91,10 @@ void FAsyncQueue::ReleaseHardReferenceToSelf()
 void FAsyncQueue::Execute(const FCallbackDelegate& Callback)
 {
 	//Sometimes, for convenience, functions pass empty delegate to indicate the lack of callback
-	if (Callback.IsBound()) CompleteCallbacks.Add(Callback);
+	if (Callback.IsBound()) 
+	{
+		CompleteCallbacks.Add(Callback);
+	}
 	Execute();
 }
 
@@ -100,13 +104,19 @@ void FAsyncQueue::Execute()
 	{
 		OnAsyncDelegateFinishedDelegate.BindThreadSafeSP(this, &FAsyncQueue::OnAsyncDelegateFinished);
 	}
-	if (!IsExecuting()) ExecuteNextInQueue();
+	if (!IsExecuting())
+	{
+		ExecuteNextInQueue();
+	}
 }
 
 void FAsyncQueue::Empty()
 {
 	FAsyncDelegate Tmp;
-	while (!Queue.IsEmpty()) Queue.Dequeue(Tmp);
+	while (!Queue.IsEmpty())
+	{
+		Queue.Dequeue(Tmp);
+	}
 }
 
 void FAsyncQueue::RemoveAllCallbacks()
@@ -123,7 +133,10 @@ void FAsyncQueue::ExecuteNextInQueue()
 	{
 		auto Tmp = CompleteCallbacks;
 		CompleteCallbacks.Empty();
-		for (auto& Callback : Tmp) Callback.Execute();
+		for (auto& Callback : Tmp)
+		{
+			Callback.Execute();
+		}
 		return;
 	}
 

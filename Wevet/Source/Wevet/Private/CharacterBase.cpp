@@ -55,7 +55,7 @@ void ACharacterBase::BeginPlay()
 	DefaultMaxSpeed = GetCharacterMovement()->MaxWalkSpeed;
 	GetCharacterMovement()->MaxWalkSpeed = MovementSpeed;
 
-	if (ComponentExtension::HasValid(PawnNoiseEmitterComponent))
+	if (ensure(PawnNoiseEmitterComponent && PawnNoiseEmitterComponent->IsValidLowLevel()))
 	{
 		//
 	}
@@ -134,7 +134,7 @@ void ACharacterBase::FootStep_Implementation(USoundBase* Sound, float Volume)
 	const float Speed = GetVelocity().Size();
 	const float InVolume = FMath::Clamp<float>((Speed / GetCharacterMovement()->MaxWalkSpeed), 0.f, 1.f);
 
-	USoundBase* InSound = Sound ? Sound : FootStepSoundAsset;
+	USoundBase* const InSound = Sound ? Sound : FootStepSoundAsset;
 	if (InSound)
 	{
 		//MakeNoise(InVolume, this, GetActorLocation());
@@ -179,15 +179,9 @@ bool ACharacterBase::IsDeath_Implementation()
 
 void ACharacterBase::OnTakeDamage_Implementation(FName BoneName, float Damage, AActor* Actor)
 {
-	if (IsDeath_Implementation())
+	if (ICombatExecuter::Execute_IsDeath(this))
 	{
 		return;
-	}
-
-	if (ICombatExecuter* Combat = Cast<ICombatExecuter>(Actor))
-	{
-		//UE_LOG(LogWevetClient, Warning, TEXT("Victim : %s"), *Actor->GetName());
-		//UE_LOG(LogWevetClient, Warning, TEXT("Receive Name : %s"), *GetName());
 	}
 
 	if (BoneName == HeadSocketName) 
@@ -199,6 +193,7 @@ void ACharacterBase::OnTakeDamage_Implementation(FName BoneName, float Damage, A
 		int32 TakeDamage = (int32)(FMath::Abs(Damage));
 		int32 CurrentHealth = CharacterModel->GetCurrentHealth();
 		CharacterModel->SetCurrentHealthValue(CurrentHealth - TakeDamage);
+		UE_LOG(LogWevetClient, Log, TEXT("HitBoneName : %s"), *BoneName.ToString());
 	}
 }
 
@@ -414,59 +409,54 @@ void ACharacterBase::UnEquipmentActionMontage()
 
 void ACharacterBase::FireActionMontage()
 {
-	if (ArrayExtension::NullOrEmpty(WeaponList) || SelectedWeapon == nullptr)
+	if (SelectedWeapon)
 	{
-		return;
+		EWeaponItemType WeaponType = SelectedWeapon->WeaponItemInfo.WeaponItemType;
+		switch (WeaponType)
+		{
+			case EWeaponItemType::Rifle:
+			case EWeaponItemType::Sniper:
+			{
+				PlayAnimMontage(FireMontage);
+			}
+			break;
+			case EWeaponItemType::Bomb:
+			{
+				//
+			}
+			break;
+			case EWeaponItemType::Pistol:
+			{
+				//
+			}
+			break;
+		}
 	}
-	EWeaponItemType WeaponType = SelectedWeapon->WeaponItemInfo.WeaponItemType;
-	switch (WeaponType)
-	{
-		case EWeaponItemType::Rifle:
-		case EWeaponItemType::Sniper:
-		{
-			PlayAnimMontage(FireMontage);
-		}
-		break;
-		case EWeaponItemType::Bomb:
-		{
-			//
-		}
-		break;
-		case EWeaponItemType::Pistol:
-		{
-			//
-		}
-		break;
-	}
-
 }
 
 void ACharacterBase::ReloadActionMontage()
 {
-	if (ArrayExtension::NullOrEmpty(WeaponList) || SelectedWeapon == nullptr)
+	if (SelectedWeapon)
 	{
-		return;
+		EWeaponItemType WeaponType = SelectedWeapon->WeaponItemInfo.WeaponItemType;
+		switch (WeaponType)
+		{
+			case EWeaponItemType::Rifle:
+			case EWeaponItemType::Sniper:
+			{
+				PlayAnimMontage(ReloadMontage);
+			}
+			break;
+			case EWeaponItemType::Bomb:
+			{
+				//
+			}
+			break;
+			case EWeaponItemType::Pistol:
+			{
+				//
+			}
+			break;
+		}
 	}
-
-	EWeaponItemType WeaponType = SelectedWeapon->WeaponItemInfo.WeaponItemType;
-	switch (WeaponType)
-	{
-		case EWeaponItemType::Rifle:
-		case EWeaponItemType::Sniper:
-		{
-			PlayAnimMontage(ReloadMontage);
-		}
-		break;
-		case EWeaponItemType::Bomb:
-		{
-			//
-		}
-		break;
-		case EWeaponItemType::Pistol:
-		{
-			//
-		}
-		break;
-	}
-
 }

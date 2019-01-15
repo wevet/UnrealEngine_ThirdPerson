@@ -7,7 +7,8 @@
 #include "AICombatExecuter.generated.h"
 
 /**
- *
+ * require interface
+ * AIController Class
  */
 UINTERFACE(BlueprintType)
 class WEVET_API UAICombatExecuter : public UInterface

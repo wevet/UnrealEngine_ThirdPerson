@@ -8,6 +8,10 @@
 
 class USoundBase;
 
+/*
+* require interface
+* ACharacterBase Class
+*/
 UINTERFACE(BlueprintType)
 class WEVET_API UInteractionExecuter : public UInterface
 {

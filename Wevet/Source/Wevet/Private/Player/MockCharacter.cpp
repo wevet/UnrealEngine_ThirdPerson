@@ -262,12 +262,10 @@ void AMockCharacter::OnPickupItemExecuter_Implementation(AActor* Actor)
 			nullptr,
 			ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
 
+		FAttachmentTransformRules Rules(EAttachmentRule::SnapToTarget, true);
 		SpawningObject->CopyWeaponItemInfo(WeaponItemInfo);
 		SpawningObject->FinishSpawning(Transform);
-		SpawningObject->AttachToComponent(
-			Super::GetMesh(),
-			{ EAttachmentRule::SnapToTarget, true },
-			WeaponItemInfo.UnEquipSocketName);
+		SpawningObject->AttachToComponent(Super::GetMesh(), Rules, WeaponItemInfo.UnEquipSocketName);
 		SpawningObject->Take(this);
 
 		if (Super::WeaponList.Find(SpawningObject) == INDEX_NONE)
@@ -308,6 +306,10 @@ void AMockCharacter::OnTakeDamage_Implementation(FName BoneName, float Damage, A
 	if (ICombatExecuter::Execute_IsDeath(this))
 	{
 		Die_Implementation();
+	}
+	else
+	{
+		//
 	}
 }
 

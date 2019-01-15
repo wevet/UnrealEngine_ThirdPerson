@@ -10,12 +10,15 @@
 class AWeaponBase;
 class UTexture2D;
 
+/*
+* require interface
+* AWeaponBase Class
+*/
 UINTERFACE(BlueprintType)
 class WEVET_API UWeaponControllerExecuter : public UInterface
 {
 	GENERATED_UINTERFACE_BODY()
 };
-
 
 class WEVET_API IWeaponControllerExecuter
 {

@@ -184,16 +184,16 @@ void AWeaponBase::OnFirePressedInternal()
 		ECollisionChannel::ECC_Camera, 
 		CollisionQueryParams);
 
+	//World->AsyncLineTraceByChannel(StartLocation, EndLocation, ECollisionChannel::ECC_Camera, CollisionQueryParams);
+
 	const FVector MuzzleLocation  = GetMuzzleTransform().GetLocation();
 	const FRotator MuzzleRotation = FRotator(GetMuzzleTransform().GetRotation());
 	const float Volume = 1.0f;
 
-	// make noise fire
 	IInteractionExecuter::Execute_ReportNoiseOther(CharacterOwner, this, FireSoundAsset, Volume, MuzzleLocation);
 	CharacterOwner->FireActionMontage();
 	--WeaponItemInfo.CurrentAmmo;
 
-	// make noise impact
 	IInteractionExecuter::Execute_ReportNoiseOther(CharacterOwner, this, FireImpactSoundAsset, Volume, HitData.Location);
 	const FVector StartPoint = MuzzleLocation;
 	const FVector EndPoint   = UKismetMathLibrary::SelectVector(HitData.ImpactPoint, HitData.TraceEnd, bSuccess);
@@ -271,18 +271,14 @@ void AWeaponBase::OnReloading_Implementation()
 
 	if (WeaponItemInfo.MaxAmmo <= 0)
 	{
-		UE_LOG(LogWevetClient, Log, TEXT("Empty Ammos Current:%d, ClipType:%d"),
-			WeaponItemInfo.CurrentAmmo,
-			WeaponItemInfo.ClipType);
+		UE_LOG(LogWevetClient, Log, TEXT("Empty Ammos Current:%d, ClipType:%d"), WeaponItemInfo.CurrentAmmo, WeaponItemInfo.ClipType);
 		bEmpty = true;
 		return;
 	}
 
 	if (WeaponItemInfo.CurrentAmmo >= WeaponItemInfo.ClipType)
 	{
-		UE_LOG(LogWevetClient, Log, TEXT("Full Ammos Current:%d, ClipType:%d"),
-			WeaponItemInfo.CurrentAmmo, 
-			WeaponItemInfo.ClipType);
+		UE_LOG(LogWevetClient, Log, TEXT("Full Ammos Current:%d, ClipType:%d"), WeaponItemInfo.CurrentAmmo, WeaponItemInfo.ClipType);
 		return;
 	}
 
