@@ -42,8 +42,6 @@ public:
 		return FollowCameraComponent; 
 	}
 
-	virtual void Jump() override;	
-	virtual void StopJumping() override;	
 	virtual void Die_Implementation() override;
 	virtual void OnReleaseItemExecuter_Implementation() override;
 	virtual void OnPickupItemExecuter_Implementation(AActor* Actor) override;

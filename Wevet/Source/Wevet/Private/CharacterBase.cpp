@@ -16,7 +16,8 @@ ACharacterBase::ACharacterBase(const FObjectInitializer& ObjectInitializer)
 	BaseTurnRate(45.f),
 	BaseLookUpRate(45.f),
 	MovementSpeed(300.f),
-	HeadSocketName(FName(TEXT("Head")))
+	HeadSocketName(FName(TEXT("Head"))),
+	TakeDamageInterval(0.f)
 {
 	PrimaryActorTick.bCanEverTick = true;
 	bCrouch = false;
@@ -64,10 +65,19 @@ void ACharacterBase::BeginPlay()
 void ACharacterBase::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
+	if (TakeDamageInterval >= 0.f)
+	{
+		TakeDamageInterval -= DeltaTime;
+	}
 }
 
 void ACharacterBase::Jump()
 {
+	if (bCrouch)
+	{
+		OnCrouch();
+	}
 	Super::Jump();
 }
 
@@ -92,6 +102,18 @@ void ACharacterBase::OnSprint()
 void ACharacterBase::OnCrouch()
 {
 	bCrouch = !bCrouch;
+	Super::bIsCrouched = bCrouch ? 1 : 0;
+	if (bCrouch)
+	{
+		if (Super::CanCrouch())
+		{
+			Super::Crouch();
+		}
+	}
+	else
+	{
+		Super::UnCrouch();
+	}
 }
 
 void ACharacterBase::OnReleaseItemExecuter_Implementation() 
@@ -193,7 +215,14 @@ void ACharacterBase::OnTakeDamage_Implementation(FName BoneName, float Damage, A
 		int32 TakeDamage = (int32)(FMath::Abs(Damage));
 		int32 CurrentHealth = CharacterModel->GetCurrentHealth();
 		CharacterModel->SetCurrentHealthValue(CurrentHealth - TakeDamage);
-		UE_LOG(LogWevetClient, Log, TEXT("HitBoneName : %s"), *BoneName.ToString());
+
+		auto RefSkeleton = GetMesh()->SkeletalMesh->Skeleton->GetReferenceSkeleton();
+		const int32 Index = RefSkeleton.FindBoneIndex(BoneName);
+		if (Index >= 0)
+		{
+
+		}
+		//UE_LOG(LogWevetClient, Log, TEXT("HitBoneName : %s"), *BoneName.ToString());
 	}
 }
 

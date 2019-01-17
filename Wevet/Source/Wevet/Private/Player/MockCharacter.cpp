@@ -39,6 +39,12 @@ void AMockCharacter::OnConstruction(const FTransform& Transform)
 void AMockCharacter::BeginPlay()
 {
 	Super::BeginPlay();
+	auto RefSkeleton = GetMesh()->SkeletalMesh->Skeleton->GetReferenceSkeleton();
+	for (int i = 0; i < RefSkeleton.GetRawBoneNum(); ++i)
+	{
+		auto Info = RefSkeleton.GetRawRefBoneInfo()[i];
+		UE_LOG(LogWevetClient, Log, TEXT("BoneName : %s \n BoneIndex : %d"), *Info.Name.ToString(), Info.ParentIndex);
+	}
 }
 
 void AMockCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent)
@@ -48,8 +54,8 @@ void AMockCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInpu
 	// basic action
 	PlayerInputComponent->BindAction("Crouch", IE_Pressed,   this, &ACharacterBase::OnCrouch);
 	PlayerInputComponent->BindAction("Sprint", IE_Pressed,   this, &ACharacterBase::OnSprint);
-	PlayerInputComponent->BindAction("Jump",   IE_Pressed,   this, &AMockCharacter::Jump);
-	PlayerInputComponent->BindAction("Jump",   IE_Released,  this, &AMockCharacter::StopJumping);
+	PlayerInputComponent->BindAction("Jump",   IE_Pressed,   this, &ACharacterBase::Jump);
+	PlayerInputComponent->BindAction("Jump",   IE_Released,  this, &ACharacterBase::StopJumping);
 	PlayerInputComponent->BindAxis("Turn",        this, &APawn::AddControllerYawInput);
 	PlayerInputComponent->BindAxis("LookUp",      this, &APawn::AddControllerPitchInput);
 	PlayerInputComponent->BindAxis("TurnRate",    this, &AMockCharacter::TurnAtRate);
@@ -74,20 +80,6 @@ void AMockCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInpu
 void AMockCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
-	//auto M = GShaderCompilingManager;
-	//if (M == NULL)
-	//{
-	//	return;
-	//}
-	//if (M->IsCompiling())
-	//{
-	//	UE_LOG(LogWevetClient, Warning, TEXT("Compiling"));
-	//}
-	//else
-	//{
-	//	UE_LOG(LogWevetClient, Log, TEXT("Success"));
-	//}
 }
 
 void AMockCharacter::TouchStarted(ETouchIndex::Type FingerIndex, FVector Location)
@@ -166,20 +158,6 @@ void AMockCharacter::Reload()
 	}
 }
 
-void AMockCharacter::Jump()
-{
-	if (Super::bCrouch)
-	{
-		return;
-	}
-	Super::Jump();
-}
-
-void AMockCharacter::StopJumping()
-{
-	Super::StopJumping();
-}
-
 void AMockCharacter::OnCrouch()
 {
 	Super::OnCrouch();
@@ -233,7 +211,7 @@ void AMockCharacter::OnPickupItemExecuter_Implementation(AActor* Actor)
 {
 	UWorld* const World = GetWorld();
 
-	if (Actor == nullptr || World == nullptr)
+	if (Actor == nullptr)
 	{
 		return;
 	}
@@ -242,14 +220,12 @@ void AMockCharacter::OnPickupItemExecuter_Implementation(AActor* Actor)
 	{
 		if (Super::SameWeapon(Weapon))
 		{
-			UE_LOG(LogWevetClient, Warning, TEXT("SameWeapon : %s"), *(Weapon->GetName()));
+			//UE_LOG(LogWevetClient, Warning, TEXT("SameWeapon : %s"), *(Weapon->GetName()));
 			return;
 		}
-
 		FWeaponItemInfo WeaponItemInfo = Weapon->WeaponItemInfo;
 		if (WeaponItemInfo.WeaponItemType == EWeaponItemType::None)
 		{
-			UE_LOG(LogWevetClient, Warning, TEXT("UnKnownItemType : %s"), *(Weapon->GetName()));
 			return;
 		}
 
@@ -273,7 +249,7 @@ void AMockCharacter::OnPickupItemExecuter_Implementation(AActor* Actor)
 			Super::WeaponList.Emplace(SpawningObject);
 		}
 		Weapon->Release(nullptr);
-		Actor  = nullptr;
+		Actor = nullptr;
 	}
 
 	if (AItemBase* Item = Cast<AItemBase>(Actor))
@@ -309,7 +285,11 @@ void AMockCharacter::OnTakeDamage_Implementation(FName BoneName, float Damage, A
 	}
 	else
 	{
-		//
+		if (Super::TakeDamageMontage && Super::TakeDamageInterval <= 0)
+		{
+			TakeDamageInterval = PlayAnimMontage(Super::TakeDamageMontage);
+			UE_LOG(LogWevetClient, Log, TEXT("Pain Interval : %f"), TakeDamageInterval);
+		}
 	}
 }
 
@@ -349,7 +329,6 @@ FVector AMockCharacter::BulletTraceForwardLocation() const
 	return GetFollowCameraComponent()->GetForwardVector();
 }
 
-//‘•’…,”ñ‘•’…‚Ì”»’è
 void AMockCharacter::EquipmentHandleEvent()
 {
 	if (SelectedWeapon)

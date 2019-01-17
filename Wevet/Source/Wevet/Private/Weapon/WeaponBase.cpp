@@ -33,6 +33,8 @@ AWeaponBase::AWeaponBase(const FObjectInitializer& ObjectInitializer)
 
 	SkeletalMeshComponent = ObjectInitializer.CreateDefaultSubobject<USkeletalMeshComponent>(this, TEXT("SkeletalMeshComponent"));
 	SkeletalMeshComponent->SetupAttachment(SphereComponent);
+	SkeletalMeshComponent->bRenderCustomDepth = true;
+	SkeletalMeshComponent->CustomDepthStencilValue = 1;
 
 	WidgetComponent = ObjectInitializer.CreateDefaultSubobject<UWidgetComponent>(this, TEXT("WidgetComponent"));
 	WidgetComponent->SetDrawSize(FVector2D(180.f, 70.f));

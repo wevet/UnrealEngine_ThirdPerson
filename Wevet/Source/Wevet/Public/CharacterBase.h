@@ -129,6 +129,9 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ACharacterBase|Asset|LargeWeapon")
 	class UAnimMontage* ReloadMontage;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ACharacterBase|Asset|Damage")
+	class UAnimMontage* TakeDamageMontage;
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ACharacterBase|Asset")
 	class USoundBase* FootStepSoundAsset;
 
@@ -190,4 +193,6 @@ public:
 	virtual void FireActionMontage();
 	virtual void ReloadActionMontage();
 
+protected:
+	float TakeDamageInterval;
 };

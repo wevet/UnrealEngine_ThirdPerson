@@ -110,9 +110,12 @@ void AAICharacterBase::MainLoop(float DeltaTime)
 	// only see target
 	if (HasEnemyFound())
 	{
-		// both not target death & Equipment
-		if (!ICombatExecuter::Execute_IsDeath(TargetCharacter) && HasEquipWeapon())
+		if (!ICombatExecuter::Execute_IsDeath(TargetCharacter))
 		{
+			if (!HasEquipWeapon())
+			{
+				return;
+			}
 			BulletInterval += DeltaTime;
 			if (BulletInterval >= BulletDelay)
 			{
@@ -120,10 +123,11 @@ void AAICharacterBase::MainLoop(float DeltaTime)
 				BulletInterval = 0.f;
 			}
 		}
-	}
-	else
-	{
-		//
+		else
+		{
+			bSeeTarget = false;
+			SetSeeTargetActor(nullptr);
+		}
 	}
 }
 
