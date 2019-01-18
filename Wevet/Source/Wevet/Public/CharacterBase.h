@@ -110,13 +110,9 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Components, meta = (AllowPrivateAccess = "true"))
 	class UCharacterPickupComponent* PickupComponent;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ACharacterBase|Weapon")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "ACharacterBase|Weapon")
 	class AWeaponBase* SelectedWeapon;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ACharacterBase|Weapon")
-	TArray<AWeaponBase*> WeaponList;
-
-	//Rifle,SniperRidle,Rancher etc..
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ACharacterBase|Asset|LargeWeapon")
 	class UAnimMontage* EquipMontage;
 
@@ -130,7 +126,10 @@ protected:
 	class UAnimMontage* ReloadMontage;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ACharacterBase|Asset|Damage")
-	class UAnimMontage* TakeDamageMontage;
+	class UAnimMontage* RifleHitDamageMontage;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ACharacterBase|Asset|Damage")
+	class UAnimMontage* DefaultHitDamageMontage;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ACharacterBase|Asset")
 	class USoundBase* FootStepSoundAsset;
@@ -176,6 +175,8 @@ protected:
 
 	/* release actor */
 	virtual void ReleaseObjects();
+	TArray<AWeaponBase*> WeaponList;
+	TWeakObjectPtr<class AWeaponBase> CurrentWeapon;
 
 public:
 	UFUNCTION(BlueprintImplementableEvent, Category = "ACharacterBase|NativeEvent")
@@ -192,7 +193,9 @@ public:
 	virtual void UnEquipmentActionMontage();
 	virtual void FireActionMontage();
 	virtual void ReloadActionMontage();
+	virtual void TakeDamageActionMontage();
 
 protected:
 	float TakeDamageInterval;
+	float ComboTakeInterval;
 };

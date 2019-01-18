@@ -283,19 +283,13 @@ void AMockCharacter::OnTakeDamage_Implementation(FName BoneName, float Damage, A
 	{
 		Die_Implementation();
 	}
-	else
-	{
-		if (Super::TakeDamageMontage && Super::TakeDamageInterval <= 0)
-		{
-			TakeDamageInterval = PlayAnimMontage(Super::TakeDamageMontage);
-			UE_LOG(LogWevetClient, Log, TEXT("Pain Interval : %f"), TakeDamageInterval);
-		}
-	}
 }
 
 void AMockCharacter::Equipment_Implementation()
 {
 	SelectedWeapon = WeaponList[WeaponCurrentIndex];
+	//CurrentWeapon = SelectedWeapon;
+
 	check(SelectedWeapon);
 	Super::Equipment_Implementation();
 	SelectedWeapon->AttachToComponent(

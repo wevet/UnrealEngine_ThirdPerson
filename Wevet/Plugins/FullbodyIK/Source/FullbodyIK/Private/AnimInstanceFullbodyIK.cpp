@@ -17,26 +17,36 @@ void UAnimInstanceFullbodyIK::InitializeBoneOffset_Implementation(int32 BoneInde
 	}
 }
 
-void UAnimInstanceFullbodyIK::SetBoneLocationOffset_Implementation(
-	int32 BoneIndex, 
-	const FVector& Location)
+void UAnimInstanceFullbodyIK::SetBoneLocationOffset_Implementation(int32 BoneIndex, const FVector& Location)
 {
-	OffsetLocations[BoneIndex] = Location;
+	if (OffsetLocations.Contains(BoneIndex))
+	{
+		OffsetLocations[BoneIndex] = Location;
+	}
 }
 
 FVector UAnimInstanceFullbodyIK::GetBoneLocationOffset_Implementation(int32 BoneIndex) const
 {
-	return OffsetLocations[BoneIndex];
+	if (OffsetLocations.Contains(BoneIndex))
+	{
+		return OffsetLocations[BoneIndex];
+	}
+	return FVector::ZeroVector;
 }
 
-void UAnimInstanceFullbodyIK::SetBoneRotationOffset_Implementation(
-	int32 BoneIndex, 
-	const FRotator& Rotation)
+void UAnimInstanceFullbodyIK::SetBoneRotationOffset_Implementation(int32 BoneIndex, const FRotator& Rotation)
 {
-	OffsetRotations[BoneIndex] = Rotation;
+	if (OffsetRotations.Contains(BoneIndex))
+	{
+		OffsetRotations[BoneIndex] = Rotation;
+	}
 }
 
 FRotator UAnimInstanceFullbodyIK::GetBoneRotationOffset_Implementation(int32 BoneIndex) const
 {
-	return OffsetRotations[BoneIndex];
+	if (OffsetRotations.Contains(BoneIndex))
+	{
+		return OffsetRotations[BoneIndex];
+	}
+	return FRotator::ZeroRotator;
 }

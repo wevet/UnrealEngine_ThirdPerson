@@ -24,7 +24,7 @@ static const int32 AXIS_COUNT = 3;
 static FORCEINLINE float SinD(float X) 
 { 
 	auto Value = FMath::Sin(FMath::DegreesToRadians(X));
-	if (FMath::IsNaN(Value))
+	if (!FMath::IsNaN(Value))
 	{
 		return Value;
 	}
@@ -34,7 +34,7 @@ static FORCEINLINE float SinD(float X)
 static FORCEINLINE float CosD(float X) 
 {
 	auto Value = FMath::Cos(FMath::DegreesToRadians(X)); 
-	if (FMath::IsNaN(Value))
+	if (!FMath::IsNaN(Value))
 	{
 		return Value;
 	}
@@ -186,11 +186,7 @@ static FORCEINLINE void MatrixMultiply(float* DstMatrix, const float* SrcMatrix1
 {
 	SCOPE_CYCLE_COUNTER(STAT_FullbodyIK_MatrixMultiply);
 
-	//check(Col1 == Row2);
-	if (Col1 != Row2)
-	{
-		return;
-	}
+	check(Col1 == Row2);
 
 	for (int32 i = 0; i < Row1; ++i)
 	{
@@ -240,7 +236,7 @@ static FORCEINLINE float GetMappedRangeEaseInClamped(
 	const float& Value)
 {
 	float Pct = FMath::Clamp((Value - InRangeMin) / (InRangeMax - InRangeMin), 0.f, 1.f);
-	Pct = FMath::IsNaN(Pct) ? Pct : 0.f;
+	Pct = (FMath::IsNaN(Pct) == false) ? Pct : 0.f;
 	return FMath::InterpEaseIn(OutRangeMin, OutRangeMax, Pct, Exp);
 }
 #pragma endregion
@@ -262,94 +258,91 @@ void FAnimNode_FullbodyIK::Initialize_AnyThread(const FAnimationInitializeContex
 		return;
 	}
 
-	USkeletalMeshComponent* const SkeletalMeshComponent = Context.AnimInstanceProxy->GetSkelMeshComponent();
-	if (SkeletalMeshComponent == nullptr)
+	if (USkeletalMeshComponent* const SkeletalMeshComponent = Context.AnimInstanceProxy->GetSkelMeshComponent())
 	{
-		return;
-	}
-
-	for (const FName& IkEndBoneName : IkEndBoneNames)
-	{
-		FName BoneName = IkEndBoneName;
-
-		while (true)
+		for (const FName& IkEndBoneName : IkEndBoneNames)
 		{
-			int32 BoneIndex = SkeletalMeshComponent->GetBoneIndex(BoneName);
-
-			if (BoneIndex == INDEX_NONE || 
-				SolverInternals.Contains(BoneIndex))
+			FName BoneName = IkEndBoneName;
+			while (true)
 			{
-				break;
-			}
+				int32 BoneIndex = SkeletalMeshComponent->GetBoneIndex(BoneName);
 
-			SolverInternals.Add(BoneIndex, FSolverInternal());
-			BoneIndices.Add(BoneIndex);
-
-			FName ParentBoneName = SkeletalMeshComponent->GetParentBone(BoneName);
-			int32 ParentBoneIndex = SkeletalMeshComponent->GetBoneIndex(ParentBoneName);
-			FFullbodyIKSolver Solver = GetSolver(BoneName);
-
-			FSolverInternal& SolverInternal = SolverInternals[BoneIndex];
-			SolverInternal.BoneIndex = BoneIndex;
-			SolverInternal.ParentBoneIndex = ParentBoneIndex;
-			SolverInternal.BoneIndicesIndex = -1;
-			SolverInternal.bTranslation = Solver.bTranslation;
-			SolverInternal.bLimited = Solver.bLimited;
-			SolverInternal.Mass = Solver.Mass;
-			SolverInternal.X = Solver.X;
-			SolverInternal.Y = Solver.Y;
-			SolverInternal.Z = Solver.Z;
-			
-			if (ParentBoneIndex >= 0)
-			{
-				if (!SolverTree.Contains(ParentBoneIndex))
+				if (BoneIndex == INDEX_NONE || SolverInternals.Contains(BoneIndex))
 				{
-					SolverTree.Add(ParentBoneIndex, TArray<int32>());
+					break;
 				}
-				SolverTree[ParentBoneIndex].Add(BoneIndex);
+
+				SolverInternals.Add(BoneIndex, FSolverInternal());
+				BoneIndices.Add(BoneIndex);
+
+				FName ParentBoneName     = SkeletalMeshComponent->GetParentBone(BoneName);
+				int32 ParentBoneIndex    = SkeletalMeshComponent->GetBoneIndex(ParentBoneName);
+				FFullbodyIKSolver Solver = GetSolver(BoneName);
+
+				FSolverInternal& SolverInternal = SolverInternals[BoneIndex];
+				SolverInternal.BoneIndex = BoneIndex;
+				SolverInternal.ParentBoneIndex = ParentBoneIndex;
+				SolverInternal.BoneIndicesIndex = -1;
+				SolverInternal.bTranslation = Solver.bTranslation;
+				SolverInternal.bLimited = Solver.bLimited;
+				SolverInternal.Mass = Solver.Mass;
+				SolverInternal.X = Solver.X;
+				SolverInternal.Y = Solver.Y;
+				SolverInternal.Z = Solver.Z;
+
+				if (ParentBoneIndex >= 0)
+				{
+					if (!SolverTree.Contains(ParentBoneIndex))
+					{
+						SolverTree.Add(ParentBoneIndex, TArray<int32>());
+					}
+					SolverTree[ParentBoneIndex].Add(BoneIndex);
+				}
+				BoneName = ParentBoneName;
 			}
-			BoneName = ParentBoneName;
 		}
-	}
 
-	BoneIndices.Sort();
-	BoneCount = BoneIndices.Num();
-	BoneAxisCount = BoneCount * AXIS_COUNT;
+		BoneIndices.Sort();
+		BoneCount = BoneIndices.Num();
+		BoneAxisCount = BoneCount * AXIS_COUNT;
 
-	for (int32 i = 0; i < BoneCount; ++i)
-	{
-		const int32& BoneIndex = BoneIndices[i];
-		SolverInternals[BoneIndex].BoneIndicesIndex = i;
-	}
+		for (int32 i = 0; i < BoneCount; ++i)
+		{
+			const int32& BoneIndex = BoneIndices[i];
+			SolverInternals[BoneIndex].BoneIndicesIndex = i;
+		}
 
-	int32 EffectorCount = EffectorCountMax;
-	int32 DisplacementCount = BoneAxisCount;
+		//最大数確保
+		int32 EffectorCount = EffectorCountMax;
+		int32 DisplacementCount = BoneAxisCount;
 
-	ElementsJ.SetNumZeroed(DisplacementCount * AXIS_COUNT);
-	ElementsJt.SetNumZeroed(AXIS_COUNT * DisplacementCount);
-	ElementsJtJ.SetNumZeroed(AXIS_COUNT * AXIS_COUNT);
-	ElementsJtJi.SetNumZeroed(AXIS_COUNT * AXIS_COUNT);
-	ElementsJp.SetNumZeroed(AXIS_COUNT * DisplacementCount);
-	ElementsW0.SetNumZeroed(BoneAxisCount);
-	ElementsWi.SetNumZeroed(DisplacementCount * DisplacementCount);
-	ElementsJtWi.SetNumZeroed(AXIS_COUNT * DisplacementCount);
-	ElementsJtWiJ.SetNumZeroed(AXIS_COUNT * AXIS_COUNT);
-	ElementsJtWiJi.SetNumZeroed(AXIS_COUNT * AXIS_COUNT);
-	ElementsJtWiJiJt.SetNumZeroed(AXIS_COUNT * DisplacementCount);
-	ElementsJwp.SetNumZeroed(AXIS_COUNT * DisplacementCount);
-	ElementsRt1.SetNumZeroed(BoneAxisCount);
-	ElementsEta.SetNumZeroed(BoneAxisCount);
-	ElementsEtaJ.SetNumZeroed(AXIS_COUNT);
-	ElementsEtaJJp.SetNumZeroed(BoneAxisCount);
-	ElementsRt2.SetNumZeroed(BoneAxisCount);
+		ElementsJ.SetNumZeroed(DisplacementCount * AXIS_COUNT);
+		ElementsJt.SetNumZeroed(AXIS_COUNT * DisplacementCount);
+		ElementsJtJ.SetNumZeroed(AXIS_COUNT * AXIS_COUNT);
+		ElementsJtJi.SetNumZeroed(AXIS_COUNT * AXIS_COUNT);
+		ElementsJp.SetNumZeroed(AXIS_COUNT * DisplacementCount);
+		ElementsW0.SetNumZeroed(BoneAxisCount);
+		ElementsWi.SetNumZeroed(DisplacementCount * DisplacementCount);
+		ElementsJtWi.SetNumZeroed(AXIS_COUNT * DisplacementCount);
+		ElementsJtWiJ.SetNumZeroed(AXIS_COUNT * AXIS_COUNT);
+		ElementsJtWiJi.SetNumZeroed(AXIS_COUNT * AXIS_COUNT);
+		ElementsJtWiJiJt.SetNumZeroed(AXIS_COUNT * DisplacementCount);
+		ElementsJwp.SetNumZeroed(AXIS_COUNT * DisplacementCount);
+		ElementsRt1.SetNumZeroed(BoneAxisCount);
+		ElementsEta.SetNumZeroed(BoneAxisCount);
+		ElementsEtaJ.SetNumZeroed(AXIS_COUNT);
+		ElementsEtaJJp.SetNumZeroed(BoneAxisCount);
+		ElementsRt2.SetNumZeroed(BoneAxisCount);
 
-	FBuffer W0 = FBuffer(ElementsW0.GetData(), BoneAxisCount);
-	for (int32 i = 0; i < BoneCount; ++i)
-	{
-		int32 BoneIndex = BoneIndices[i];
-		W0.Ref(i * AXIS_COUNT + 0) = SolverInternals[BoneIndex].X.Weight;
-		W0.Ref(i * AXIS_COUNT + 1) = SolverInternals[BoneIndex].Y.Weight;
-		W0.Ref(i * AXIS_COUNT + 2) = SolverInternals[BoneIndex].Z.Weight;
+		//加重行列
+		FBuffer W0 = FBuffer(ElementsW0.GetData(), BoneAxisCount);
+		for (int32 i = 0; i < BoneCount; ++i)
+		{
+			int32 BoneIndex = BoneIndices[i];
+			W0.Ref(i * AXIS_COUNT + 0) = SolverInternals[BoneIndex].X.Weight;
+			W0.Ref(i * AXIS_COUNT + 1) = SolverInternals[BoneIndex].Y.Weight;
+			W0.Ref(i * AXIS_COUNT + 2) = SolverInternals[BoneIndex].Z.Weight;
+		}
 	}
 }
 
@@ -361,13 +354,7 @@ void FAnimNode_FullbodyIK::GatherDebugData(FNodeDebugData& DebugData)
 void FAnimNode_FullbodyIK::EvaluateSkeletalControl_AnyThread(FComponentSpacePoseContext& Context, TArray<FBoneTransform>& OutBoneTransforms)
 {
 	SCOPE_CYCLE_COUNTER(STAT_FullbodyIK_Eval);
-
-	//check(OutBoneTransforms.Num() == 0);
-	if (OutBoneTransforms.Num() != 0)
-	{
-		return;
-	}
-
+	check(OutBoneTransforms.Num() == 0);
 	if (Setting == nullptr)
 	{
 		return;
@@ -385,6 +372,11 @@ void FAnimNode_FullbodyIK::EvaluateSkeletalControl_AnyThread(FComponentSpacePose
 	{
 		return;
 	}
+
+	//if (GEngine)
+	//{
+	//	GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, FString::Printf(TEXT("EffectorsNum : %d")), Effectors.Effectors.Num());
+	//}
 
 	if (Effectors.Effectors.Num() <= 0)
 	{
@@ -659,20 +651,16 @@ void FAnimNode_FullbodyIK::EvaluateSkeletalControl_AnyThread(FComponentSpacePose
 						},
 						[&](int32 BoneIndex, FRotator& SavedOffsetRotation, FRotator& CurrentOffsetRotation)
 						{
-							if (BoneIndex != Effector.EffectorBoneIndex)
+							if (BoneIndex == Effector.EffectorBoneIndex)
 							{
-								return;
+								FTransform EffectorWorldTransform = FTransform(InitWorldTransform.Rotator());
+								FTransform EffectorComponentTransform = EffectorWorldTransform * CachedComponentTransform.Inverse();
+								FTransform EffectorLocalTransform = EffectorComponentTransform * SolverInternals[SolverInternal.ParentBoneIndex].ComponentTransform.Inverse();
+								FRotator EffectorLocalRotation = EffectorLocalTransform.Rotator();
+								FRotator DeltaLocalRotation = EffectorLocalRotation + Effector.Rotation - CurrentOffsetRotation;
+								SavedOffsetRotation += DeltaLocalRotation;
+								CurrentOffsetRotation += DeltaLocalRotation;
 							}
-
-							FTransform EffectorWorldTransform = FTransform(InitWorldTransform.Rotator());
-							FTransform EffectorComponentTransform = EffectorWorldTransform * CachedComponentTransform.Inverse();
-							FTransform EffectorLocalTransform = EffectorComponentTransform * SolverInternals[SolverInternal.ParentBoneIndex].ComponentTransform.Inverse();
-
-							FRotator EffectorLocalRotation = EffectorLocalTransform.Rotator();
-							FRotator DeltaLocalRotation = EffectorLocalRotation + Effector.Rotation - CurrentOffsetRotation;
-
-							SavedOffsetRotation += DeltaLocalRotation;
-							CurrentOffsetRotation += DeltaLocalRotation;
 						}
 					);
 
@@ -888,7 +876,7 @@ void FAnimNode_FullbodyIK::EvaluateSkeletalControl_AnyThread(FComponentSpacePose
 						{
 							CurrentAngle += FMath::RadiansToDegrees(Rt1.Ref(i * AXIS_COUNT + Axis));
 							float DeltaAngle = FRotator::NormalizeAxis(CurrentAngle - InputAngle);
-							if (FMath::IsNaN(DeltaAngle) && !FMath::IsNearlyZero(DeltaAngle))
+							if (!FMath::IsNaN(DeltaAngle) && !FMath::IsNearlyZero(DeltaAngle))
 							{
 								Eta.Ref(i * AXIS_COUNT + Axis) = GetMappedRangeEaseInClamped(
 									0, 90,

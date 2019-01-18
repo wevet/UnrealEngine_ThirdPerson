@@ -17,7 +17,8 @@ ACharacterBase::ACharacterBase(const FObjectInitializer& ObjectInitializer)
 	BaseLookUpRate(45.f),
 	MovementSpeed(300.f),
 	HeadSocketName(FName(TEXT("Head"))),
-	TakeDamageInterval(0.f)
+	TakeDamageInterval(0.f),
+	ComboTakeInterval(0.f)
 {
 	PrimaryActorTick.bCanEverTick = true;
 	bCrouch = false;
@@ -48,6 +49,11 @@ void ACharacterBase::BeginDestroy()
 void ACharacterBase::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	Super::EndPlay(EndPlayReason);
+
+	if (CurrentWeapon.IsValid())
+	{
+		CurrentWeapon.Reset();
+	}
 }
 
 void ACharacterBase::BeginPlay()
@@ -69,6 +75,10 @@ void ACharacterBase::Tick(float DeltaTime)
 	if (TakeDamageInterval >= 0.f)
 	{
 		TakeDamageInterval -= DeltaTime;
+	}
+	if (ComboTakeInterval >= 0.f)
+	{
+		ComboTakeInterval -= DeltaTime;
 	}
 }
 
@@ -223,6 +233,7 @@ void ACharacterBase::OnTakeDamage_Implementation(FName BoneName, float Damage, A
 
 		}
 		//UE_LOG(LogWevetClient, Log, TEXT("HitBoneName : %s"), *BoneName.ToString());
+		TakeDamageActionMontage();
 	}
 }
 
@@ -305,14 +316,6 @@ void ACharacterBase::ReleaseWeaponToWorld(const FTransform Transform, AWeaponBas
 	const FWeaponItemInfo WeaponItemInfo = Weapon->WeaponItemInfo;
 	TSubclassOf<class AWeaponBase> WeaponClass = WeaponItemInfo.WeaponClass;
 	Weapon->Release(nullptr);
-	if (Weapon->IsPendingKill())
-	{
-		UE_LOG(LogWevetClient, Log, TEXT("Yes PendingKill"));
-	}
-	else
-	{
-		UE_LOG(LogWevetClient, Warning, TEXT("Not PendingKill"));
-	}
 	Weapon = nullptr;
 
 	AWeaponBase* const SpawningObject = World->SpawnActorDeferred<AWeaponBase>(
@@ -486,6 +489,40 @@ void ACharacterBase::ReloadActionMontage()
 				//
 			}
 			break;
+		}
+	}
+}
+
+void ACharacterBase::TakeDamageActionMontage()
+{
+	if (TakeDamageInterval <= 0)
+	{
+		if (SelectedWeapon)
+		{
+			const FWeaponItemInfo Info = SelectedWeapon->WeaponItemInfo;
+			switch (Info.WeaponItemType)
+			{
+			case EWeaponItemType::Rifle:
+			case EWeaponItemType::Sniper:
+				if (RifleHitDamageMontage)
+				{
+					TakeDamageInterval = PlayAnimMontage(RifleHitDamageMontage);
+				}
+				break;
+			case EWeaponItemType::Bomb:
+				//
+				break;
+			case EWeaponItemType::Pistol:
+				//
+				break;
+			};
+		}
+		else
+		{
+			if (DefaultHitDamageMontage)
+			{
+				TakeDamageInterval = PlayAnimMontage(DefaultHitDamageMontage);
+			}
 		}
 	}
 }
