@@ -5,6 +5,7 @@
 #include "Engine.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "Math/RotationMatrix.h"
 //#include "ShaderCompiler.h"
 
 AMockCharacter::AMockCharacter(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
@@ -43,7 +44,7 @@ void AMockCharacter::BeginPlay()
 	for (int i = 0; i < RefSkeleton.GetRawBoneNum(); ++i)
 	{
 		auto Info = RefSkeleton.GetRawRefBoneInfo()[i];
-		UE_LOG(LogWevetClient, Log, TEXT("BoneName : %s \n BoneIndex : %d"), *Info.Name.ToString(), Info.ParentIndex);
+		//UE_LOG(LogWevetClient, Log, TEXT("BoneName : %s \n BoneIndex : %d"), *Info.Name.ToString(), Info.ParentIndex);
 	}
 }
 
@@ -62,9 +63,10 @@ void AMockCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInpu
 	PlayerInputComponent->BindAxis("LookUpRate",  this, &AMockCharacter::LookUpAtRate);
 	PlayerInputComponent->BindAxis("MoveForward", this, &AMockCharacter::MoveForward);
 	PlayerInputComponent->BindAxis("MoveRight",   this, &AMockCharacter::MoveRight);
+#if !WITH_EDITOR
 	PlayerInputComponent->BindTouch(IE_Pressed,   this, &AMockCharacter::TouchStarted);
 	PlayerInputComponent->BindTouch(IE_Released,  this, &AMockCharacter::TouchStopped);
-
+#endif
 	// interaction
 	PlayerInputComponent->BindAction("ReleaseObjects", IE_Pressed, this, &AMockCharacter::ReleaseObjects);
 	PlayerInputComponent->BindAction("PickupObjects",  IE_Pressed, this, &AMockCharacter::PickupObjects);
@@ -80,8 +82,17 @@ void AMockCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInpu
 void AMockCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
+	//FRotator Rotation = GetActorRotation();
+	//FVector StartLocation = Rotation.Quaternion().GetForwardVector();
+	//auto Temp = StartLocation;
+	//auto Dir = StartLocation.RotateAngleAxis(Rotation.Yaw, StartLocation);
+	//StartLocation += Dir;
+	//UE_LOG(LogWevetClient, Warning, TEXT("StartLocation : %s"), *Temp.ToString());
+	//UE_LOG(LogWevetClient, Warning, TEXT("Direction : %s"), *StartLocation.ToString());
 }
 
+#if !WITH_EDITOR
 void AMockCharacter::TouchStarted(ETouchIndex::Type FingerIndex, FVector Location)
 {
 	Super::Jump();
@@ -91,6 +102,7 @@ void AMockCharacter::TouchStopped(ETouchIndex::Type FingerIndex, FVector Locatio
 {
 	Super::StopJumping();
 }
+#endif
 
 void AMockCharacter::TurnAtRate(float Rate)
 {

@@ -57,8 +57,10 @@ protected:
 	virtual void PickupObjects() override;
 	virtual void ReleaseObjects() override;
 
+#if !WITH_EDITOR
 	void TouchStarted(ETouchIndex::Type FingerIndex, FVector Location);
 	void TouchStopped(ETouchIndex::Type FingerIndex, FVector Location);
+#endif
 	void TurnAtRate(float Rate);
 	void LookUpAtRate(float Rate);
 	void MoveForward(float Value);

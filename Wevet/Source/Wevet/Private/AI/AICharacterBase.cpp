@@ -140,20 +140,22 @@ void AAICharacterBase::Die_Implementation()
 
 	WidgetComponent->SetVisibility(false);
 	TargetCharacter = nullptr;
+	// not spawned WeaponActor
+	WeaponList.Empty();
 	Super::Die_Implementation();
 
 }
 
 void AAICharacterBase::Equipment_Implementation()
 {
+
 	if (!HasEquipWeapon())
 	{
 		check(SelectedWeapon);
+		const FName SocketName(SelectedWeapon->WeaponItemInfo.EquipSocketName);
+		FAttachmentTransformRules Rules(EAttachmentRule::SnapToTarget, true);
 		Super::Equipment_Implementation();
-		Super::SelectedWeapon->AttachToComponent(
-			Super::GetMesh(),
-			{ EAttachmentRule::SnapToTarget, true },
-			Super::SelectedWeapon->WeaponItemInfo.EquipSocketName);
+		SelectedWeapon->AttachToComponent(Super::GetMesh(), Rules, SocketName);
 	}
 }
 
@@ -165,10 +167,9 @@ void AAICharacterBase::UnEquipment_Implementation()
 	}
 	check(SelectedWeapon);
 	Super::UnEquipment_Implementation();
-	Super::SelectedWeapon->AttachToComponent(
-		Super::GetMesh(),
-		{ EAttachmentRule::SnapToTarget, true },
-		Super::SelectedWeapon->WeaponItemInfo.UnEquipSocketName);
+	const FName SocketName(SelectedWeapon->WeaponItemInfo.UnEquipSocketName);
+	FAttachmentTransformRules Rules(EAttachmentRule::SnapToTarget, true);
+	SelectedWeapon->AttachToComponent(Super::GetMesh(), Rules, SocketName);
 }
 
 void AAICharacterBase::OnTakeDamage_Implementation(FName BoneName, float Damage, AActor* Actor)
@@ -217,7 +218,7 @@ FVector AAICharacterBase::BulletTraceForwardLocation() const
 
 void AAICharacterBase::CreateWeaponInstance()
 {
-	check(GetWorld());
+	UWorld* const World = GetWorld();
 
 	if (SpawnWeapon == nullptr)
 	{
@@ -228,19 +229,18 @@ void AAICharacterBase::CreateWeaponInstance()
 	SpawnParams.Owner = this;
 	SpawnParams.Instigator = Instigator;
 	const FTransform Transform = FTransform::Identity;
-	AWeaponBase* const SpawningObject = GetWorld()->SpawnActor<AWeaponBase>(SpawnWeapon, Transform, SpawnParams);
-	Super::SelectedWeapon = SpawningObject;
+	AWeaponBase* const SpawningObject = World->SpawnActor<AWeaponBase>(SpawnWeapon, Transform, SpawnParams);
+	
+	SelectedWeapon = SpawningObject;
+	const FName SocketName(SelectedWeapon->WeaponItemInfo.UnEquipSocketName);
+	FAttachmentTransformRules Rules(EAttachmentRule::SnapToTarget, true);
+	SelectedWeapon->AttachToComponent(Super::GetMesh(), Rules, SocketName);
+	SelectedWeapon->Take(this);
+	SelectedWeapon->GetSphereComponent()->DestroyComponent();
 
-	Super::SelectedWeapon->AttachToComponent(
-		Super::GetMesh(), 
-		{ EAttachmentRule::SnapToTarget, true }, 
-		Super::SelectedWeapon->WeaponItemInfo.UnEquipSocketName);
-	Super::SelectedWeapon->Take(this);
-	Super::SelectedWeapon->GetSphereComponent()->DestroyComponent();
-
-	if (Super::WeaponList.Find(Super::SelectedWeapon) == INDEX_NONE)
+	if (Super::WeaponList.Find(SelectedWeapon) == INDEX_NONE)
 	{
-		Super::WeaponList.Emplace(Super::SelectedWeapon);
+		Super::WeaponList.Emplace(SelectedWeapon);
 	}
 }
 
