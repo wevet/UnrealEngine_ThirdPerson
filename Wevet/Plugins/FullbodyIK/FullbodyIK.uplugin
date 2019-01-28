@@ -1,20 +1,20 @@
 {
-	"FileVersion" : 3,
-	"Version" : 1,
-	"VersionName" : "1.0",
-	"FriendlyName" : "FullbodyIK Plugin",
-	"Description" : "Animation Blueprint FullbodyIK Plugin",
-	"Category" : "Animation",
-	"CreatedBy" : "Shunji Nagasawa",
-	"DocsURL" : "",
-	"MarketplaceURL" : "",
-	"SupportURL" : "",
-	"EnabledByDefault" : false,
-	"CanContainContent" : false,
-	"IsBetaVersion" : false,
-	"Installed" : false,
-	"Modules" :
-	[
+  "FileVersion": 3,
+  "Version": 1,
+  "VersionName": "0.1",
+  "FriendlyName": "FullbodyIK",
+  "Description": "",
+  "Category": "Animation",
+  "CreatedBy": "",
+  "CreatedByURL": "",
+  "DocsURL": "",
+  "MarketplaceURL": "",
+  "SupportURL": "",
+  "CanContainContent": true,
+  "IsBetaVersion": true,
+  "Installed": false,
+  "EnabledByDefault": false,
+  "Modules": [
     {
       "Name": "FullbodyIK",
       "Type": "Runtime",
@@ -25,5 +25,5 @@
       "Type": "Editor",
       "LoadingPhase": "Default"
     }
-	]
+  ]
 }

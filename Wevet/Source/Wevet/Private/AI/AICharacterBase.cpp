@@ -89,8 +89,8 @@ void AAICharacterBase::MainLoop(float DeltaTime)
 		return;
 	}
 
-	if ((Super::SelectedWeapon && Super::SelectedWeapon->bEmpty)
-		|| (Super::SelectedWeapon && Super::SelectedWeapon->bReload))
+	if ((Super::GetSelectedWeapon() && Super::GetSelectedWeapon()->bEmpty)
+		|| (Super::GetSelectedWeapon() && Super::GetSelectedWeapon()->bReload))
 	{
 		return;
 	}
@@ -151,11 +151,11 @@ void AAICharacterBase::Equipment_Implementation()
 
 	if (!HasEquipWeapon())
 	{
-		check(SelectedWeapon);
-		const FName SocketName(SelectedWeapon->WeaponItemInfo.EquipSocketName);
+		check(CurrentWeapon.IsValid());
+		const FName SocketName(CurrentWeapon.Get()->WeaponItemInfo.EquipSocketName);
 		FAttachmentTransformRules Rules(EAttachmentRule::SnapToTarget, true);
 		Super::Equipment_Implementation();
-		SelectedWeapon->AttachToComponent(Super::GetMesh(), Rules, SocketName);
+		CurrentWeapon.Get()->AttachToComponent(Super::GetMesh(), Rules, SocketName);
 	}
 }
 
@@ -165,11 +165,11 @@ void AAICharacterBase::UnEquipment_Implementation()
 	{
 		return;
 	}
-	check(SelectedWeapon);
+	check(CurrentWeapon.IsValid());
 	Super::UnEquipment_Implementation();
-	const FName SocketName(SelectedWeapon->WeaponItemInfo.UnEquipSocketName);
+	const FName SocketName(CurrentWeapon.Get()->WeaponItemInfo.UnEquipSocketName);
 	FAttachmentTransformRules Rules(EAttachmentRule::SnapToTarget, true);
-	SelectedWeapon->AttachToComponent(Super::GetMesh(), Rules, SocketName);
+	CurrentWeapon.Get()->AttachToComponent(Super::GetMesh(), Rules, SocketName);
 }
 
 void AAICharacterBase::OnTakeDamage_Implementation(FName BoneName, float Damage, AActor* Actor)
@@ -200,18 +200,18 @@ void AAICharacterBase::InitializePosses()
 
 FVector AAICharacterBase::BulletTraceRelativeLocation() const
 {
-	if (Super::SelectedWeapon)
+	if (CurrentWeapon.IsValid())
 	{
-		return Super::SelectedWeapon->GetMuzzleTransform().GetLocation();
+		return CurrentWeapon.Get()->GetMuzzleTransform().GetLocation();
 	}
 	return FVector::ZeroVector;
 }
 
 FVector AAICharacterBase::BulletTraceForwardLocation() const
 {
-	if (Super::SelectedWeapon)
+	if (CurrentWeapon.IsValid())
 	{
-		return Super::SelectedWeapon->GetMuzzleTransform().GetRotation().GetForwardVector();
+		return CurrentWeapon.Get()->GetMuzzleTransform().GetRotation().GetForwardVector();
 	}
 	return FVector::ForwardVector;
 }
@@ -231,16 +231,16 @@ void AAICharacterBase::CreateWeaponInstance()
 	const FTransform Transform = FTransform::Identity;
 	AWeaponBase* const SpawningObject = World->SpawnActor<AWeaponBase>(SpawnWeapon, Transform, SpawnParams);
 	
-	SelectedWeapon = SpawningObject;
-	const FName SocketName(SelectedWeapon->WeaponItemInfo.UnEquipSocketName);
+	CurrentWeapon = MakeWeakObjectPtr<AWeaponBase>(SpawningObject);
+	const FName SocketName(CurrentWeapon.Get()->WeaponItemInfo.UnEquipSocketName);
 	FAttachmentTransformRules Rules(EAttachmentRule::SnapToTarget, true);
-	SelectedWeapon->AttachToComponent(Super::GetMesh(), Rules, SocketName);
-	SelectedWeapon->Take(this);
-	SelectedWeapon->GetSphereComponent()->DestroyComponent();
+	CurrentWeapon.Get()->AttachToComponent(Super::GetMesh(), Rules, SocketName);
+	CurrentWeapon.Get()->Take(this);
+	CurrentWeapon.Get()->GetSphereComponent()->DestroyComponent();
 
-	if (Super::WeaponList.Find(SelectedWeapon) == INDEX_NONE)
+	if (Super::WeaponList.Find(CurrentWeapon.Get()) == INDEX_NONE)
 	{
-		Super::WeaponList.Emplace(SelectedWeapon);
+		Super::WeaponList.Emplace(CurrentWeapon.Get());
 	}
 }
 

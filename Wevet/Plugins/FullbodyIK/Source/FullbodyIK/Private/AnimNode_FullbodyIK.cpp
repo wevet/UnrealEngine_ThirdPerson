@@ -5,7 +5,6 @@
 #include "SceneManagement.h"
 #include "AnimInstanceInterface_FullbodyIK.h"
 #include "DrawDebugHelpers.h"
-#include <iostream>
 
 DECLARE_CYCLE_STAT(TEXT("FullbodyIK Eval"), STAT_FullbodyIK_Eval, STATGROUP_Anim);
 DECLARE_CYCLE_STAT(TEXT("FullbodyIK MatrixInverse"), STAT_FullbodyIK_MatrixInverse, STATGROUP_Anim);
@@ -18,27 +17,26 @@ DECLARE_CYCLE_STAT(TEXT("FullbodyIK CalcJacobian"), STAT_FullbodyIK_CalcJacobian
 DECLARE_CYCLE_STAT(TEXT("FullbodyIK SolveSolver"), STAT_FullbodyIK_SolveSolver, STATGROUP_Anim);
 DECLARE_CYCLE_STAT(TEXT("FullbodyIK UpdateCenterOfMass"), STAT_FullbodyIK_UpdateCenterOfMass, STATGROUP_Anim);
 
-#pragma region static
 static const int32 AXIS_COUNT = 3;
 
 static FORCEINLINE float SinD(float X) 
-{ 
-	auto Value = FMath::Sin(FMath::DegreesToRadians(X));
-	if (!FMath::IsNaN(Value))
+{
+	auto Rad = FMath::DegreesToRadians(X);
+	if (FMath::IsNaN(Rad))
 	{
-		return Value;
+		Rad = 0.f;
 	}
-	return 0.f; 
+	return FMath::Sin(Rad);
 }
 
 static FORCEINLINE float CosD(float X) 
 {
-	auto Value = FMath::Cos(FMath::DegreesToRadians(X)); 
-	if (!FMath::IsNaN(Value))
+	auto Rad = FMath::DegreesToRadians(X);
+	if (FMath::IsNaN(Rad))
 	{
-		return Value;
+		Rad = 0.f;
 	}
-	return 0.f;
+	return FMath::Cos(Rad);
 }
 
 static FORCEINLINE FMatrix RotX(float Roll)
@@ -50,7 +48,6 @@ static FORCEINLINE FMatrix RotX(float Roll)
 		FPlane(0, 0, 0, 1)
 	);
 }
-
 static FORCEINLINE FMatrix RotY(float Pitch)
 {
 	return FMatrix(
@@ -60,7 +57,6 @@ static FORCEINLINE FMatrix RotY(float Pitch)
 		FPlane(0, 0, 0, 1)
 	);
 }
-
 static FORCEINLINE FMatrix RotZ(float Yaw)
 {
 	return FMatrix(
@@ -80,7 +76,6 @@ static FORCEINLINE FMatrix DiffX(float Roll)
 		FPlane(0, 0, 0, 0)
 	);
 }
-
 static FORCEINLINE FMatrix DiffY(float Pitch)
 {
 	return FMatrix(
@@ -90,7 +85,6 @@ static FORCEINLINE FMatrix DiffY(float Pitch)
 		FPlane(0, 0, 0, 0)
 	);
 }
-
 static FORCEINLINE FMatrix DiffZ(float Yaw)
 {
 	return FMatrix(
@@ -159,7 +153,7 @@ static FORCEINLINE float MatrixInverse4(float* DstMatrix, const float* SrcMatrix
 				SrcMatrix[2 * 4 + 1] * (SrcMatrix[0 * 4 + 2] * SrcMatrix[1 * 4 + 3] - SrcMatrix[0 * 4 + 3] * SrcMatrix[1 * 4 + 2])
 				);
 
-	if (Det == 0)
+	if (Det == 0 || FMath::IsNaN(Det))
 	{
 		return Det;
 	}
@@ -236,16 +230,15 @@ static FORCEINLINE float GetMappedRangeEaseInClamped(
 	const float& Value)
 {
 	float Pct = FMath::Clamp((Value - InRangeMin) / (InRangeMax - InRangeMin), 0.f, 1.f);
-	Pct = (FMath::IsNaN(Pct) == false) ? Pct : 0.f;
 	return FMath::InterpEaseIn(OutRangeMin, OutRangeMax, Pct, Exp);
 }
-#pragma endregion
+
 
 FAnimNode_FullbodyIK::FAnimNode_FullbodyIK()
-	: Setting(nullptr),
-	EffectorCountMax(4),
-	DebugShowCenterOfMassRadius(0.f),
-	bDebugShowEffectiveCount(false)
+	: Setting(nullptr)
+	, EffectorCountMax(4)
+	, DebugShowCenterOfMassRadius(0.f)
+	, bDebugShowEffectiveCount(false)
 {
 }
 
@@ -258,104 +251,117 @@ void FAnimNode_FullbodyIK::Initialize_AnyThread(const FAnimationInitializeContex
 		return;
 	}
 
-	if (USkeletalMeshComponent* const SkeletalMeshComponent = Context.AnimInstanceProxy->GetSkelMeshComponent())
+	USkeletalMeshComponent* const SkeletalMeshComponent = Context.AnimInstanceProxy->GetSkelMeshComponent();
+	if (SkeletalMeshComponent == nullptr)
 	{
-		for (const FName& IkEndBoneName : IkEndBoneNames)
+		return;
+	}
+
+	for (const FName& IkEndBoneName : IkEndBoneNames)
+	{
+		FName BoneName = IkEndBoneName;
+
+		while (true)
 		{
-			FName BoneName = IkEndBoneName;
-			while (true)
+			int32 BoneIndex = SkeletalMeshComponent->GetBoneIndex(BoneName);
+
+			if (BoneIndex == INDEX_NONE || SolverInternals.Contains(BoneIndex))
 			{
-				int32 BoneIndex = SkeletalMeshComponent->GetBoneIndex(BoneName);
-
-				if (BoneIndex == INDEX_NONE || SolverInternals.Contains(BoneIndex))
-				{
-					break;
-				}
-
-				SolverInternals.Add(BoneIndex, FSolverInternal());
-				BoneIndices.Add(BoneIndex);
-
-				FName ParentBoneName     = SkeletalMeshComponent->GetParentBone(BoneName);
-				int32 ParentBoneIndex    = SkeletalMeshComponent->GetBoneIndex(ParentBoneName);
-				FFullbodyIKSolver Solver = GetSolver(BoneName);
-
-				FSolverInternal& SolverInternal = SolverInternals[BoneIndex];
-				SolverInternal.BoneIndex = BoneIndex;
-				SolverInternal.ParentBoneIndex = ParentBoneIndex;
-				SolverInternal.BoneIndicesIndex = -1;
-				SolverInternal.bTranslation = Solver.bTranslation;
-				SolverInternal.bLimited = Solver.bLimited;
-				SolverInternal.Mass = Solver.Mass;
-				SolverInternal.X = Solver.X;
-				SolverInternal.Y = Solver.Y;
-				SolverInternal.Z = Solver.Z;
-
-				if (ParentBoneIndex >= 0)
-				{
-					if (!SolverTree.Contains(ParentBoneIndex))
-					{
-						SolverTree.Add(ParentBoneIndex, TArray<int32>());
-					}
-					SolverTree[ParentBoneIndex].Add(BoneIndex);
-				}
-				BoneName = ParentBoneName;
+				break;
 			}
+
+			SolverInternals.Add(BoneIndex, FSolverInternal());
+			BoneIndices.Add(BoneIndex);
+
+			FName ParentBoneName = SkeletalMeshComponent->GetParentBone(BoneName);
+			int32 ParentBoneIndex = SkeletalMeshComponent->GetBoneIndex(ParentBoneName);
+			FFullbodyIKSolver Solver = GetSolver(BoneName);
+
+			FSolverInternal& SolverInternal = SolverInternals[BoneIndex];
+			SolverInternal.BoneIndex = BoneIndex;
+			SolverInternal.ParentBoneIndex = ParentBoneIndex;
+			SolverInternal.BoneIndicesIndex = -1;
+			SolverInternal.bTranslation = Solver.bTranslation;
+			SolverInternal.bLimited = Solver.bLimited;
+			SolverInternal.Mass = Solver.Mass;
+			SolverInternal.X = Solver.X;
+			SolverInternal.Y = Solver.Y;
+			SolverInternal.Z = Solver.Z;
+
+			if (ParentBoneIndex >= 0)
+			{
+				if (!SolverTree.Contains(ParentBoneIndex))
+				{
+					SolverTree.Add(ParentBoneIndex, TArray<int32>());
+				}
+
+				SolverTree[ParentBoneIndex].Add(BoneIndex);
+			}
+
+			BoneName = ParentBoneName;
 		}
+	}
 
-		BoneIndices.Sort();
-		BoneCount = BoneIndices.Num();
-		BoneAxisCount = BoneCount * AXIS_COUNT;
+	BoneIndices.Sort();
+	BoneCount = BoneIndices.Num();
+	BoneAxisCount = BoneCount * AXIS_COUNT;
 
-		for (int32 i = 0; i < BoneCount; ++i)
-		{
-			const int32& BoneIndex = BoneIndices[i];
-			SolverInternals[BoneIndex].BoneIndicesIndex = i;
-		}
+	for (int32 i = 0; i < BoneCount; ++i)
+	{
+		const int32& BoneIndex = BoneIndices[i];
+		SolverInternals[BoneIndex].BoneIndicesIndex = i;
+	}
 
-		//最大数確保
-		int32 EffectorCount = EffectorCountMax;
-		int32 DisplacementCount = BoneAxisCount;
+	// 最大数で確保
+	int32 EffectorCount = EffectorCountMax;
+	int32 DisplacementCount = BoneAxisCount;
 
-		ElementsJ.SetNumZeroed(DisplacementCount * AXIS_COUNT);
-		ElementsJt.SetNumZeroed(AXIS_COUNT * DisplacementCount);
-		ElementsJtJ.SetNumZeroed(AXIS_COUNT * AXIS_COUNT);
-		ElementsJtJi.SetNumZeroed(AXIS_COUNT * AXIS_COUNT);
-		ElementsJp.SetNumZeroed(AXIS_COUNT * DisplacementCount);
-		ElementsW0.SetNumZeroed(BoneAxisCount);
-		ElementsWi.SetNumZeroed(DisplacementCount * DisplacementCount);
-		ElementsJtWi.SetNumZeroed(AXIS_COUNT * DisplacementCount);
-		ElementsJtWiJ.SetNumZeroed(AXIS_COUNT * AXIS_COUNT);
-		ElementsJtWiJi.SetNumZeroed(AXIS_COUNT * AXIS_COUNT);
-		ElementsJtWiJiJt.SetNumZeroed(AXIS_COUNT * DisplacementCount);
-		ElementsJwp.SetNumZeroed(AXIS_COUNT * DisplacementCount);
-		ElementsRt1.SetNumZeroed(BoneAxisCount);
-		ElementsEta.SetNumZeroed(BoneAxisCount);
-		ElementsEtaJ.SetNumZeroed(AXIS_COUNT);
-		ElementsEtaJJp.SetNumZeroed(BoneAxisCount);
-		ElementsRt2.SetNumZeroed(BoneAxisCount);
+	ElementsJ.SetNumZeroed(DisplacementCount * AXIS_COUNT);
+	ElementsJt.SetNumZeroed(AXIS_COUNT * DisplacementCount);
+	ElementsJtJ.SetNumZeroed(AXIS_COUNT * AXIS_COUNT);
+	ElementsJtJi.SetNumZeroed(AXIS_COUNT * AXIS_COUNT);
+	ElementsJp.SetNumZeroed(AXIS_COUNT * DisplacementCount);
+	ElementsW0.SetNumZeroed(BoneAxisCount);
+	ElementsWi.SetNumZeroed(DisplacementCount * DisplacementCount);
+	ElementsJtWi.SetNumZeroed(AXIS_COUNT * DisplacementCount);
+	ElementsJtWiJ.SetNumZeroed(AXIS_COUNT * AXIS_COUNT);
+	ElementsJtWiJi.SetNumZeroed(AXIS_COUNT * AXIS_COUNT);
+	ElementsJtWiJiJt.SetNumZeroed(AXIS_COUNT * DisplacementCount);
+	ElementsJwp.SetNumZeroed(AXIS_COUNT * DisplacementCount);
+	ElementsRt1.SetNumZeroed(BoneAxisCount);
+	ElementsEta.SetNumZeroed(BoneAxisCount);
+	ElementsEtaJ.SetNumZeroed(AXIS_COUNT);
+	ElementsEtaJJp.SetNumZeroed(BoneAxisCount);
+	ElementsRt2.SetNumZeroed(BoneAxisCount);
 
-		//加重行列
-		FBuffer W0 = FBuffer(ElementsW0.GetData(), BoneAxisCount);
-		for (int32 i = 0; i < BoneCount; ++i)
-		{
-			int32 BoneIndex = BoneIndices[i];
-			W0.Ref(i * AXIS_COUNT + 0) = SolverInternals[BoneIndex].X.Weight;
-			W0.Ref(i * AXIS_COUNT + 1) = SolverInternals[BoneIndex].Y.Weight;
-			W0.Ref(i * AXIS_COUNT + 2) = SolverInternals[BoneIndex].Z.Weight;
-		}
+	// 加重行列 W
+	auto W0 = FBuffer(ElementsW0.GetData(), BoneAxisCount);
+	for (int32 i = 0; i < BoneCount; ++i)
+	{
+		int32 BoneIndex = BoneIndices[i];
+		W0.Ref(i * AXIS_COUNT + 0) = SolverInternals[BoneIndex].X.Weight;
+		W0.Ref(i * AXIS_COUNT + 1) = SolverInternals[BoneIndex].Y.Weight;
+		W0.Ref(i * AXIS_COUNT + 2) = SolverInternals[BoneIndex].Z.Weight;
 	}
 }
 
-void FAnimNode_FullbodyIK::GatherDebugData(FNodeDebugData& DebugData)
-{
-	Super::GatherDebugData(DebugData);
-}
+//void FAnimNode_FullbodyIK::GatherDebugData(FNodeDebugData& DebugData)
+//{
+//	Super::GatherDebugData(DebugData);
+//}
 
 void FAnimNode_FullbodyIK::EvaluateSkeletalControl_AnyThread(FComponentSpacePoseContext& Context, TArray<FBoneTransform>& OutBoneTransforms)
 {
 	SCOPE_CYCLE_COUNTER(STAT_FullbodyIK_Eval);
+
 	check(OutBoneTransforms.Num() == 0);
-	if (Setting == nullptr)
+
+	if (!Setting)
+	{
+		return;
+	}
+
+	if (Context.ContainsNaN())
 	{
 		return;
 	}
@@ -373,11 +379,6 @@ void FAnimNode_FullbodyIK::EvaluateSkeletalControl_AnyThread(FComponentSpacePose
 		return;
 	}
 
-	//if (GEngine)
-	//{
-	//	GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, FString::Printf(TEXT("EffectorsNum : %d")), Effectors.Effectors.Num());
-	//}
-
 	if (Effectors.Effectors.Num() <= 0)
 	{
 		return;
@@ -386,12 +387,11 @@ void FAnimNode_FullbodyIK::EvaluateSkeletalControl_AnyThread(FComponentSpacePose
 	CachedAnimInstanceObject = AnimInstanceObject;
 	CachedComponentTransform = Context.AnimInstanceProxy->GetComponentTransform();
 
-	// Effector
+	// エフェクタ
 	TArray<FEffectorInternal> EffectorInternals;
-	for (const FAnimNode_FullbodyIkEffector& Effector : Effectors.Effectors)
+	for (const auto& Effector : Effectors.Effectors)
 	{
-		if (Effector.EffectorBoneName == NAME_None || 
-			Effector.RootBoneName == NAME_None)
+		if (Effector.EffectorBoneName == NAME_None || Effector.RootBoneName == NAME_None)
 		{
 			continue;
 		}
@@ -401,8 +401,7 @@ void FAnimNode_FullbodyIK::EvaluateSkeletalControl_AnyThread(FComponentSpacePose
 		EffectorInternal.EffectorBoneIndex = SkeletalMeshComponent->GetBoneIndex(Effector.EffectorBoneName);
 		EffectorInternal.RootBoneIndex = SkeletalMeshComponent->GetBoneIndex(Effector.RootBoneName);
 
-		if (EffectorInternal.EffectorBoneIndex == INDEX_NONE || 
-			EffectorInternal.RootBoneIndex == INDEX_NONE)
+		if (EffectorInternal.EffectorBoneIndex == INDEX_NONE || EffectorInternal.RootBoneIndex == INDEX_NONE)
 		{
 			continue;
 		}
@@ -432,14 +431,16 @@ void FAnimNode_FullbodyIK::EvaluateSkeletalControl_AnyThread(FComponentSpacePose
 			{
 				break;
 			}
-
 			BoneIndex = ParentBoneIndex;
 		}
 		if (!bValidation)
 		{
 			continue;
 		}
-
+		//if (EffectorInternals.Contains(EffectorInternal))
+		//{
+		//	continue;
+		//}
 		EffectorInternals.Add(EffectorInternal);
 	}
 
@@ -453,16 +454,16 @@ void FAnimNode_FullbodyIK::EvaluateSkeletalControl_AnyThread(FComponentSpacePose
 	{
 		IAnimInstanceInterface_FullbodyIK::Execute_InitializeBoneOffset(AnimInstanceObject, BoneIndex);
 
-		// save to init transform
-		FCompactPoseBoneIndex CompactPoseBoneIndex = FCompactPoseBoneIndex(BoneIndex);
-		FSolverInternal& SolverInternal = SolverInternals[BoneIndex];
+		// 初期Transformを保存
+		auto CompactPoseBoneIndex = FCompactPoseBoneIndex(BoneIndex);
+		auto& SolverInternal = SolverInternals[BoneIndex];
 		SolverInternal.LocalTransform = Context.Pose.GetLocalSpaceTransform(CompactPoseBoneIndex);
 		SolverInternal.ComponentTransform = Context.Pose.GetComponentSpaceTransform(CompactPoseBoneIndex);
 		SolverInternal.InitLocalTransform = SolverInternal.LocalTransform;
 		SolverInternal.InitComponentTransform = SolverInternal.ComponentTransform;
 	}
 
-	// update transform solve
+	// Transform更新
 	SolveSolver(0, FTransform::Identity,
 		[&](int32 BoneIndex, FVector& SavedOffsetLocation, FVector& CurrentOffsetLocation)
 		{
@@ -474,7 +475,7 @@ void FAnimNode_FullbodyIK::EvaluateSkeletalControl_AnyThread(FComponentSpacePose
 		}
 	);
 
-	// update weight
+	// 重心の更新
 	UpdateCenterOfMass();
 
 	int32 StepLoopCount = 0;
@@ -485,7 +486,7 @@ void FAnimNode_FullbodyIK::EvaluateSkeletalControl_AnyThread(FComponentSpacePose
 
 		for (int32 EffectorIndex = 0; EffectorIndex < EffectorCount; ++EffectorIndex)
 		{
-			const FEffectorInternal& Effector = EffectorInternals[EffectorIndex];
+			const auto& Effector = EffectorInternals[EffectorIndex];
 			float EffectorStep[AXIS_COUNT];
 			float EtaStep = 0.f;
 
@@ -515,8 +516,9 @@ void FAnimNode_FullbodyIK::EvaluateSkeletalControl_AnyThread(FComponentSpacePose
 				break;
 			case EFullbodyIkEffectorType::KeepRotation:
 				{
-					const FSolverInternal& SolverInternal = SolverInternals[Effector.EffectorBoneIndex];
+					const auto& SolverInternal = SolverInternals[Effector.EffectorBoneIndex];
 
+					// Transform更新
 					SolveSolver(0, FTransform::Identity,
 						[&](int32 BoneIndex, FVector& SavedOffsetLocation, FVector& CurrentOffsetLocation)
 						{
@@ -545,8 +547,9 @@ void FAnimNode_FullbodyIK::EvaluateSkeletalControl_AnyThread(FComponentSpacePose
 				break;
 			case EFullbodyIkEffectorType::KeepLocationAndRotation:
 				{
-					const FSolverInternal& SolverInternal = SolverInternals[Effector.EffectorBoneIndex];
+					const auto& SolverInternal = SolverInternals[Effector.EffectorBoneIndex];
 
+					// Transform更新
 					SolveSolver(0, FTransform::Identity,
 						[&](int32 BoneIndex, FVector& SavedOffsetLocation, FVector& CurrentOffsetLocation)
 						{
@@ -573,7 +576,6 @@ void FAnimNode_FullbodyIK::EvaluateSkeletalControl_AnyThread(FComponentSpacePose
 					FVector EndSolverLocation = GetWorldSpaceBoneLocation(Effector.EffectorBoneIndex);
 					FVector DeltaLocation = Effector.Location - EndSolverLocation;
 					float DeltaLocationSize = DeltaLocation.Size();
-
 					if (DeltaLocationSize > Setting->ConvergenceDistance)
 					{
 						float Step = FMath::Min(Setting->StepSize, DeltaLocationSize);
@@ -583,19 +585,18 @@ void FAnimNode_FullbodyIK::EvaluateSkeletalControl_AnyThread(FComponentSpacePose
 						EffectorStep[1] = StepV.Y;
 						EffectorStep[2] = StepV.Z;
 					}
-
 					DisplacementCount = BoneAxisCount;
 				}
 				break;
+
 			case EFullbodyIkEffectorType::FollowOriginalLocation:
 				{
-					const FSolverInternal& SolverInternal = SolverInternals[Effector.EffectorBoneIndex];
+					const auto& SolverInternal = SolverInternals[Effector.EffectorBoneIndex];
 					FTransform InitWorldTransform = SolverInternal.InitComponentTransform * CachedComponentTransform;
 
 					FVector EndSolverLocation = GetWorldSpaceBoneLocation(Effector.EffectorBoneIndex);
 					FVector DeltaLocation = InitWorldTransform.GetLocation() + CachedComponentTransform.TransformVector(Effector.Location) - EndSolverLocation;
 					float DeltaLocationSize = DeltaLocation.Size();
-
 					if (DeltaLocationSize > Setting->ConvergenceDistance)
 					{
 						float Step = FMath::Min(Setting->StepSize, DeltaLocationSize);
@@ -605,15 +606,16 @@ void FAnimNode_FullbodyIK::EvaluateSkeletalControl_AnyThread(FComponentSpacePose
 						EffectorStep[1] = StepV.Y;
 						EffectorStep[2] = StepV.Z;
 					}
-
 					DisplacementCount = BoneAxisCount;
 				}
 				break;
+
 			case EFullbodyIkEffectorType::FollowOriginalRotation:
 				{
-					const FSolverInternal& SolverInternal = SolverInternals[Effector.EffectorBoneIndex];
+					const auto& SolverInternal = SolverInternals[Effector.EffectorBoneIndex];
 					FTransform InitWorldTransform = SolverInternal.InitComponentTransform * CachedComponentTransform;
 
+					// Transform更新
 					SolveSolver(0, FTransform::Identity,
 						[&](int32 BoneIndex, FVector& SavedOffsetLocation, FVector& CurrentOffsetLocation)
 						{
@@ -642,25 +644,30 @@ void FAnimNode_FullbodyIK::EvaluateSkeletalControl_AnyThread(FComponentSpacePose
 				break;
 			case EFullbodyIkEffectorType::FollowOriginalLocationAndRotation:
 				{
-					const FSolverInternal& SolverInternal = SolverInternals[Effector.EffectorBoneIndex];
+					const auto& SolverInternal = SolverInternals[Effector.EffectorBoneIndex];
 					FTransform InitWorldTransform = SolverInternal.InitComponentTransform * CachedComponentTransform;
 
+					// Transform更新
 					SolveSolver(0, FTransform::Identity,
 						[&](int32 BoneIndex, FVector& SavedOffsetLocation, FVector& CurrentOffsetLocation)
 						{
 						},
 						[&](int32 BoneIndex, FRotator& SavedOffsetRotation, FRotator& CurrentOffsetRotation)
 						{
-							if (BoneIndex == Effector.EffectorBoneIndex)
+							if (BoneIndex != Effector.EffectorBoneIndex)
 							{
-								FTransform EffectorWorldTransform = FTransform(InitWorldTransform.Rotator());
-								FTransform EffectorComponentTransform = EffectorWorldTransform * CachedComponentTransform.Inverse();
-								FTransform EffectorLocalTransform = EffectorComponentTransform * SolverInternals[SolverInternal.ParentBoneIndex].ComponentTransform.Inverse();
-								FRotator EffectorLocalRotation = EffectorLocalTransform.Rotator();
-								FRotator DeltaLocalRotation = EffectorLocalRotation + Effector.Rotation - CurrentOffsetRotation;
-								SavedOffsetRotation += DeltaLocalRotation;
-								CurrentOffsetRotation += DeltaLocalRotation;
+								return;
 							}
+
+							FTransform EffectorWorldTransform = FTransform(InitWorldTransform.Rotator());
+							FTransform EffectorComponentTransform = EffectorWorldTransform * CachedComponentTransform.Inverse();
+							FTransform EffectorLocalTransform = EffectorComponentTransform * SolverInternals[SolverInternal.ParentBoneIndex].ComponentTransform.Inverse();
+
+							FRotator EffectorLocalRotation = EffectorLocalTransform.Rotator();
+							FRotator DeltaLocalRotation = EffectorLocalRotation + Effector.Rotation - CurrentOffsetRotation;
+
+							SavedOffsetRotation += DeltaLocalRotation;
+							CurrentOffsetRotation += DeltaLocalRotation;
 						}
 					);
 
@@ -694,25 +701,25 @@ void FAnimNode_FullbodyIK::EvaluateSkeletalControl_AnyThread(FComponentSpacePose
 
 			EtaStep /= Setting->StepSize;
 
-			FBuffer J    = FBuffer(ElementsJ.GetData(), DisplacementCount, AXIS_COUNT);
-			FBuffer Jt   = FBuffer(ElementsJt.GetData(), AXIS_COUNT, DisplacementCount);
-			FBuffer JtJ  = FBuffer(ElementsJtJ.GetData(), AXIS_COUNT, AXIS_COUNT);
-			FBuffer JtJi = FBuffer(ElementsJtJi.GetData(), AXIS_COUNT, AXIS_COUNT);
-			FBuffer Jp   = FBuffer(ElementsJp.GetData(), AXIS_COUNT, DisplacementCount);
-			FBuffer W0   = FBuffer(ElementsW0.GetData(), BoneAxisCount);
-			FBuffer Wi   = FBuffer(ElementsWi.GetData(), DisplacementCount, DisplacementCount);
-			FBuffer JtWi     = FBuffer(ElementsJtWi.GetData(), AXIS_COUNT, DisplacementCount);
-			FBuffer JtWiJ    = FBuffer(ElementsJtWiJ.GetData(), AXIS_COUNT, AXIS_COUNT);
-			FBuffer JtWiJi   = FBuffer(ElementsJtWiJi.GetData(), AXIS_COUNT, AXIS_COUNT);
-			FBuffer JtWiJiJt = FBuffer(ElementsJtWiJiJt.GetData(), AXIS_COUNT, DisplacementCount);
-			FBuffer Jwp    = FBuffer(ElementsJwp.GetData(), AXIS_COUNT, DisplacementCount);
-			FBuffer Rt1    = FBuffer(ElementsRt1.GetData(), BoneAxisCount);
-			FBuffer Eta    = FBuffer(ElementsEta.GetData(), BoneAxisCount);
-			FBuffer EtaJ   = FBuffer(ElementsEtaJ.GetData(), AXIS_COUNT);
-			FBuffer EtaJJp = FBuffer(ElementsEtaJJp.GetData(), BoneAxisCount);
-			FBuffer Rt2    = FBuffer(ElementsRt2.GetData(), BoneAxisCount);
+			auto J = FBuffer(ElementsJ.GetData(), DisplacementCount, AXIS_COUNT);
+			auto Jt = FBuffer(ElementsJt.GetData(), AXIS_COUNT, DisplacementCount);
+			auto JtJ = FBuffer(ElementsJtJ.GetData(), AXIS_COUNT, AXIS_COUNT);
+			auto JtJi = FBuffer(ElementsJtJi.GetData(), AXIS_COUNT, AXIS_COUNT);
+			auto Jp = FBuffer(ElementsJp.GetData(), AXIS_COUNT, DisplacementCount);
+			auto W0 = FBuffer(ElementsW0.GetData(), BoneAxisCount);
+			auto Wi = FBuffer(ElementsWi.GetData(), DisplacementCount, DisplacementCount);
+			auto JtWi = FBuffer(ElementsJtWi.GetData(), AXIS_COUNT, DisplacementCount);
+			auto JtWiJ = FBuffer(ElementsJtWiJ.GetData(), AXIS_COUNT, AXIS_COUNT);
+			auto JtWiJi = FBuffer(ElementsJtWiJi.GetData(), AXIS_COUNT, AXIS_COUNT);
+			auto JtWiJiJt = FBuffer(ElementsJtWiJiJt.GetData(), AXIS_COUNT, DisplacementCount);
+			auto Jwp = FBuffer(ElementsJwp.GetData(), AXIS_COUNT, DisplacementCount);
+			auto Rt1 = FBuffer(ElementsRt1.GetData(), BoneAxisCount);
+			auto Eta = FBuffer(ElementsEta.GetData(), BoneAxisCount);
+			auto EtaJ = FBuffer(ElementsEtaJ.GetData(), AXIS_COUNT);
+			auto EtaJJp = FBuffer(ElementsEtaJJp.GetData(), BoneAxisCount);
+			auto Rt2 = FBuffer(ElementsRt2.GetData(), BoneAxisCount);
 
-			// J
+			// ヤコビアン J
 			// auto J = FBuffer(DisplacementCount, AXIS_COUNT);
 			J.Reset();
 			switch (Effector.EffectorType)
@@ -738,8 +745,8 @@ void FAnimNode_FullbodyIK::EvaluateSkeletalControl_AnyThread(FComponentSpacePose
 			MatrixMultiply(
 				JtJ.Ptr(),
 				Jt.Ptr(), AXIS_COUNT, DisplacementCount,
-				J.Ptr(), DisplacementCount, AXIS_COUNT);
-
+				J.Ptr(), DisplacementCount, AXIS_COUNT
+			);
 			for (int32 i = 0; i < AXIS_COUNT; ++i)
 			{
 				JtJ.Ref(i, i) += Setting->JtJInverseBias;
@@ -842,8 +849,12 @@ void FAnimNode_FullbodyIK::EvaluateSkeletalControl_AnyThread(FComponentSpacePose
 					SCOPE_CYCLE_COUNTER(STAT_FullbodyIK_CulcEta);
 
 					int32 BoneIndex = BoneIndices[i];
-					auto& SolverInternal = SolverInternals[BoneIndex];
+					if (!SolverInternals.Contains(BoneIndex))
+					{
+						continue;
+					}
 
+					auto& SolverInternal = SolverInternals[BoneIndex];
 					if (SolverInternal.bTranslation)
 					{
 						FVector CurrentLocation = GetLocalSpaceBoneLocation(BoneIndex);
@@ -876,13 +887,13 @@ void FAnimNode_FullbodyIK::EvaluateSkeletalControl_AnyThread(FComponentSpacePose
 						{
 							CurrentAngle += FMath::RadiansToDegrees(Rt1.Ref(i * AXIS_COUNT + Axis));
 							float DeltaAngle = FRotator::NormalizeAxis(CurrentAngle - InputAngle);
-							if (!FMath::IsNaN(DeltaAngle) && !FMath::IsNearlyZero(DeltaAngle))
+							if (!FMath::IsNearlyZero(DeltaAngle))
 							{
 								Eta.Ref(i * AXIS_COUNT + Axis) = GetMappedRangeEaseInClamped(
 									0, 90,
 									0, Setting->EtaSize * SolverAxis.EtaBias * EtaStep,
-									1.f, 
-									FMath::Abs(DeltaAngle)) * (DeltaAngle > 0 ? -1 : 1);
+									1.f, FMath::Abs(DeltaAngle)
+								) * (DeltaAngle > 0 ? -1 : 1);
 							}
 						};
 
@@ -923,7 +934,7 @@ void FAnimNode_FullbodyIK::EvaluateSkeletalControl_AnyThread(FComponentSpacePose
 				Rt2.Ref(i) = Eta.Ref(i) - EtaJJp.Ref(i);
 			}
 
-			// Transform
+			// Transform更新
 			SolveSolver(0, FTransform::Identity,
 				[&](int32 BoneIndex, FVector& SavedOffsetLocation, FVector& CurrentOffsetLocation)
 				{
@@ -961,6 +972,7 @@ void FAnimNode_FullbodyIK::EvaluateSkeletalControl_AnyThread(FComponentSpacePose
 			}
 		}
 
+		// 重心の更新
 		UpdateCenterOfMass();
 
 		++StepLoopCount;
@@ -1000,9 +1012,7 @@ void FAnimNode_FullbodyIK::EvaluateSkeletalControl_AnyThread(FComponentSpacePose
 	}
 }
 
-bool FAnimNode_FullbodyIK::IsValidToEvaluate(
-	const USkeleton* Skeleton, 
-	const FBoneContainer& RequiredBones)
+bool FAnimNode_FullbodyIK::IsValidToEvaluate(const USkeleton* Skeleton, const FBoneContainer& RequiredBones)
 {
 	return true;
 }
@@ -1013,74 +1023,113 @@ void FAnimNode_FullbodyIK::InitializeBoneReferences(const FBoneContainer& Requir
 
 FFullbodyIKSolver FAnimNode_FullbodyIK::GetSolver(FName BoneName) const
 {
-	if (Setting)
+	check(Setting);
+
+	for (auto& Solver : Setting->Solvers)
 	{
-		for (FFullbodyIKSolver& Solver : Setting->Solvers)
+		if (Solver.BoneName == BoneName)
 		{
-			if (Solver.BoneName == BoneName)
-			{
-				return Solver;
-			}
+			return Solver;
 		}
 	}
 
-	// not found to default
+	// 見つからなければデフォルト
 	FFullbodyIKSolver Solver;
 	Solver.BoneName = BoneName;
+
 	return Solver;
 }
 
 FTransform FAnimNode_FullbodyIK::GetWorldSpaceBoneTransform(const int32& BoneIndex) const
 {
-	FTransform Transform = SolverInternals[BoneIndex].ComponentTransform;
-	Transform *= CachedComponentTransform;
-	return Transform;
+	if (SolverInternals.Contains(BoneIndex))
+	{
+		FTransform Transform = SolverInternals[BoneIndex].ComponentTransform;
+		Transform *= CachedComponentTransform;
+		return Transform;
+	}
+	return FTransform::Identity;
 }
 
 FVector FAnimNode_FullbodyIK::GetWorldSpaceBoneLocation(const int32& BoneIndex) const
 {
-	FTransform Transform = SolverInternals[BoneIndex].ComponentTransform;
-	Transform *= CachedComponentTransform;
-	return Transform.GetLocation();
+	if (SolverInternals.Contains(BoneIndex))
+	{
+		FTransform Transform = SolverInternals[BoneIndex].ComponentTransform;
+		Transform *= CachedComponentTransform;
+		return Transform.GetLocation();
+	}
+	return FVector::ZeroVector;
 }
 
 FQuat FAnimNode_FullbodyIK::GetWorldSpaceBoneRotation(const int32& BoneIndex) const
 {
-	FTransform Transform = SolverInternals[BoneIndex].ComponentTransform;
-	Transform *= CachedComponentTransform;
-	return Transform.GetRotation();
+	FRotator Rot(FRotator::ZeroRotator);
+	if (SolverInternals.Contains(BoneIndex))
+	{
+		FTransform Transform = SolverInternals[BoneIndex].ComponentTransform;
+		Transform *= CachedComponentTransform;
+		return Transform.GetRotation();
+	}
+	return Rot.Quaternion();
 }
 
 FTransform FAnimNode_FullbodyIK::GetLocalSpaceBoneTransform(const int32& BoneIndex) const
 {
-	return SolverInternals[BoneIndex].LocalTransform;
+	if (SolverInternals.Contains(BoneIndex))
+	{
+		return SolverInternals[BoneIndex].LocalTransform;
+	}
+	return FTransform::Identity;
 }
 
 FVector FAnimNode_FullbodyIK::GetLocalSpaceBoneLocation(const int32& BoneIndex) const
 {
-	FTransform Transform = SolverInternals[BoneIndex].LocalTransform;
-	return Transform.GetLocation();
+	FTransform Transform;
+	FVector Loc(FVector::ZeroVector);
+	if (SolverInternals.Contains(BoneIndex))
+	{
+		if (Transform.GetLocation().ContainsNaN())
+		{
+			Transform = SolverInternals[BoneIndex].LocalTransform;
+			Transform.SetLocation(Loc);
+		}
+		return Transform.GetLocation();
+	}
+	return Loc;
 }
 
 FQuat FAnimNode_FullbodyIK::GetLocalSpaceBoneRotation(const int32& BoneIndex) const
 {
-	FTransform Transform = SolverInternals[BoneIndex].LocalTransform;
-	return Transform.GetRotation();
+	FTransform Transform;
+	FRotator Rot(FRotator::ZeroRotator);
+	if (SolverInternals.Contains(BoneIndex))
+	{
+		Transform = SolverInternals[BoneIndex].LocalTransform;
+		if (Transform.GetRotation().ContainsNaN())
+		{
+			Transform.SetRotation(Rot.Quaternion());
+		}
+		return Transform.GetRotation();
+	}
+	return Rot.Quaternion();
 }
 
-void FAnimNode_FullbodyIK::CalcJacobian(
-	const FEffectorInternal& EffectorInternal, 
-	float* Jacobian)
+void FAnimNode_FullbodyIK::CalcJacobian(const FEffectorInternal& EffectorInternal, float* Jacobian)
 {
 	SCOPE_CYCLE_COUNTER(STAT_FullbodyIK_CalcJacobian);
 
 	int32 BoneIndex = EffectorInternal.EffectorBoneIndex;
-	const FVector EndSolverLocation = GetWorldSpaceBoneLocation(BoneIndex);
-	BoneIndex = SolverInternals[BoneIndex].ParentBoneIndex;
+	const auto EndSolverLocation = GetWorldSpaceBoneLocation(BoneIndex);
+	
+	if (SolverInternals.Contains(BoneIndex)) 
+	{
+		BoneIndex = SolverInternals[BoneIndex].ParentBoneIndex;
+	}
 
 	while (true)
 	{
-		const FSolverInternal& SolverInternal = SolverInternals[BoneIndex];
+		const auto& SolverInternal = SolverInternals[BoneIndex];
 		int32 ParentBoneIndex = SolverInternal.ParentBoneIndex;
 
 		FQuat ParentWorldRotation = FQuat::Identity;
@@ -1135,8 +1184,7 @@ void FAnimNode_FullbodyIK::CalcJacobian(
 			}
 		}
 
-		if (BoneIndex == EffectorInternal.RootBoneIndex || 
-			ParentBoneIndex == INDEX_NONE)
+		if (BoneIndex == EffectorInternal.RootBoneIndex || ParentBoneIndex == INDEX_NONE)
 		{
 			break;
 		}
@@ -1153,8 +1201,12 @@ void FAnimNode_FullbodyIK::SolveSolver(
 {
 	SCOPE_CYCLE_COUNTER(STAT_FullbodyIK_SolveSolver);
 
-	FSolverInternal& SolverInternal = SolverInternals[BoneIndex];
+	if (!SolverInternals.Contains(BoneIndex))
+	{
+		return;
+	}
 
+	auto& SolverInternal = SolverInternals[BoneIndex];
 	if (SolverInternal.bTranslation)
 	{
 		FVector SavedOffsetLocation = IAnimInstanceInterface_FullbodyIK::Execute_GetBoneLocationOffset(CachedAnimInstanceObject, BoneIndex);
@@ -1260,14 +1312,17 @@ void FAnimNode_FullbodyIK::SolveSolver(
 		IAnimInstanceInterface_FullbodyIK::Execute_SetBoneRotationOffset(CachedAnimInstanceObject, BoneIndex, SavedOffsetRotation);
 
 		CurrentOffsetRotation.Normalize();
-		SolverInternal.LocalTransform.SetRotation(FQuat(CurrentOffsetRotation));
+		if (!CurrentOffsetRotation.ContainsNaN())
+		{
+			SolverInternal.LocalTransform.SetRotation(FQuat(CurrentOffsetRotation));
+		}
 	}
 
 	SolverInternal.ComponentTransform = SolverInternal.LocalTransform * ParentComponentTransform;
 
 	if (SolverTree.Contains(BoneIndex))
 	{
-		for (int32 ChildBoneIndex : SolverTree[BoneIndex])
+		for (auto ChildBoneIndex : SolverTree[BoneIndex])
 		{
 			SolveSolver(ChildBoneIndex, SolverInternal.ComponentTransform, LocationOffsetProcess, RotationOffsetProcess);
 		}
@@ -1283,7 +1338,7 @@ void FAnimNode_FullbodyIK::UpdateCenterOfMass()
 
 	for (const int32& BoneIndex : BoneIndices)
 	{
-		const FSolverInternal& SolverInternal = SolverInternals[BoneIndex];
+		const auto& SolverInternal = SolverInternals[BoneIndex];
 		const int32& ParentBoneIndex = SolverInternal.ParentBoneIndex;
 
 		if (ParentBoneIndex == INDEX_NONE)
@@ -1291,15 +1346,13 @@ void FAnimNode_FullbodyIK::UpdateCenterOfMass()
 			continue;
 		}
 
-		const FSolverInternal& ParentSolverInternal = SolverInternals[ParentBoneIndex];
-		CenterOfMass += (SolverInternal.ComponentTransform.GetLocation() + ParentSolverInternal.ComponentTransform.GetLocation()) * 0.5f * SolverInternal.Mass;
-		MassSum += SolverInternal.Mass;
+		if (SolverInternals.Contains(ParentBoneIndex))
+		{
+			const auto& ParentSolverInternal = SolverInternals[ParentBoneIndex];
+			CenterOfMass += (SolverInternal.ComponentTransform.GetLocation() + ParentSolverInternal.ComponentTransform.GetLocation()) * 0.5f * SolverInternal.Mass;
+			MassSum += SolverInternal.Mass;
+		}
 	}
+
 	CenterOfMass /= MassSum;
 }
-
-//#if WITH_EDITOR
-//void FAnimNode_FullbodyIK::ConditionalDebugDraw(FPrimitiveDrawInterface* PDI, USkeletalMeshComponent* MeshComp) const
-//{
-//}
-//#endif

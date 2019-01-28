@@ -1,6 +1,4 @@
-// Copyright 1998-2018 Epic Games, Inc. All Rights Reserved.
-
-#pragma once
+﻿#pragma once
 
 #include "CoreMinimal.h"
 #include "FullbodyIKSetting.generated.h"
@@ -8,14 +6,14 @@
 USTRUCT(BlueprintType)
 struct FULLBODYIK_API FFullbodyIKSolverAxis
 {
-	GENERATED_USTRUCT_BODY();
+	GENERATED_BODY()
 
 public:
 	FFullbodyIKSolverAxis()
-		: Weight(1.f),
-		LimitMin(-180.f),
-		LimitMax(180.f),
-		EtaBias(1.f)
+		: Weight(1.f)
+		, LimitMin(-180.f)
+		, LimitMax(180.f)
+		, EtaBias(1.f)
 	{
 	}
 
@@ -35,14 +33,14 @@ public:
 USTRUCT(BlueprintType)
 struct FULLBODYIK_API FFullbodyIKSolver
 {
-	GENERATED_USTRUCT_BODY();
+	GENERATED_BODY()
 
 public:
 	FFullbodyIKSolver()
-		: BoneName(NAME_None),
-		bTranslation(false),
-		bLimited(false),
-		Mass(1.f)
+		: BoneName(NAME_None)
+		, bTranslation(false)
+		, bLimited(false)
+		, Mass(1.f)
 	{
 	}
 
@@ -74,14 +72,13 @@ class FULLBODYIK_API UFullbodyIKSetting : public UObject
 	GENERATED_BODY()
 
 public:
-
 	UFullbodyIKSetting()
-		: ConvergenceDistance(0.1f),
-		StepSize(10.f),
-		StepLoopCountMax(10),
-		EffectiveCountMax(10),
-		EtaSize(0.f),
-		JtJInverseBias(0.f)
+		: ConvergenceDistance(0.1f)
+		, StepSize(10.f)
+		, StepLoopCountMax(10)
+		, EffectiveCountMax(10)
+		, EtaSize(0.f)
+		, JtJInverseBias(0.f)
 	{
 	}
 

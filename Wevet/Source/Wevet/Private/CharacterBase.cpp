@@ -245,11 +245,15 @@ void ACharacterBase::Die_Implementation()
 	}
 
 	bDied = true;
-	SelectedWeapon = nullptr;
-	Super::GetMesh()->SetAllBodiesSimulatePhysics(true);
-	Super::GetMesh()->SetSimulatePhysics(true);
-	Super::GetMesh()->WakeAllRigidBodies();
-	Super::GetMesh()->bBlendPhysics = true;
+	if (CurrentWeapon.IsValid())
+	{
+		CurrentWeapon.Reset();
+	}
+	USkeletalMeshComponent* const Mesh = GetMesh();
+	Mesh->SetAllBodiesSimulatePhysics(true);
+	Mesh->SetSimulatePhysics(true);
+	Mesh->WakeAllRigidBodies();
+	Mesh->bBlendPhysics = true;
 	Super::GetCharacterMovement()->DisableMovement();
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
@@ -276,32 +280,36 @@ void ACharacterBase::Die_Implementation()
 
 void ACharacterBase::Equipment_Implementation()
 {
-	if (SelectedWeapon) 
+	if (GetSelectedWeapon())
 	{
-		SelectedWeapon->SetEquip(true);
+		GetSelectedWeapon()->SetEquip(true);
 	}
 }
 
 void ACharacterBase::UnEquipment_Implementation()
 {
-	if (SelectedWeapon)
+	if (GetSelectedWeapon())
 	{
-		SelectedWeapon->SetEquip(false);
+		GetSelectedWeapon()->SetEquip(false);
 	}
 }
 
 const bool ACharacterBase::HasEquipWeapon()
 {
-	if (SelectedWeapon == nullptr)
+	if (GetSelectedWeapon())
 	{
-		return false;
+		return GetSelectedWeapon()->bEquip;
 	}
-	return SelectedWeapon->bEquip;
+	return false;
 }
 
 float ACharacterBase::GetHealthToWidget() const
 {
-	return CharacterModel->GetHealthToWidget();
+	if (CharacterModel->IsValidLowLevel())
+	{
+		return CharacterModel->GetHealthToWidget();
+	}
+	return 0.f;
 }
 
 void ACharacterBase::ReleaseWeaponToWorld(const FTransform Transform, AWeaponBase* &Weapon)
@@ -346,14 +354,22 @@ AWeaponBase* ACharacterBase::FindByWeapon(const EWeaponItemType WeaponItemType)
 	return nullptr;
 }
 
-AWeaponBase* ACharacterBase::GetSelectedWeapon()
+AWeaponBase* ACharacterBase::GetSelectedWeapon() const
 {
-	return SelectedWeapon;
+	if (CurrentWeapon.IsValid())
+	{
+		return CurrentWeapon.Get();
+	}
+	return nullptr;
 }
 
 UCharacterModel* ACharacterBase::GetCharacterModel() const
 {
-	return CharacterModel;
+	if (CharacterModel->IsValidLowLevel())
+	{
+		return CharacterModel;
+	}
+	return nullptr;
 }
 
 const TArray<AWeaponBase*>& ACharacterBase::GetWeaponList()
@@ -441,9 +457,9 @@ void ACharacterBase::UnEquipmentActionMontage()
 
 void ACharacterBase::FireActionMontage()
 {
-	if (SelectedWeapon)
+	if (GetSelectedWeapon())
 	{
-		EWeaponItemType WeaponType = SelectedWeapon->WeaponItemInfo.WeaponItemType;
+		EWeaponItemType WeaponType = GetSelectedWeapon()->WeaponItemInfo.WeaponItemType;
 		switch (WeaponType)
 		{
 			case EWeaponItemType::Rifle:
@@ -468,9 +484,9 @@ void ACharacterBase::FireActionMontage()
 
 void ACharacterBase::ReloadActionMontage()
 {
-	if (SelectedWeapon)
+	if (GetSelectedWeapon())
 	{
-		EWeaponItemType WeaponType = SelectedWeapon->WeaponItemInfo.WeaponItemType;
+		EWeaponItemType WeaponType = GetSelectedWeapon()->WeaponItemInfo.WeaponItemType;
 		switch (WeaponType)
 		{
 			case EWeaponItemType::Rifle:
@@ -497,9 +513,9 @@ void ACharacterBase::TakeDamageActionMontage()
 {
 	if (TakeDamageInterval <= 0)
 	{
-		if (SelectedWeapon)
+		if (GetSelectedWeapon())
 		{
-			const FWeaponItemInfo Info = SelectedWeapon->WeaponItemInfo;
+			const FWeaponItemInfo Info = GetSelectedWeapon()->WeaponItemInfo;
 			switch (Info.WeaponItemType)
 			{
 			case EWeaponItemType::Rifle:

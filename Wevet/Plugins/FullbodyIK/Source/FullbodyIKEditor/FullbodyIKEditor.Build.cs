@@ -1,48 +1,59 @@
 // Copyright 1998-2017 Epic Games, Inc. All Rights Reserved.
 
-namespace UnrealBuildTool.Rules
+using UnrealBuildTool;
+
+public class FullbodyIKEditor : ModuleRules
 {
-	public class FullbodyIKEditor : ModuleRules
+	public FullbodyIKEditor(ReadOnlyTargetRules Target) : base(Target)
 	{
-		public FullbodyIKEditor(ReadOnlyTargetRules Target) : base(Target)
-		{
-			PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
+		PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
 
-			PublicIncludePaths.AddRange(
-				new string[] {
-					"FullbodyIKEditor/Public"
-				}
-				);
+		PublicIncludePaths.AddRange(
+			new string[] {
+				"FullbodyIKEditor/Public"
+				// ... add public include paths required here ...
+			}
+			);
 
-			PrivateIncludePaths.AddRange(
-				new string[] {
-					"FullbodyIKEditor/Private",
-				}
-				);
-			
-			PublicDependencyModuleNames.AddRange(
-				new string[] {
-					"Core",
-				}
-				);
 
-			PrivateDependencyModuleNames.AddRange(
-				new string[] {
-					"CoreUObject",
-					"Engine",
-					"Slate",
-					"SlateCore",
-					"UnrealEd",
-					"AnimGraph",
-					"BlueprintGraph",
-					"FullbodyIK",
-				}
-				);
+		PrivateIncludePaths.AddRange(
+			new string[] {
+				"FullbodyIKEditor/Private",
+				// ... add other private include paths required here ...
+			}
+			);
 
-			DynamicallyLoadedModuleNames.AddRange(
-				new string[] {
-				}
-				);
-		}
+
+		PublicDependencyModuleNames.AddRange(
+			new string[]
+			{
+				"Core",
+				// ... add other public dependencies that you statically link with here ...
+			}
+			);
+
+
+		PrivateDependencyModuleNames.AddRange(
+			new string[]
+			{
+				"CoreUObject",
+				"Engine",
+				"Slate",
+				"SlateCore",
+				// ... add private dependencies that you statically link with here ...
+				"UnrealEd",
+				"AnimGraph",
+				"BlueprintGraph",
+				"FullbodyIK",
+			}
+			);
+
+
+		DynamicallyLoadedModuleNames.AddRange(
+			new string[]
+			{
+				// ... add any modules that your module loads dynamically here ...
+			}
+			);
 	}
 }

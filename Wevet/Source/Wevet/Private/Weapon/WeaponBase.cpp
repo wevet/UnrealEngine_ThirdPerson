@@ -56,11 +56,14 @@ void AWeaponBase::BeginPlay()
 		SphereComponent->OnComponentBeginOverlap.AddDynamic(this, &AWeaponBase::BeginOverlapRecieve);
 		SphereComponent->OnComponentEndOverlap.AddDynamic(this, &AWeaponBase::EndOverlapRecieve);
 	}
+
+	TraceDelegate.BindUObject(this, &AWeaponBase::OnTraceCompleted);
 }
 
 void AWeaponBase::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+	AsyncTraceUpdate(DeltaTime);
 }
 
 void AWeaponBase::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -69,6 +72,11 @@ void AWeaponBase::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	if (World && World->GetTimerManager().IsTimerActive(ReloadTimerHandle))
 	{
 		World->GetTimerManager().ClearTimer(ReloadTimerHandle);
+	}
+
+	if (TraceDelegate.IsBound())
+	{
+		TraceDelegate.Unbind();
 	}
 	Super::EndPlay(EndPlayReason);
 }
@@ -186,8 +194,6 @@ void AWeaponBase::OnFirePressedInternal()
 		ECollisionChannel::ECC_Camera, 
 		CollisionQueryParams);
 
-	//World->AsyncLineTraceByChannel(StartLocation, EndLocation, ECollisionChannel::ECC_Camera, CollisionQueryParams);
-
 	const FVector MuzzleLocation  = GetMuzzleTransform().GetLocation();
 	const FRotator MuzzleRotation = FRotator(GetMuzzleTransform().GetRotation());
 	const float Volume = 1.0f;
@@ -263,6 +269,59 @@ void AWeaponBase::TakeHitDamage(const FHitResult HitResult)
 	CombatExecuter->Execute_OnTakeDamage(HitResult.GetActor(), HitResult.BoneName, Damage, CharacterOwner);
 }
 
+void AWeaponBase::AsyncTraceUpdate(const float DeltaTime)
+{
+	if (CharacterOwner == nullptr)
+	{
+		return;
+	}
+
+	UWorld* const World = GetWorld();
+	if (World == nullptr)
+	{
+		return;
+	}
+
+	const FVector StartLocation = CharacterOwner->BulletTraceRelativeLocation();
+	const FVector ForwardLocation = CharacterOwner->BulletTraceForwardLocation();
+	const FVector EndLocation = StartLocation + (ForwardLocation * WeaponItemInfo.TraceDistance);
+
+	FCollisionObjectQueryParams	RV_ObjectQueryParam(ECollisionChannel::ECC_Camera);
+	FCollisionQueryParams TraceParams = FCollisionQueryParams(TEXT("ForwardCheck"), false, this);
+	TraceParams.TraceTag = FName("");
+	TraceParams.OwnerTag = FName("");
+	TraceParams.bTraceAsyncScene = true;
+	TraceParams.bTraceComplex = true;
+	TraceParams.bFindInitialOverlaps = false;
+	TraceParams.bReturnFaceIndex = false;
+	TraceParams.bReturnPhysicalMaterial = false;
+	TraceParams.bIgnoreBlocks = false;
+	TraceParams.IgnoreMask = 0;
+	TraceParams.AddIgnoredActor(this);
+
+	bool bWantsTrace = false;
+	if (World->IsTraceHandleValid(LastTraceHandle, false))
+	{
+		bWantsTrace = true;
+	}
+
+	if (bWantsTrace)
+	{
+		LastTraceHandle = World->AsyncLineTraceByChannel(
+			EAsyncTraceType::Single,
+			StartLocation,
+			EndLocation,
+			ECollisionChannel::ECC_Camera,
+			TraceParams,
+			FCollisionResponseParams::DefaultResponseParam,
+			&TraceDelegate);
+	}
+	else
+	{
+		UE_LOG(LogWevetClient, Log, TEXT("Not AsyncTrace"));
+	}
+}
+
 void AWeaponBase::OnReloading_Implementation()
 {
 	UWorld* const World = GetWorld();
@@ -327,8 +386,14 @@ void AWeaponBase::Take(ACharacterBase* NewCharacter)
 		SphereComponent->OnComponentBeginOverlap.RemoveDynamic(this, &AWeaponBase::BeginOverlapRecieve);
 		SphereComponent->OnComponentEndOverlap.RemoveDynamic(this, &AWeaponBase::EndOverlapRecieve);
 	}
-	check(GetWorld());
-	UGameplayStatics::PlaySoundAtLocation(GetWorld(), PickupSoundAsset, CharacterOwner ? CharacterOwner->GetActorLocation() : GetActorLocation());
+
+	UWorld* const World = GetWorld();
+
+	if (PickupSoundAsset && World)
+	{
+		const FVector Location = CharacterOwner ? CharacterOwner->GetActorLocation() : GetActorLocation();
+		UGameplayStatics::PlaySoundAtLocation(World, PickupSoundAsset, Location);
+	}
 }
 
 void AWeaponBase::Release(ACharacterBase* NewCharacter)
@@ -385,4 +450,23 @@ void AWeaponBase::CopyWeaponItemInfo(const FWeaponItemInfo RefWeaponItemInfo)
 	WeaponItemInfo.MaxAmmo  = RefWeaponItemInfo.MaxAmmo;
 	WeaponItemInfo.Damage   = RefWeaponItemInfo.Damage;
 	WeaponItemInfo.Texture  = RefWeaponItemInfo.Texture;
+}
+
+void AWeaponBase::OnTraceCompleted(const FTraceHandle& Handle, FTraceDatum& Data)
+{
+	ensure(Handle == LastTraceHandle);
+
+	for (TArray<struct FHitResult>::TConstIterator it = Data.OutHits.CreateConstIterator(); 
+		it; 
+		++it)
+	{
+		if (!it->Actor.IsValid())
+		{
+			GEngine->AddOnScreenDebugMessage(-1, 3.f, FColor::Blue, TEXT("Unknown Hit"));
+			continue;
+		}
+		auto Actor = it->GetActor();
+		GEngine->AddOnScreenDebugMessage(-1, 3.f, FColor::Red, TEXT("Hit : %s"), *Actor->GetName());
+	}
+	LastTraceHandle._Data.FrameNumber = 0;
 }

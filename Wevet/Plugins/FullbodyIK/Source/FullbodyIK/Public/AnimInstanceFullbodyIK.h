@@ -19,7 +19,7 @@ public:
 	virtual void SetBoneRotationOffset_Implementation(int32 BoneIndex, const FRotator& Rotation) override;
 	virtual FRotator GetBoneRotationOffset_Implementation(int32 BoneIndex) const override;
 
-protected:
+private:
 	TMap<int32, FVector> OffsetLocations;
 	TMap<int32, FRotator> OffsetRotations;
 };

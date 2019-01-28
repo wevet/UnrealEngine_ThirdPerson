@@ -25,15 +25,15 @@ enum class EFullbodyIkEffectorType : uint8
 USTRUCT(BlueprintType)
 struct FULLBODYIK_API FAnimNode_FullbodyIkEffector
 {
-	GENERATED_USTRUCT_BODY();
+	GENERATED_BODY()
 
 public:
 	FAnimNode_FullbodyIkEffector()
-		: EffectorType(EFullbodyIkEffectorType::KeepLocation),
-		EffectorBoneName(NAME_None),
-		RootBoneName(NAME_None),
-		Location(FVector::ZeroVector),
-		Rotation(FRotator::ZeroRotator)
+		: EffectorType(EFullbodyIkEffectorType::KeepLocation)
+		, EffectorBoneName(NAME_None)
+		, RootBoneName(NAME_None)
+		, Location(FVector::ZeroVector)
+		, Rotation(FRotator::ZeroRotator)
 	{
 	}
 
@@ -56,7 +56,7 @@ public:
 USTRUCT(BlueprintType)
 struct FULLBODYIK_API FAnimNode_FullbodyIkEffectors
 {
-	GENERATED_USTRUCT_BODY();
+	GENERATED_BODY()
 
 public:
 	FAnimNode_FullbodyIkEffectors()
@@ -70,9 +70,8 @@ public:
 USTRUCT(BlueprintInternalUseOnly)
 struct FULLBODYIK_API FAnimNode_FullbodyIK : public FAnimNode_SkeletalControlBase
 {
-	GENERATED_USTRUCT_BODY();
+	GENERATED_USTRUCT_BODY()
 
-public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category=IK)
 	TArray<FName> IkEndBoneNames;
 
@@ -99,40 +98,39 @@ public:
 
 	FAnimNode_FullbodyIK();
 
+	// FAnimNode_Base interface
 	virtual void Initialize_AnyThread(const FAnimationInitializeContext& Context) override;
-	virtual void GatherDebugData(FNodeDebugData& DebugData) override;
+	//virtual void GatherDebugData(FNodeDebugData& DebugData) override;
+	// End of FAnimNode_Base interface
+
+	// FAnimNode_SkeletalControlBase interface
 	virtual void EvaluateSkeletalControl_AnyThread(FComponentSpacePoseContext& Output, TArray<FBoneTransform>& OutBoneTransforms) override;
 	virtual bool IsValidToEvaluate(const USkeleton* Skeleton, const FBoneContainer& RequiredBones) override;
-//#if WITH_EDITOR
-	// can't use World Draw functions because this is called from Render of viewport, AFTER ticking component,
-	// which means LineBatcher already has ticked, so it won't render anymore
-	// to use World Draw functions, we have to call this from tick of actor
-	//void ConditionalDebugDraw(FPrimitiveDrawInterface* PDI, USkeletalMeshComponent* MeshComp) const;
-//#endif
+	// End of FAnimNode_SkeletalControlBase interface
 
 private:
 	struct FBuffer
 	{
 	public:
 		FBuffer()
-			: Elements(nullptr),
-			SizeX(0),
-			SizeY(0)
+			: Elements(nullptr)
+			, SizeX(0)
+			, SizeY(0)
 		{
 		}
 
 		FBuffer(float* InElements, int32 InSizeX)
-			: Elements(InElements),
-			SizeX(InSizeX),
-			SizeY(1)
+			: Elements(InElements)
+			, SizeX(InSizeX)
+			, SizeY(1)
 		{
 			Elements = new (InElements) float(sizeof(float) * SizeX * SizeY);
 		}
 
 		FBuffer(float* InElements, int32 InSizeY, int32 InSizeX)
-			: Elements(InElements),
-			SizeX(InSizeX),
-			SizeY(InSizeY)
+			: Elements(InElements)
+			, SizeX(InSizeX)
+			, SizeY(InSizeY)
 		{
 			Elements = new (InElements) float(sizeof(float) * SizeX * SizeY);
 		}
@@ -167,16 +165,16 @@ private:
 	{
 	public:
 		FSolverInternal()
-			: BoneIndex(INDEX_NONE),
-			ParentBoneIndex(INDEX_NONE),
-			BoneIndicesIndex(INDEX_NONE),
-			LocalTransform(FTransform::Identity),
-			ComponentTransform(FTransform::Identity),
-			InitLocalTransform(FTransform::Identity),
-			InitComponentTransform(FTransform::Identity),
-			bTranslation(false),
-			bLimited(false),
-			Mass(1.f)
+			: BoneIndex(INDEX_NONE)
+			, ParentBoneIndex(INDEX_NONE)
+			, BoneIndicesIndex(INDEX_NONE)
+			, LocalTransform(FTransform::Identity)
+			, ComponentTransform(FTransform::Identity)
+			, InitLocalTransform(FTransform::Identity)
+			, InitComponentTransform(FTransform::Identity)
+			, bTranslation(false)
+			, bLimited(false)
+			, Mass(1.f)
 		{
 		}
 
@@ -199,12 +197,12 @@ private:
 	{
 	public:
 		FEffectorInternal()
-			: EffectorType(EFullbodyIkEffectorType::KeepLocation),
-			EffectorBoneIndex(INDEX_NONE),
-			RootBoneIndex(INDEX_NONE),
-			ParentBoneIndex(INDEX_NONE),
-			Location(FVector::ZeroVector),
-			Rotation(FRotator::ZeroRotator)
+			: EffectorType(EFullbodyIkEffectorType::KeepLocation)
+			, EffectorBoneIndex(INDEX_NONE)
+			, RootBoneIndex(INDEX_NONE)
+			, ParentBoneIndex(INDEX_NONE)
+			, Location(FVector::ZeroVector)
+			, Rotation(FRotator::ZeroRotator)
 		{
 		}
 
@@ -216,7 +214,10 @@ private:
 		FRotator Rotation;
 	};
 
+	// FAnimNode_SkeletalControlBase interface
 	virtual void InitializeBoneReferences(const FBoneContainer& RequiredBones) override;
+	// End of FAnimNode_SkeletalControlBase interface
+
 	FFullbodyIKSolver GetSolver(FName BoneName) const;
 
 	FTransform GetWorldSpaceBoneTransform(const int32& BoneIndex) const;

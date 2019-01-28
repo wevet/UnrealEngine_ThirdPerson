@@ -86,7 +86,7 @@ public:
 	UCharacterModel* GetCharacterModel() const;
 
 	UFUNCTION(BlueprintCallable, Category = "ACharacterBase|Weapon")
-	AWeaponBase* GetSelectedWeapon();
+	AWeaponBase* GetSelectedWeapon() const;
 
 	const TArray<AWeaponBase*>& GetWeaponList();
 	const bool HasCrouch();
@@ -109,9 +109,6 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Components, meta = (AllowPrivateAccess = "true"))
 	class UCharacterPickupComponent* PickupComponent;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "ACharacterBase|Weapon")
-	class AWeaponBase* SelectedWeapon;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ACharacterBase|Asset|LargeWeapon")
 	class UAnimMontage* EquipMontage;

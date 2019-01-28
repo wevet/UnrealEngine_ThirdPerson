@@ -148,7 +148,7 @@ void AMockCharacter::PickupObjects()
 
 void AMockCharacter::FirePressed()
 {
-	if (Super::SelectedWeapon)
+	if (GetSelectedWeapon())
 	{
 		BP_FirePressReceive();
 	}
@@ -156,7 +156,7 @@ void AMockCharacter::FirePressed()
 
 void AMockCharacter::FireReleassed()
 {
-	if (Super::SelectedWeapon)
+	if (GetSelectedWeapon())
 	{
 		BP_FireReleaseReceive();
 	}
@@ -164,7 +164,7 @@ void AMockCharacter::FireReleassed()
 
 void AMockCharacter::Reload()
 {
-	if (Super::SelectedWeapon)
+	if (GetSelectedWeapon())
 	{
 		BP_ReloadReceive();
 	}
@@ -241,8 +241,9 @@ void AMockCharacter::OnPickupItemExecuter_Implementation(AActor* Actor)
 			return;
 		}
 
+		const FName SocketName(WeaponItemInfo.UnEquipSocketName);
 		TSubclassOf<class AWeaponBase> WeaponClass = WeaponItemInfo.WeaponClass;
-		const FTransform Transform = Super::GetMesh()->GetSocketTransform(WeaponItemInfo.UnEquipSocketName);
+		const FTransform Transform = Super::GetMesh()->GetSocketTransform(SocketName);
 		AWeaponBase* const SpawningObject = World->SpawnActorDeferred<AWeaponBase>(
 			WeaponClass,
 			Transform,
@@ -253,7 +254,7 @@ void AMockCharacter::OnPickupItemExecuter_Implementation(AActor* Actor)
 		FAttachmentTransformRules Rules(EAttachmentRule::SnapToTarget, true);
 		SpawningObject->CopyWeaponItemInfo(WeaponItemInfo);
 		SpawningObject->FinishSpawning(Transform);
-		SpawningObject->AttachToComponent(Super::GetMesh(), Rules, WeaponItemInfo.UnEquipSocketName);
+		SpawningObject->AttachToComponent(Super::GetMesh(), Rules, SocketName);
 		SpawningObject->Take(this);
 
 		if (Super::WeaponList.Find(SpawningObject) == INDEX_NONE)
@@ -299,30 +300,27 @@ void AMockCharacter::OnTakeDamage_Implementation(FName BoneName, float Damage, A
 
 void AMockCharacter::Equipment_Implementation()
 {
-	SelectedWeapon = WeaponList[WeaponCurrentIndex];
-	//CurrentWeapon = SelectedWeapon;
+	CurrentWeapon = MakeWeakObjectPtr<AWeaponBase>(WeaponList[WeaponCurrentIndex]);
 
-	check(SelectedWeapon);
+	check(CurrentWeapon.IsValid());
 	Super::Equipment_Implementation();
-	SelectedWeapon->AttachToComponent(
-		Super::GetMesh(),
-		{ EAttachmentRule::SnapToTarget, true },
-		Super::SelectedWeapon->WeaponItemInfo.EquipSocketName);
+	const FName SocketName(CurrentWeapon.Get()->WeaponItemInfo.EquipSocketName);
+	FAttachmentTransformRules Rules(EAttachmentRule::SnapToTarget, true);
+	CurrentWeapon.Get()->AttachToComponent(Super::GetMesh(), Rules, SocketName);
 	GetCharacterMovement()->bOrientRotationToMovement = false;
 	Super::bUseControllerRotationYaw = true;
 }
 
 void AMockCharacter::UnEquipment_Implementation()
 {
-	check(SelectedWeapon);
+	check(CurrentWeapon.IsValid());
 	Super::UnEquipment_Implementation();
-	SelectedWeapon->AttachToComponent(
-		Super::GetMesh(),
-		{ EAttachmentRule::SnapToTarget, true },
-		SelectedWeapon->WeaponItemInfo.UnEquipSocketName);
+	const FName SocketName(CurrentWeapon.Get()->WeaponItemInfo.UnEquipSocketName);
+	FAttachmentTransformRules Rules(EAttachmentRule::SnapToTarget, true);
+	CurrentWeapon.Get()->AttachToComponent(Super::GetMesh(), Rules, SocketName);
 	GetCharacterMovement()->bOrientRotationToMovement = true;
 	Super::bUseControllerRotationYaw = false;
-	SelectedWeapon = nullptr;
+	CurrentWeapon.Reset();
 }
 
 FVector AMockCharacter::BulletTraceRelativeLocation() const
@@ -337,7 +335,7 @@ FVector AMockCharacter::BulletTraceForwardLocation() const
 
 void AMockCharacter::EquipmentHandleEvent()
 {
-	if (SelectedWeapon)
+	if (CurrentWeapon.IsValid())
 	{
 		Super::UnEquipmentActionMontage();
 	}
@@ -356,8 +354,9 @@ void AMockCharacter::ReleaseWeapon()
 		return;
 	}
 
+	const float ForwardOffset = 200.f;
 	const FRotator Rotation = Super::GetActorRotation();
-	const FVector Forward   = Super::GetActorLocation() + (Controller->GetControlRotation().Vector() * 200);
+	const FVector Forward   = Super::GetActorLocation() + (Controller->GetControlRotation().Vector() * ForwardOffset);
 	const FTransform Transform  = UKismetMathLibrary::MakeTransform(Forward, Rotation, FVector::OneVector);
 	
 	if (AWeaponBase* Weapon = Super::GetUnEquipWeapon())

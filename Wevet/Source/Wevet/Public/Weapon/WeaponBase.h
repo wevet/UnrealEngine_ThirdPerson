@@ -164,5 +164,11 @@ public:
 
 	virtual void SetCharacterOwner(ACharacterBase* NewCharacter);
 	void CopyWeaponItemInfo(const FWeaponItemInfo RefWeaponItemInfo);
-};
 
+protected:
+	FTraceDelegate TraceDelegate;
+	FTraceHandle LastTraceHandle;
+
+	virtual void AsyncTraceUpdate(const float DeltaTime);
+	virtual void OnTraceCompleted(const FTraceHandle& Handle, FTraceDatum& Data);
+};
