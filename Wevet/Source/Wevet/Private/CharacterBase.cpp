@@ -441,8 +441,7 @@ void ACharacterBase::EquipmentActionMontage()
 	{
 		return;
 	}
-	const float Delay = 1.6f;
-	PlayAnimMontage(EquipMontage, Delay);
+	PlayAnimMontage(EquipMontage, MONTAGE_DELAY);
 }
 
 void ACharacterBase::UnEquipmentActionMontage()
@@ -451,8 +450,7 @@ void ACharacterBase::UnEquipmentActionMontage()
 	{
 		return;
 	}
-	const float Delay = 1.6f;
-	PlayAnimMontage(UnEquipMontage, Delay);
+	PlayAnimMontage(UnEquipMontage, MONTAGE_DELAY);
 }
 
 void ACharacterBase::FireActionMontage()

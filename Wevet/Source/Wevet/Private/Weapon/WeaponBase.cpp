@@ -11,7 +11,6 @@
 
 AWeaponBase::AWeaponBase(const FObjectInitializer& ObjectInitializer) 
 	: Super(ObjectInitializer),
-	CharacterOwner(nullptr), 
 	WidgetComponent(nullptr),
 	SphereComponent(nullptr),
 	SkeletalMeshComponent(nullptr),
@@ -23,7 +22,7 @@ AWeaponBase::AWeaponBase(const FObjectInitializer& ObjectInitializer)
 	bReload(false),
 	bFired(false)
 {
-	PrimaryActorTick.bCanEverTick = false;
+	PrimaryActorTick.bCanEverTick = true;
 	SceneComponent = ObjectInitializer.CreateDefaultSubobject<USceneComponent>(this, TEXT("SceneComponent"));
 	RootComponent  = SceneComponent;
 
@@ -68,16 +67,7 @@ void AWeaponBase::Tick(float DeltaTime)
 
 void AWeaponBase::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
-	UWorld* const World = GetWorld();
-	if (World && World->GetTimerManager().IsTimerActive(ReloadTimerHandle))
-	{
-		World->GetTimerManager().ClearTimer(ReloadTimerHandle);
-	}
-
-	if (TraceDelegate.IsBound())
-	{
-		TraceDelegate.Unbind();
-	}
+	PrepareDestroy();
 	Super::EndPlay(EndPlayReason);
 }
 
@@ -153,7 +143,7 @@ void AWeaponBase::OnFirePressedInternal()
 	UWorld* const World = GetWorld();
 
 	// not found owner
-	if (World == nullptr || CharacterOwner == nullptr || (CharacterOwner && ICombatExecuter::Execute_IsDeath(CharacterOwner)))
+	if (World == nullptr || !CharacterOwner.IsValid() || (CharacterOwner.IsValid() && ICombatExecuter::Execute_IsDeath(CharacterOwner.Get())))
 	{
 		return;
 	}
@@ -196,13 +186,11 @@ void AWeaponBase::OnFirePressedInternal()
 
 	const FVector MuzzleLocation  = GetMuzzleTransform().GetLocation();
 	const FRotator MuzzleRotation = FRotator(GetMuzzleTransform().GetRotation());
-	const float Volume = 1.0f;
-
-	IInteractionExecuter::Execute_ReportNoiseOther(CharacterOwner, this, FireSoundAsset, Volume, MuzzleLocation);
+	IInteractionExecuter::Execute_ReportNoiseOther(CharacterOwner.Get(), this, FireSoundAsset, DEFAULT_VOLUME, MuzzleLocation);
 	CharacterOwner->FireActionMontage();
 	--WeaponItemInfo.CurrentAmmo;
 
-	IInteractionExecuter::Execute_ReportNoiseOther(CharacterOwner, this, FireImpactSoundAsset, Volume, HitData.Location);
+	IInteractionExecuter::Execute_ReportNoiseOther(CharacterOwner.Get(), this, FireImpactSoundAsset, DEFAULT_VOLUME, HitData.Location);
 	const FVector StartPoint = MuzzleLocation;
 	const FVector EndPoint   = UKismetMathLibrary::SelectVector(HitData.ImpactPoint, HitData.TraceEnd, bSuccess);
 	const FRotator Rotation  = UKismetMathLibrary::FindLookAtRotation(StartPoint, EndPoint);
@@ -227,13 +215,26 @@ void AWeaponBase::PlayBulletEffect(UWorld* const World, const FHitResult HitResu
 	EmitterTransform.SetIdentity();
 	EmitterTransform.SetLocation(HitResult.Location);
 
-	UParticleSystemComponent* ImpactMetalEmitterComponent = UGameplayStatics::SpawnEmitterAtLocation(
+	//UParticleSystemComponent* ImpactMetalEmitterComponent = UGameplayStatics::SpawnEmitterAtLocation(
+	//	World,
+	//	ImpactMetalEmitterTemplate,
+	//	EmitterTransform,
+	//	true);
+	UGameplayStatics::SpawnEmitterAtLocation(
 		World,
 		ImpactMetalEmitterTemplate,
 		EmitterTransform,
 		true);
 
-	UParticleSystemComponent* MuzzleFlashEmitterComponent = UGameplayStatics::SpawnEmitterAttached(
+	//UParticleSystemComponent* MuzzleFlashEmitterComponent = UGameplayStatics::SpawnEmitterAttached(
+	//	MuzzleFlashEmitterTemplate,
+	//	GetSkeletalMeshComponent(),
+	//	MuzzleSocketName,
+	//	GetMuzzleTransform().GetLocation(),
+	//	FRotator(GetMuzzleTransform().GetRotation()),
+	//	EAttachLocation::KeepWorldPosition,
+	//	true);
+	UGameplayStatics::SpawnEmitterAttached(
 		MuzzleFlashEmitterTemplate,
 		GetSkeletalMeshComponent(),
 		MuzzleSocketName,
@@ -266,7 +267,7 @@ void AWeaponBase::TakeHitDamage(const FHitResult HitResult)
 	const float WeaponDamage = WeaponItemInfo.Damage;
 	const float Total = (float)(Attack / Wisdom) + WeaponDamage;
 	const float Damage = FMath::FRandRange((Total * Offset), Total);
-	CombatExecuter->Execute_OnTakeDamage(HitResult.GetActor(), HitResult.BoneName, Damage, CharacterOwner);
+	CombatExecuter->Execute_OnTakeDamage(HitResult.GetActor(), HitResult.BoneName, Damage, CharacterOwner.Get());
 }
 
 void AWeaponBase::AsyncTraceUpdate(const float DeltaTime)
@@ -308,17 +309,13 @@ void AWeaponBase::AsyncTraceUpdate(const float DeltaTime)
 	if (bWantsTrace)
 	{
 		LastTraceHandle = World->AsyncLineTraceByChannel(
-			EAsyncTraceType::Single,
+			EAsyncTraceType::Multi, //EAsyncTraceType::Single
 			StartLocation,
 			EndLocation,
 			ECollisionChannel::ECC_Camera,
 			TraceParams,
 			FCollisionResponseParams::DefaultResponseParam,
 			&TraceDelegate);
-	}
-	else
-	{
-		UE_LOG(LogWevetClient, Log, TEXT("Not AsyncTrace"));
 	}
 }
 
@@ -346,7 +343,7 @@ void AWeaponBase::OnReloading_Implementation()
 	SetReload(true);
 	OnReloadInternal();
 	FTimerDelegate TimerCallback;
-	TimerCallback.BindLambda([this]
+	TimerCallback.BindLambda([&]
 	{
 		SetReload(false);
 	});
@@ -391,7 +388,7 @@ void AWeaponBase::Take(ACharacterBase* NewCharacter)
 
 	if (PickupSoundAsset && World)
 	{
-		const FVector Location = CharacterOwner ? CharacterOwner->GetActorLocation() : GetActorLocation();
+		const FVector Location = CharacterOwner.IsValid() ? CharacterOwner.Get()->GetActorLocation() : GetActorLocation();
 		UGameplayStatics::PlaySoundAtLocation(World, PickupSoundAsset, Location);
 	}
 }
@@ -408,6 +405,7 @@ void AWeaponBase::Release(ACharacterBase* NewCharacter)
 	//}
 	if (IsValidLowLevel())
 	{
+		PrepareDestroy();
 		Super::Destroy();
 		Super::ConditionalBeginDestroy();
 	}
@@ -431,12 +429,8 @@ void AWeaponBase::Recover(const FWeaponItemInfo RefWeaponItemInfo)
 
 void AWeaponBase::SetCharacterOwner(ACharacterBase* NewCharacter)
 {
-	CharacterOwner = NewCharacter;
-	SetOwner(CharacterOwner);
-	//auto A = &NewCharacter;
-	//auto B = (*A);
-	//(*B).Equipment();
-	//(*A)->Equipment();
+	CharacterOwner = MakeWeakObjectPtr<ACharacterBase>(NewCharacter);
+	SetOwner(CharacterOwner.IsValid() ? CharacterOwner.Get() : nullptr);
 }
 
 void AWeaponBase::CopyWeaponItemInfo(const FWeaponItemInfo RefWeaponItemInfo)
@@ -460,13 +454,26 @@ void AWeaponBase::OnTraceCompleted(const FTraceHandle& Handle, FTraceDatum& Data
 		it; 
 		++it)
 	{
-		if (!it->Actor.IsValid())
-		{
-			GEngine->AddOnScreenDebugMessage(-1, 3.f, FColor::Blue, TEXT("Unknown Hit"));
-			continue;
-		}
-		auto Actor = it->GetActor();
-		GEngine->AddOnScreenDebugMessage(-1, 3.f, FColor::Red, TEXT("Hit : %s"), *Actor->GetName());
+		const auto Name = it->Actor.IsValid() ? it->GetActor()->GetName() : TEXT("Unknown");
+		GEngine->AddOnScreenDebugMessage(-1, 3.f, FColor::Red, TEXT("Hit : %s"), *Name);
 	}
 	LastTraceHandle._Data.FrameNumber = 0;
+}
+
+void AWeaponBase::PrepareDestroy()
+{
+	UWorld* const World = GetWorld();
+	if (World && World->GetTimerManager().IsTimerActive(ReloadTimerHandle))
+	{
+		World->GetTimerManager().ClearTimer(ReloadTimerHandle);
+	}
+
+	if (TraceDelegate.IsBound())
+	{
+		TraceDelegate.Unbind();
+	}
+	if (CharacterOwner.IsValid())
+	{
+		CharacterOwner.Reset();
+	}
 }

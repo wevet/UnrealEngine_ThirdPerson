@@ -21,7 +21,7 @@ void UUMGManager::BeginDestroy()
 	Super::BeginDestroy();
 }
 
-void UUMGManager::Initializer(ACharacterBase* NewCharacter)
+void UUMGManager::Initializer(ACharacterBase* const NewCharacter)
 {
 	MainUIController = CreateWidget<UMainUIController>(this, MainUIControllerTemp);
 	if (MainUIController)

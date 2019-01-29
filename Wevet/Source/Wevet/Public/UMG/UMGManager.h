@@ -24,7 +24,7 @@ protected:
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 
 public:
-	void Initializer(ACharacterBase* NewCharacter);
+	void Initializer(ACharacterBase* const NewCharacter);
 
 private:
 	class UMainUIController* MainUIController;

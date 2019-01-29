@@ -59,9 +59,6 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Variable")
 	float ReloadDuration;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Variable")
-	class ACharacterBase* CharacterOwner;
-
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Components, meta = (AllowPrivateAccess = "true"))
 	class USkeletalMeshComponent* SkeletalMeshComponent;
 
@@ -73,6 +70,7 @@ protected:
 
 	USceneComponent* SceneComponent;
 	FTimerHandle ReloadTimerHandle;
+	TWeakObjectPtr<class ACharacterBase> CharacterOwner;
 
 	virtual void TakeHitDamage(const FHitResult HitResult);
 	virtual void PlayBulletEffect(UWorld* const World, const FHitResult HitResult);
@@ -171,4 +169,5 @@ protected:
 
 	virtual void AsyncTraceUpdate(const float DeltaTime);
 	virtual void OnTraceCompleted(const FTraceHandle& Handle, FTraceDatum& Data);
+	virtual void PrepareDestroy();
 };

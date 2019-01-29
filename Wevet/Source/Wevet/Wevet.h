@@ -11,6 +11,8 @@ DECLARE_LOG_CATEGORY_EXTERN(LogWevetClient, Verbose, All);
 #define SPRITER_IMPORT_WARNING(FormatString, ...) \
 	if (!bSilent) { UE_LOG(LogWevetClient, Warning, FormatString, __VA_ARGS__); }
 
+#define DEFAULT_VOLUME 1.f
+#define MONTAGE_DELAY 1.6f
 
 namespace Wevet
 {

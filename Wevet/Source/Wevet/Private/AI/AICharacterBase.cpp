@@ -323,8 +323,8 @@ void AAICharacterBase::SetHearTargetActor(AActor* OtherActor)
 		AIController->SetBlackboardPatrolLocation(Target);
 		Super::EquipmentActionMontage();
 	}
-	else
-	{
-		Super::UnEquipmentActionMontage();
-	}
+	//else
+	//{
+	//	Super::UnEquipmentActionMontage();
+	//}
 }
