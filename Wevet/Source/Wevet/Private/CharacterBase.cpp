@@ -17,6 +17,7 @@ ACharacterBase::ACharacterBase(const FObjectInitializer& ObjectInitializer)
 	BaseLookUpRate(45.f),
 	MovementSpeed(300.f),
 	HeadSocketName(FName(TEXT("Head"))),
+	PelvisSocketName(FName(TEXT("PelvisSocket"))),
 	TakeDamageInterval(0.f),
 	ComboTakeInterval(0.f)
 {

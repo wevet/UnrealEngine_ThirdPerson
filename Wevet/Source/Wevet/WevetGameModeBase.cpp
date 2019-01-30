@@ -4,10 +4,6 @@
 #include "MockPlayerController.h"
 #include "Engine.h"
 
-AWevetGameModeBase::AWevetGameModeBase()
-{
-	//
-}
 
 AWevetGameModeBase::AWevetGameModeBase(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -24,5 +20,24 @@ void AWevetGameModeBase::StartPlay()
 {
 	Super::StartPlay();
 
-	UE_LOG(LogWevetClient, Log, TEXT("StartPlay"));
+	UWorld* const World = GetWorld();
+
+	if (World == nullptr)
+	{
+		return;
+	}
+	TArray<AActor*> FoundActors;
+	UGameplayStatics::GetAllActorsOfClass(World, ACharacterBase::StaticClass(), FoundActors);
+
+	for (AActor*& Actor : FoundActors)
+	{
+		if (ACharacterBase* Character = Cast<ACharacterBase>(Actor))
+		{
+			CharacterArray.Add(Character);
+		}
+	}
+
+	UE_LOG(LogWevetClient, Warning, TEXT("StartPlay \n CharacterNum : [%d] \n funcName : [%s]"), 
+		CharacterArray.Num(), 
+		*FString(__FUNCTION__));
 }

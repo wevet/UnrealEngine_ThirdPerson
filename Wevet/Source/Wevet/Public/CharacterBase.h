@@ -152,6 +152,9 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ACharacterBase|Variable")
 	FName HeadSocketName;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ACharacterBase|Variable")
+	FName PelvisSocketName;
+
 	UPROPERTY(EditAnywhere, Instanced, Category = "ACharacterBase|CharacterModel")
 	UCharacterModel* CharacterModel;
 

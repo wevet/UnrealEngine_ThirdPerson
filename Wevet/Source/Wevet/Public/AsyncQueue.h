@@ -112,12 +112,14 @@ DECLARE_DELEGATE_OneParam(FAsyncDelegate, FCallbackDelegate);
 
 class WEVET_API FAsyncQueue : public TSharedFromThis<FAsyncQueue, ESPMode::ThreadSafe>
 {
-// @TODO
-//#if WITH_HOT_RELOAD_CTORS
-//	friend class TSharedRef<FAsyncQueue, ESPMode::ThreadSafe>;
-//	friend class TSharedPtr<FAsyncQueue, ESPMode::ThreadSafe>;
-//	friend class TWeakPtr<FAsyncQueue, ESPMode::ThreadSafe>;
-//#endif
+#if WITH_HOT_RELOAD
+	/*
+	* WITH_HOT_RELOAD_CTORS 
+	*/
+	friend class TSharedRef<FAsyncQueue, ESPMode::ThreadSafe>;
+	friend class TSharedPtr<FAsyncQueue, ESPMode::ThreadSafe>;
+	friend class TWeakPtr<FAsyncQueue, ESPMode::ThreadSafe>;
+#endif
 
 public:
 	static FAsyncDelegate MakeSequence(const TArray<FAsyncDelegate>& SequenceDelegates);

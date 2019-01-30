@@ -16,7 +16,6 @@ class WEVET_API AWevetGameModeBase : public AGameModeBase
 	GENERATED_BODY()
 	
 public:
-	AWevetGameModeBase();
 	AWevetGameModeBase(const FObjectInitializer& ObjectInitializer);
 
 	virtual void InitGameState() override;
@@ -24,6 +23,6 @@ public:
 	
 
 private:
-	TArray<ACharacterBase*> Characters;
+	TArray<ACharacterBase*> CharacterArray;
 	AMockCharacter* Player;
 };
