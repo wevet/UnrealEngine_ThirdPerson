@@ -5,13 +5,14 @@
 #include "CoreMinimal.h"
 #include "AnimInstanceFullbodyIK.h"
 #include "CharacterBase.h"
+#include "GrabExecuter.h"
 #include "CharacterAnimInstanceBase.generated.h"
 
 /**
  * 
  */
 UCLASS(transient, Blueprintable, hideCategories = AnimInstance, BlueprintType)
-class WEVET_API UCharacterAnimInstanceBase : public UAnimInstanceFullbodyIK
+class WEVET_API UCharacterAnimInstanceBase : public UAnimInstanceFullbodyIK, public IGrabExecuter
 {
 	GENERATED_BODY()
 	
@@ -39,6 +40,9 @@ protected:
 	bool IsEquip;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Variable")
+	bool IsHanging;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Variable")
 	float Speed;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Variable")
@@ -62,4 +66,10 @@ protected:
 	virtual void SetRotator();
 	virtual void SetCrouch();
 	virtual void SetEquip();
+	virtual void SetHanging();
+
+public:
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AnimationBlueprint|IGrabExecuter")
+	void CanGrab(bool InCanGrab);
+	virtual void CanGrab_Implementation(bool InCanGrab) override;
 };

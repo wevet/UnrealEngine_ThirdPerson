@@ -354,9 +354,8 @@ void AMockCharacter::ReleaseWeapon()
 		return;
 	}
 
-	const float ForwardOffset = 200.f;
 	const FRotator Rotation = Super::GetActorRotation();
-	const FVector Forward   = Super::GetActorLocation() + (Controller->GetControlRotation().Vector() * ForwardOffset);
+	const FVector Forward   = Super::GetActorLocation() + (Controller->GetControlRotation().Vector() * DEFAULT_FORWARD);
 	const FTransform Transform  = UKismetMathLibrary::MakeTransform(Forward, Rotation, FVector::OneVector);
 	
 	if (AWeaponBase* Weapon = Super::GetUnEquipWeapon())

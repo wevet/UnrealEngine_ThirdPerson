@@ -72,9 +72,21 @@ void UCharacterAnimInstanceBase::SetEquip()
 	}
 }
 
+void UCharacterAnimInstanceBase::SetHanging()
+{
+	if (Owner)
+	{
+		//IsHanging = Owner->HasHanging();
+	}
+}
+
 FRotator UCharacterAnimInstanceBase::NormalizedDeltaRotator(FRotator A, FRotator B) const
 {
 	FRotator Diff = A - B;
 	Diff.Normalize();
 	return Diff;
+}
+
+void UCharacterAnimInstanceBase::CanGrab_Implementation(bool InCanGrab)
+{
 }

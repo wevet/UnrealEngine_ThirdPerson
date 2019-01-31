@@ -5,6 +5,8 @@
 #include "ItemBase.h"
 #include "CharacterModel.h"
 #include "CharacterPickupComponent.h"
+#include "CharacterAnimInstanceBase.h"
+
 #include "Engine.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
@@ -22,9 +24,11 @@ ACharacterBase::ACharacterBase(const FObjectInitializer& ObjectInitializer)
 	ComboTakeInterval(0.f)
 {
 	PrimaryActorTick.bCanEverTick = true;
-	bCrouch = false;
-	bSprint = false;
-	bDied   = false;
+	bCrouch  = false;
+	bSprint  = false;
+	bDied    = false;
+	bHanging = false;
+	bClimbingLedge = false;
 	PawnNoiseEmitterComponent = ObjectInitializer.CreateDefaultSubobject<UPawnNoiseEmitterComponent>(this, TEXT("PawnNoiseEmitterComponent"));
 	AudioComponent = ObjectInitializer.CreateDefaultSubobject<UAudioComponent>(this, TEXT("AudioComponent"));
 	AudioComponent->bAutoActivate = false;
@@ -49,12 +53,11 @@ void ACharacterBase::BeginDestroy()
 
 void ACharacterBase::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
-	Super::EndPlay(EndPlayReason);
-
 	if (CurrentWeapon.IsValid())
 	{
 		CurrentWeapon.Reset();
 	}
+	Super::EndPlay(EndPlayReason);
 }
 
 void ACharacterBase::BeginPlay()
@@ -191,6 +194,17 @@ void ACharacterBase::ReportNoiseOther_Implementation(AActor* Actor, USoundBase* 
 	}
 }
 
+void ACharacterBase::CanGrab_Implementation(bool InCanGrab)
+{
+	bHanging = InCanGrab;
+	if (bHanging)
+	{
+		GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Flying);
+	}
+	IGrabExecuter::Execute_CanGrab(GetCharacterAnimInstance(), bHanging);
+	UE_LOG(LogWevetClient, Log, TEXT("hanging : %s"), bHanging ? TEXT("true") : TEXT("false"));
+}
+
 FVector ACharacterBase::BulletTraceRelativeLocation() const
 {
 	return FVector::ZeroVector;
@@ -262,7 +276,7 @@ void ACharacterBase::Die_Implementation()
 	check(World);
 
 	const FRotator Rotation = Super::GetActorRotation();
-	const FVector Forward   = Super::GetActorLocation() + (Controller->GetControlRotation().Vector() * 200);
+	const FVector Forward   = Super::GetActorLocation() + (Controller->GetControlRotation().Vector() * DEFAULT_FORWARD);
 	const FTransform Transform  = UKismetMathLibrary::MakeTransform(Forward, Rotation, FVector::OneVector);
 
 	if (!ArrayExtension::NullOrEmpty(WeaponList))
@@ -373,6 +387,11 @@ UCharacterModel* ACharacterBase::GetCharacterModel() const
 	return nullptr;
 }
 
+UCharacterAnimInstanceBase* ACharacterBase::GetCharacterAnimInstance() const
+{
+	return Cast<UCharacterAnimInstanceBase>(GetMesh()->GetAnimInstance());
+}
+
 const TArray<AWeaponBase*>& ACharacterBase::GetWeaponList()
 {
 	return WeaponList;
@@ -388,13 +407,18 @@ const bool ACharacterBase::HasSprint()
 	return bSprint;
 }
 
+const bool ACharacterBase::HasHanging()
+{
+	return bHanging;
+}
+
 AWeaponBase* ACharacterBase::GetUnEquipWeapon()
 {
 	if (ArrayExtension::NullOrEmpty(WeaponList))
 	{
 		return nullptr;
 	}
-	for (AWeaponBase* &Weapon : WeaponList)
+	for (AWeaponBase*& Weapon : WeaponList)
 	{
 		if (Weapon && !Weapon->bEquip)
 		{
@@ -419,9 +443,9 @@ void ACharacterBase::OutUnEquipWeaponList(TArray<AWeaponBase*>& OutWeaponList)
 	}
 }
 
-const bool ACharacterBase::SameWeapon(AWeaponBase* Weapon)
+const bool ACharacterBase::SameWeapon(AWeaponBase* const Weapon)
 {
-	if (AWeaponBase* InWeapon = FindByWeapon(Weapon->WeaponItemInfo.WeaponItemType))
+	if (AWeaponBase* const InWeapon = FindByWeapon(Weapon->WeaponItemInfo.WeaponItemType))
 	{
 		return InWeapon->WeaponItemInfo.WeaponItemType == Weapon->WeaponItemInfo.WeaponItemType;
 	}
@@ -458,7 +482,7 @@ void ACharacterBase::FireActionMontage()
 {
 	if (GetSelectedWeapon())
 	{
-		EWeaponItemType WeaponType = GetSelectedWeapon()->WeaponItemInfo.WeaponItemType;
+		const EWeaponItemType WeaponType = GetSelectedWeapon()->WeaponItemInfo.WeaponItemType;
 		switch (WeaponType)
 		{
 			case EWeaponItemType::Rifle:
@@ -485,7 +509,7 @@ void ACharacterBase::ReloadActionMontage()
 {
 	if (GetSelectedWeapon())
 	{
-		EWeaponItemType WeaponType = GetSelectedWeapon()->WeaponItemInfo.WeaponItemType;
+		const EWeaponItemType WeaponType = GetSelectedWeapon()->WeaponItemInfo.WeaponItemType;
 		switch (WeaponType)
 		{
 			case EWeaponItemType::Rifle:
@@ -514,8 +538,8 @@ void ACharacterBase::TakeDamageActionMontage()
 	{
 		if (GetSelectedWeapon())
 		{
-			const FWeaponItemInfo Info = GetSelectedWeapon()->WeaponItemInfo;
-			switch (Info.WeaponItemType)
+			const EWeaponItemType WeaponType = GetSelectedWeapon()->WeaponItemInfo.WeaponItemType;
+			switch (WeaponType)
 			{
 			case EWeaponItemType::Rifle:
 			case EWeaponItemType::Sniper:

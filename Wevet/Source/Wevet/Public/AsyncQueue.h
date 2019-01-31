@@ -129,16 +129,32 @@ public:
 	static TSharedRef<FAsyncQueue, ESPMode::ThreadSafe> Create();
 
 	void Add(const FAsyncDelegate& AsyncDelegate);
-	void AddSync(const FCallbackDelegate& SyncDelegate) { Add(FAsyncQueue::MakeSync(SyncDelegate)); }
-	void AddParallel(const TArray<FAsyncDelegate>& ParallelDelegates) { Add(FAsyncQueue::MakeParallel(ParallelDelegates)); }
+	void AddSync(const FCallbackDelegate& SyncDelegate) 
+	{ 
+		Add(FAsyncQueue::MakeSync(SyncDelegate)); 
+	}
+
+	void AddParallel(const TArray<FAsyncDelegate>& ParallelDelegates) 
+	{
+		Add(FAsyncQueue::MakeParallel(ParallelDelegates)); 
+	}
+	
 	void StoreHardReferenceToSelf(TSharedRef<FAsyncQueue, ESPMode::ThreadSafe> HardReferenceToSelf);
 	void ReleaseHardReferenceToSelf();
 	void Execute(const FCallbackDelegate& Callback);
 	void Execute();
 	void Empty();
 	void RemoveAllCallbacks();
-	bool IsExecuting() { return CurrentDelegate.IsBound(); }
-	bool IsEmpty() { return Queue.IsEmpty(); }
+
+	bool IsExecuting()
+	{
+		return CurrentDelegate.IsBound(); 
+	}
+	
+	bool IsEmpty()
+	{
+		return Queue.IsEmpty(); 
+	}
 
 private:
 	FAsyncQueue();

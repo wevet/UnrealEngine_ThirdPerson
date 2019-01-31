@@ -9,16 +9,18 @@
 #include "STypes.h"
 #include "CombatExecuter.h"
 #include "InteractionExecuter.h"
+#include "GrabExecuter.h"
 #include "WeaponControllerExecuter.h"
 #include "CharacterBase.generated.h"
 
 class UCharacterPickupComponent;
 class UCharacterModel;
+class UCharacterAnimInstanceBase;
 
 using namespace Wevet;
 
 UCLASS(ABSTRACT)
-class WEVET_API ACharacterBase : public ACharacter, public ICombatExecuter, public IInteractionExecuter
+class WEVET_API ACharacterBase : public ACharacter, public ICombatExecuter, public IInteractionExecuter, public IGrabExecuter
 {
 	GENERATED_BODY()
 
@@ -39,6 +41,8 @@ public:
 	virtual void OnCrouch();
 
 public:
+
+#pragma region interaction
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "ACharacterBase|IInteractionExecuter")
 	void OnReleaseItemExecuter();
 	virtual void OnReleaseItemExecuter_Implementation() override;
@@ -47,6 +51,20 @@ public:
 	void OnPickupItemExecuter(AActor* Actor);
 	virtual void OnPickupItemExecuter_Implementation(AActor* Actor) override;
 
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "ACharacterBase|IInteractionExecuter")
+	void ReportNoise(USoundBase* Sound, float Volume);
+	virtual void ReportNoise_Implementation(USoundBase* Sound, float Volume) override;
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "ACharacterBase|IInteractionExecuter")
+	void FootStep(USoundBase* Sound, float Volume);
+	virtual void FootStep_Implementation(USoundBase* Sound, float Volume) override;
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "ACharacterBase|IInteractionExecuter")
+	void ReportNoiseOther(AActor* Actor, USoundBase* Sound, const float Volume, const FVector Location);
+	virtual void ReportNoiseOther_Implementation(AActor* Actor, USoundBase* Sound, const float Volume, const FVector Location) override;
+#pragma endregion
+
+#pragma region combat
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "ACharacterBase|ICombatExecuter")
 	bool IsDeath();
 	virtual bool IsDeath_Implementation() override;
@@ -66,18 +84,13 @@ public:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "ACharacterBase|ICombatExecuter")
 	void UnEquipment();
 	virtual void UnEquipment_Implementation() override;
+#pragma endregion
 
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "ACharacterBase|IInteractionExecuter")
-	void ReportNoise(USoundBase* Sound, float Volume);
-	virtual void ReportNoise_Implementation(USoundBase* Sound, float Volume) override;
-
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "ACharacterBase|IInteractionExecuter")
-	void FootStep(USoundBase* Sound, float Volume);
-	virtual void FootStep_Implementation(USoundBase* Sound, float Volume) override;
-
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "IInteractionExecuter")
-	void ReportNoiseOther(AActor* Actor, USoundBase* Sound, const float Volume, const FVector Location);
-	virtual void ReportNoiseOther_Implementation(AActor* Actor, USoundBase* Sound, const float Volume, const FVector Location) override;
+#pragma region climb
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "IGrabExecuter")
+	void CanGrab(bool InCanGrab);
+	virtual void CanGrab_Implementation(bool InCanGrab) override;
+#pragma endregion
 
 public:
 	virtual FVector BulletTraceRelativeLocation() const;
@@ -85,12 +98,16 @@ public:
 	AWeaponBase* FindByWeapon(const EWeaponItemType WeaponItemType);
 	UCharacterModel* GetCharacterModel() const;
 
+	UFUNCTION(BlueprintCallable, Category = "ACharacterBase|AnimationBlueprint")
+	UCharacterAnimInstanceBase* GetCharacterAnimInstance() const;
+
 	UFUNCTION(BlueprintCallable, Category = "ACharacterBase|Weapon")
 	AWeaponBase* GetSelectedWeapon() const;
 
 	const TArray<AWeaponBase*>& GetWeaponList();
 	const bool HasCrouch();
 	const bool HasSprint();
+	const bool HasHanging();
 	virtual const bool HasEquipWeapon();
 	virtual void ReleaseWeaponToWorld(const FTransform Transform, AWeaponBase* &Weapon);
 
@@ -140,6 +157,21 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ACharacterBase|Variable")
 	bool bDied;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Climbsystem")
+	bool bHanging;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Climbsystem")
+	bool bClimbingLedge;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Climbsystem")
+	FVector HeightLocation;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Climbsystem")
+	FVector WallLocation;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Climbsystem")
+	FVector WallNormal;
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ACharacterBase|Variable")
 	float BaseTurnRate;
 
@@ -168,7 +200,7 @@ protected:
 	void OutUnEquipWeaponList(TArray<AWeaponBase*>& OutWeaponList);
 
 	/* same weaponList */
-	const bool SameWeapon(AWeaponBase* Weapon);
+	const bool SameWeapon(AWeaponBase* const Weapon);
 
 	/* pickup actor */
 	virtual void PickupObjects();
