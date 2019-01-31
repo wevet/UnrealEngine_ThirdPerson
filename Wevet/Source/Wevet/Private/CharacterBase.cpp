@@ -86,50 +86,6 @@ void ACharacterBase::Tick(float DeltaTime)
 	}
 }
 
-void ACharacterBase::Jump()
-{
-	if (bCrouch)
-	{
-		OnCrouch();
-	}
-	Super::Jump();
-}
-
-void ACharacterBase::StopJumping()
-{
-	Super::StopJumping();
-}
-
-void ACharacterBase::OnSprint()
-{
-	bSprint = !bSprint;
-
-	// now crouching slow speed
-	if (bCrouch)
-	{
-		bSprint = false;
-	}
-	MovementSpeed = bSprint ? DefaultMaxSpeed : DefaultMaxSpeed *0.5f;
-	GetCharacterMovement()->MaxWalkSpeed = MovementSpeed;
-}
-
-void ACharacterBase::OnCrouch()
-{
-	bCrouch = !bCrouch;
-	Super::bIsCrouched = bCrouch ? 1 : 0;
-	if (bCrouch)
-	{
-		if (Super::CanCrouch())
-		{
-			Super::Crouch();
-		}
-	}
-	else
-	{
-		Super::UnCrouch();
-	}
-}
-
 void ACharacterBase::OnReleaseItemExecuter_Implementation() 
 {
 }
@@ -203,16 +159,6 @@ void ACharacterBase::CanGrab_Implementation(bool InCanGrab)
 	}
 	IGrabExecuter::Execute_CanGrab(GetCharacterAnimInstance(), bHanging);
 	UE_LOG(LogWevetClient, Log, TEXT("hanging : %s"), bHanging ? TEXT("true") : TEXT("false"));
-}
-
-FVector ACharacterBase::BulletTraceRelativeLocation() const
-{
-	return FVector::ZeroVector;
-}
-
-FVector ACharacterBase::BulletTraceForwardLocation() const
-{
-	return FVector::ZeroVector;
 }
 
 bool ACharacterBase::IsDeath_Implementation()
@@ -306,6 +252,60 @@ void ACharacterBase::UnEquipment_Implementation()
 	if (GetSelectedWeapon())
 	{
 		GetSelectedWeapon()->SetEquip(false);
+	}
+}
+
+FVector ACharacterBase::BulletTraceRelativeLocation() const
+{
+	return FVector::ZeroVector;
+}
+
+FVector ACharacterBase::BulletTraceForwardLocation() const
+{
+	return FVector::ZeroVector;
+}
+
+void ACharacterBase::Jump()
+{
+	if (bCrouch)
+	{
+		OnCrouch();
+	}
+	Super::Jump();
+}
+
+void ACharacterBase::StopJumping()
+{
+	Super::StopJumping();
+}
+
+void ACharacterBase::OnSprint()
+{
+	bSprint = !bSprint;
+
+	// now crouching slow speed
+	if (bCrouch)
+	{
+		bSprint = false;
+	}
+	MovementSpeed = bSprint ? DefaultMaxSpeed : DefaultMaxSpeed * 0.5f;
+	GetCharacterMovement()->MaxWalkSpeed = MovementSpeed;
+}
+
+void ACharacterBase::OnCrouch()
+{
+	bCrouch = !bCrouch;
+	Super::bIsCrouched = bCrouch ? 1 : 0;
+	if (bCrouch)
+	{
+		if (Super::CanCrouch())
+		{
+			Super::Crouch();
+		}
+	}
+	else
+	{
+		Super::UnCrouch();
 	}
 }
 
@@ -445,9 +445,10 @@ void ACharacterBase::OutUnEquipWeaponList(TArray<AWeaponBase*>& OutWeaponList)
 
 const bool ACharacterBase::SameWeapon(AWeaponBase* const Weapon)
 {
-	if (AWeaponBase* const InWeapon = FindByWeapon(Weapon->WeaponItemInfo.WeaponItemType))
+	const EWeaponItemType ItemType = Weapon->WeaponItemInfo.WeaponItemType;
+	if (AWeaponBase* const InWeapon = FindByWeapon(ItemType))
 	{
-		return InWeapon->WeaponItemInfo.WeaponItemType == Weapon->WeaponItemInfo.WeaponItemType;
+		return InWeapon->HasMatchTypes(ItemType);
 	}
 	return false;
 }

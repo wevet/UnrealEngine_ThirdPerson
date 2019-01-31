@@ -82,14 +82,6 @@ void AMockCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInpu
 void AMockCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
-	//FRotator Rotation = GetActorRotation();
-	//FVector StartLocation = Rotation.Quaternion().GetForwardVector();
-	//auto Temp = StartLocation;
-	//auto Dir = StartLocation.RotateAngleAxis(Rotation.Yaw, StartLocation);
-	//StartLocation += Dir;
-	//UE_LOG(LogWevetClient, Warning, TEXT("StartLocation : %s"), *Temp.ToString());
-	//UE_LOG(LogWevetClient, Warning, TEXT("Direction : %s"), *StartLocation.ToString());
 }
 
 #if !WITH_EDITOR

@@ -196,10 +196,10 @@ protected:
 	/* get unequip weapon */
 	AWeaponBase* GetUnEquipWeapon();
 
-	/* get unequip weaponlist */
+	/* out unequip weaponlist */
 	void OutUnEquipWeaponList(TArray<AWeaponBase*>& OutWeaponList);
 
-	/* same weaponList */
+	/* pickup before had same weaponList */
 	const bool SameWeapon(AWeaponBase* const Weapon);
 
 	/* pickup actor */
