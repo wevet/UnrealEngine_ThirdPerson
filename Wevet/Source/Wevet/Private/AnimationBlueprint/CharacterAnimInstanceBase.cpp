@@ -72,6 +72,7 @@ void UCharacterAnimInstanceBase::SetEquip()
 	}
 }
 
+// @TODO
 void UCharacterAnimInstanceBase::SetHanging()
 {
 	if (Owner)
@@ -88,5 +89,13 @@ FRotator UCharacterAnimInstanceBase::NormalizedDeltaRotator(FRotator A, FRotator
 }
 
 void UCharacterAnimInstanceBase::CanGrab_Implementation(bool InCanGrab)
+{
+}
+
+void UCharacterAnimInstanceBase::ClimbLedge_Implementation(bool InClimbLedge)
+{
+}
+
+void UCharacterAnimInstanceBase::ReportClimbEnd_Implementation()
 {
 }

@@ -25,4 +25,11 @@ public :
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "IGrabExecuter")
 	void CanGrab(bool InCanGrab);
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "IGrabExecuter")
+	void ClimbLedge(bool InClimbLedge);
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "IGrabExecuter")
+	void ReportClimbEnd();
+
 };

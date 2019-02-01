@@ -48,6 +48,8 @@ public:
 	virtual void OnTakeDamage_Implementation(FName BoneName, float Damage, AActor* Actor) override;
 	virtual void Equipment_Implementation() override;
 	virtual void UnEquipment_Implementation() override;
+	virtual void ClimbLedge_Implementation(bool InClimbLedge) override;
+
 	virtual FVector BulletTraceRelativeLocation() const override;
 	virtual FVector BulletTraceForwardLocation() const override;
 
@@ -56,6 +58,8 @@ protected:
 	virtual void OnCrouch() override;
 	virtual void PickupObjects() override;
 	virtual void ReleaseObjects() override;
+	virtual void Jump() override;
+	virtual void StopJumping() override;
 
 #if !WITH_EDITOR
 	void TouchStarted(ETouchIndex::Type FingerIndex, FVector Location);

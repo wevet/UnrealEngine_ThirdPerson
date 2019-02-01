@@ -6,6 +6,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Math/RotationMatrix.h"
+#include "CharacterAnimInstanceBase.h"
 //#include "ShaderCompiler.h"
 
 AMockCharacter::AMockCharacter(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
@@ -55,8 +56,8 @@ void AMockCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInpu
 	// basic action
 	PlayerInputComponent->BindAction("Crouch", IE_Pressed,   this, &ACharacterBase::OnCrouch);
 	PlayerInputComponent->BindAction("Sprint", IE_Pressed,   this, &ACharacterBase::OnSprint);
-	PlayerInputComponent->BindAction("Jump",   IE_Pressed,   this, &ACharacterBase::Jump);
-	PlayerInputComponent->BindAction("Jump",   IE_Released,  this, &ACharacterBase::StopJumping);
+	PlayerInputComponent->BindAction("Jump",   IE_Pressed,   this, &AMockCharacter::Jump);
+	PlayerInputComponent->BindAction("Jump",   IE_Released,  this, &AMockCharacter::StopJumping);
 	PlayerInputComponent->BindAxis("Turn",        this, &APawn::AddControllerYawInput);
 	PlayerInputComponent->BindAxis("LookUp",      this, &APawn::AddControllerPitchInput);
 	PlayerInputComponent->BindAxis("TurnRate",    this, &AMockCharacter::TurnAtRate);
@@ -110,6 +111,21 @@ void AMockCharacter::MoveForward(float Value)
 {
 	if (Controller && Value != 0.0f)
 	{
+		// backward hanging reset
+		if (Value <= 0.f)
+		{
+			if (Super::bHanging)
+			{
+				IGrabExecuter::Execute_CanGrab(this, false);
+			}
+		}
+		else
+		{
+			if (Super::bHanging)
+			{
+				return;
+			}
+		}
 		const FRotator Rotation = Controller->GetControlRotation();
 		const FRotator YawRotation(0.f, Rotation.Yaw, 0.f);
 		const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
@@ -119,6 +135,10 @@ void AMockCharacter::MoveForward(float Value)
 
 void AMockCharacter::MoveRight(float Value)
 {
+	if (Super::bHanging)
+	{
+		return;
+	}
 	if (Controller && Value != 0.f)
 	{
 		const FRotator Rotation = Controller->GetControlRotation();
@@ -136,6 +156,23 @@ void AMockCharacter::ReleaseObjects()
 void AMockCharacter::PickupObjects()
 {
 	OnPickupItemExecuter_Implementation(GetPickupComponent()->GetPickupActor());
+}
+
+void AMockCharacter::Jump()
+{
+	if (Super::bHanging)
+	{
+		ClimbLedge_Implementation(true);
+	}
+	else
+	{
+		Super::Jump();
+	}
+}
+
+void AMockCharacter::StopJumping()
+{
+	Super::StopJumping();
 }
 
 void AMockCharacter::FirePressed()
@@ -315,6 +352,30 @@ void AMockCharacter::UnEquipment_Implementation()
 	CurrentWeapon.Reset();
 }
 
+void AMockCharacter::ClimbLedge_Implementation(bool InClimbLedge)
+{
+	if (bClimbingLedge == InClimbLedge)
+	{
+		return;
+	}
+	bClimbingLedge = InClimbLedge;
+	if (!bHanging)
+	{
+		GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Flying);
+	}
+	else
+	{
+		bHanging = false;
+	}
+	IGrabExecuter::Execute_CanGrab(GetCharacterAnimInstance(), bHanging);
+	IGrabExecuter::Execute_ClimbLedge(GetCharacterAnimInstance(), bClimbingLedge);
+	if (ClimbLedgeMontage)
+	{
+		PlayAnimMontage(ClimbLedgeMontage);
+	}
+	UE_LOG(LogWevetClient, Log, TEXT("Climbing : %s"), bClimbingLedge ? TEXT("true") : TEXT("false"));
+}
+
 FVector AMockCharacter::BulletTraceRelativeLocation() const
 {
 	return GetFollowCameraComponent()->GetComponentLocation();
@@ -352,7 +413,7 @@ void AMockCharacter::ReleaseWeapon()
 	
 	if (AWeaponBase* Weapon = Super::GetUnEquipWeapon())
 	{
-		if (WeaponList.Find(Weapon) <= 0)
+		if (WeaponList.Find(Weapon) != INDEX_NONE)
 		{
 			WeaponList.Remove(Weapon);
 		}

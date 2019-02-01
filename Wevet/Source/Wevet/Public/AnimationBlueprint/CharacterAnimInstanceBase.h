@@ -39,8 +39,11 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Variable")
 	bool IsEquip;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Variable")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Animation|Climbsystem")
 	bool IsHanging;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Animation|Climbsystem")
+	bool IsClimbingLedge;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Variable")
 	float Speed;
@@ -72,4 +75,12 @@ public:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AnimationBlueprint|IGrabExecuter")
 	void CanGrab(bool InCanGrab);
 	virtual void CanGrab_Implementation(bool InCanGrab) override;
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AnimationBlueprint|IGrabExecuter")
+	void ClimbLedge(bool InClimbLedge);
+	virtual void ClimbLedge_Implementation(bool InClimbLedge) override;
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AnimationBlueprint|IGrabExecuter")
+	void ReportClimbEnd();
+	virtual void ReportClimbEnd_Implementation() override;
 };

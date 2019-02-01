@@ -153,12 +153,22 @@ void ACharacterBase::ReportNoiseOther_Implementation(AActor* Actor, USoundBase* 
 void ACharacterBase::CanGrab_Implementation(bool InCanGrab)
 {
 	bHanging = InCanGrab;
-	if (bHanging)
-	{
-		GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Flying);
-	}
+	GetCharacterMovement()->SetMovementMode(bHanging ? EMovementMode::MOVE_Flying : EMovementMode::MOVE_Walking);
 	IGrabExecuter::Execute_CanGrab(GetCharacterAnimInstance(), bHanging);
-	UE_LOG(LogWevetClient, Log, TEXT("hanging : %s"), bHanging ? TEXT("true") : TEXT("false"));
+	UE_LOG(LogWevetClient, Log, TEXT("Hanging : %s"), bHanging ? TEXT("true") : TEXT("false"));
+}
+
+void ACharacterBase::ClimbLedge_Implementation(bool InClimbLedge)
+{
+}
+
+void ACharacterBase::ReportClimbEnd_Implementation()
+{
+	bHanging = false;
+	bClimbingLedge = false;
+	IGrabExecuter::Execute_CanGrab(GetCharacterAnimInstance(), bHanging);
+	IGrabExecuter::Execute_ClimbLedge(GetCharacterAnimInstance(), bClimbingLedge);
+	GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
 }
 
 bool ACharacterBase::IsDeath_Implementation()
@@ -327,7 +337,7 @@ float ACharacterBase::GetHealthToWidget() const
 	return 0.f;
 }
 
-void ACharacterBase::ReleaseWeaponToWorld(const FTransform Transform, AWeaponBase* &Weapon)
+void ACharacterBase::ReleaseWeaponToWorld(const FTransform& Transform, AWeaponBase* &Weapon)
 {
 	UWorld* const World = GetWorld();
 

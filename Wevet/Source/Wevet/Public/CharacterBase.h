@@ -90,6 +90,14 @@ public:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "IGrabExecuter")
 	void CanGrab(bool InCanGrab);
 	virtual void CanGrab_Implementation(bool InCanGrab) override;
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "IGrabExecuter")
+	void ClimbLedge(bool InClimbLedge);
+	virtual void ClimbLedge_Implementation(bool InClimbLedge) override;
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "IGrabExecuter")
+	void ReportClimbEnd();
+	virtual void ReportClimbEnd_Implementation() override;
 #pragma endregion
 
 public:
@@ -99,7 +107,7 @@ public:
 	UCharacterModel* GetCharacterModel() const;
 
 	UFUNCTION(BlueprintCallable, Category = "ACharacterBase|AnimationBlueprint")
-	UCharacterAnimInstanceBase* GetCharacterAnimInstance() const;
+	virtual UCharacterAnimInstanceBase* GetCharacterAnimInstance() const;
 
 	UFUNCTION(BlueprintCallable, Category = "ACharacterBase|Weapon")
 	AWeaponBase* GetSelectedWeapon() const;
@@ -109,7 +117,7 @@ public:
 	const bool HasSprint();
 	const bool HasHanging();
 	virtual const bool HasEquipWeapon();
-	virtual void ReleaseWeaponToWorld(const FTransform Transform, AWeaponBase* &Weapon);
+	virtual void ReleaseWeaponToWorld(const FTransform& Transform, AWeaponBase* &Weapon);
 
 	UFUNCTION(BlueprintCallable, Category = "ACharacterBase|CharacterModel")
 	float GetHealthToWidget() const;
@@ -144,6 +152,9 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ACharacterBase|Asset|Damage")
 	class UAnimMontage* DefaultHitDamageMontage;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ACharacterBase|Asset|Climbsystem")
+	class UAnimMontage* ClimbLedgeMontage;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ACharacterBase|Asset")
 	class USoundBase* FootStepSoundAsset;
