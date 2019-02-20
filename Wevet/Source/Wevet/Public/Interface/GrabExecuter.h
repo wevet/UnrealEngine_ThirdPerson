@@ -32,4 +32,12 @@ public :
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "IGrabExecuter")
 	void ReportClimbEnd();
 
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "IGrabExecuter")
+	void ClimbMove(float Value);
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "IGrabExecuter")
+	void ClimbJump();
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "IGrabExecuter")
+	void ReportClimbJumpEnd();
 };

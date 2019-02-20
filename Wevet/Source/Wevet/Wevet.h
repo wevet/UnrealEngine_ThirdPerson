@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "ObjectMacros.h"
 #include "Components/ActorComponent.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogWevetClient, Verbose, All);
@@ -73,27 +74,6 @@ namespace Wevet
 			return Component && Component->IsValidLowLevel();
 		}
 
-	};
-
-	class WEVET_API EnumExtension
-	{
-	public:
-		// ETeam Team = ETeam::Alpha;
-		// FString Message = TEXT("Our enum value: ") + EnumToString(TEXT("ETeam"), static_cast<uint8>(Team));
-		// This prints: "Our enum value: ETeam::Alpha"
-		static FORCEINLINE const FString EnumToString(const TCHAR* Enum, const int32 EnumValue)
-		{
-			const UEnum* EnumPtr = FindObject<UEnum>(ANY_PACKAGE, Enum, true);
-			if (!EnumPtr)
-			{
-				return NSLOCTEXT("Invalid", "Invalid", "Invalid").ToString();
-			}
-#if WITH_EDITOR
-			return EnumPtr->GetDisplayNameTextByIndex(EnumValue).ToString();
-#else
-			return EnumPtr->GetEnumName(EnumValue);
-#endif
-		}
 	};
 }
 

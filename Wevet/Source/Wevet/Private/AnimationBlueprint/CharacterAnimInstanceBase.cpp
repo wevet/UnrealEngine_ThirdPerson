@@ -7,7 +7,8 @@
 
 UCharacterAnimInstanceBase::UCharacterAnimInstanceBase(const FObjectInitializer& ObjectInitializer) 
 	: Super(ObjectInitializer),
-	MaxBlendWeight(0.8f)
+	MaxBlendWeight(0.8f),
+	FalloutInterval(3.f)
 {
 
 }
@@ -22,7 +23,7 @@ void UCharacterAnimInstanceBase::NativeUpdateAnimation(float DeltaTimeX)
 {
 	Super::NativeUpdateAnimation(DeltaTimeX);
 
-	if (OwningPawn == nullptr) 
+	if (OwningPawn == nullptr)
 	{
 		return;
 	}
@@ -37,10 +38,26 @@ void UCharacterAnimInstanceBase::NativeUpdateAnimation(float DeltaTimeX)
 		//const bool isInAir = MovementComponent->MovementMode == EMovementMode::MOVE_Falling;
 		//const float Velocity = MovementComponent->GetVelocity();
 	}
+	if (IsFalling)
+	{
+		FalloutTickTime += DeltaTimeX;
+		if (FalloutTickTime >= FalloutInterval)
+		{
+			IsFallout = true;
+		}
+	}
+	else
+	{
+		IsFallout = false;
+		FalloutTickTime = 0.f;
+	}
 
 	SetRotator();
 	SetCrouch();
 	SetEquip();
+	SetHanging();
+	SetClimbingLedge();
+	SetClimbingMove();
 	BlendWeight = (IsEquip) ? MaxBlendWeight : 0.f;
 }
 
@@ -72,12 +89,28 @@ void UCharacterAnimInstanceBase::SetEquip()
 	}
 }
 
-// @TODO
 void UCharacterAnimInstanceBase::SetHanging()
 {
 	if (Owner)
 	{
-		//IsHanging = Owner->HasHanging();
+		IsHanging = Owner->HasHanging();
+	}
+}
+
+void UCharacterAnimInstanceBase::SetClimbingLedge()
+{
+	if (Owner)
+	{
+		IsClimbingLedge = Owner->HasClimbingLedge();
+	}
+}
+
+void UCharacterAnimInstanceBase::SetClimbingMove()
+{
+	if (Owner)
+	{
+		bCanClimbMoveLeft  = Owner->HasClimbingMoveLeft();
+		bCanClimbMoveRight = Owner->HasClimbingMoveRight();
 	}
 }
 
@@ -98,4 +131,24 @@ void UCharacterAnimInstanceBase::ClimbLedge_Implementation(bool InClimbLedge)
 
 void UCharacterAnimInstanceBase::ReportClimbEnd_Implementation()
 {
+}
+
+void UCharacterAnimInstanceBase::ClimbMove_Implementation(float Value)
+{
+	IsClimbMoveRight = (Value > 0.f);
+	IsClimbMoveLeft  = (Value < 0.f);
+}
+
+void UCharacterAnimInstanceBase::ClimbJump_Implementation()
+{
+	//bClimbJumping = InClimbJumpRight;
+}
+
+void UCharacterAnimInstanceBase::ReportClimbJumpEnd_Implementation()
+{
+	//if (Owner)
+	//{
+	//	IGrabExecuter::Execute_ReportClimbJumpEnd(Owner);
+	//}
+	//bClimbJumping = false;
 }

@@ -49,6 +49,8 @@ public:
 	virtual void Equipment_Implementation() override;
 	virtual void UnEquipment_Implementation() override;
 	virtual void ClimbLedge_Implementation(bool InClimbLedge) override;
+	virtual void ClimbJump_Implementation() override;
+	virtual void ReportClimbJumpEnd_Implementation() override;
 
 	virtual FVector BulletTraceRelativeLocation() const override;
 	virtual FVector BulletTraceForwardLocation() const override;
@@ -77,5 +79,6 @@ protected:
 
 private:
 	int32 WeaponCurrentIndex;
+	float MoveRightValue;
 };
 

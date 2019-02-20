@@ -87,17 +87,29 @@ public:
 #pragma endregion
 
 #pragma region climb
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "IGrabExecuter")
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "ACharacterBase|IGrabExecuter")
 	void CanGrab(bool InCanGrab);
 	virtual void CanGrab_Implementation(bool InCanGrab) override;
 
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "IGrabExecuter")
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "ACharacterBase|IGrabExecuter")
 	void ClimbLedge(bool InClimbLedge);
 	virtual void ClimbLedge_Implementation(bool InClimbLedge) override;
 
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "IGrabExecuter")
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "ACharacterBase|IGrabExecuter")
 	void ReportClimbEnd();
 	virtual void ReportClimbEnd_Implementation() override;
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "ACharacterBase|IGrabExecuter")
+	void ClimbMove(float Value);
+	virtual void ClimbMove_Implementation(float Value) override;
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "ACharacterBase|IGrabExecuter")
+	void ClimbJump();
+	virtual void ClimbJump_Implementation() override;
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "ACharacterBase|IGrabExecuter")
+	void ReportClimbJumpEnd();
+	virtual void ReportClimbJumpEnd_Implementation() override;
 #pragma endregion
 
 public:
@@ -116,6 +128,9 @@ public:
 	const bool HasCrouch();
 	const bool HasSprint();
 	const bool HasHanging();
+	const bool HasClimbingLedge();
+	const bool HasClimbingMoveLeft();
+	const bool HasClimbingMoveRight();
 	virtual const bool HasEquipWeapon();
 	virtual void ReleaseWeaponToWorld(const FTransform& Transform, AWeaponBase* &Weapon);
 
@@ -156,6 +171,12 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ACharacterBase|Asset|Climbsystem")
 	class UAnimMontage* ClimbLedgeMontage;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ACharacterBase|Asset|Climbsystem")
+	class UAnimMontage* ClimbJumpLeftMontage;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ACharacterBase|Asset|Climbsystem")
+	class UAnimMontage* ClimbJumpRightMontage;
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ACharacterBase|Asset")
 	class USoundBase* FootStepSoundAsset;
 
@@ -173,6 +194,27 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Climbsystem")
 	bool bClimbingLedge;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Climbsystem")
+	bool bCanClimbMoveLeft;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Climbsystem")
+	bool bCanClimbMoveRight;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Climbsystem")
+	bool bClimbMovingLeft;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Climbsystem")
+	bool bClimbMovingRight;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Climbsystem")
+	bool bCanClimbJumpLeft;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Climbsystem")
+	bool bCanClimbJumpRight;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Climbsystem")
+	bool bClimbJumping;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Climbsystem")
 	FVector HeightLocation;

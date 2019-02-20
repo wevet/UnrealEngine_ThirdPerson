@@ -10,7 +10,6 @@
 #include "BehaviorTree/BehaviorTree.h"
 #include "Macros.h"
 #include "STypes.h"
-#include "AICombatExecuter.h"
 #include "AIControllerBase.generated.h"
 
 class UBehaviorTreeComponent;
@@ -23,7 +22,7 @@ class UAIPerceptionComponent;
 
 
 UCLASS(ABSTRACT)
-class WEVET_API AAIControllerBase :  public AAIController, public IAICombatExecuter
+class WEVET_API AAIControllerBase :  public AAIController
 {
 	GENERATED_BODY()
 
@@ -53,18 +52,6 @@ public:
 	}
 
 public:
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AAIControllerBase|Interface")
-	void Patrolling();
-	virtual void Patrolling_Implementation() override;
-
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AAIControllerBase|Interface")
-	void CheckEnemySighting();
-	virtual void CheckEnemySighting_Implementation() override;
-
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AAIControllerBase|Interface")
-	void Hunting();
-	virtual void Hunting_Implementation() override;
-
 	UFUNCTION(BlueprintCallable, Category = "AAIControllerBase|Variable")
 	AAICharacterBase* GetAICharacter() const
 	{

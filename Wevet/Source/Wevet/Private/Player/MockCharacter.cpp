@@ -9,7 +9,9 @@
 #include "CharacterAnimInstanceBase.h"
 //#include "ShaderCompiler.h"
 
-AMockCharacter::AMockCharacter(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
+AMockCharacter::AMockCharacter(const FObjectInitializer& ObjectInitializer)
+	: Super(ObjectInitializer),
+	MoveRightValue(0.f)
 {
 	GetCapsuleComponent()->InitCapsuleSize(32.f, 96.0f);
 
@@ -109,6 +111,10 @@ void AMockCharacter::LookUpAtRate(float Rate)
 
 void AMockCharacter::MoveForward(float Value)
 {
+	if (Super::bClimbJumping)
+	{
+		return;
+	}
 	if (Controller && Value != 0.0f)
 	{
 		// backward hanging reset
@@ -135,7 +141,8 @@ void AMockCharacter::MoveForward(float Value)
 
 void AMockCharacter::MoveRight(float Value)
 {
-	if (Super::bHanging)
+	MoveRightValue = FMath::Clamp<float>(Value, -1.f, 1.f);
+	if (Super::bHanging || Super::bClimbJumping)
 	{
 		return;
 	}
@@ -160,9 +167,22 @@ void AMockCharacter::PickupObjects()
 
 void AMockCharacter::Jump()
 {
+	if (Super::bClimbJumping)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Using ClimbSystem.."));
+		return;
+	}
 	if (Super::bHanging)
 	{
-		ClimbLedge_Implementation(true);
+		if (FMath::IsNearlyZero(MoveRightValue))
+		{
+			Super::bClimbJumping = false;
+			ClimbLedge_Implementation(true);
+		}
+		else if (Super::bCanClimbJumpLeft || Super::bCanClimbJumpRight)
+		{
+			ClimbJump_Implementation();
+		}
 	}
 	else
 	{
@@ -373,7 +393,37 @@ void AMockCharacter::ClimbLedge_Implementation(bool InClimbLedge)
 	{
 		PlayAnimMontage(ClimbLedgeMontage);
 	}
-	UE_LOG(LogWevetClient, Log, TEXT("Climbing : %s"), bClimbingLedge ? TEXT("true") : TEXT("false"));
+	//UE_LOG(LogWevetClient, Log, TEXT("Climbing : %s"), bClimbingLedge ? TEXT("true") : TEXT("false"));
+}
+
+void AMockCharacter::ClimbJump_Implementation()
+{
+	if (bClimbJumping)
+	{
+		return;
+	}
+
+	check(bHanging);
+	GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Flying);
+	bClimbJumping = true;
+	if (MoveRightValue > 0.f && ClimbJumpRightMontage)
+	{
+		PlayAnimMontage(ClimbJumpRightMontage);
+	}
+	else if (MoveRightValue < 0.f && ClimbJumpLeftMontage)
+	{
+		PlayAnimMontage(ClimbJumpLeftMontage);
+	}
+}
+
+void AMockCharacter::ReportClimbJumpEnd_Implementation()
+{
+	if (auto Anim = GetCharacterAnimInstance())
+	{
+		Anim->Montage_Stop(0.f);
+	}
+	//GetMovementComponent()->StopMovementImmediately();
+	Super::ReportClimbJumpEnd_Implementation();
 }
 
 FVector AMockCharacter::BulletTraceRelativeLocation() const

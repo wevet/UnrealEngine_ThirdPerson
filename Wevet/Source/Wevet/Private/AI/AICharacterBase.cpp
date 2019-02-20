@@ -142,8 +142,14 @@ void AAICharacterBase::Die_Implementation()
 	TargetCharacter = nullptr;
 	// not spawned WeaponActor
 	WeaponList.Empty();
-	Super::Die_Implementation();
+	GetController()->UnPossess();
 
+	if (ensure(PawnSensingComponent && PawnSensingComponent->IsValidLowLevel()))
+	{
+		PawnSensingComponent->OnSeePawn.RemoveDynamic(this, &AAICharacterBase::OnSeePawnRecieve);
+		PawnSensingComponent->OnHearNoise.RemoveDynamic(this, &AAICharacterBase::OnHearNoiseRecieve);
+	}
+	Super::Die_Implementation();
 }
 
 void AAICharacterBase::Equipment_Implementation()
@@ -198,6 +204,11 @@ void AAICharacterBase::InitializePosses()
 	CreateWeaponInstance();
 }
 
+ACharacterBase* AAICharacterBase::GetTargetCharacter() const
+{
+	return TargetCharacter;
+}
+
 FVector AAICharacterBase::BulletTraceRelativeLocation() const
 {
 	if (CurrentWeapon.IsValid())
@@ -246,13 +257,16 @@ void AAICharacterBase::CreateWeaponInstance()
 
 void AAICharacterBase::CreateWayPointList(TArray<AWayPointBase*>& OutWayPointList)
 {
-	check(GetWorld());
-	
-	for (TActorIterator<AWayPointBase> ActorIterator(GetWorld()); ActorIterator; ++ActorIterator)
+	UWorld* const World = GetWorld();
+
+	if (World)
 	{
-		if (AWayPointBase* WayPoint = *ActorIterator)
+		for (TActorIterator<AWayPointBase> ActorIterator(World); ActorIterator; ++ActorIterator)
 		{
-			OutWayPointList.Emplace(WayPoint);
+			if (AWayPointBase* WayPoint = *ActorIterator)
+			{
+				OutWayPointList.Emplace(WayPoint);
+			}
 		}
 	}
 }

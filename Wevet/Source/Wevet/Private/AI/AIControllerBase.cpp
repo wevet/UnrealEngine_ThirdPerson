@@ -47,45 +47,46 @@ AAIControllerBase::AAIControllerBase(const FObjectInitializer& ObjectInitializer
 	AIPerceptionComponent->SetDominantSense(SightConfig->GetSenseImplementation());
 }
 
+void AAIControllerBase::BeginPlay()
+{
+	Super::BeginPlay();
+}
+
 void AAIControllerBase::Possess(APawn* Pawn)
 {
 	Super::Possess(Pawn);
-
 	AICharacterOwner = Cast<AAICharacterBase>(Pawn);
+	bool bInitialize = false;
 	if (AICharacterOwner)
 	{
-		if (AICharacterOwner->BehaviorTree->BlackboardAsset)
-		{
-			BlackboardComponent->InitializeBlackboard(*AICharacterOwner->BehaviorTree->BlackboardAsset);
-		}
+		bInitialize = BlackboardComponent->InitializeBlackboard(*AICharacterOwner->BehaviorTree->BlackboardAsset);
+	}
 
+	if (bInitialize)
+	{
 		AICharacterOwner->InitializePosses();
 		AICharacterOwner->CreateWayPointList(WayPointList);
 		BehaviorTreeComponent->StartTree(*AICharacterOwner->BehaviorTree);
+	}
+	if (bInitialize && ensure(AIPerceptionComponent && AIPerceptionComponent->IsValidLowLevel()))
+	{
+		AIPerceptionComponent->OnTargetPerceptionUpdated.AddDynamic(this, &AAIControllerBase::OnTargetPerceptionUpdatedRecieve);
 	}
 }
 
 void AAIControllerBase::UnPossess()
 {
-	Super::UnPossess();
+	if (ensure(AIPerceptionComponent && AIPerceptionComponent->IsValidLowLevel()))
+	{
+		AIPerceptionComponent->OnTargetPerceptionUpdated.RemoveDynamic(this, &AAIControllerBase::OnTargetPerceptionUpdatedRecieve);
+	}
 	BehaviorTreeComponent->StopTree();
+	Super::UnPossess();
 }
 
 FGenericTeamId AAIControllerBase::GetGenericTeamId() const
 {
 	return PTG_TEAM_ID_ENEMY;
-}
-
-void AAIControllerBase::Patrolling_Implementation() 
-{
-}
-
-void AAIControllerBase::CheckEnemySighting_Implementation() 
-{
-}
-
-void AAIControllerBase::Hunting_Implementation() 
-{
 }
 
 AWayPointBase* AAIControllerBase::GetRandomAtWayPoint()
@@ -98,7 +99,7 @@ AWayPointBase* AAIControllerBase::GetRandomAtWayPoint()
 	return WayPointList[RandomIndex];
 }
 
-void AAIControllerBase::SetTargetEnemy(APawn * NewTarget)
+void AAIControllerBase::SetTargetEnemy(APawn* NewTarget)
 {
 	if (BlackboardComponent)
 	{
@@ -147,32 +148,22 @@ void AAIControllerBase::SetBlackboardPatrolLocation(const FVector NewLocation)
 	}
 }
 
-void AAIControllerBase::BeginPlay()
-{
-	Super::BeginPlay();
-	if (ensure(AIPerceptionComponent && AIPerceptionComponent->IsValidLowLevel()))
-	{
-		AIPerceptionComponent->OnTargetPerceptionUpdated.AddDynamic(this, &AAIControllerBase::OnTargetPerceptionUpdatedRecieve);
-	}
-}
-
 void AAIControllerBase::OnTargetPerceptionUpdatedRecieve(AActor* Actor, FAIStimulus Stimulus)
 {
-	if (AICharacterOwner == nullptr)
+	if (AICharacterOwner == nullptr || ICombatExecuter::Execute_IsDeath(AICharacterOwner))
 	{
 		return;
 	}
 
-	if (ICombatExecuter::Execute_IsDeath(AICharacterOwner) || AICharacterOwner->GetTargetCharacter())
+	if (AICharacterOwner->GetTargetCharacter())
 	{
 		return;
 	}
 
 	if (AMockCharacter* MockCharacter = Cast<AMockCharacter>(Actor))
 	{
-		bool bSuccess = (ICombatExecuter::Execute_IsDeath(MockCharacter)) && Stimulus.WasSuccessfullySensed() ? true : false;
-		UE_LOG(LogWevetClient, Log, TEXT("WasSuccessfullySensed : %s"), bSuccess ? TEXT("True") : TEXT("false"));
-
+		bool bSuccess = (!ICombatExecuter::Execute_IsDeath(MockCharacter)) && Stimulus.WasSuccessfullySensed() ? true : false;
+		//UE_LOG(LogWevetClient, Log, TEXT("WasSuccessfullySensed : %s"), bSuccess ? TEXT("True") : TEXT("false"));
 	}
 }
 

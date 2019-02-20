@@ -34,6 +34,13 @@ protected:
 	bool IsFalling;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Variable")
+	bool IsFallout;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Variable")
+	float FalloutInterval;
+	float FalloutTickTime;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Variable")
 	bool IsCrouch;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Variable")
@@ -44,6 +51,21 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Animation|Climbsystem")
 	bool IsClimbingLedge;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Animation|Climbsystem")
+	bool IsClimbMoveLeft;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Animation|Climbsystem")
+	bool IsClimbMoveRight;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Animation|Climbsystem")
+	bool bCanClimbMoveLeft;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Animation|Climbsystem")
+	bool bCanClimbMoveRight;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Animation|Climbsystem")
+	bool bClimbJumping;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Variable")
 	float Speed;
@@ -70,6 +92,9 @@ protected:
 	virtual void SetCrouch();
 	virtual void SetEquip();
 	virtual void SetHanging();
+	virtual void SetClimbingLedge();
+	virtual void SetClimbingMove();
+
 
 public:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AnimationBlueprint|IGrabExecuter")
@@ -83,4 +108,16 @@ public:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AnimationBlueprint|IGrabExecuter")
 	void ReportClimbEnd();
 	virtual void ReportClimbEnd_Implementation() override;
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AnimationBlueprint|IGrabExecuter")
+	void ClimbMove(float Value);
+	virtual void ClimbMove_Implementation(float Value) override;
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AnimationBlueprint|IGrabExecuter")
+	void ClimbJump();
+	virtual void ClimbJump_Implementation() override;
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AnimationBlueprint|IGrabExecuter")
+	void ReportClimbJumpEnd();
+	virtual void ReportClimbJumpEnd_Implementation() override;
 };

@@ -94,19 +94,19 @@ public:
 	}
 
 public:
-	friend FArchive& operator<<(FArchive& Ar, FWeaponItemInfo& TheStruct)
-	{
-		Ar << TheStruct.WeaponItemType;
-		Ar << TheStruct.WeaponClass;
-		Ar << TheStruct.ClipType;
-		Ar << TheStruct.CurrentAmmo;
-		Ar << TheStruct.MaxAmmo;
-		Ar << TheStruct.Damage;
-		Ar << TheStruct.Texture;
-		Ar << TheStruct.EquipSocketName;
-		Ar << TheStruct.UnEquipSocketName;
-		return Ar;
-	}
+	//FORCEINLINE FArchive& operator<<(FArchive& Ar, FWeaponItemInfo& TheStruct)
+	//{
+	//	Ar << TheStruct.WeaponItemType;
+	//	Ar << TheStruct.WeaponClass;
+	//	Ar << TheStruct.ClipType;
+	//	Ar << TheStruct.CurrentAmmo;
+	//	Ar << TheStruct.MaxAmmo;
+	//	Ar << TheStruct.Damage;
+	//	Ar << TheStruct.Texture;
+	//	Ar << TheStruct.EquipSocketName;
+	//	Ar << TheStruct.UnEquipSocketName;
+	//	return Ar;
+	//}
 
 	void CopyTo(const FWeaponItemInfo& InWeaponItemInfo)
 	{

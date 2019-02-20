@@ -29,6 +29,7 @@ ACharacterBase::ACharacterBase(const FObjectInitializer& ObjectInitializer)
 	bDied    = false;
 	bHanging = false;
 	bClimbingLedge = false;
+	bClimbJumping = false;
 	PawnNoiseEmitterComponent = ObjectInitializer.CreateDefaultSubobject<UPawnNoiseEmitterComponent>(this, TEXT("PawnNoiseEmitterComponent"));
 	AudioComponent = ObjectInitializer.CreateDefaultSubobject<UAudioComponent>(this, TEXT("AudioComponent"));
 	AudioComponent->bAutoActivate = false;
@@ -155,7 +156,7 @@ void ACharacterBase::CanGrab_Implementation(bool InCanGrab)
 	bHanging = InCanGrab;
 	GetCharacterMovement()->SetMovementMode(bHanging ? EMovementMode::MOVE_Flying : EMovementMode::MOVE_Walking);
 	IGrabExecuter::Execute_CanGrab(GetCharacterAnimInstance(), bHanging);
-	UE_LOG(LogWevetClient, Log, TEXT("Hanging : %s"), bHanging ? TEXT("true") : TEXT("false"));
+	//UE_LOG(LogWevetClient, Log, TEXT("Hanging : %s"), bHanging ? TEXT("true") : TEXT("false"));
 }
 
 void ACharacterBase::ClimbLedge_Implementation(bool InClimbLedge)
@@ -169,6 +170,23 @@ void ACharacterBase::ReportClimbEnd_Implementation()
 	IGrabExecuter::Execute_CanGrab(GetCharacterAnimInstance(), bHanging);
 	IGrabExecuter::Execute_ClimbLedge(GetCharacterAnimInstance(), bClimbingLedge);
 	GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
+}
+
+void ACharacterBase::ClimbMove_Implementation(float Value)
+{
+	IGrabExecuter::Execute_ClimbMove(GetCharacterAnimInstance(), Value);
+}
+
+void ACharacterBase::ClimbJump_Implementation()
+{
+	bClimbJumping = true;
+}
+
+void ACharacterBase::ReportClimbJumpEnd_Implementation()
+{
+	bClimbJumping = false;
+	bCanClimbJumpLeft = false;
+	bCanClimbJumpRight = false;
 }
 
 bool ACharacterBase::IsDeath_Implementation()
@@ -220,11 +238,11 @@ void ACharacterBase::Die_Implementation()
 	{
 		CurrentWeapon.Reset();
 	}
-	USkeletalMeshComponent* const Mesh = GetMesh();
-	Mesh->SetAllBodiesSimulatePhysics(true);
-	Mesh->SetSimulatePhysics(true);
-	Mesh->WakeAllRigidBodies();
-	Mesh->bBlendPhysics = true;
+	USkeletalMeshComponent* const SkelMesh = GetMesh();
+	SkelMesh->SetAllBodiesSimulatePhysics(true);
+	SkelMesh->SetSimulatePhysics(true);
+	SkelMesh->WakeAllRigidBodies();
+	SkelMesh->bBlendPhysics = true;
 	Super::GetCharacterMovement()->DisableMovement();
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
@@ -420,6 +438,21 @@ const bool ACharacterBase::HasSprint()
 const bool ACharacterBase::HasHanging()
 {
 	return bHanging;
+}
+
+const bool ACharacterBase::HasClimbingLedge()
+{
+	return bClimbingLedge;
+}
+
+const bool ACharacterBase::HasClimbingMoveLeft()
+{
+	return bCanClimbMoveLeft;
+}
+
+const bool ACharacterBase::HasClimbingMoveRight()
+{
+	return bCanClimbMoveRight;
 }
 
 AWeaponBase* ACharacterBase::GetUnEquipWeapon()

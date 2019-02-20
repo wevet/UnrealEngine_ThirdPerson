@@ -65,11 +65,7 @@ public:
 	// @NOTE
 	// for Animation Blueprint
 	UFUNCTION(BlueprintCallable, Category = "AAICharacterBase|Target")
-	ACharacterBase* GetTargetCharacter() const
-	{
-		return TargetCharacter;
-	}
-
+	ACharacterBase* GetTargetCharacter() const;
 	virtual FVector BulletTraceRelativeLocation() const override;
 	virtual FVector BulletTraceForwardLocation() const override;
 	virtual void MainLoop(float DeltaTime);
