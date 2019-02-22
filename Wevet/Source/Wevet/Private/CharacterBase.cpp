@@ -93,7 +93,7 @@ void ACharacterBase::OnReleaseItemExecuter_Implementation()
 
 void ACharacterBase::OnPickupItemExecuter_Implementation(AActor* Actor)
 {
-	if (Actor)
+	if (Actor->IsValidLowLevel())
 	{
 		UE_LOG(LogWevetClient, Log, TEXT("Picking : %s"), *(Actor->GetName()));
 	}
@@ -179,14 +179,29 @@ void ACharacterBase::ClimbMove_Implementation(float Value)
 
 void ACharacterBase::ClimbJump_Implementation()
 {
-	bClimbJumping = true;
+	IGrabExecuter::Execute_ClimbJump(GetCharacterAnimInstance());
+	//bClimbJumping = false;
 }
 
 void ACharacterBase::ReportClimbJumpEnd_Implementation()
 {
-	bClimbJumping = false;
+	bHanging = true;
 	bCanClimbJumpLeft = false;
 	bCanClimbJumpRight = false;
+	//bClimbJumping = false;
+	IGrabExecuter::Execute_ClimbJump(GetCharacterAnimInstance());
+}
+
+void ACharacterBase::TurnConerLeftUpdate_Implementation()
+{
+}
+
+void ACharacterBase::TurnConerRightUpdate_Implementation()
+{
+}
+
+void ACharacterBase::TurnConerResult_Implementation()
+{
 }
 
 bool ACharacterBase::IsDeath_Implementation()
@@ -249,8 +264,9 @@ void ACharacterBase::Die_Implementation()
 	UWorld* const World = GetWorld();
 	check(World);
 
+	const FVector ForwardOffset = Controller ? Controller->GetControlRotation().Vector() : Super::GetActorForwardVector();
 	const FRotator Rotation = Super::GetActorRotation();
-	const FVector Forward   = Super::GetActorLocation() + (Controller->GetControlRotation().Vector() * DEFAULT_FORWARD);
+	const FVector Forward   = Super::GetActorLocation() + (ForwardOffset * DEFAULT_FORWARD);
 	const FTransform Transform  = UKismetMathLibrary::MakeTransform(Forward, Rotation, FVector::OneVector);
 
 	if (!ArrayExtension::NullOrEmpty(WeaponList))

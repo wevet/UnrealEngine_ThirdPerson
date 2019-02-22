@@ -7,7 +7,9 @@
 
 UCharacterAnimInstanceBase::UCharacterAnimInstanceBase(const FObjectInitializer& ObjectInitializer) 
 	: Super(ObjectInitializer),
-	MaxBlendWeight(0.8f),
+	CombatBlendWeight(0.8f),
+	ClimbBlendWeight(1.f),
+	BlendWeight(0.f),
 	FalloutInterval(3.f)
 {
 
@@ -58,7 +60,7 @@ void UCharacterAnimInstanceBase::NativeUpdateAnimation(float DeltaTimeX)
 	SetHanging();
 	SetClimbingLedge();
 	SetClimbingMove();
-	BlendWeight = (IsEquip) ? MaxBlendWeight : 0.f;
+	BlendWeight = (IsEquip) ? FMath::Clamp<float>(CombatBlendWeight, 0.f, 1.f) : 0.f;
 }
 
 void UCharacterAnimInstanceBase::SetRotator()
@@ -141,7 +143,7 @@ void UCharacterAnimInstanceBase::ClimbMove_Implementation(float Value)
 
 void UCharacterAnimInstanceBase::ClimbJump_Implementation()
 {
-	//bClimbJumping = InClimbJumpRight;
+	bClimbJumping = true;
 }
 
 void UCharacterAnimInstanceBase::ReportClimbJumpEnd_Implementation()
@@ -150,5 +152,20 @@ void UCharacterAnimInstanceBase::ReportClimbJumpEnd_Implementation()
 	//{
 	//	IGrabExecuter::Execute_ReportClimbJumpEnd(Owner);
 	//}
-	//bClimbJumping = false;
+	bClimbJumping = false;
+}
+
+void UCharacterAnimInstanceBase::TurnConerLeftUpdate_Implementation()
+{
+
+}
+
+void UCharacterAnimInstanceBase::TurnConerRightUpdate_Implementation()
+{
+
+}
+
+void UCharacterAnimInstanceBase::TurnConerResult_Implementation()
+{
+
 }

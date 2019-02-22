@@ -40,4 +40,13 @@ public :
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "IGrabExecuter")
 	void ReportClimbJumpEnd();
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "IGrabExecuter")
+	void TurnConerLeftUpdate();
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "IGrabExecuter")
+	void TurnConerRightUpdate();
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "IGrabExecuter")
+	void TurnConerResult();
 };

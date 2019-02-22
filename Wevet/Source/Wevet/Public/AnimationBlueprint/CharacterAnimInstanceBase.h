@@ -67,6 +67,9 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Animation|Climbsystem")
 	bool bClimbJumping;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Animation|Climbsystem")
+	float ClimbBlendWeight;
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Variable")
 	float Speed;
 
@@ -83,7 +86,7 @@ protected:
 	float BlendWeight;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Variable")
-	float MaxBlendWeight;
+	float CombatBlendWeight;
 
 	// FRotator Delta
 	virtual FRotator NormalizedDeltaRotator(FRotator A, FRotator B) const;
@@ -97,27 +100,39 @@ protected:
 
 
 public:
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AnimationBlueprint|IGrabExecuter")
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "UCharacterAnimInstanceBase|IGrabExecuter")
 	void CanGrab(bool InCanGrab);
 	virtual void CanGrab_Implementation(bool InCanGrab) override;
 
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AnimationBlueprint|IGrabExecuter")
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "UCharacterAnimInstanceBase|IGrabExecuter")
 	void ClimbLedge(bool InClimbLedge);
 	virtual void ClimbLedge_Implementation(bool InClimbLedge) override;
 
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AnimationBlueprint|IGrabExecuter")
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "UCharacterAnimInstanceBase|IGrabExecuter")
 	void ReportClimbEnd();
 	virtual void ReportClimbEnd_Implementation() override;
 
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AnimationBlueprint|IGrabExecuter")
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "UCharacterAnimInstanceBase|IGrabExecuter")
 	void ClimbMove(float Value);
 	virtual void ClimbMove_Implementation(float Value) override;
 
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AnimationBlueprint|IGrabExecuter")
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "UCharacterAnimInstanceBase|IGrabExecuter")
 	void ClimbJump();
 	virtual void ClimbJump_Implementation() override;
 
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AnimationBlueprint|IGrabExecuter")
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "UCharacterAnimInstanceBase|IGrabExecuter")
 	void ReportClimbJumpEnd();
 	virtual void ReportClimbJumpEnd_Implementation() override;
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "UCharacterAnimInstanceBase|IGrabExecuter")
+	void TurnConerLeftUpdate();
+	virtual void TurnConerLeftUpdate_Implementation() override;
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "UCharacterAnimInstanceBase|IGrabExecuter")
+	void TurnConerRightUpdate();
+	virtual void TurnConerRightUpdate_Implementation() override;
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "UCharacterAnimInstanceBase|IGrabExecuter")
+	void TurnConerResult();
+	virtual void TurnConerResult_Implementation() override;
 };

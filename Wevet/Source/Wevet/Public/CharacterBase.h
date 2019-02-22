@@ -110,6 +110,18 @@ public:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "ACharacterBase|IGrabExecuter")
 	void ReportClimbJumpEnd();
 	virtual void ReportClimbJumpEnd_Implementation() override;
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "ACharacterBase|IGrabExecuter")
+	void TurnConerLeftUpdate();
+	virtual void TurnConerLeftUpdate_Implementation() override;
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "ACharacterBase|IGrabExecuter")
+	void TurnConerRightUpdate();
+	virtual void TurnConerRightUpdate_Implementation() override;
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "ACharacterBase|IGrabExecuter")
+	void TurnConerResult();
+	virtual void TurnConerResult_Implementation() override;
 #pragma endregion
 
 public:
@@ -177,6 +189,15 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ACharacterBase|Asset|Climbsystem")
 	class UAnimMontage* ClimbJumpRightMontage;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ACharacterBase|Asset|Climbsystem")
+	class UAnimMontage* ClimbJumpUpMontage;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ACharacterBase|Asset|Climbsystem")
+	class UAnimMontage* ClimbCornerLeftMontage;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ACharacterBase|Asset|Climbsystem")
+	class UAnimMontage* ClimbCornerRightMontage;
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ACharacterBase|Asset")
 	class USoundBase* FootStepSoundAsset;
 
@@ -214,7 +235,16 @@ protected:
 	bool bCanClimbJumpRight;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Climbsystem")
+	bool bCanClimbJumpUp;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Climbsystem")
 	bool bClimbJumping;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Climbsystem")
+	bool bCanTurnLeft;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Climbsystem")
+	bool bCanTurnRight;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Climbsystem")
 	FVector HeightLocation;

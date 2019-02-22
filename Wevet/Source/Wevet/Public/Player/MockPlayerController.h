@@ -19,6 +19,7 @@ class WEVET_API AMockPlayerController : public APlayerController
 public:
 	AMockPlayerController(const FObjectInitializer& ObjectInitializer);
 	virtual void Possess(APawn* Pawn) override;
+	virtual void UnPossess() override;
 
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AMockPlayerController|Variable")

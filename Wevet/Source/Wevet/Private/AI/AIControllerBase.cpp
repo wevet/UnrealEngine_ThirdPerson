@@ -50,27 +50,26 @@ AAIControllerBase::AAIControllerBase(const FObjectInitializer& ObjectInitializer
 void AAIControllerBase::BeginPlay()
 {
 	Super::BeginPlay();
+	if (ensure(AIPerceptionComponent && AIPerceptionComponent->IsValidLowLevel()))
+	{
+		AIPerceptionComponent->OnTargetPerceptionUpdated.AddDynamic(this, &AAIControllerBase::OnTargetPerceptionUpdatedRecieve);
+	}
 }
 
 void AAIControllerBase::Possess(APawn* Pawn)
 {
 	Super::Possess(Pawn);
 	AICharacterOwner = Cast<AAICharacterBase>(Pawn);
-	bool bInitialize = false;
+	bool bInitialized = false;
 	if (AICharacterOwner)
 	{
-		bInitialize = BlackboardComponent->InitializeBlackboard(*AICharacterOwner->BehaviorTree->BlackboardAsset);
+		bInitialized = BlackboardComponent->InitializeBlackboard(*AICharacterOwner->BehaviorTree->BlackboardAsset);
 	}
-
-	if (bInitialize)
+	if (bInitialized)
 	{
 		AICharacterOwner->InitializePosses();
 		AICharacterOwner->CreateWayPointList(WayPointList);
 		BehaviorTreeComponent->StartTree(*AICharacterOwner->BehaviorTree);
-	}
-	if (bInitialize && ensure(AIPerceptionComponent && AIPerceptionComponent->IsValidLowLevel()))
-	{
-		AIPerceptionComponent->OnTargetPerceptionUpdated.AddDynamic(this, &AAIControllerBase::OnTargetPerceptionUpdatedRecieve);
 	}
 }
 

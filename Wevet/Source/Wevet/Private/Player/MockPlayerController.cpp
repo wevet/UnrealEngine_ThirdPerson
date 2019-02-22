@@ -16,12 +16,17 @@ void AMockPlayerController::Possess(APawn* Pawn)
 {
 	Super::Possess(Pawn);
 
-	if (AMockCharacter* Character = Cast<AMockCharacter>(Pawn))
+	if (AMockCharacter* OwnerPawn = Cast<AMockCharacter>(Pawn))
 	{
-		CharacterOwner = Character;
+		CharacterOwner = OwnerPawn;
 		check(CharacterOwner);
 		Initializer();
 	}
+}
+
+void AMockPlayerController::UnPossess()
+{
+	Super::UnPossess();
 }
 
 void AMockPlayerController::Initializer()

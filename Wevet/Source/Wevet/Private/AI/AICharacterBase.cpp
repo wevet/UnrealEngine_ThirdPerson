@@ -65,10 +65,7 @@ void AAICharacterBase::BeginPlay()
 			AIWidget->Initializer(this);
 		}
 	}
-	if (AAIControllerBase* Controller = Cast<AAIControllerBase>(GetController()))
-	{
-		AIController = Controller;
-	}
+	AIController = Cast<AAIControllerBase>(GetController());
 }
 
 void AAICharacterBase::Tick(float DeltaTime)
@@ -154,7 +151,6 @@ void AAICharacterBase::Die_Implementation()
 
 void AAICharacterBase::Equipment_Implementation()
 {
-
 	if (!HasEquipWeapon())
 	{
 		check(CurrentWeapon.IsValid());
@@ -196,7 +192,7 @@ void AAICharacterBase::OnTakeDamage_Implementation(FName BoneName, float Damage,
 
 bool AAICharacterBase::HasEnemyFound() const
 {
-	return (TargetCharacter && bSeeTarget) ? true : false;
+	return (TargetCharacter && bSeeTarget);
 }
 
 void AAICharacterBase::InitializePosses()
@@ -258,15 +254,16 @@ void AAICharacterBase::CreateWeaponInstance()
 void AAICharacterBase::CreateWayPointList(TArray<AWayPointBase*>& OutWayPointList)
 {
 	UWorld* const World = GetWorld();
-
-	if (World)
+	if (World == nullptr)
 	{
-		for (TActorIterator<AWayPointBase> ActorIterator(World); ActorIterator; ++ActorIterator)
+		return;
+	}
+
+	for (TActorIterator<AWayPointBase> ActorIterator(World); ActorIterator; ++ActorIterator)
+	{
+		if (AWayPointBase* WayPoint = *ActorIterator)
 		{
-			if (AWayPointBase* WayPoint = *ActorIterator)
-			{
-				OutWayPointList.Emplace(WayPoint);
-			}
+			OutWayPointList.Emplace(WayPoint);
 		}
 	}
 }

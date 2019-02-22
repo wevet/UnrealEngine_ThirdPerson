@@ -11,7 +11,7 @@
 
 AMockCharacter::AMockCharacter(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer),
-	MoveRightValue(0.f)
+	WeaponCurrentIndex(INDEX_NONE)
 {
 	GetCapsuleComponent()->InitCapsuleSize(32.f, 96.0f);
 
@@ -141,18 +141,39 @@ void AMockCharacter::MoveForward(float Value)
 
 void AMockCharacter::MoveRight(float Value)
 {
-	MoveRightValue = FMath::Clamp<float>(Value, -1.f, 1.f);
-	if (Super::bHanging || Super::bClimbJumping)
+	if (Super::bClimbJumping)
 	{
 		return;
 	}
-	if (Controller && Value != 0.f)
+
+	if (Super::bHanging)
 	{
-		const FRotator Rotation = Controller->GetControlRotation();
-		const FRotator YawRotation(0.f, Rotation.Yaw, 0.f);
-		const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
-		AddMovementInput(Direction, Value);
+		const bool bCanNotClimbJumpLeft  = (!Super::bCanClimbJumpLeft && Value < 0.f);
+		const bool bCanNotClimbJumpRight = (!Super::bCanClimbJumpRight && Value > 0.f);
+		APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0);
+
+		if (Super::bCanTurnLeft && bCanNotClimbJumpLeft)
+		{
+			Super::DisableInput(PC);
+			IGrabExecuter::Execute_TurnConerLeftUpdate(this);
+		}
+		if (Super::bCanTurnRight && bCanNotClimbJumpRight)
+		{
+			Super::DisableInput(PC);
+			IGrabExecuter::Execute_TurnConerRightUpdate(this);
+		}
 	}
+	else
+	{
+		if (Controller && Value != 0.f)
+		{
+			const FRotator Rotation = Controller->GetControlRotation();
+			const FRotator YawRotation(0.f, Rotation.Yaw, 0.f);
+			const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
+			AddMovementInput(Direction, Value);
+		}
+	}
+
 }
 
 void AMockCharacter::ReleaseObjects()
@@ -172,16 +193,24 @@ void AMockCharacter::Jump()
 		UE_LOG(LogTemp, Warning, TEXT("Using ClimbSystem.."));
 		return;
 	}
-	if (Super::bHanging)
+	else if (Super::bHanging)
 	{
-		if (FMath::IsNearlyZero(MoveRightValue))
+		const float Value = InputComponent->GetAxisValue(TEXT("MoveRight"));
+		const bool bCanAnyLeftOrRightJump = (Super::bCanClimbJumpLeft || Super::bCanClimbJumpRight);
+		//const bool bCanJumpUp = (Super::bCanClimbJumpUp && FMath::IsNearlyZero(Value));
+
+		if (bCanAnyLeftOrRightJump)
+		{
+			ClimbJump_Implementation();
+		}
+		else if (!bCanAnyLeftOrRightJump && FMath::IsNearlyZero(Value))
 		{
 			Super::bClimbJumping = false;
 			ClimbLedge_Implementation(true);
 		}
-		else if (Super::bCanClimbJumpLeft || Super::bCanClimbJumpRight)
+		else
 		{
-			ClimbJump_Implementation();
+			UE_LOG(LogWevetClient, Error, TEXT("Unknown state : %s"), *FString(__FUNCTION__));
 		}
 	}
 	else
@@ -221,6 +250,10 @@ void AMockCharacter::Reload()
 
 void AMockCharacter::OnCrouch()
 {
+	if (Super::bHanging)
+	{
+		return;
+	}
 	Super::OnCrouch();
 
 	if (Super::bCrouch)
@@ -255,9 +288,10 @@ void AMockCharacter::Die_Implementation()
 		return;
 	}
 
-	if (APlayerController* Controller = UGameplayStatics::GetPlayerController(this, 0))
+	if (APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0))
 	{
-		Super::DisableInput(Controller);
+		PC->UnPossess();
+		Super::DisableInput(PC);
 	}
 	Super::Die_Implementation();
 }
@@ -349,9 +383,21 @@ void AMockCharacter::OnTakeDamage_Implementation(FName BoneName, float Damage, A
 
 void AMockCharacter::Equipment_Implementation()
 {
-	CurrentWeapon = MakeWeakObjectPtr<AWeaponBase>(WeaponList[WeaponCurrentIndex]);
+	if (Super::bHanging)
+	{
+		return;
+	}
 
-	check(CurrentWeapon.IsValid());
+	if (WeaponCurrentIndex == INDEX_NONE)
+	{
+		UpdateWeapon();
+	}
+
+	CurrentWeapon = MakeWeakObjectPtr<AWeaponBase>(WeaponList[WeaponCurrentIndex]);
+	if (!CurrentWeapon.IsValid())
+	{
+		return;
+	}
 	Super::Equipment_Implementation();
 	const FName SocketName(CurrentWeapon.Get()->WeaponItemInfo.EquipSocketName);
 	FAttachmentTransformRules Rules(EAttachmentRule::SnapToTarget, true);
@@ -362,7 +408,10 @@ void AMockCharacter::Equipment_Implementation()
 
 void AMockCharacter::UnEquipment_Implementation()
 {
-	check(CurrentWeapon.IsValid());
+	if (!CurrentWeapon.IsValid())
+	{
+		return;
+	}
 	Super::UnEquipment_Implementation();
 	const FName SocketName(CurrentWeapon.Get()->WeaponItemInfo.UnEquipSocketName);
 	FAttachmentTransformRules Rules(EAttachmentRule::SnapToTarget, true);
@@ -374,6 +423,11 @@ void AMockCharacter::UnEquipment_Implementation()
 
 void AMockCharacter::ClimbLedge_Implementation(bool InClimbLedge)
 {
+	if (CurrentWeapon.IsValid() && CurrentWeapon.Get()->bEquip)
+	{
+		UE_LOG(LogWevetClient, Warning, TEXT("UnEquip Weapon : [%s]"), *FString(__FUNCTION__));
+		return;
+	}
 	if (bClimbingLedge == InClimbLedge)
 	{
 		return;
@@ -393,27 +447,32 @@ void AMockCharacter::ClimbLedge_Implementation(bool InClimbLedge)
 	{
 		PlayAnimMontage(ClimbLedgeMontage);
 	}
-	//UE_LOG(LogWevetClient, Log, TEXT("Climbing : %s"), bClimbingLedge ? TEXT("true") : TEXT("false"));
 }
 
 void AMockCharacter::ClimbJump_Implementation()
 {
-	if (bClimbJumping)
+	if (Super::bClimbJumping)
 	{
 		return;
 	}
-
 	check(bHanging);
+
+	float Value = InputComponent->GetAxisValue(TEXT("MoveRight"));
+	Value = FMath::Clamp<float>(Value, -1.f, 1.f);
 	GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Flying);
-	bClimbJumping = true;
-	if (MoveRightValue > 0.f && ClimbJumpRightMontage)
+	if (Value > 0.f && ClimbJumpRightMontage)
 	{
 		PlayAnimMontage(ClimbJumpRightMontage);
 	}
-	else if (MoveRightValue < 0.f && ClimbJumpLeftMontage)
+	else if (Value < 0.f && ClimbJumpLeftMontage)
 	{
 		PlayAnimMontage(ClimbJumpLeftMontage);
 	}
+	//else if (FMath::IsNearlyZero(Value) && ClimbJumpUpMontage)
+	//{
+	//	PlayAnimMontage(ClimbJumpUpMontage);
+	//}
+	Super::ClimbJump_Implementation();
 }
 
 void AMockCharacter::ReportClimbJumpEnd_Implementation()
@@ -422,8 +481,15 @@ void AMockCharacter::ReportClimbJumpEnd_Implementation()
 	{
 		Anim->Montage_Stop(0.f);
 	}
-	//GetMovementComponent()->StopMovementImmediately();
 	Super::ReportClimbJumpEnd_Implementation();
+}
+
+void AMockCharacter::TurnConerResult_Implementation()
+{
+	if (APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0))
+	{
+		Super::EnableInput(PC);
+	}
 }
 
 FVector AMockCharacter::BulletTraceRelativeLocation() const
@@ -457,8 +523,9 @@ void AMockCharacter::ReleaseWeapon()
 		return;
 	}
 
+	const FVector ForwardOffset = Controller ? Controller->GetControlRotation().Vector() : Super::GetActorForwardVector();
 	const FRotator Rotation = Super::GetActorRotation();
-	const FVector Forward   = Super::GetActorLocation() + (Controller->GetControlRotation().Vector() * DEFAULT_FORWARD);
+	const FVector Forward   = Super::GetActorLocation() + (ForwardOffset * DEFAULT_FORWARD);
 	const FTransform Transform  = UKismetMathLibrary::MakeTransform(Forward, Rotation, FVector::OneVector);
 	
 	if (AWeaponBase* Weapon = Super::GetUnEquipWeapon())
