@@ -153,7 +153,10 @@ void AAICharacterBase::Equipment_Implementation()
 {
 	if (!HasEquipWeapon())
 	{
-		check(CurrentWeapon.IsValid());
+		if (!CurrentWeapon.IsValid())
+		{
+			return;
+		}
 		const FName SocketName(CurrentWeapon.Get()->WeaponItemInfo.EquipSocketName);
 		FAttachmentTransformRules Rules(EAttachmentRule::SnapToTarget, true);
 		Super::Equipment_Implementation();
@@ -167,7 +170,10 @@ void AAICharacterBase::UnEquipment_Implementation()
 	{
 		return;
 	}
-	check(CurrentWeapon.IsValid());
+	if (!CurrentWeapon.IsValid())
+	{
+		return;
+	}
 	Super::UnEquipment_Implementation();
 	const FName SocketName(CurrentWeapon.Get()->WeaponItemInfo.UnEquipSocketName);
 	FAttachmentTransformRules Rules(EAttachmentRule::SnapToTarget, true);
@@ -291,18 +297,21 @@ void AAICharacterBase::OnSeePawnRecieve(APawn* OtherPawn)
 	}
 }
 
-void AAICharacterBase::SetSeeTargetActor(ACharacterBase* NewCharacter)
+void AAICharacterBase::SetSeeTargetActor(ACharacterBase* const NewCharacter)
 {
 	TargetCharacter = NewCharacter;
 	AIController->SetBlackboardSeeActor(HasEnemyFound());
-	AIController->SetTargetEnemy(TargetCharacter);
+	AIController->SetTargetEnemy(NewCharacter);
+
 	if (!NewCharacter)
 	{
 		BP_FireReleaseReceive();
 		Super::UnEquipmentActionMontage();
-		return;
 	}
-	Super::EquipmentActionMontage();
+	else
+	{
+		Super::EquipmentActionMontage();
+	}
 }
 
 void AAICharacterBase::OnHearNoiseRecieve(APawn* OtherActor, const FVector& Location, float Volume)
@@ -312,30 +321,26 @@ void AAICharacterBase::OnHearNoiseRecieve(APawn* OtherActor, const FVector& Loca
 		return;
 	}
 
+	// hearing time always update
 	LastHeardTime = GetWorld()->GetTimeSeconds();
-	//UE_LOG(LogWevetClient, Warning, TEXT("Heard\n from : %s \n to : %s \n Vol : %f"), *GetName(), *OtherActor->GetName(), Volume);
 
 	if (!bHearTarget)
 	{
 		bHearTarget = true;
 		SetHearTargetActor(OtherActor);
+		AIController->SetBlackboardHearActor(bHearTarget);
 	}
 }
 
-void AAICharacterBase::SetHearTargetActor(AActor* OtherActor)
+void AAICharacterBase::SetHearTargetActor(AActor* const OtherActor)
 {
-	AIController->SetBlackboardHearActor(bHearTarget);
 	if (OtherActor)
 	{
-		const FVector Start  = GetActorLocation();
-		const FVector Target = OtherActor->GetActorLocation();
-		const FRotator LookAtRotation = UKismetMathLibrary::FindLookAtRotation(Start, Target);
+		const FVector StartLocation   = GetActorLocation();
+		const FVector TargetLocation  = OtherActor->GetActorLocation();
+		const FRotator LookAtRotation = UKismetMathLibrary::FindLookAtRotation(StartLocation, TargetLocation);
 		SetActorRotation(LookAtRotation);
-		AIController->SetBlackboardPatrolLocation(Target);
+		AIController->SetBlackboardPatrolLocation(TargetLocation);
 		Super::EquipmentActionMontage();
 	}
-	//else
-	//{
-	//	Super::UnEquipmentActionMontage();
-	//}
 }

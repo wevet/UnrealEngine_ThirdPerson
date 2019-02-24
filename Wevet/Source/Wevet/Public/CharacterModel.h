@@ -33,25 +33,27 @@ public:
 	int32 GetWisdom() const { return Wisdom; }
 
 	UFUNCTION(BlueprintCallable, Category = "CharacterCondition")
-	virtual void SetCurrentHealthValue(int32 NewHealth);
+	void SetCurrentHealthValue(int32 NewHealth);
 
 	UFUNCTION(BlueprintCallable, Category = "CharacterCondition")
-	virtual void SetMaxHealthValue(int32 NewHealth);
+	void SetMaxHealthValue(int32 NewHealth);
 
 	UFUNCTION(BlueprintCallable, Category = "CharacterCondition")
-	virtual void SetAttackValue(int32 NewAttack);
+	void SetAttackValue(int32 NewAttack);
 
 	UFUNCTION(BlueprintCallable, Category = "CharacterCondition")
-	virtual void SetDefenceValue(int32 NewDefence);
+	void SetDefenceValue(int32 NewDefence);
 
 	UFUNCTION(BlueprintCallable, Category = "CharacterCondition")
-	virtual void SetWisdomValue(int32 NewWisdom);
+	void SetWisdomValue(int32 NewWisdom);
 
 	UFUNCTION(BlueprintCallable, Category = "CharacterCondition")
-	float GetHealthToWidget() const
-	{
-		return (float)CurrentHealth / (float)MaxHealth;
-	}
+	float GetHealthToWidget() const;
+	bool IsHealthHalf() const;
+	bool IsHealthQuarter() const;
+
+	void Die();
+	bool IsDie() const { return CurrentHealth <= 0 && bDie; }
 
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "CharacterCondition")
@@ -68,4 +70,5 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "CharacterCondition")
 	int32 Wisdom;
+	bool bDie;
 };

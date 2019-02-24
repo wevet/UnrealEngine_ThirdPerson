@@ -93,7 +93,7 @@ void ACharacterBase::OnReleaseItemExecuter_Implementation()
 
 void ACharacterBase::OnPickupItemExecuter_Implementation(AActor* Actor)
 {
-	if (Actor->IsValidLowLevel())
+	if (Actor)
 	{
 		UE_LOG(LogWevetClient, Log, TEXT("Picking : %s"), *(Actor->GetName()));
 	}
@@ -210,7 +210,7 @@ bool ACharacterBase::IsDeath_Implementation()
 	{
 		return true;
 	}
-	return CharacterModel->GetCurrentHealth() <= 0;
+	return CharacterModel->IsDie();
 }
 
 void ACharacterBase::OnTakeDamage_Implementation(FName BoneName, float Damage, AActor* Actor)
@@ -222,7 +222,7 @@ void ACharacterBase::OnTakeDamage_Implementation(FName BoneName, float Damage, A
 
 	if (BoneName == HeadSocketName) 
 	{
-		CharacterModel->SetCurrentHealthValue(0);
+		CharacterModel->SetCurrentHealthValue(INDEX_NONE);
 	} 
 	else
 	{
@@ -253,6 +253,8 @@ void ACharacterBase::Die_Implementation()
 	{
 		CurrentWeapon.Reset();
 	}
+
+	CharacterModel->Die();
 	USkeletalMeshComponent* const SkelMesh = GetMesh();
 	SkelMesh->SetAllBodiesSimulatePhysics(true);
 	SkelMesh->SetSimulatePhysics(true);
@@ -371,6 +373,24 @@ float ACharacterBase::GetHealthToWidget() const
 	return 0.f;
 }
 
+bool ACharacterBase::IsHealthHalf() const
+{
+	if (CharacterModel->IsValidLowLevel())
+	{
+		return CharacterModel->IsHealthHalf();
+	}
+	return false;
+}
+
+bool ACharacterBase::IsHealthQuarter() const
+{
+	if (CharacterModel->IsValidLowLevel())
+	{
+		return CharacterModel->IsHealthQuarter();
+	}
+	return false;
+}
+
 void ACharacterBase::ReleaseWeaponToWorld(const FTransform& Transform, AWeaponBase* &Weapon)
 {
 	UWorld* const World = GetWorld();
@@ -379,7 +399,6 @@ void ACharacterBase::ReleaseWeaponToWorld(const FTransform& Transform, AWeaponBa
 	{
 		return;
 	}
-
 	const FWeaponItemInfo WeaponItemInfo = Weapon->WeaponItemInfo;
 	TSubclassOf<class AWeaponBase> WeaponClass = WeaponItemInfo.WeaponClass;
 	Weapon->Release(nullptr);
@@ -402,7 +421,6 @@ AWeaponBase* ACharacterBase::FindByWeapon(const EWeaponItemType WeaponItemType)
 	{
 		return nullptr;
 	}
-
 	for (AWeaponBase*& Weapon : WeaponList)
 	{
 		if (Weapon && Weapon->HasMatchTypes(WeaponItemType))

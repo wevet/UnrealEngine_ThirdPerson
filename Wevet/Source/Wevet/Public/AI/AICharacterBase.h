@@ -69,8 +69,8 @@ public:
 	virtual FVector BulletTraceRelativeLocation() const override;
 	virtual FVector BulletTraceForwardLocation() const override;
 	virtual void MainLoop(float DeltaTime);
-	virtual void SetSeeTargetActor(ACharacterBase* NewCharacter);
-	virtual void SetHearTargetActor(AActor* OtherActor);
+	virtual void SetSeeTargetActor(ACharacterBase* const NewCharacter);
+	virtual void SetHearTargetActor(AActor* const OtherActor);
 
 protected:
 	ACharacterBase* TargetCharacter;
