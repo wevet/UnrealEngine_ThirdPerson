@@ -251,23 +251,25 @@ void AWeaponBase::TakeHitDamage(const FHitResult HitResult)
 		return;
 	}
 
-	ICombatExecuter* CombatExecuter = Cast<ICombatExecuter>(HitResult.GetActor());
-	if (CombatExecuter == nullptr)
+	if (ICombatExecuter* CombatExecuter = Cast<ICombatExecuter>(HitResult.GetActor()))
 	{
-		return;
-	}
-	if (CombatExecuter->Execute_IsDeath(HitResult.GetActor()))
-	{
-		return;
+		if (!CombatExecuter->Execute_IsDeath(HitResult.GetActor()))
+		{
+			const float Offset = 0.05f;
+			const int32 Attack = CharacterOwner->GetCharacterModel()->GetAttack();
+			const int32 Wisdom = CharacterOwner->GetCharacterModel()->GetWisdom();
+			const float WeaponDamage = WeaponItemInfo.Damage;
+			const float Total = (float)(Attack / Wisdom) + WeaponDamage;
+			const float Damage = FMath::FRandRange((Total * Offset), Total);
+
+			CombatExecuter->Execute_OnTakeDamage(
+				HitResult.GetActor(), 
+				HitResult.BoneName, 
+				Damage, 
+				CharacterOwner.Get());
+		}
 	}
 
-	const float Offset = 0.05f;
-	const int32 Attack = CharacterOwner->GetCharacterModel()->GetAttack();
-	const int32 Wisdom = CharacterOwner->GetCharacterModel()->GetWisdom();
-	const float WeaponDamage = WeaponItemInfo.Damage;
-	const float Total = (float)(Attack / Wisdom) + WeaponDamage;
-	const float Damage = FMath::FRandRange((Total * Offset), Total);
-	CombatExecuter->Execute_OnTakeDamage(HitResult.GetActor(), HitResult.BoneName, Damage, CharacterOwner.Get());
 }
 
 void AWeaponBase::AsyncTraceUpdate(const float DeltaTime)
