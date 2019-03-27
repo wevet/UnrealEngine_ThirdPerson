@@ -45,12 +45,12 @@ void AWeaponBase::BeginPlay()
 {
 	Super::BeginPlay();
 
-	if (ensure(WidgetComponent && WidgetComponent->IsValidLowLevel())) 
+	if (ComponentExtension::HasValid(WidgetComponent))
 	{
 		WidgetComponent->SetVisibility(false);
 	}
 
-	if (ensure(SphereComponent && SphereComponent->IsValidLowLevel())) 
+	if (ComponentExtension::HasValid(SphereComponent))
 	{
 		SphereComponent->OnComponentBeginOverlap.AddDynamic(this, &AWeaponBase::BeginOverlapRecieve);
 		SphereComponent->OnComponentEndOverlap.AddDynamic(this, &AWeaponBase::EndOverlapRecieve);
@@ -311,7 +311,7 @@ void AWeaponBase::AsyncTraceUpdate(const float DeltaTime)
 	if (bWantsTrace)
 	{
 		LastTraceHandle = World->AsyncLineTraceByChannel(
-			EAsyncTraceType::Multi, //EAsyncTraceType::Single
+			EAsyncTraceType::Single, //EAsyncTraceType::Multi
 			StartLocation,
 			EndLocation,
 			ECollisionChannel::ECC_Camera,
@@ -380,7 +380,7 @@ void AWeaponBase::Take(ACharacterBase* NewCharacter)
 	SetEquip(false);
 	OffVisible_Implementation();
 
-	if (ensure(SphereComponent && SphereComponent->IsValidLowLevel()))
+	if (ComponentExtension::HasValid(SphereComponent))
 	{
 		SphereComponent->OnComponentBeginOverlap.RemoveDynamic(this, &AWeaponBase::BeginOverlapRecieve);
 		SphereComponent->OnComponentEndOverlap.RemoveDynamic(this, &AWeaponBase::EndOverlapRecieve);

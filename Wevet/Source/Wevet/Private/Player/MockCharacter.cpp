@@ -226,7 +226,7 @@ void AMockCharacter::StopJumping()
 
 void AMockCharacter::FirePressed()
 {
-	if (GetSelectedWeapon())
+	if (CurrentWeapon.IsValid())
 	{
 		BP_FirePressReceive();
 	}
@@ -234,7 +234,7 @@ void AMockCharacter::FirePressed()
 
 void AMockCharacter::FireReleassed()
 {
-	if (GetSelectedWeapon())
+	if (CurrentWeapon.IsValid())
 	{
 		BP_FireReleaseReceive();
 	}
@@ -242,7 +242,7 @@ void AMockCharacter::FireReleassed()
 
 void AMockCharacter::Reload()
 {
-	if (GetSelectedWeapon())
+	if (CurrentWeapon.IsValid())
 	{
 		BP_ReloadReceive();
 	}
@@ -288,7 +288,7 @@ void AMockCharacter::Die_Implementation()
 		return;
 	}
 
-	if (APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0))
+	if (APlayerController* PC = Wevet::ControllerExtension::GetPlayer(this, 0))
 	{
 		PC->UnPossess();
 		Super::DisableInput(PC);
@@ -304,13 +304,12 @@ void AMockCharacter::OnReleaseItemExecuter_Implementation()
 
 void AMockCharacter::OnPickupItemExecuter_Implementation(AActor* Actor)
 {
-	UWorld* const World = GetWorld();
-
 	if (Actor == nullptr)
 	{
 		return;
 	}
 
+	UWorld* const World = GetWorld();
 	if (AWeaponBase* Weapon = Cast<AWeaponBase>(Actor))
 	{
 		if (Super::SameWeapon(Weapon))
@@ -359,7 +358,7 @@ void AMockCharacter::OnPickupItemExecuter_Implementation(AActor* Actor)
 				if (auto Weapon = Super::FindByWeapon(ItemInfo.WeaponItemType))
 				{
 					Weapon->Recover(ItemInfo);
-					Item->TakeResult();
+					Item->Release();
 					Actor = nullptr;
 				}
 			}
@@ -486,7 +485,7 @@ void AMockCharacter::ReportClimbJumpEnd_Implementation()
 
 void AMockCharacter::TurnConerResult_Implementation()
 {
-	if (APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0))
+	if (APlayerController* PC = ControllerExtension::GetPlayer(this, 0))
 	{
 		Super::EnableInput(PC);
 	}

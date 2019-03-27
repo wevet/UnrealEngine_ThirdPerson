@@ -29,6 +29,9 @@ void UUMGManager::Initializer(ACharacterBase* const NewCharacter)
 		MainUIController->Initializer(NewCharacter);
 		MainUIController->AddToViewport((int32)EUMGLayerType::Main);
 	}
+
+	check(NewCharacter->InputComponent);
+	NewCharacter->InputComponent->BindAction("Pause", IE_Pressed, this, &UUMGManager::SetTickableWhenPaused);
 }
 
 void UUMGManager::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
@@ -38,5 +41,13 @@ void UUMGManager::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 	if (MainUIController)
 	{
 		MainUIController->Renderer(InDeltaTime);
+	}
+}
+
+void UUMGManager::SetTickableWhenPaused()
+{
+	if (MainUIController)
+	{
+		MainUIController->SetTickableWhenPaused();
 	}
 }

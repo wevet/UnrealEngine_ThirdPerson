@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "ObjectMacros.h"
 #include "Components/ActorComponent.h"
+#include "Kismet/GameplayStatics.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogWevetClient, Verbose, All);
 
@@ -20,6 +21,17 @@ DECLARE_LOG_CATEGORY_EXTERN(LogWevetClient, Verbose, All);
 
 namespace Wevet
 {
+	class WEVET_API ControllerExtension
+	{
+	public:
+		// usage
+		// Wevet::ControllerExtension::GetPlayer(this, 0)
+		static FORCEINLINE APlayerController* GetPlayer(const UObject* WorldContextObject, int32 PlayerIndex)
+		{
+			return UGameplayStatics::GetPlayerController(WorldContextObject, PlayerIndex);
+		}
+	};
+
 	class WEVET_API ArrayExtension
 	{
 	public:
@@ -71,7 +83,11 @@ namespace Wevet
 
 		static FORCEINLINE bool HasValid(const UActorComponent* Component)
 		{
-			return Component && Component->IsValidLowLevel();
+			if (ensure(Component && Component->IsValidLowLevel()))
+			{
+				return true;
+			}
+			return false;
 		}
 
 	};

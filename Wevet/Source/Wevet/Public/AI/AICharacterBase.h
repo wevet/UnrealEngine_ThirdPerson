@@ -107,4 +107,8 @@ protected:
 	/* Resets after sense time-out to avoid unnecessary clearing of target each tick */
 	bool bSeeTarget;
 	bool bHearTarget;
+
+	virtual bool CanShotup() const;
+	virtual void ForceSprint();
+	virtual void UnForceSprint();
 };

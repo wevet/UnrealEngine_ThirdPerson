@@ -52,13 +52,13 @@ void AAICharacterBase::BeginPlay()
 {
 	Super::BeginPlay();
 
-	if (ensure(PawnSensingComponent && PawnSensingComponent->IsValidLowLevel())) 
+	if (ComponentExtension::HasValid(PawnSensingComponent))
 	{
 		PawnSensingComponent->OnSeePawn.AddDynamic(this, &AAICharacterBase::OnSeePawnRecieve);
 		PawnSensingComponent->OnHearNoise.AddDynamic(this, &AAICharacterBase::OnHearNoiseRecieve);
 	}
 
-	if (ensure(WidgetComponent && WidgetComponent->IsValidLowLevel())) 
+	if (ComponentExtension::HasValid(WidgetComponent))
 	{
 		if (UAIUserWidgetBase* AIWidget = Cast<UAIUserWidgetBase>(WidgetComponent->GetUserWidgetObject()))
 		{
@@ -86,8 +86,7 @@ void AAICharacterBase::MainLoop(float DeltaTime)
 		return;
 	}
 
-	if ((Super::GetSelectedWeapon() && Super::GetSelectedWeapon()->bEmpty)
-		|| (Super::GetSelectedWeapon() && Super::GetSelectedWeapon()->bReload))
+	if (!CanShotup())
 	{
 		return;
 	}
@@ -109,10 +108,6 @@ void AAICharacterBase::MainLoop(float DeltaTime)
 	{
 		if (!ICombatExecuter::Execute_IsDeath(TargetCharacter))
 		{
-			if (!HasEquipWeapon())
-			{
-				return;
-			}
 			BulletInterval += DeltaTime;
 			if (BulletInterval >= BulletDelay)
 			{
@@ -125,6 +120,10 @@ void AAICharacterBase::MainLoop(float DeltaTime)
 			bSeeTarget = false;
 			SetSeeTargetActor(nullptr);
 		}
+	}
+	else
+	{
+		// not found
 	}
 }
 
@@ -141,7 +140,7 @@ void AAICharacterBase::Die_Implementation()
 	WeaponList.Empty();
 	GetController()->UnPossess();
 
-	if (ensure(PawnSensingComponent && PawnSensingComponent->IsValidLowLevel()))
+	if (ComponentExtension::HasValid(PawnSensingComponent))
 	{
 		PawnSensingComponent->OnSeePawn.RemoveDynamic(this, &AAICharacterBase::OnSeePawnRecieve);
 		PawnSensingComponent->OnHearNoise.RemoveDynamic(this, &AAICharacterBase::OnHearNoiseRecieve);
@@ -303,14 +302,16 @@ void AAICharacterBase::SetSeeTargetActor(ACharacterBase* const NewCharacter)
 	AIController->SetBlackboardSeeActor(HasEnemyFound());
 	AIController->SetTargetEnemy(NewCharacter);
 
-	if (!NewCharacter)
+	if (NewCharacter)
 	{
-		BP_FireReleaseReceive();
-		Super::UnEquipmentActionMontage();
+		ForceSprint();
+		Super::EquipmentActionMontage();
 	}
 	else
 	{
-		Super::EquipmentActionMontage();
+		UnForceSprint();
+		BP_FireReleaseReceive();
+		Super::UnEquipmentActionMontage();
 	}
 }
 
@@ -336,6 +337,7 @@ void AAICharacterBase::SetHearTargetActor(AActor* const OtherActor)
 {
 	if (OtherActor)
 	{
+		ForceSprint();
 		const FVector StartLocation   = GetActorLocation();
 		const FVector TargetLocation  = OtherActor->GetActorLocation();
 		const FRotator LookAtRotation = UKismetMathLibrary::FindLookAtRotation(StartLocation, TargetLocation);
@@ -343,4 +345,36 @@ void AAICharacterBase::SetHearTargetActor(AActor* const OtherActor)
 		AIController->SetBlackboardPatrolLocation(TargetLocation);
 		Super::EquipmentActionMontage();
 	}
+	else
+	{
+		UnForceSprint();
+	}
 }
+
+bool AAICharacterBase::CanShotup() const
+{
+	if (!CurrentWeapon.IsValid())
+	{
+		return false;
+	}
+	if ((CurrentWeapon.Get()->bEmpty) || (CurrentWeapon.Get()->bReload))
+	{
+		return false;
+	}
+	return true;
+}
+
+void AAICharacterBase::ForceSprint()
+{
+	bSprint = true;
+	MovementSpeed = DefaultMaxSpeed;
+	GetCharacterMovement()->MaxWalkSpeed = MovementSpeed;
+}
+
+void AAICharacterBase::UnForceSprint()
+{
+	bSprint = false;
+	MovementSpeed = DefaultMaxSpeed * 0.5f;
+	GetCharacterMovement()->MaxWalkSpeed = MovementSpeed;
+}
+

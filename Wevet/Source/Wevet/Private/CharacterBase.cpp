@@ -67,7 +67,7 @@ void ACharacterBase::BeginPlay()
 	DefaultMaxSpeed = GetCharacterMovement()->MaxWalkSpeed;
 	GetCharacterMovement()->MaxWalkSpeed = MovementSpeed;
 
-	if (ensure(PawnNoiseEmitterComponent && PawnNoiseEmitterComponent->IsValidLowLevel()))
+	if (Wevet::ComponentExtension::HasValid(PawnNoiseEmitterComponent))
 	{
 		//
 	}
@@ -287,17 +287,17 @@ void ACharacterBase::Die_Implementation()
 
 void ACharacterBase::Equipment_Implementation()
 {
-	if (GetSelectedWeapon())
+	if (CurrentWeapon.IsValid())
 	{
-		GetSelectedWeapon()->SetEquip(true);
+		CurrentWeapon.Get()->SetEquip(true);
 	}
 }
 
 void ACharacterBase::UnEquipment_Implementation()
 {
-	if (GetSelectedWeapon())
+	if (CurrentWeapon.IsValid())
 	{
-		GetSelectedWeapon()->SetEquip(false);
+		CurrentWeapon.Get()->SetEquip(false);
 	}
 }
 
@@ -357,9 +357,9 @@ void ACharacterBase::OnCrouch()
 
 const bool ACharacterBase::HasEquipWeapon()
 {
-	if (GetSelectedWeapon())
+	if (CurrentWeapon.IsValid())
 	{
-		return GetSelectedWeapon()->bEquip;
+		return CurrentWeapon.Get()->bEquip;
 	}
 	return false;
 }
@@ -558,9 +558,9 @@ void ACharacterBase::UnEquipmentActionMontage()
 
 void ACharacterBase::FireActionMontage()
 {
-	if (GetSelectedWeapon())
+	if (CurrentWeapon.IsValid())
 	{
-		const EWeaponItemType WeaponType = GetSelectedWeapon()->WeaponItemInfo.WeaponItemType;
+		const EWeaponItemType WeaponType = CurrentWeapon.Get()->WeaponItemInfo.WeaponItemType;
 		switch (WeaponType)
 		{
 			case EWeaponItemType::Rifle:
@@ -585,9 +585,9 @@ void ACharacterBase::FireActionMontage()
 
 void ACharacterBase::ReloadActionMontage()
 {
-	if (GetSelectedWeapon())
+	if (CurrentWeapon.IsValid())
 	{
-		const EWeaponItemType WeaponType = GetSelectedWeapon()->WeaponItemInfo.WeaponItemType;
+		const EWeaponItemType WeaponType = CurrentWeapon.Get()->WeaponItemInfo.WeaponItemType;
 		switch (WeaponType)
 		{
 			case EWeaponItemType::Rifle:
@@ -614,9 +614,9 @@ void ACharacterBase::TakeDamageActionMontage()
 {
 	if (TakeDamageInterval <= 0)
 	{
-		if (GetSelectedWeapon())
+		if (CurrentWeapon.IsValid())
 		{
-			const EWeaponItemType WeaponType = GetSelectedWeapon()->WeaponItemInfo.WeaponItemType;
+			const EWeaponItemType WeaponType = CurrentWeapon.Get()->WeaponItemInfo.WeaponItemType;
 			switch (WeaponType)
 			{
 			case EWeaponItemType::Rifle:

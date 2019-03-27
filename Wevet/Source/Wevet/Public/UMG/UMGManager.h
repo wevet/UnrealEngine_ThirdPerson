@@ -28,6 +28,7 @@ public:
 
 private:
 	class UMainUIController* MainUIController;
+	void SetTickableWhenPaused();
 
 public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Controller)
