@@ -25,7 +25,6 @@ void UAIUserWidgetBase::NativeConstruct()
 void UAIUserWidgetBase::Initializer(AAICharacterBase* NewCharacter)
 {
 	CharacterOwner = NewCharacter;
-	check(CharacterOwner);
 }
 
 void UAIUserWidgetBase::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)

@@ -43,15 +43,8 @@ public:
 	virtual void CreateWayPointList(TArray<AWayPointBase*>& OutWayPointList);
 	virtual void CreateWeaponInstance();
 
-	FORCEINLINE class UPawnSensingComponent* GetPawnSensingComponent() const
-	{
-		return PawnSensingComponent;
-	}
-
-	FORCEINLINE class UWidgetComponent* GetWidgetComponent() const
-	{
-		return WidgetComponent;
-	}
+	FORCEINLINE class UPawnSensingComponent* GetPawnSensingComponent() const { return PawnSensingComponent; }
+	FORCEINLINE class UWidgetComponent* GetWidgetComponent() const { return WidgetComponent; }
 
 	UFUNCTION(BlueprintCallable, Category = "AAICharacterBase|Variable")
 	bool HasEnemyFound() const;

@@ -14,6 +14,7 @@
 #include "CharacterBase.generated.h"
 
 class UCharacterPickupComponent;
+class UCharacterInventoryComponent;
 class UCharacterModel;
 class UCharacterAnimInstanceBase;
 
@@ -153,6 +154,7 @@ public:
 
 	FORCEINLINE class UAudioComponent* GetAudioComponent() const { return AudioComponent; }
 	FORCEINLINE class UCharacterPickupComponent* GetPickupComponent() const { return PickupComponent; }
+	FORCEINLINE class UCharacterInventoryComponent* GetInventoryComponent() const { return InventoryComponent; }
 
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Components, meta = (AllowPrivateAccess = "true"))
@@ -163,6 +165,9 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Components, meta = (AllowPrivateAccess = "true"))
 	class UCharacterPickupComponent* PickupComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Components, meta = (AllowPrivateAccess = "true"))
+	class UCharacterInventoryComponent* InventoryComponent;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ACharacterBase|Asset|LargeWeapon")
 	class UAnimMontage* EquipMontage;
@@ -292,7 +297,6 @@ protected:
 
 	/* release actor */
 	virtual void ReleaseObjects();
-	TArray<AWeaponBase*> WeaponList;
 	TWeakObjectPtr<class AWeaponBase> CurrentWeapon;
 
 public:

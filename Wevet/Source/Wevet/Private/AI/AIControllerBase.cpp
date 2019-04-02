@@ -50,7 +50,7 @@ AAIControllerBase::AAIControllerBase(const FObjectInitializer& ObjectInitializer
 void AAIControllerBase::BeginPlay()
 {
 	Super::BeginPlay();
-	if (ensure(AIPerceptionComponent && AIPerceptionComponent->IsValidLowLevel()))
+	if (ComponentExtension::HasValid(AIPerceptionComponent))
 	{
 		AIPerceptionComponent->OnTargetPerceptionUpdated.AddDynamic(this, &AAIControllerBase::OnTargetPerceptionUpdatedRecieve);
 	}
@@ -75,7 +75,7 @@ void AAIControllerBase::Possess(APawn* Pawn)
 
 void AAIControllerBase::UnPossess()
 {
-	if (ensure(AIPerceptionComponent && AIPerceptionComponent->IsValidLowLevel()))
+	if (ComponentExtension::HasValid(AIPerceptionComponent))
 	{
 		AIPerceptionComponent->OnTargetPerceptionUpdated.RemoveDynamic(this, &AAIControllerBase::OnTargetPerceptionUpdatedRecieve);
 	}
@@ -90,7 +90,7 @@ FGenericTeamId AAIControllerBase::GetGenericTeamId() const
 
 AWayPointBase* AAIControllerBase::GetRandomAtWayPoint()
 {
-	if (WayPointList.Num() <= 0)
+	if (ArrayExtension::NullOrEmpty(WayPointList))
 	{
 		return nullptr;
 	}

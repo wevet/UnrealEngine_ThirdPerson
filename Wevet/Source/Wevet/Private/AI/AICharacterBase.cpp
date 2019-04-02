@@ -12,6 +12,7 @@
 #include "Perception/AISense_Hearing.h"
 #include "Engine.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "Component/CharacterInventoryComponent.h"
 
 AAICharacterBase::AAICharacterBase(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer), 
@@ -66,6 +67,13 @@ void AAICharacterBase::BeginPlay()
 		}
 	}
 	AIController = Cast<AAIControllerBase>(GetController());
+
+	auto RefSkeleton = GetMesh()->SkeletalMesh->Skeleton->GetReferenceSkeleton();
+	for (int i = 0; i < RefSkeleton.GetRawBoneNum(); ++i)
+	{
+		auto Info = RefSkeleton.GetRawRefBoneInfo()[i];
+		UE_LOG(LogWevetClient, Log, TEXT("BoneName : %s \n ParentIndex : %d"), *Info.Name.ToString(), Info.ParentIndex);
+	}
 }
 
 void AAICharacterBase::Tick(float DeltaTime)
@@ -80,51 +88,8 @@ void AAICharacterBase::Tick(float DeltaTime)
 
 void AAICharacterBase::MainLoop(float DeltaTime)
 {
-	UWorld* const World = GetWorld();
-	if (World == nullptr)
-	{
-		return;
-	}
-
-	if (!CanShotup())
-	{
-		return;
-	}
-
-	if (bSeeTarget && (World->TimeSeconds - LastSeenTime) > SenseTimeOut)
-	{
-		bSeeTarget = false;
-		SetSeeTargetActor(nullptr);
-	}
-
-	if (bHearTarget && (World->TimeSeconds - LastHeardTime) > SenseTimeOut)
-	{
-		bHearTarget = false;
-		SetHearTargetActor(nullptr);
-	}
-
-	// only see target
-	if (HasEnemyFound())
-	{
-		if (!ICombatExecuter::Execute_IsDeath(TargetCharacter))
-		{
-			BulletInterval += DeltaTime;
-			if (BulletInterval >= BulletDelay)
-			{
-				BP_FirePressReceive();
-				BulletInterval = 0.f;
-			}
-		}
-		else
-		{
-			bSeeTarget = false;
-			SetSeeTargetActor(nullptr);
-		}
-	}
-	else
-	{
-		// not found
-	}
+	//@NOTE
+	//Subclass Extend
 }
 
 void AAICharacterBase::Die_Implementation()
@@ -137,7 +102,10 @@ void AAICharacterBase::Die_Implementation()
 	WidgetComponent->SetVisibility(false);
 	TargetCharacter = nullptr;
 	// not spawned WeaponActor
-	WeaponList.Empty();
+	if (Super::InventoryComponent)
+	{
+		Super::InventoryComponent->RemoveAllInventory();
+	}
 	GetController()->UnPossess();
 
 	if (ComponentExtension::HasValid(PawnSensingComponent))
@@ -216,7 +184,7 @@ FVector AAICharacterBase::BulletTraceRelativeLocation() const
 	{
 		return CurrentWeapon.Get()->GetMuzzleTransform().GetLocation();
 	}
-	return FVector::ZeroVector;
+	return Super::BulletTraceRelativeLocation();
 }
 
 FVector AAICharacterBase::BulletTraceForwardLocation() const
@@ -225,7 +193,7 @@ FVector AAICharacterBase::BulletTraceForwardLocation() const
 	{
 		return CurrentWeapon.Get()->GetMuzzleTransform().GetRotation().GetForwardVector();
 	}
-	return FVector::ForwardVector;
+	return Super::BulletTraceForwardLocation();
 }
 
 void AAICharacterBase::CreateWeaponInstance()
@@ -250,10 +218,14 @@ void AAICharacterBase::CreateWeaponInstance()
 	CurrentWeapon.Get()->Take(this);
 	CurrentWeapon.Get()->GetSphereComponent()->DestroyComponent();
 
-	if (Super::WeaponList.Find(CurrentWeapon.Get()) == INDEX_NONE)
+	if (Super::InventoryComponent)
 	{
-		Super::WeaponList.Emplace(CurrentWeapon.Get());
+		Super::InventoryComponent->AddWeaponInventory(CurrentWeapon.Get());
 	}
+	//if (Super::WeaponList.Find(CurrentWeapon.Get()) == INDEX_NONE)
+	//{
+	//	Super::WeaponList.Emplace(CurrentWeapon.Get());
+	//}
 }
 
 void AAICharacterBase::CreateWayPointList(TArray<AWayPointBase*>& OutWayPointList)
@@ -275,25 +247,7 @@ void AAICharacterBase::CreateWayPointList(TArray<AWayPointBase*>& OutWayPointLis
 
 void AAICharacterBase::OnSeePawnRecieve(APawn* OtherPawn)
 {
-	if (ICombatExecuter::Execute_IsDeath(this))
-	{
-		return;
-	}
-
-	if (AMockCharacter* Character = Cast<AMockCharacter>(OtherPawn))
-	{
-		if (!ICombatExecuter::Execute_IsDeath(Character))
-		{
-			LastSeenTime = GetWorld()->GetTimeSeconds();
-			//UE_LOG(LogWevetClient, Warning, TEXT("See\n from : %s \n to : %s \n"), *GetName(), *OtherPawn->GetName());
-
-			if (!bSeeTarget)
-			{
-				bSeeTarget = true;
-				SetSeeTargetActor(Character);
-			}
-		}
-	}
+	//
 }
 
 void AAICharacterBase::SetSeeTargetActor(ACharacterBase* const NewCharacter)
@@ -317,37 +271,27 @@ void AAICharacterBase::SetSeeTargetActor(ACharacterBase* const NewCharacter)
 
 void AAICharacterBase::OnHearNoiseRecieve(APawn* OtherActor, const FVector& Location, float Volume)
 {
-	if (ICombatExecuter::Execute_IsDeath(this))
-	{
-		return;
-	}
-
-	// hearing time always update
-	LastHeardTime = GetWorld()->GetTimeSeconds();
-
-	if (!bHearTarget)
-	{
-		bHearTarget = true;
-		SetHearTargetActor(OtherActor);
-		AIController->SetBlackboardHearActor(bHearTarget);
-	}
+	//
 }
 
 void AAICharacterBase::SetHearTargetActor(AActor* const OtherActor)
 {
 	if (OtherActor)
 	{
-		ForceSprint();
+		check(AIController);
 		const FVector StartLocation   = GetActorLocation();
 		const FVector TargetLocation  = OtherActor->GetActorLocation();
 		const FRotator LookAtRotation = UKismetMathLibrary::FindLookAtRotation(StartLocation, TargetLocation);
-		SetActorRotation(LookAtRotation);
+
+		FRotator Rotation = GetActorRotation();
+		Rotation.Yaw = LookAtRotation.Yaw;
+		SetActorRotation(Rotation);
 		AIController->SetBlackboardPatrolLocation(TargetLocation);
 		Super::EquipmentActionMontage();
 	}
 	else
 	{
-		UnForceSprint();
+		Super::UnEquipmentActionMontage();
 	}
 }
 
@@ -374,7 +318,7 @@ void AAICharacterBase::ForceSprint()
 void AAICharacterBase::UnForceSprint()
 {
 	bSprint = false;
-	MovementSpeed = DefaultMaxSpeed * 0.5f;
+	MovementSpeed = DefaultMaxSpeed * HALF_WEIGHT;
 	GetCharacterMovement()->MaxWalkSpeed = MovementSpeed;
 }
 

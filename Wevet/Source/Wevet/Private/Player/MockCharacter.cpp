@@ -7,6 +7,7 @@
 #include "Kismet/KismetMathLibrary.h"
 #include "Math/RotationMatrix.h"
 #include "CharacterAnimInstanceBase.h"
+#include "Component/CharacterInventoryComponent.h"
 //#include "ShaderCompiler.h"
 
 AMockCharacter::AMockCharacter(const FObjectInitializer& ObjectInitializer)
@@ -43,12 +44,6 @@ void AMockCharacter::OnConstruction(const FTransform& Transform)
 void AMockCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-	auto RefSkeleton = GetMesh()->SkeletalMesh->Skeleton->GetReferenceSkeleton();
-	for (int i = 0; i < RefSkeleton.GetRawBoneNum(); ++i)
-	{
-		auto Info = RefSkeleton.GetRawRefBoneInfo()[i];
-		//UE_LOG(LogWevetClient, Log, TEXT("BoneName : %s \n BoneIndex : %d"), *Info.Name.ToString(), Info.ParentIndex);
-	}
 }
 
 void AMockCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent)
@@ -266,12 +261,14 @@ void AMockCharacter::OnCrouch()
 
 void AMockCharacter::UpdateWeapon()
 {
-	if (ArrayExtension::NullOrEmpty(WeaponList))
+	check(Super::InventoryComponent);	
+	if (Super::InventoryComponent->HasInventoryWeaponItems())
 	{
 		return;
 	}
 
-	if (WeaponCurrentIndex >= WeaponList.Num() - 1) 
+	const TArray<AWeaponBase*> WeaponArray = Super::InventoryComponent->GetWeaponInventory();
+	if (WeaponCurrentIndex >= WeaponArray.Num() - 1) 
 	{
 		WeaponCurrentIndex = 0;
 	}
@@ -288,7 +285,7 @@ void AMockCharacter::Die_Implementation()
 		return;
 	}
 
-	if (APlayerController* PC = Wevet::ControllerExtension::GetPlayer(this, 0))
+	if (APlayerController* PC = ControllerExtension::GetPlayer(this, 0))
 	{
 		PC->UnPossess();
 		Super::DisableInput(PC);
@@ -320,6 +317,7 @@ void AMockCharacter::OnPickupItemExecuter_Implementation(AActor* Actor)
 		FWeaponItemInfo WeaponItemInfo = Weapon->WeaponItemInfo;
 		if (WeaponItemInfo.WeaponItemType == EWeaponItemType::None)
 		{
+			UE_LOG(LogWevetClient, Warning, TEXT("Unknown WeaponType : %s"), *(Weapon->GetName()));
 			return;
 		}
 
@@ -338,11 +336,11 @@ void AMockCharacter::OnPickupItemExecuter_Implementation(AActor* Actor)
 		SpawningObject->FinishSpawning(Transform);
 		SpawningObject->AttachToComponent(Super::GetMesh(), Rules, SocketName);
 		SpawningObject->Take(this);
-
-		if (Super::WeaponList.Find(SpawningObject) == INDEX_NONE)
-		{
-			Super::WeaponList.Emplace(SpawningObject);
-		}
+		Super::InventoryComponent->AddWeaponInventory(SpawningObject);
+		//if (Super::WeaponList.Find(SpawningObject) == INDEX_NONE)
+		//{
+		//	Super::WeaponList.Emplace(SpawningObject);
+		//}
 		Weapon->Release(nullptr);
 		Actor = nullptr;
 	}
@@ -392,7 +390,8 @@ void AMockCharacter::Equipment_Implementation()
 		UpdateWeapon();
 	}
 
-	CurrentWeapon = MakeWeakObjectPtr<AWeaponBase>(WeaponList[WeaponCurrentIndex]);
+	const TArray<AWeaponBase*> WeaponItem = Super::InventoryComponent->GetWeaponInventoryOriginal();
+	CurrentWeapon = MakeWeakObjectPtr<AWeaponBase>(WeaponItem[WeaponCurrentIndex]);
 	if (!CurrentWeapon.IsValid())
 	{
 		return;
@@ -529,10 +528,11 @@ void AMockCharacter::ReleaseWeapon()
 	
 	if (AWeaponBase* Weapon = Super::GetUnEquipWeapon())
 	{
-		if (WeaponList.Find(Weapon) != INDEX_NONE)
-		{
-			WeaponList.Remove(Weapon);
-		}
+		//if (WeaponList.Find(Weapon) != INDEX_NONE)
+		//{
+		//	WeaponList.Remove(Weapon);
+		//}
+		Super::InventoryComponent->RemoveWeaponInventory(Weapon);
 		Super::ReleaseWeaponToWorld(Transform, Weapon);
 	}
 }

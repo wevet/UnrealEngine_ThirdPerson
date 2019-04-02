@@ -17,7 +17,8 @@ DECLARE_LOG_CATEGORY_EXTERN(LogWevetClient, Verbose, All);
 #define DEFAULT_VOLUME 1.f
 #define DEFAULT_FORWARD 200.f
 #define MONTAGE_DELAY 1.6f
-
+#define HALF_WEIGHT 0.5f
+#define MIN_VOLUME 0.f
 
 namespace Wevet
 {

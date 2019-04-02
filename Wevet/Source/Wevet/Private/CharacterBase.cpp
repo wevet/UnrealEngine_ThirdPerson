@@ -5,6 +5,7 @@
 #include "ItemBase.h"
 #include "CharacterModel.h"
 #include "CharacterPickupComponent.h"
+#include "CharacterInventoryComponent.h"
 #include "CharacterAnimInstanceBase.h"
 
 #include "Engine.h"
@@ -35,7 +36,8 @@ ACharacterBase::ACharacterBase(const FObjectInitializer& ObjectInitializer)
 	AudioComponent->bAutoActivate = false;
 	AudioComponent->bAutoDestroy = false;
 	AudioComponent->SetupAttachment(GetMesh());
-	PickupComponent = ObjectInitializer.CreateDefaultSubobject<UCharacterPickupComponent>(this, TEXT("PickupComponent"));
+	PickupComponent    = ObjectInitializer.CreateDefaultSubobject<UCharacterPickupComponent>(this, TEXT("PickupComponent"));
+	InventoryComponent = ObjectInitializer.CreateDefaultSubobject<UCharacterInventoryComponent>(this, TEXT("InventoryComponent"));
 }
 
 void ACharacterBase::OnConstruction(const FTransform& Transform)
@@ -67,7 +69,7 @@ void ACharacterBase::BeginPlay()
 	DefaultMaxSpeed = GetCharacterMovement()->MaxWalkSpeed;
 	GetCharacterMovement()->MaxWalkSpeed = MovementSpeed;
 
-	if (Wevet::ComponentExtension::HasValid(PawnNoiseEmitterComponent))
+	if (ComponentExtension::HasValid(PawnNoiseEmitterComponent))
 	{
 		//
 	}
@@ -77,11 +79,11 @@ void ACharacterBase::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	if (TakeDamageInterval >= 0.f)
+	if (!FMath::IsNearlyZero(TakeDamageInterval))
 	{
 		TakeDamageInterval -= DeltaTime;
 	}
-	if (ComboTakeInterval >= 0.f)
+	if (!FMath::IsNearlyZero(ComboTakeInterval))
 	{
 		ComboTakeInterval -= DeltaTime;
 	}
@@ -110,7 +112,7 @@ void ACharacterBase::ReportNoise_Implementation(USoundBase* Sound, float Volume)
 	if (Sound)
 	{
 		//MakeNoise(Volume, this, GetActorLocation());
-		const float InVolume = FMath::Clamp<float>(Volume, 0.0f, 1.0f);
+		const float InVolume = FMath::Clamp<float>(Volume, MIN_VOLUME, DEFAULT_VOLUME);
 		UGameplayStatics::PlaySoundAtLocation(World, Sound, GetActorLocation(), InVolume, 1.0f, 0.0f, nullptr, nullptr);
 		PawnNoiseEmitterComponent->MakeNoise(this, InVolume, GetActorLocation());
 	}
@@ -125,7 +127,7 @@ void ACharacterBase::FootStep_Implementation(USoundBase* Sound, float Volume)
 	}
 
 	const float Speed = GetVelocity().Size();
-	const float InVolume = FMath::Clamp<float>((Speed / GetCharacterMovement()->MaxWalkSpeed), 0.f, 1.f);
+	const float InVolume = FMath::Clamp<float>((Speed / GetCharacterMovement()->MaxWalkSpeed), MIN_VOLUME, DEFAULT_VOLUME);
 
 	USoundBase* const InSound = Sound ? Sound : FootStepSoundAsset;
 	if (InSound)
@@ -145,7 +147,7 @@ void ACharacterBase::ReportNoiseOther_Implementation(AActor* Actor, USoundBase* 
 	}
 	if (Sound)
 	{
-		const float InVolume = FMath::Clamp<float>(Volume, 0.0f, 1.0f);
+		const float InVolume = FMath::Clamp<float>(Volume, MIN_VOLUME, DEFAULT_VOLUME);
 		UGameplayStatics::PlaySoundAtLocation(World, Sound, Location, InVolume, 1.0f, 0.0f, nullptr, nullptr);
 		PawnNoiseEmitterComponent->MakeNoise(Actor, InVolume, Location);
 	}
@@ -271,9 +273,9 @@ void ACharacterBase::Die_Implementation()
 	const FVector Forward   = Super::GetActorLocation() + (ForwardOffset * DEFAULT_FORWARD);
 	const FTransform Transform  = UKismetMathLibrary::MakeTransform(Forward, Rotation, FVector::OneVector);
 
-	if (!ArrayExtension::NullOrEmpty(WeaponList))
+	if (!InventoryComponent->HasInventoryWeaponItems())
 	{
-		for (AWeaponBase*& Weapon : WeaponList)
+		for (AWeaponBase*& Weapon : InventoryComponent->GetWeaponInventoryOriginal())
 		{
 			if (!Weapon)
 			{
@@ -281,7 +283,7 @@ void ACharacterBase::Die_Implementation()
 			}
 			ReleaseWeaponToWorld(Transform, Weapon);
 		}
-		WeaponList.Empty();
+		InventoryComponent->ClearWeaponInventory();
 	}
 }
 
@@ -334,7 +336,7 @@ void ACharacterBase::OnSprint()
 	{
 		bSprint = false;
 	}
-	MovementSpeed = bSprint ? DefaultMaxSpeed : DefaultMaxSpeed * 0.5f;
+	MovementSpeed = bSprint ? DefaultMaxSpeed : DefaultMaxSpeed * HALF_WEIGHT;
 	GetCharacterMovement()->MaxWalkSpeed = MovementSpeed;
 }
 
@@ -417,11 +419,11 @@ void ACharacterBase::ReleaseWeaponToWorld(const FTransform& Transform, AWeaponBa
 
 AWeaponBase* ACharacterBase::FindByWeapon(const EWeaponItemType WeaponItemType)
 {
-	if (ArrayExtension::NullOrEmpty(WeaponList))
+	if (InventoryComponent->HasInventoryWeaponItems())
 	{
 		return nullptr;
 	}
-	for (AWeaponBase*& Weapon : WeaponList)
+	for (AWeaponBase*& Weapon : InventoryComponent->GetWeaponInventoryOriginal())
 	{
 		if (Weapon && Weapon->HasMatchTypes(WeaponItemType))
 		{
@@ -456,7 +458,7 @@ UCharacterAnimInstanceBase* ACharacterBase::GetCharacterAnimInstance() const
 
 const TArray<AWeaponBase*>& ACharacterBase::GetWeaponList()
 {
-	return WeaponList;
+	return InventoryComponent->GetWeaponInventory();
 }
 
 const bool ACharacterBase::HasCrouch()
@@ -491,11 +493,11 @@ const bool ACharacterBase::HasClimbingMoveRight()
 
 AWeaponBase* ACharacterBase::GetUnEquipWeapon()
 {
-	if (ArrayExtension::NullOrEmpty(WeaponList))
+	if (InventoryComponent->HasInventoryWeaponItems())
 	{
 		return nullptr;
 	}
-	for (AWeaponBase*& Weapon : WeaponList)
+	for (AWeaponBase*& Weapon : InventoryComponent->GetWeaponInventoryOriginal())
 	{
 		if (Weapon && !Weapon->bEquip)
 		{
@@ -507,11 +509,11 @@ AWeaponBase* ACharacterBase::GetUnEquipWeapon()
 
 void ACharacterBase::OutUnEquipWeaponList(TArray<AWeaponBase*>& OutWeaponList)
 {
-	if (ArrayExtension::NullOrEmpty(WeaponList))
+	if (InventoryComponent->HasInventoryWeaponItems())
 	{
 		return;
 	}
-	for (AWeaponBase* &Weapon : WeaponList)
+	for (AWeaponBase* &Weapon : InventoryComponent->GetWeaponInventoryOriginal())
 	{
 		if (Weapon && !Weapon->bEquip)
 		{
@@ -540,7 +542,7 @@ void ACharacterBase::ReleaseObjects()
 
 void ACharacterBase::EquipmentActionMontage()
 {
-	if (ArrayExtension::NullOrEmpty(WeaponList))
+	if (InventoryComponent->HasInventoryWeaponItems())
 	{
 		return;
 	}
@@ -549,7 +551,7 @@ void ACharacterBase::EquipmentActionMontage()
 
 void ACharacterBase::UnEquipmentActionMontage()
 {
-	if (ArrayExtension::NullOrEmpty(WeaponList))
+	if (InventoryComponent->HasInventoryWeaponItems())
 	{
 		return;
 	}
@@ -612,7 +614,7 @@ void ACharacterBase::ReloadActionMontage()
 
 void ACharacterBase::TakeDamageActionMontage()
 {
-	if (TakeDamageInterval <= 0)
+	if (FMath::IsNearlyZero(TakeDamageInterval))
 	{
 		if (CurrentWeapon.IsValid())
 		{
