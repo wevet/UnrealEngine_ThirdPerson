@@ -16,7 +16,7 @@ EBTNodeResult::Type UBTTask_FindBotWaypoint::ExecuteTask(UBehaviorTreeComponent&
 	{
 		if (AWayPointBase* NewWaypoint = AIController->GetRandomAtWayPoint())
 		{
-			AIController->SetWayPoint(NewWaypoint);
+			AIController->SetBlackboardWayPoint(NewWaypoint);
 			bSuccess = true;
 		}
 	}

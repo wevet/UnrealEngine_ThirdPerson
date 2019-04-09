@@ -79,12 +79,19 @@ void AAIControllerBase::UnPossess()
 	{
 		AIPerceptionComponent->OnTargetPerceptionUpdated.RemoveDynamic(this, &AAIControllerBase::OnTargetPerceptionUpdatedRecieve);
 	}
-	BehaviorTreeComponent->StopTree();
+	if (BehaviorTreeComponent)
+	{
+		BehaviorTreeComponent->StopTree();
+	}
 	Super::UnPossess();
 }
 
 FGenericTeamId AAIControllerBase::GetGenericTeamId() const
 {
+	//if (AICharacterOwner)
+	//{
+	//	return AICharacterOwner->GetGenericTeamID();
+	//}
 	return PTG_TEAM_ID_ENEMY;
 }
 
@@ -98,7 +105,7 @@ AWayPointBase* AAIControllerBase::GetRandomAtWayPoint()
 	return WayPointList[RandomIndex];
 }
 
-void AAIControllerBase::SetTargetEnemy(APawn* NewTarget)
+void AAIControllerBase::SetBlackboardTarget(APawn* NewTarget)
 {
 	if (BlackboardComponent)
 	{
@@ -106,7 +113,7 @@ void AAIControllerBase::SetTargetEnemy(APawn* NewTarget)
 	}
 }
 
-void AAIControllerBase::SetWayPoint(AWayPointBase* NewWayPoint)
+void AAIControllerBase::SetBlackboardWayPoint(AWayPointBase* NewWayPoint)
 {
 	if (BlackboardComponent)
 	{
@@ -147,23 +154,28 @@ void AAIControllerBase::SetBlackboardPatrolLocation(const FVector NewLocation)
 	}
 }
 
+ACharacterBase* AAIControllerBase::GetTargetCharacter() const
+{
+	if (GetAICharacter())
+	{
+		return GetAICharacter()->GetTargetCharacter();
+	}
+	return nullptr;
+}
+
 void AAIControllerBase::OnTargetPerceptionUpdatedRecieve(AActor* Actor, FAIStimulus Stimulus)
 {
 	if (AICharacterOwner == nullptr || ICombatExecuter::Execute_IsDeath(AICharacterOwner))
 	{
 		return;
 	}
-
-	if (AICharacterOwner->GetTargetCharacter())
+	if (!GetTargetCharacter())
 	{
 		return;
 	}
 
-	if (AMockCharacter* MockCharacter = Cast<AMockCharacter>(Actor))
-	{
-		bool bSuccess = (!ICombatExecuter::Execute_IsDeath(MockCharacter)) && Stimulus.WasSuccessfullySensed() ? true : false;
-		//UE_LOG(LogWevetClient, Log, TEXT("WasSuccessfullySensed : %s"), bSuccess ? TEXT("True") : TEXT("false"));
-	}
+	bool bSuccess = (!ICombatExecuter::Execute_IsDeath(GetTargetCharacter())) && Stimulus.WasSuccessfullySensed() ? true : false;
+	//UE_LOG(LogWevetClient, Log, TEXT("WasSuccessfullySensed : %s"), bSuccess ? TEXT("True") : TEXT("false"));
 }
 
 

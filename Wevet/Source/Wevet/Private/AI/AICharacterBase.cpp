@@ -92,6 +92,11 @@ void AAICharacterBase::MainLoop(float DeltaTime)
 	//Subclass Extend
 }
 
+const int AAICharacterBase::GetGenericTeamID()
+{
+	return PTG_TEAM_ID_ENEMY;
+}
+
 void AAICharacterBase::Die_Implementation()
 {
 	if (Super::bDied)
@@ -253,17 +258,26 @@ void AAICharacterBase::OnSeePawnRecieve(APawn* OtherPawn)
 void AAICharacterBase::SetSeeTargetActor(ACharacterBase* const NewCharacter)
 {
 	TargetCharacter = NewCharacter;
+
+	if (TargetCharacter)
+	{
+		const FVector StartLocation  = GetActorLocation();
+		const FVector TargetLocation = TargetCharacter->GetActorLocation();
+		FRotator LookAtRotation = UKismetMathLibrary::FindLookAtRotation(StartLocation, TargetLocation);
+		SetActorRotation(LookAtRotation);
+	}
+	AIController->SetBlackboardTarget(NewCharacter);
 	AIController->SetBlackboardSeeActor(HasEnemyFound());
-	AIController->SetTargetEnemy(NewCharacter);
+	//AIController->SetBlackboardPatrolLocation(TargetCharacter->GetActorLocation());
 
 	if (NewCharacter)
 	{
-		ForceSprint();
+		//ForceSprint();
 		Super::EquipmentActionMontage();
 	}
 	else
 	{
-		UnForceSprint();
+		//UnForceSprint();
 		BP_FireReleaseReceive();
 		Super::UnEquipmentActionMontage();
 	}
@@ -281,11 +295,10 @@ void AAICharacterBase::SetHearTargetActor(AActor* const OtherActor)
 		check(AIController);
 		const FVector StartLocation   = GetActorLocation();
 		const FVector TargetLocation  = OtherActor->GetActorLocation();
-		const FRotator LookAtRotation = UKismetMathLibrary::FindLookAtRotation(StartLocation, TargetLocation);
-
-		FRotator Rotation = GetActorRotation();
-		Rotation.Yaw = LookAtRotation.Yaw;
-		SetActorRotation(Rotation);
+		FRotator LookAtRotation = UKismetMathLibrary::FindLookAtRotation(StartLocation, TargetLocation);
+		//LookAtRotation.Roll  = 0.f;
+		//LookAtRotation.Pitch = 0.f;
+		SetActorRotation(LookAtRotation);
 		AIController->SetBlackboardPatrolLocation(TargetLocation);
 		Super::EquipmentActionMontage();
 	}
@@ -293,6 +306,7 @@ void AAICharacterBase::SetHearTargetActor(AActor* const OtherActor)
 	{
 		Super::UnEquipmentActionMontage();
 	}
+	AIController->SetBlackboardHearActor(bHearTarget);
 }
 
 bool AAICharacterBase::CanShotup() const

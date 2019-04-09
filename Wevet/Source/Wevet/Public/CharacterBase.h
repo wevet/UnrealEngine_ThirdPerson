@@ -155,6 +155,7 @@ public:
 	FORCEINLINE class UAudioComponent* GetAudioComponent() const { return AudioComponent; }
 	FORCEINLINE class UCharacterPickupComponent* GetPickupComponent() const { return PickupComponent; }
 	FORCEINLINE class UCharacterInventoryComponent* GetInventoryComponent() const { return InventoryComponent; }
+	virtual const int GetGenericTeamID() { return NO_TEAMID; }
 
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Components, meta = (AllowPrivateAccess = "true"))

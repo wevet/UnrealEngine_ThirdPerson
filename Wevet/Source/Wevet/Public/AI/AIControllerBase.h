@@ -59,12 +59,13 @@ public:
 	}
 
 	AWayPointBase* GetRandomAtWayPoint();
-	virtual void SetTargetEnemy(APawn* NewTarget);
-	virtual void SetWayPoint(AWayPointBase* NewWayPoint);
+	virtual void SetBlackboardTarget(APawn* NewTarget);
+	virtual void SetBlackboardWayPoint(AWayPointBase* NewWayPoint);
 	virtual void SetBlackboardBotType(EBotBehaviorType NewType);
 	virtual void SetBlackboardSeeActor(const bool NewCanSeeActor);
 	virtual void SetBlackboardHearActor(const bool NewCanHearActor);
 	virtual void SetBlackboardPatrolLocation(const FVector NewLocation);
+	ACharacterBase* GetTargetCharacter() const;
 
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Components, meta = (AllowPrivateAccess = "true"))

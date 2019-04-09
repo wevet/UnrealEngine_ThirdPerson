@@ -126,13 +126,12 @@ void ACharacterBase::FootStep_Implementation(USoundBase* Sound, float Volume)
 		return;
 	}
 
-	const float Speed = GetVelocity().Size();
-	const float InVolume = FMath::Clamp<float>((Speed / GetCharacterMovement()->MaxWalkSpeed), MIN_VOLUME, DEFAULT_VOLUME);
-
 	USoundBase* const InSound = Sound ? Sound : FootStepSoundAsset;
 	if (InSound)
 	{
 		//MakeNoise(InVolume, this, GetActorLocation());
+		const float Speed = GetVelocity().Size();
+		const float InVolume = FMath::Clamp<float>((Speed / GetCharacterMovement()->MaxWalkSpeed), MIN_VOLUME, DEFAULT_VOLUME);
 		UGameplayStatics::PlaySoundAtLocation(World, InSound, GetActorLocation(), InVolume, 1.0f, 0.0f, nullptr, nullptr);
 		PawnNoiseEmitterComponent->MakeNoise(this, InVolume, GetActorLocation());
 	}

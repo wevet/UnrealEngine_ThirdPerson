@@ -55,6 +55,7 @@ public:
 
 	virtual FVector BulletTraceRelativeLocation() const override;
 	virtual FVector BulletTraceForwardLocation() const override;
+	virtual const int GetGenericTeamID() override;
 
 protected:
 	virtual void UpdateWeapon();
