@@ -42,7 +42,6 @@ public:
 	virtual void OnTakeDamage_Implementation(FName BoneName, float Damage, AActor* Actor) override;
 	virtual void CreateWayPointList(TArray<AWayPointBase*>& OutWayPointList);
 	virtual void CreateWeaponInstance();
-	virtual const int GetGenericTeamID() override;
 
 	FORCEINLINE class UPawnSensingComponent* GetPawnSensingComponent() const { return PawnSensingComponent; }
 	FORCEINLINE class UWidgetComponent* GetWidgetComponent() const { return WidgetComponent; }

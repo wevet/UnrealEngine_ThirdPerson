@@ -88,10 +88,6 @@ void AAIControllerBase::UnPossess()
 
 FGenericTeamId AAIControllerBase::GetGenericTeamId() const
 {
-	//if (AICharacterOwner)
-	//{
-	//	return AICharacterOwner->GetGenericTeamID();
-	//}
 	return PTG_TEAM_ID_ENEMY;
 }
 

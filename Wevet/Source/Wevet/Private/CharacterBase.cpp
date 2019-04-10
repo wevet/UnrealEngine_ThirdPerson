@@ -19,7 +19,7 @@ ACharacterBase::ACharacterBase(const FObjectInitializer& ObjectInitializer)
 	BaseTurnRate(45.f),
 	BaseLookUpRate(45.f),
 	MovementSpeed(300.f),
-	HeadSocketName(FName(TEXT("Head"))),
+	HeadSocketName(FName(TEXT("head"))),
 	PelvisSocketName(FName(TEXT("PelvisSocket"))),
 	TakeDamageInterval(0.f),
 	ComboTakeInterval(0.f)
@@ -223,7 +223,15 @@ void ACharacterBase::OnTakeDamage_Implementation(FName BoneName, float Damage, A
 
 	if (BoneName == HeadSocketName) 
 	{
-		CharacterModel->SetCurrentHealthValue(INDEX_NONE);
+		USkeletalMeshComponent* SkeletalMeshComponent = Super::GetMesh();
+		if (SkeletalMeshComponent)
+		{
+			auto RefSkeleton = SkeletalMeshComponent->SkeletalMesh->Skeleton->GetReferenceSkeleton();
+			if (RefSkeleton.FindBoneIndex(BoneName) != INDEX_NONE)
+			{
+				CharacterModel->SetCurrentHealthValue(INDEX_NONE);
+			}
+		}
 	} 
 	else
 	{
@@ -240,6 +248,11 @@ void ACharacterBase::OnTakeDamage_Implementation(FName BoneName, float Damage, A
 		//UE_LOG(LogWevetClient, Log, TEXT("HitBoneName : %s"), *BoneName.ToString());
 		TakeDamageActionMontage();
 	}
+
+	if (CharacterModel->GetCurrentHealth() <= INDEX_NONE)
+	{
+		CharacterModel->Die();
+	}
 }
 
 void ACharacterBase::Die_Implementation()
@@ -255,7 +268,6 @@ void ACharacterBase::Die_Implementation()
 		CurrentWeapon.Reset();
 	}
 
-	CharacterModel->Die();
 	USkeletalMeshComponent* const SkelMesh = GetMesh();
 	SkelMesh->SetAllBodiesSimulatePhysics(true);
 	SkelMesh->SetSimulatePhysics(true);

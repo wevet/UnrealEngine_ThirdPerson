@@ -7,7 +7,7 @@
 
 UAICharacterAnimInstanceBase::UAICharacterAnimInstanceBase(const FObjectInitializer& ObjectInitializer) 
 	: Super(ObjectInitializer),
-	TargetSocketName(TEXT("Spine_03"))
+	TargetSocketName(TEXT("spine_03"))
 {
 	//
 }

@@ -67,13 +67,6 @@ void AAICharacterBase::BeginPlay()
 		}
 	}
 	AIController = Cast<AAIControllerBase>(GetController());
-
-	auto RefSkeleton = GetMesh()->SkeletalMesh->Skeleton->GetReferenceSkeleton();
-	for (int i = 0; i < RefSkeleton.GetRawBoneNum(); ++i)
-	{
-		auto Info = RefSkeleton.GetRawRefBoneInfo()[i];
-		UE_LOG(LogWevetClient, Log, TEXT("BoneName : %s \n ParentIndex : %d"), *Info.Name.ToString(), Info.ParentIndex);
-	}
 }
 
 void AAICharacterBase::Tick(float DeltaTime)
@@ -90,11 +83,6 @@ void AAICharacterBase::MainLoop(float DeltaTime)
 {
 	//@NOTE
 	//Subclass Extend
-}
-
-const int AAICharacterBase::GetGenericTeamID()
-{
-	return PTG_TEAM_ID_ENEMY;
 }
 
 void AAICharacterBase::Die_Implementation()
@@ -222,15 +210,7 @@ void AAICharacterBase::CreateWeaponInstance()
 	CurrentWeapon.Get()->AttachToComponent(Super::GetMesh(), Rules, SocketName);
 	CurrentWeapon.Get()->Take(this);
 	CurrentWeapon.Get()->GetSphereComponent()->DestroyComponent();
-
-	if (Super::InventoryComponent)
-	{
-		Super::InventoryComponent->AddWeaponInventory(CurrentWeapon.Get());
-	}
-	//if (Super::WeaponList.Find(CurrentWeapon.Get()) == INDEX_NONE)
-	//{
-	//	Super::WeaponList.Emplace(CurrentWeapon.Get());
-	//}
+	Super::InventoryComponent->AddWeaponInventory(CurrentWeapon.Get());
 }
 
 void AAICharacterBase::CreateWayPointList(TArray<AWayPointBase*>& OutWayPointList)
@@ -268,7 +248,6 @@ void AAICharacterBase::SetSeeTargetActor(ACharacterBase* const NewCharacter)
 	}
 	AIController->SetBlackboardTarget(NewCharacter);
 	AIController->SetBlackboardSeeActor(HasEnemyFound());
-	//AIController->SetBlackboardPatrolLocation(TargetCharacter->GetActorLocation());
 
 	if (NewCharacter)
 	{
@@ -296,9 +275,10 @@ void AAICharacterBase::SetHearTargetActor(AActor* const OtherActor)
 		const FVector StartLocation   = GetActorLocation();
 		const FVector TargetLocation  = OtherActor->GetActorLocation();
 		FRotator LookAtRotation = UKismetMathLibrary::FindLookAtRotation(StartLocation, TargetLocation);
-		//LookAtRotation.Roll  = 0.f;
-		//LookAtRotation.Pitch = 0.f;
-		SetActorRotation(LookAtRotation);
+
+		FRotator Rot = FRotator::ZeroRotator;
+		Rot.Yaw = LookAtRotation.Yaw;
+		SetActorRotation(Rot);
 		AIController->SetBlackboardPatrolLocation(TargetLocation);
 		Super::EquipmentActionMontage();
 	}

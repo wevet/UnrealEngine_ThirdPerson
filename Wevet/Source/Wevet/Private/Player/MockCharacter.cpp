@@ -500,11 +500,6 @@ FVector AMockCharacter::BulletTraceForwardLocation() const
 	return GetFollowCameraComponent()->GetForwardVector();
 }
 
-const int AMockCharacter::GetGenericTeamID()
-{
-	return PTG_TEAM_ID_PLAYER;
-}
-
 void AMockCharacter::EquipmentHandleEvent()
 {
 	if (CurrentWeapon.IsValid())
