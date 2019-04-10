@@ -287,7 +287,6 @@ void AMockCharacter::Die_Implementation()
 
 	if (APlayerController* PC = ControllerExtension::GetPlayer(this, 0))
 	{
-		PC->UnPossess();
 		Super::DisableInput(PC);
 	}
 	Super::Die_Implementation();
@@ -337,10 +336,6 @@ void AMockCharacter::OnPickupItemExecuter_Implementation(AActor* Actor)
 		SpawningObject->AttachToComponent(Super::GetMesh(), Rules, SocketName);
 		SpawningObject->Take(this);
 		Super::InventoryComponent->AddWeaponInventory(SpawningObject);
-		//if (Super::WeaponList.Find(SpawningObject) == INDEX_NONE)
-		//{
-		//	Super::WeaponList.Emplace(SpawningObject);
-		//}
 		Weapon->Release(nullptr);
 		Actor = nullptr;
 	}

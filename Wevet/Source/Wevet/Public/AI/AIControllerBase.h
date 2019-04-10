@@ -66,6 +66,7 @@ public:
 	virtual void SetBlackboardHearActor(const bool NewCanHearActor);
 	virtual void SetBlackboardPatrolLocation(const FVector NewLocation);
 	ACharacterBase* GetTargetCharacter() const;
+	const float GetSearchRadius() { return SearchRadius; }
 
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Components, meta = (AllowPrivateAccess = "true"))
@@ -101,4 +102,7 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = "AAIControllerBase|Variable")
 	FName BotTypeKeyName;
+
+	float SearchRadius;
+
 };

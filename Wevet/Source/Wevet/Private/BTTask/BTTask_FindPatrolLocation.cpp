@@ -16,7 +16,7 @@ EBTNodeResult::Type UBTTask_FindPatrolLocation::ExecuteTask(UBehaviorTreeCompone
 	{
 		if (AWayPointBase* WayPoint = AIController->GetRandomAtWayPoint())
 		{
-			const float SearchRadius = 200.f;
+			const float SearchRadius = AIController->GetSearchRadius();
 			const FVector SearchOrigin = WayPoint->GetActorLocation();
 			FNavLocation ResultLocation;
 

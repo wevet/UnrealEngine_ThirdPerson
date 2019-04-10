@@ -19,7 +19,8 @@ AAIControllerBase::AAIControllerBase(const FObjectInitializer& ObjectInitializer
 	PatrolLocationKeyName(FName(TEXT("PatrolLocation"))),
 	SightConfig(nullptr),
 	HearConfig(nullptr),
-	PredictionConfig(nullptr)
+	PredictionConfig(nullptr),
+	SearchRadius(200.f)
 {
 
 	BehaviorTreeComponent = ObjectInitializer.CreateDefaultSubobject<UBehaviorTreeComponent>(this, TEXT("BehaviorTreeComponent"));

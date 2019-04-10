@@ -282,7 +282,12 @@ void ACharacterBase::Die_Implementation()
 	const FVector ForwardOffset = Controller ? Controller->GetControlRotation().Vector() : Super::GetActorForwardVector();
 	const FRotator Rotation = Super::GetActorRotation();
 	const FVector Forward   = Super::GetActorLocation() + (ForwardOffset * DEFAULT_FORWARD);
-	const FTransform Transform  = UKismetMathLibrary::MakeTransform(Forward, Rotation, FVector::OneVector);
+	const FTransform Transform = UKismetMathLibrary::MakeTransform(Forward, Rotation, FVector::OneVector);
+
+	if (Controller)
+	{
+		Controller->UnPossess();
+	}
 
 	if (!InventoryComponent->HasInventoryWeaponItems())
 	{
