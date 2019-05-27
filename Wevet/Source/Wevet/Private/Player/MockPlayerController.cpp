@@ -12,11 +12,11 @@ AMockPlayerController::AMockPlayerController(const FObjectInitializer& ObjectIni
 	//
 }
 
-void AMockPlayerController::Possess(APawn* Pawn)
+void AMockPlayerController::OnPossess(APawn* InPawn)
 {
-	Super::Possess(Pawn);
+	Super::OnPossess(InPawn);
 
-	if (AMockCharacter* OwnerPawn = Cast<AMockCharacter>(Pawn))
+	if (AMockCharacter* OwnerPawn = Cast<AMockCharacter>(InPawn))
 	{
 		CharacterOwner = OwnerPawn;
 		check(CharacterOwner);
@@ -24,9 +24,9 @@ void AMockPlayerController::Possess(APawn* Pawn)
 	}
 }
 
-void AMockPlayerController::UnPossess()
+void AMockPlayerController::OnUnPossess()
 {
-	Super::UnPossess();
+	Super::OnUnPossess();
 }
 
 void AMockPlayerController::Initializer()

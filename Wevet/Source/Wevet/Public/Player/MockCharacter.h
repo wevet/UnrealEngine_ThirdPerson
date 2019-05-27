@@ -30,16 +30,24 @@ public:
 	class USpringArmComponent* CameraBoomComponent;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Components, meta = (AllowPrivateAccess = "true"))
-	class UCameraComponent* FollowCameraComponent;
+	class UCameraComponent* TPSCameraComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Components, meta = (AllowPrivateAccess = "true"))
+	class UCameraComponent* FPSCameraComponent;
 
 	FORCEINLINE class USpringArmComponent* GetCameraBoomComponent() const 
 	{ 
 		return CameraBoomComponent; 
 	}
 
-	FORCEINLINE class UCameraComponent* GetFollowCameraComponent() const 
+	FORCEINLINE class UCameraComponent* GetTPSCameraComponent() const 
 	{
-		return FollowCameraComponent; 
+		return TPSCameraComponent; 
+	}
+
+	FORCEINLINE class UCameraComponent* GetFPSCameraComponent() const
+	{
+		return FPSCameraComponent;
 	}
 
 	virtual void Die_Implementation() override;

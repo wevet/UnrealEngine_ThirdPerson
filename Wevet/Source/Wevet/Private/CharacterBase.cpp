@@ -89,6 +89,11 @@ void ACharacterBase::Tick(float DeltaTime)
 	}
 }
 
+float ACharacterBase::TakeDamage(float Damage, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
+{
+	return Super::TakeDamage(Damage, DamageEvent, EventInstigator, DamageCauser);
+}
+
 void ACharacterBase::OnReleaseItemExecuter_Implementation() 
 {
 }
@@ -470,11 +475,6 @@ UCharacterModel* ACharacterBase::GetCharacterModel() const
 UCharacterAnimInstanceBase* ACharacterBase::GetCharacterAnimInstance() const
 {
 	return Cast<UCharacterAnimInstanceBase>(GetMesh()->GetAnimInstance());
-}
-
-const TArray<AWeaponBase*>& ACharacterBase::GetWeaponList()
-{
-	return InventoryComponent->GetWeaponInventory();
 }
 
 const bool ACharacterBase::HasCrouch()

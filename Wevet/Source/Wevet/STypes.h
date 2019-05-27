@@ -11,6 +11,7 @@ enum class EBotBehaviorType : uint8
 	Patrolling,
 };
 
+// UI ManagerLayer
 UENUM()
 enum class EUMGLayerType : int32
 {
@@ -84,6 +85,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
 	FName UnEquipSocketName;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
+	float DamageRange;
+
 	EWeaponSizeType SizeType;
 
 	FWeaponItemInfo()
@@ -91,22 +95,10 @@ public:
 		EquipSocketName = FName(TEXT("Lancer_Root_Socket"));
 		Damage = 20.f;
 		TraceDistance = 15000.f;
+		DamageRange = 0.f;
 	}
 
 public:
-	//FORCEINLINE FArchive& operator<<(FArchive& Ar, FWeaponItemInfo& TheStruct)
-	//{
-	//	Ar << TheStruct.WeaponItemType;
-	//	Ar << TheStruct.WeaponClass;
-	//	Ar << TheStruct.ClipType;
-	//	Ar << TheStruct.CurrentAmmo;
-	//	Ar << TheStruct.MaxAmmo;
-	//	Ar << TheStruct.Damage;
-	//	Ar << TheStruct.Texture;
-	//	Ar << TheStruct.EquipSocketName;
-	//	Ar << TheStruct.UnEquipSocketName;
-	//	return Ar;
-	//}
 
 	void CopyTo(const FWeaponItemInfo& InWeaponItemInfo)
 	{

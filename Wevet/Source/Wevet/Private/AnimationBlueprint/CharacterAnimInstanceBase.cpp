@@ -6,13 +6,12 @@
 #include "GameFramework/PawnMovementComponent.h"
 
 UCharacterAnimInstanceBase::UCharacterAnimInstanceBase(const FObjectInitializer& ObjectInitializer) 
-	: Super(ObjectInitializer),
-	CombatBlendWeight(0.8f),
-	ClimbBlendWeight(1.f),
-	BlendWeight(0.f),
-	FalloutInterval(3.f)
+	: Super(ObjectInitializer)
 {
-
+	CombatBlendWeight = 0.8f;
+	ClimbBlendWeight  = 1.f;
+	BlendWeight = 0.f;
+	FalloutInterval = 3.f;
 }
 
 void UCharacterAnimInstanceBase::NativeInitializeAnimation()
@@ -31,8 +30,8 @@ void UCharacterAnimInstanceBase::NativeUpdateAnimation(float DeltaTimeX)
 	}
 
 	Owner = Cast<ACharacterBase>(OwningPawn);
-	IsMoving = (OwningPawn->GetVelocity().SizeSquared() > 25);
-	Speed = OwningPawn->GetVelocity().Size();
+	bHasMoving = (OwningPawn->GetVelocity().SizeSquared() > 25);
+	MovementSpeed = OwningPawn->GetVelocity().Size();
 
 	if (UPawnMovementComponent* MovementComponent = OwningPawn->GetMovementComponent())
 	{
@@ -68,7 +67,7 @@ void UCharacterAnimInstanceBase::SetRotator()
 	const FRotator ControlRotation = OwningPawn->GetControlRotation();
 	const FRotator Rotation = OwningPawn->GetActorRotation();
 	const FVector Velocity = OwningPawn->GetVelocity();
-	Direction = Super::CalculateDirection(Velocity, Rotation);
+	CalcDirection = Super::CalculateDirection(Velocity, Rotation);
 
 	const FRotator ResultRotation = NormalizedDeltaRotator(ControlRotation, Rotation);
 	Yaw = ResultRotation.Yaw;

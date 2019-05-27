@@ -18,8 +18,10 @@ class WEVET_API AMockPlayerController : public APlayerController
 	
 public:
 	AMockPlayerController(const FObjectInitializer& ObjectInitializer);
-	virtual void Possess(APawn* Pawn) override;
-	virtual void UnPossess() override;
+
+protected:
+	virtual void OnPossess(APawn* InPawn) override;
+	virtual void OnUnPossess() override;
 
 protected:
 	virtual void Initializer();

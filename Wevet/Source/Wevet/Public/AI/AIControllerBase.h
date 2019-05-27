@@ -28,10 +28,10 @@ class WEVET_API AAIControllerBase :  public AAIController
 
 public:
 	AAIControllerBase(const FObjectInitializer& ObjectInitializer);
-	virtual void Possess(APawn* Pawn) override;
-	virtual void UnPossess() override;
 
 protected:
+	virtual void OnPossess(APawn* InPawn) override;
+	virtual void OnUnPossess() override;
 	virtual void BeginPlay() override;
 	FGenericTeamId GetGenericTeamId() const override;
 

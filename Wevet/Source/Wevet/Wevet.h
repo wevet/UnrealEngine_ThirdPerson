@@ -20,6 +20,10 @@ DECLARE_LOG_CATEGORY_EXTERN(LogWevetClient, Verbose, All);
 #define HALF_WEIGHT 0.5f
 #define MIN_VOLUME 0.f
 
+//stencil range
+#define STENCIL_MAX 255
+
+
 namespace Wevet
 {
 	class WEVET_API ControllerExtension

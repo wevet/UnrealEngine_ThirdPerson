@@ -21,7 +21,7 @@ public class Wevet : ModuleRules
 				"SlateCore",
 				"NavigationSystem",
 				"ExtraCameraWindow",
-				"ShaderCore",
+				//"ShaderCore",
 				"RenderCore",
 				"RHI",
 				"FullbodyIK",

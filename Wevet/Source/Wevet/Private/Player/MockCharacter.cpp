@@ -14,26 +14,34 @@ AMockCharacter::AMockCharacter(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer),
 	WeaponCurrentIndex(INDEX_NONE)
 {
-	GetCapsuleComponent()->InitCapsuleSize(32.f, 96.0f);
+	GetCapsuleComponent()->InitCapsuleSize(30.f, 90.0f);
 
 	bUseControllerRotationPitch = false;
 	bUseControllerRotationYaw   = false;
 	bUseControllerRotationRoll  = false;
 
-	GetCharacterMovement()->bOrientRotationToMovement = true;
-	GetCharacterMovement()->RotationRate = FRotator(0.0f, 540.0f, 0.0f);
-	GetCharacterMovement()->JumpZVelocity = 570.f;
-	GetCharacterMovement()->AirControl = 0.2f;
+	GetCharacterMovement()->bOrientRotationToMovement = false;
+	GetCharacterMovement()->RotationRate = FRotator(0.0f, 0.0f, 0.0f);
+	GetCharacterMovement()->JumpZVelocity = 350.f;
+	GetCharacterMovement()->AirControl = 0.1f;
 
 	CameraBoomComponent = ObjectInitializer.CreateDefaultSubobject<USpringArmComponent>(this, TEXT("CameraBoomComponent"));
 	CameraBoomComponent->SetupAttachment(RootComponent);
-	CameraBoomComponent->TargetArmLength = 240.0f;
+	CameraBoomComponent->TargetArmLength = 325.0f;
 	CameraBoomComponent->bUsePawnControlRotation = true;
+	CameraBoomComponent->bDoCollisionTest = false;
+	CameraBoomComponent->bEnableCameraLag = true;
+	CameraBoomComponent->SocketOffset = FVector(0.f, 0.f, 45.f);
 
-	FollowCameraComponent = ObjectInitializer.CreateDefaultSubobject<UCameraComponent>(this, TEXT("FollowCameraComponent"));
-	FollowCameraComponent->SetupAttachment(CameraBoomComponent, USpringArmComponent::SocketName);
-	FollowCameraComponent->bUsePawnControlRotation = false;
-	FollowCameraComponent->SetRelativeLocation(FVector(0.f, 70.f, 30.f));
+	TPSCameraComponent = ObjectInitializer.CreateDefaultSubobject<UCameraComponent>(this, TEXT("TPSCameraComponent"));
+	TPSCameraComponent->SetupAttachment(CameraBoomComponent, USpringArmComponent::SocketName);
+	TPSCameraComponent->bUsePawnControlRotation = false;
+
+	FPSCameraComponent = ObjectInitializer.CreateDefaultSubobject<UCameraComponent>(this, TEXT("FPSCameraComponent"));
+	FPSCameraComponent->SetupAttachment(RootComponent);
+	FPSCameraComponent->SetRelativeLocation(FVector(0.f, 10.f, 170.f));
+	FPSCameraComponent->bUsePawnControlRotation = true;
+	FPSCameraComponent->SetFieldOfView(100.f);
 }
 
 void AMockCharacter::OnConstruction(const FTransform& Transform)
@@ -50,26 +58,14 @@ void AMockCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInpu
 {
 	check(PlayerInputComponent);
 
-	// basic action
-	PlayerInputComponent->BindAction("Crouch", IE_Pressed,   this, &ACharacterBase::OnCrouch);
-	PlayerInputComponent->BindAction("Sprint", IE_Pressed,   this, &ACharacterBase::OnSprint);
-	PlayerInputComponent->BindAction("Jump",   IE_Pressed,   this, &AMockCharacter::Jump);
-	PlayerInputComponent->BindAction("Jump",   IE_Released,  this, &AMockCharacter::StopJumping);
-	PlayerInputComponent->BindAxis("Turn",        this, &APawn::AddControllerYawInput);
-	PlayerInputComponent->BindAxis("LookUp",      this, &APawn::AddControllerPitchInput);
-	PlayerInputComponent->BindAxis("TurnRate",    this, &AMockCharacter::TurnAtRate);
-	PlayerInputComponent->BindAxis("LookUpRate",  this, &AMockCharacter::LookUpAtRate);
-	PlayerInputComponent->BindAxis("MoveForward", this, &AMockCharacter::MoveForward);
-	PlayerInputComponent->BindAxis("MoveRight",   this, &AMockCharacter::MoveRight);
 #if !WITH_EDITOR
 	PlayerInputComponent->BindTouch(IE_Pressed,   this, &AMockCharacter::TouchStarted);
 	PlayerInputComponent->BindTouch(IE_Released,  this, &AMockCharacter::TouchStopped);
 #endif
-	// interaction
+
 	PlayerInputComponent->BindAction("ReleaseObjects", IE_Pressed, this, &AMockCharacter::ReleaseObjects);
 	PlayerInputComponent->BindAction("PickupObjects",  IE_Pressed, this, &AMockCharacter::PickupObjects);
 
-	// combat action
 	PlayerInputComponent->BindAction("EquipWeapon", IE_Pressed, this, &AMockCharacter::EquipmentHandleEvent);
 	PlayerInputComponent->BindAction("SwapWeapon",  IE_Pressed, this, &AMockCharacter::UpdateWeapon);
 	PlayerInputComponent->BindAction("Fire", IE_Pressed,   this, &AMockCharacter::FirePressed);
@@ -461,10 +457,6 @@ void AMockCharacter::ClimbJump_Implementation()
 	{
 		PlayAnimMontage(ClimbJumpLeftMontage);
 	}
-	//else if (FMath::IsNearlyZero(Value) && ClimbJumpUpMontage)
-	//{
-	//	PlayAnimMontage(ClimbJumpUpMontage);
-	//}
 	Super::ClimbJump_Implementation();
 }
 
@@ -487,12 +479,12 @@ void AMockCharacter::TurnConerResult_Implementation()
 
 FVector AMockCharacter::BulletTraceRelativeLocation() const
 {
-	return GetFollowCameraComponent()->GetComponentLocation();
+	return GetTPSCameraComponent()->GetComponentLocation();
 }
 
 FVector AMockCharacter::BulletTraceForwardLocation() const
 {
-	return GetFollowCameraComponent()->GetForwardVector();
+	return GetTPSCameraComponent()->GetForwardVector();
 }
 
 void AMockCharacter::EquipmentHandleEvent()

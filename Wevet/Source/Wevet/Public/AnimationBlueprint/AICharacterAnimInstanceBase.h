@@ -22,10 +22,7 @@ public:
 
 	virtual void NativeUpdateAnimation(float DeltaTimeX) override;
 
-protected:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
-	FName HandSocketName;
-	
+protected:	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
 	FName TargetSocketName;
 

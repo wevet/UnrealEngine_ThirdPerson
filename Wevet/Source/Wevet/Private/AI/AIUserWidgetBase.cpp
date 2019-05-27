@@ -4,14 +4,13 @@
 #include "Components/ProgressBar.h"
 
 UAIUserWidgetBase::UAIUserWidgetBase(const FObjectInitializer& ObjectInitializer)
-	: Super(ObjectInitializer),
-	CharacterOwner(nullptr),
-	CanvasPanel(nullptr),
-	ProgressBar(nullptr),
-	ProgressHealthBarKeyName(TEXT("ProgressHealthBar")),
-	CanvasPanelKeyName(TEXT("BasePanel"))
+	: Super(ObjectInitializer)
 {
-	//
+	CharacterOwner = nullptr;
+	CanvasPanel = nullptr;
+	ProgressBar = nullptr;
+	ProgressHealthBarKeyName = (TEXT("ProgressHealthBar"));
+	CanvasPanelKeyName = (TEXT("BasePanel"));
 }
 
 void UAIUserWidgetBase::NativeConstruct()

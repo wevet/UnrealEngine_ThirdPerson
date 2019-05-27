@@ -106,6 +106,12 @@ void AAICharacterBase::Die_Implementation()
 		PawnSensingComponent->OnSeePawn.RemoveDynamic(this, &AAICharacterBase::OnSeePawnRecieve);
 		PawnSensingComponent->OnHearNoise.RemoveDynamic(this, &AAICharacterBase::OnHearNoiseRecieve);
 	}
+
+	USkeletalMeshComponent* SkeltalMesh = Super::GetMesh();
+	if (SkeltalMesh && SkeltalMesh->bRenderCustomDepth)
+	{
+		SkeltalMesh->SetRenderCustomDepth(false);
+	}
 	Super::Die_Implementation();
 }
 

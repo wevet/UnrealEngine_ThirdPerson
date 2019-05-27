@@ -28,7 +28,7 @@ protected:
 	ACharacterBase* Owner;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Variable")
-	bool IsMoving;
+	bool bHasMoving;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Variable")
 	bool IsFalling;
@@ -71,10 +71,10 @@ protected:
 	float ClimbBlendWeight;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Variable")
-	float Speed;
+	float MovementSpeed;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Variable")
-	float Direction;
+	float CalcDirection;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Variable")
 	float Yaw;

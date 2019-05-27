@@ -31,6 +31,7 @@ public:
 	virtual void BeginDestroy() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason);
 	virtual void Tick(float DeltaTime) override;
+	virtual float TakeDamage(float Damage, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
 
 protected:
 	virtual void BeginPlay() override;
@@ -137,7 +138,6 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "ACharacterBase|Weapon")
 	AWeaponBase* GetSelectedWeapon() const;
 
-	const TArray<AWeaponBase*>& GetWeaponList();
 	const bool HasCrouch();
 	const bool HasSprint();
 	const bool HasHanging();

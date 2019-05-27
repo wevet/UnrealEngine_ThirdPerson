@@ -11,17 +11,18 @@
 
 AWeaponBase::AWeaponBase(const FObjectInitializer& ObjectInitializer) 
 	: Super(ObjectInitializer),
-	WidgetComponent(nullptr),
-	SphereComponent(nullptr),
-	SkeletalMeshComponent(nullptr),
 	MuzzleSocketName(FName(TEXT("MuzzleFlash"))),
 	BulletDuration(0.1f),
-	ReloadDuration(2.f),
-	bEmpty(false),
-	bEquip(false),
-	bReload(false),
-	bFired(false)
+	ReloadDuration(2.f)
+	//bEmpty(false),
+	//bEquip(false),
+	//bReload(false),
+	//bFired(false)
 {
+	bEmpty = false;
+	bEquip = false;
+	bReload = false;
+	bFired = false;
 	PrimaryActorTick.bCanEverTick = true;
 	SceneComponent = ObjectInitializer.CreateDefaultSubobject<USceneComponent>(this, TEXT("SceneComponent"));
 	RootComponent  = SceneComponent;
@@ -32,7 +33,7 @@ AWeaponBase::AWeaponBase(const FObjectInitializer& ObjectInitializer)
 
 	SkeletalMeshComponent = ObjectInitializer.CreateDefaultSubobject<USkeletalMeshComponent>(this, TEXT("SkeletalMeshComponent"));
 	SkeletalMeshComponent->SetupAttachment(SphereComponent);
-	SkeletalMeshComponent->bRenderCustomDepth = true;
+	SkeletalMeshComponent->bRenderCustomDepth = false;
 	SkeletalMeshComponent->CustomDepthStencilValue = 1;
 
 	WidgetComponent = ObjectInitializer.CreateDefaultSubobject<UWidgetComponent>(this, TEXT("WidgetComponent"));
@@ -168,7 +169,7 @@ void AWeaponBase::OnFirePressedInternal()
 	FCollisionQueryParams CollisionQueryParams;
 	CollisionQueryParams.TraceTag = FName("");
 	CollisionQueryParams.OwnerTag = FName("");
-	CollisionQueryParams.bTraceAsyncScene = false;
+	//CollisionQueryParams.bTraceAsyncScene = false;
 	CollisionQueryParams.bTraceComplex = true;
 	CollisionQueryParams.bFindInitialOverlaps = false;
 	CollisionQueryParams.bReturnFaceIndex = false;
@@ -262,6 +263,22 @@ void AWeaponBase::TakeHitDamage(const FHitResult HitResult)
 			const float Total = (float)(Attack / Wisdom) + WeaponDamage;
 			const float Damage = FMath::FRandRange((Total * Offset), Total);
 
+			//TSubclassOf<UDamageType> DamageTypeClass;
+			//FHitResult HitInfo;
+			//AActor* DamagedActor = HitResult.GetActor();
+			//ACharacterBase* DamagedCauser = CharacterOwner.Get();
+			//AController* Controller = CharacterOwner.Get()->Controller;
+
+			//UGameplayStatics::ApplyPointDamage(
+			//	DamagedActor, 
+			//	Damage, 
+			//	CharacterOwner->GetActorLocation(), 
+			//	HitInfo, 
+			//	Controller, 
+			//	DamagedCauser, 
+			//	DamageTypeClass);
+
+
 			CombatExecuter->Execute_OnTakeDamage(
 				HitResult.GetActor(), 
 				HitResult.BoneName, 
@@ -293,7 +310,7 @@ void AWeaponBase::AsyncTraceUpdate(const float DeltaTime)
 	FCollisionQueryParams TraceParams = FCollisionQueryParams(TEXT("ForwardCheck"), false, this);
 	TraceParams.TraceTag = FName("");
 	TraceParams.OwnerTag = FName("");
-	TraceParams.bTraceAsyncScene = true;
+	//TraceParams.bTraceAsyncScene = true;
 	TraceParams.bTraceComplex = true;
 	TraceParams.bFindInitialOverlaps = false;
 	TraceParams.bReturnFaceIndex = false;
@@ -393,18 +410,14 @@ void AWeaponBase::Take(ACharacterBase* NewCharacter)
 		const FVector Location = CharacterOwner.IsValid() ? CharacterOwner.Get()->GetActorLocation() : GetActorLocation();
 		UGameplayStatics::PlaySoundAtLocation(World, PickupSoundAsset, Location);
 	}
+	SkeletalMeshComponent->SetRenderCustomDepth(false);
 }
 
 void AWeaponBase::Release(ACharacterBase* NewCharacter)
 {
 	SetCharacterOwner(NewCharacter);
 	SetEquip(false);
-	//OnVisible_Implementation();
-	//if (ensure(SphereComponent && SphereComponent->IsValidLowLevel()))
-	//{
-	//	SphereComponent->OnComponentBeginOverlap.AddDynamic(this, &AWeaponBase::BeginOverlapRecieve);
-	//	SphereComponent->OnComponentEndOverlap.AddDynamic(this, &AWeaponBase::EndOverlapRecieve);
-	//}
+
 	if (IsValidLowLevel())
 	{
 		PrepareDestroy();
@@ -432,7 +445,7 @@ void AWeaponBase::Recover(const FWeaponItemInfo RefWeaponItemInfo)
 void AWeaponBase::SetCharacterOwner(ACharacterBase* NewCharacter)
 {
 	CharacterOwner = MakeWeakObjectPtr<ACharacterBase>(NewCharacter);
-	SetOwner(CharacterOwner.IsValid() ? CharacterOwner.Get() : nullptr);
+	Super::SetOwner(CharacterOwner.IsValid() ? CharacterOwner.Get() : nullptr);
 }
 
 void AWeaponBase::CopyWeaponItemInfo(const FWeaponItemInfo RefWeaponItemInfo)
@@ -457,7 +470,7 @@ void AWeaponBase::OnTraceCompleted(const FTraceHandle& Handle, FTraceDatum& Data
 		++it)
 	{
 		const auto Name = it->Actor.IsValid() ? it->GetActor()->GetName() : TEXT("Unknown");
-		GEngine->AddOnScreenDebugMessage(-1, 3.f, FColor::Red, TEXT("Hit : %s"), *Name);
+		//GEngine->AddOnScreenDebugMessage(-1, 3.f, FColor::Red, TEXT("Hit : %s"), *Name);
 	}
 	LastTraceHandle._Data.FrameNumber = 0;
 }

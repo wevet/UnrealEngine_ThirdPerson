@@ -11,17 +11,17 @@
 
 
 AAIControllerBase::AAIControllerBase(const FObjectInitializer& ObjectInitializer)
-	: Super(ObjectInitializer), 
-	BotTypeKeyName(FName(TEXT("BotType"))),
-	CanSeePlayerKeyName(FName(TEXT("CanSeePlayer"))),
-	CanHearPlayerKeyName(FName(TEXT("CanHearPlayer"))),
-	TargetEnemyKeyName(FName(TEXT("TargetEnemy"))),
-	PatrolLocationKeyName(FName(TEXT("PatrolLocation"))),
-	SightConfig(nullptr),
-	HearConfig(nullptr),
-	PredictionConfig(nullptr),
-	SearchRadius(200.f)
+	: Super(ObjectInitializer)
 {
+	BotTypeKeyName = (FName(TEXT("BotType")));
+	CanSeePlayerKeyName   = (FName(TEXT("CanSeePlayer")));
+	CanHearPlayerKeyName  = (FName(TEXT("CanHearPlayer")));
+	TargetEnemyKeyName    = (FName(TEXT("TargetEnemy")));
+	PatrolLocationKeyName = (FName(TEXT("PatrolLocation")));
+	SightConfig = nullptr;
+	HearConfig  = nullptr;
+	PredictionConfig = nullptr;
+	SearchRadius = 200.f;
 
 	BehaviorTreeComponent = ObjectInitializer.CreateDefaultSubobject<UBehaviorTreeComponent>(this, TEXT("BehaviorTreeComponent"));
 	BlackboardComponent   = ObjectInitializer.CreateDefaultSubobject<UBlackboardComponent>(this, TEXT("BlackboardComponent"));
@@ -57,10 +57,10 @@ void AAIControllerBase::BeginPlay()
 	}
 }
 
-void AAIControllerBase::Possess(APawn* Pawn)
+void AAIControllerBase::OnPossess(APawn* InPawn)
 {
-	Super::Possess(Pawn);
-	AICharacterOwner = Cast<AAICharacterBase>(Pawn);
+	Super::OnPossess(InPawn);
+	AICharacterOwner = Cast<AAICharacterBase>(InPawn);
 	bool bInitialized = false;
 	if (AICharacterOwner)
 	{
@@ -74,7 +74,7 @@ void AAIControllerBase::Possess(APawn* Pawn)
 	}
 }
 
-void AAIControllerBase::UnPossess()
+void AAIControllerBase::OnUnPossess()
 {
 	if (ComponentExtension::HasValid(AIPerceptionComponent))
 	{
@@ -84,7 +84,7 @@ void AAIControllerBase::UnPossess()
 	{
 		BehaviorTreeComponent->StopTree();
 	}
-	Super::UnPossess();
+	Super::OnUnPossess();
 }
 
 FGenericTeamId AAIControllerBase::GetGenericTeamId() const
