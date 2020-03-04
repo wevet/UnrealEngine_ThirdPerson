@@ -4,7 +4,6 @@
 
 #include "CoreMinimal.h"
 #include "CharacterBase.h"
-#include "Components/WidgetComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Perception/PawnSensingComponent.h"
 #include "AICharacterBase.generated.h"
@@ -13,6 +12,7 @@
 class AWeaponBase;
 class AWayPointBase;
 class AAIControllerBase;
+class UAIUserWidgetBase;
 
 UCLASS(ABSTRACT)
 class WEVET_API AAICharacterBase : public ACharacterBase
@@ -31,10 +31,6 @@ protected:
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Components, meta = (AllowPrivateAccess = "true"))
 	class UPawnSensingComponent* PawnSensingComponent;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Components, meta = (AllowPrivateAccess = "true"))
-	class UWidgetComponent* WidgetComponent;
-
 public:
 	virtual void Die_Implementation() override;
 	virtual void Equipment_Implementation() override;
@@ -44,13 +40,16 @@ public:
 	virtual void CreateWeaponInstance();
 
 	FORCEINLINE class UPawnSensingComponent* GetPawnSensingComponent() const { return PawnSensingComponent; }
-	FORCEINLINE class UWidgetComponent* GetWidgetComponent() const { return WidgetComponent; }
 
 	UFUNCTION(BlueprintCallable, Category = "AAICharacterBase|Variable")
 	bool HasEnemyFound() const;
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "AAICharacterBase|Variable")
 	class UBehaviorTree* BehaviorTree;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "AAICharacterBase|Variable")
+	TSubclassOf<class UAIUserWidgetBase> UIControllerTemplate;
+	class UAIUserWidgetBase* UIController;
 
 	UFUNCTION(BlueprintCallable, Category = "AAICharacterBase|Variable")
 	virtual void InitializePosses();
@@ -104,4 +103,10 @@ protected:
 	virtual bool CanShotup() const;
 	virtual void ForceSprint();
 	virtual void UnForceSprint();
+
+protected:
+	/* Cache rendering */
+	bool bWasVisibility;
+
+	virtual void CreateUIController();
 };

@@ -139,7 +139,7 @@ public:
 		Add(FAsyncQueue::MakeParallel(ParallelDelegates)); 
 	}
 	
-	void StoreHardReferenceToSelf(TSharedRef<FAsyncQueue, ESPMode::ThreadSafe> HardReferenceToSelf);
+	void StoreHardReferenceToSelf(TSharedRef<FAsyncQueue, ESPMode::ThreadSafe> NewHardReferenceToSelf);
 	void ReleaseHardReferenceToSelf();
 	void Execute(const FCallbackDelegate& Callback);
 	void Execute();

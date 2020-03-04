@@ -29,6 +29,9 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "UAIUserWidgetBase|Variable")
 	class AAICharacterBase* CharacterOwner;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "UAIUserWidgetBase|Variable")
+	FVector OwnerLocation;
+
 	class UProgressBar* ProgressBar;
 	class UCanvasPanel* CanvasPanel;
 	

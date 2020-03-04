@@ -35,5 +35,6 @@ void UAIUserWidgetBase::NativeTick(const FGeometry& MyGeometry, float InDeltaTim
 		return;
 	}
 
+	OwnerLocation = CharacterOwner->GetActorLocation();
 	ProgressBar->SetPercent(CharacterOwner->IsDeath_Implementation() ? 0.f : CharacterOwner->GetHealthToWidget());
 }

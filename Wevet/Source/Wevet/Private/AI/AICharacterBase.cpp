@@ -13,13 +13,15 @@
 #include "Engine.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Component/CharacterInventoryComponent.h"
+#include "AI/AIUserWidgetBase.h"
 
 AAICharacterBase::AAICharacterBase(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer), 
 	BulletDelay(1.4f),
 	SenseTimeOut(8.f),
 	bSeeTarget(false),
-	bHearTarget(false)
+	bHearTarget(false),
+	bWasVisibility(true)
 {
 	PrimaryActorTick.bCanEverTick = true;
 
@@ -31,12 +33,6 @@ AAICharacterBase::AAICharacterBase(const FObjectInitializer& ObjectInitializer)
 
 	GetMovementComponent()->NavAgentProps.AgentRadius = 42;
 	GetMovementComponent()->NavAgentProps.AgentRadius = 192;
-
-	WidgetComponent = ObjectInitializer.CreateDefaultSubobject<UWidgetComponent>(this, TEXT("WidgetComponent"));
-	WidgetComponent->SetupAttachment(GetMesh());
-	WidgetComponent->SetDrawSize(FVector2D(200.f, 70.f));
-	WidgetComponent->SetWorldLocation(FVector(0.f, 0.f, 230.f));
-	WidgetComponent->SetWorldRotation(FRotator::MakeFromEuler(FVector(0.f, 0.f, 90.f)));
 }
 
 void AAICharacterBase::OnConstruction(const FTransform & Transform)
@@ -58,15 +54,8 @@ void AAICharacterBase::BeginPlay()
 		PawnSensingComponent->OnSeePawn.AddDynamic(this, &AAICharacterBase::OnSeePawnRecieve);
 		PawnSensingComponent->OnHearNoise.AddDynamic(this, &AAICharacterBase::OnHearNoiseRecieve);
 	}
-
-	if (ComponentExtension::HasValid(WidgetComponent))
-	{
-		if (UAIUserWidgetBase* AIWidget = Cast<UAIUserWidgetBase>(WidgetComponent->GetUserWidgetObject()))
-		{
-			AIWidget->Initializer(this);
-		}
-	}
 	AIController = Cast<AAIControllerBase>(GetController());
+	CreateUIController();
 }
 
 void AAICharacterBase::Tick(float DeltaTime)
@@ -91,8 +80,10 @@ void AAICharacterBase::Die_Implementation()
 	{
 		return;
 	}
-
-	WidgetComponent->SetVisibility(false);
+	if (UIController->IsValidLowLevel())
+	{
+		UIController->RemoveFromParent();
+	}
 	TargetCharacter = nullptr;
 	// not spawned WeaponActor
 	if (Super::InventoryComponent)
@@ -152,13 +143,6 @@ void AAICharacterBase::OnTakeDamage_Implementation(FName BoneName, float Damage,
 	if (ICombatExecuter::Execute_IsDeath(this))
 	{
 		Die_Implementation();
-	}
-	else 
-	{
-		//if (ACharacterBase* Character = Cast<ACharacterBase>(Actor))
-		//{
-		//	UE_LOG(LogWevetClient, Log, TEXT("Pained\n from : %s\n to : %s\n"), *Character->GetName(), *GetName());
-		//}
 	}
 }
 
@@ -277,7 +261,6 @@ void AAICharacterBase::SetHearTargetActor(AActor* const OtherActor)
 {
 	if (OtherActor)
 	{
-		check(AIController);
 		const FVector StartLocation   = GetActorLocation();
 		const FVector TargetLocation  = OtherActor->GetActorLocation();
 		FRotator LookAtRotation = UKismetMathLibrary::FindLookAtRotation(StartLocation, TargetLocation);
@@ -322,3 +305,19 @@ void AAICharacterBase::UnForceSprint()
 	GetCharacterMovement()->MaxWalkSpeed = MovementSpeed;
 }
 
+void AAICharacterBase::CreateUIController()
+{
+	UWorld* World = GetWorld();
+	if (UIControllerTemplate && World)
+	{
+		if (APlayerController * PC = Wevet::ControllerExtension::GetPlayer(World, 0))
+		{
+			UIController = CreateWidget<UAIUserWidgetBase>(PC, UIControllerTemplate);
+			if (UIController)
+			{
+				UIController->AddToViewport((int32)EUMGLayerType::Main);
+				UIController->Initializer(this);
+			}
+		}
+	}
+}

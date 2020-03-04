@@ -153,9 +153,9 @@ void AAIControllerBase::SetBlackboardPatrolLocation(const FVector NewLocation)
 
 ACharacterBase* AAIControllerBase::GetTargetCharacter() const
 {
-	if (GetAICharacter())
+	if (AICharacterOwner)
 	{
-		return GetAICharacter()->GetTargetCharacter();
+		return AICharacterOwner->GetTargetCharacter();
 	}
 	return nullptr;
 }

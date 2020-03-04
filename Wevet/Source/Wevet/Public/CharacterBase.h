@@ -7,10 +7,15 @@
 #include "Macros.h"
 #include "Wevet.h"
 #include "STypes.h"
+
+// Interface
 #include "CombatExecuter.h"
 #include "InteractionExecuter.h"
 #include "GrabExecuter.h"
 #include "WeaponControllerExecuter.h"
+
+// Plugins Locomotion
+#include "LocomotionSystemTypes.h"
 #include "CharacterBase.generated.h"
 
 class UCharacterPickupComponent;
@@ -21,7 +26,10 @@ class UCharacterAnimInstanceBase;
 using namespace Wevet;
 
 UCLASS(ABSTRACT)
-class WEVET_API ACharacterBase : public ACharacter, public ICombatExecuter, public IInteractionExecuter, public IGrabExecuter
+class WEVET_API ACharacterBase : public ACharacter, 
+	public ICombatExecuter, 
+	public IInteractionExecuter, 
+	public IGrabExecuter
 {
 	GENERATED_BODY()
 
@@ -127,8 +135,13 @@ public:
 #pragma endregion
 
 public:
+
+	UFUNCTION(BlueprintCallable)
 	virtual FVector BulletTraceRelativeLocation() const;
+
+	UFUNCTION(BlueprintCallable)
 	virtual FVector BulletTraceForwardLocation() const;
+
 	AWeaponBase* FindByWeapon(const EWeaponItemType WeaponItemType);
 	UCharacterModel* GetCharacterModel() const;
 
@@ -152,9 +165,20 @@ public:
 	bool IsHealthHalf() const;
 	bool IsHealthQuarter() const;
 
-	FORCEINLINE class UAudioComponent* GetAudioComponent() const { return AudioComponent; }
-	FORCEINLINE class UCharacterPickupComponent* GetPickupComponent() const { return PickupComponent; }
-	FORCEINLINE class UCharacterInventoryComponent* GetInventoryComponent() const { return InventoryComponent; }
+	FORCEINLINE class UAudioComponent* GetAudioComponent() const 
+	{
+		return AudioComponent; 
+	}
+
+	FORCEINLINE class UCharacterPickupComponent* GetPickupComponent() const 
+	{
+		return PickupComponent; 
+	}
+
+	FORCEINLINE class UCharacterInventoryComponent* GetInventoryComponent() const 
+	{
+		return InventoryComponent; 
+	}
 
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Components, meta = (AllowPrivateAccess = "true"))
@@ -217,49 +241,49 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ACharacterBase|Variable")
 	bool bDied;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Climbsystem")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ACharacterBase|Climbsystem")
 	bool bHanging;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Climbsystem")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ACharacterBase|Climbsystem")
 	bool bClimbingLedge;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Climbsystem")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ACharacterBase|Climbsystem")
 	bool bCanClimbMoveLeft;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Climbsystem")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ACharacterBase|Climbsystem")
 	bool bCanClimbMoveRight;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Climbsystem")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ACharacterBase|Climbsystem")
 	bool bClimbMovingLeft;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Climbsystem")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ACharacterBase|Climbsystem")
 	bool bClimbMovingRight;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Climbsystem")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ACharacterBase|Climbsystem")
 	bool bCanClimbJumpLeft;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Climbsystem")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ACharacterBase|Climbsystem")
 	bool bCanClimbJumpRight;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Climbsystem")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ACharacterBase|Climbsystem")
 	bool bCanClimbJumpUp;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Climbsystem")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ACharacterBase|Climbsystem")
 	bool bClimbJumping;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Climbsystem")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ACharacterBase|Climbsystem")
 	bool bCanTurnLeft;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Climbsystem")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ACharacterBase|Climbsystem")
 	bool bCanTurnRight;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Climbsystem")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ACharacterBase|Climbsystem")
 	FVector HeightLocation;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Climbsystem")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ACharacterBase|Climbsystem")
 	FVector WallLocation;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Climbsystem")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ACharacterBase|Climbsystem")
 	FVector WallNormal;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ACharacterBase|Variable")

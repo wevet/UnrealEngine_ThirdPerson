@@ -186,7 +186,6 @@ void ACharacterBase::ClimbMove_Implementation(float Value)
 void ACharacterBase::ClimbJump_Implementation()
 {
 	IGrabExecuter::Execute_ClimbJump(GetCharacterAnimInstance());
-	//bClimbJumping = false;
 }
 
 void ACharacterBase::ReportClimbJumpEnd_Implementation()
@@ -221,11 +220,6 @@ bool ACharacterBase::IsDeath_Implementation()
 
 void ACharacterBase::OnTakeDamage_Implementation(FName BoneName, float Damage, AActor* Actor)
 {
-	if (ICombatExecuter::Execute_IsDeath(this))
-	{
-		return;
-	}
-
 	if (BoneName == HeadSocketName) 
 	{
 		USkeletalMeshComponent* SkeletalMeshComponent = Super::GetMesh();
@@ -240,23 +234,13 @@ void ACharacterBase::OnTakeDamage_Implementation(FName BoneName, float Damage, A
 	} 
 	else
 	{
-		int32 TakeDamage = (int32)(FMath::Abs(Damage));
-		int32 CurrentHealth = CharacterModel->GetCurrentHealth();
-		CharacterModel->SetCurrentHealthValue(CurrentHealth - TakeDamage);
-
-		auto RefSkeleton = GetMesh()->SkeletalMesh->Skeleton->GetReferenceSkeleton();
-		const int32 Index = RefSkeleton.FindBoneIndex(BoneName);
-		if (Index >= 0)
-		{
-
-		}
-		//UE_LOG(LogWevetClient, Log, TEXT("HitBoneName : %s"), *BoneName.ToString());
 		TakeDamageActionMontage();
 	}
 
 	if (CharacterModel->GetCurrentHealth() <= INDEX_NONE)
 	{
 		CharacterModel->Die();
+		Die_Implementation();
 	}
 }
 

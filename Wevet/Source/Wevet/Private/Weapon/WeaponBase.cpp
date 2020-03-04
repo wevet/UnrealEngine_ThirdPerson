@@ -14,15 +14,11 @@ AWeaponBase::AWeaponBase(const FObjectInitializer& ObjectInitializer)
 	MuzzleSocketName(FName(TEXT("MuzzleFlash"))),
 	BulletDuration(0.1f),
 	ReloadDuration(2.f)
-	//bEmpty(false),
-	//bEquip(false),
-	//bReload(false),
-	//bFired(false)
 {
-	bEmpty = false;
-	bEquip = false;
+	bEmpty  = false;
+	bEquip  = false;
 	bReload = false;
-	bFired = false;
+	bFired  = false;
 	PrimaryActorTick.bCanEverTick = true;
 	SceneComponent = ObjectInitializer.CreateDefaultSubobject<USceneComponent>(this, TEXT("SceneComponent"));
 	RootComponent  = SceneComponent;
@@ -177,6 +173,7 @@ void AWeaponBase::OnFirePressedInternal()
 	CollisionQueryParams.bIgnoreBlocks = false;
 	CollisionQueryParams.IgnoreMask = 0;
 	CollisionQueryParams.AddIgnoredActor(this);
+	CollisionQueryParams.AddIgnoredActor(CharacterOwner.Get());
 
 	const bool bSuccess = World->LineTraceSingleByChannel(
 		HitData, 
@@ -252,46 +249,28 @@ void AWeaponBase::TakeHitDamage(const FHitResult HitResult)
 		return;
 	}
 
-	if (ICombatExecuter* CombatExecuter = Cast<ICombatExecuter>(HitResult.GetActor()))
+	AActor* HitActor = HitResult.GetActor();
+	ACharacterBase* Target = Cast<ACharacterBase>(HitActor);
+
+	if (Target == nullptr)
 	{
-		if (!CombatExecuter->Execute_IsDeath(HitResult.GetActor()))
-		{
-			const float Offset = 0.05f;
-			const int32 Attack = CharacterOwner->GetCharacterModel()->GetAttack();
-			const int32 Wisdom = CharacterOwner->GetCharacterModel()->GetWisdom();
-			const float WeaponDamage = WeaponItemInfo.Damage;
-			const float Total = (float)(Attack / Wisdom) + WeaponDamage;
-			const float Damage = FMath::FRandRange((Total * Offset), Total);
-
-			//TSubclassOf<UDamageType> DamageTypeClass;
-			//FHitResult HitInfo;
-			//AActor* DamagedActor = HitResult.GetActor();
-			//ACharacterBase* DamagedCauser = CharacterOwner.Get();
-			//AController* Controller = CharacterOwner.Get()->Controller;
-
-			//UGameplayStatics::ApplyPointDamage(
-			//	DamagedActor, 
-			//	Damage, 
-			//	CharacterOwner->GetActorLocation(), 
-			//	HitInfo, 
-			//	Controller, 
-			//	DamagedCauser, 
-			//	DamageTypeClass);
-
-
-			CombatExecuter->Execute_OnTakeDamage(
-				HitResult.GetActor(), 
-				HitResult.BoneName, 
-				Damage, 
-				CharacterOwner.Get());
-		}
+		return;
 	}
+
+	auto Character = CharacterOwner.Get();
+	const int32 Attack = (Character->GetCharacterModel()->GetAttack() / ATTACK_CONST);
+	const int32 Deffence = (Target->GetCharacterModel()->GetDefence() / DEFFENCE_CONST);
+	const int32 Wisdom = Character->GetCharacterModel()->GetWisdom();
+	const float WeaponDamage = WeaponItemInfo.Damage;
+	const float TotalDamage = (float)(Attack - Deffence) + (Wisdom + WeaponDamage);
+	ICombatExecuter::Execute_OnTakeDamage(Target, HitResult.BoneName, TotalDamage, Character);
+	UE_LOG(LogWevetClient, Log, TEXT("Damage : %f"), TotalDamage);
 
 }
 
 void AWeaponBase::AsyncTraceUpdate(const float DeltaTime)
 {
-	if (CharacterOwner == nullptr)
+	if (!CharacterOwner.IsValid())
 	{
 		return;
 	}
@@ -302,8 +281,8 @@ void AWeaponBase::AsyncTraceUpdate(const float DeltaTime)
 		return;
 	}
 
-	const FVector StartLocation = CharacterOwner->BulletTraceRelativeLocation();
-	const FVector ForwardLocation = CharacterOwner->BulletTraceForwardLocation();
+	const FVector StartLocation = CharacterOwner.Get()->BulletTraceRelativeLocation();
+	const FVector ForwardLocation = CharacterOwner.Get()->BulletTraceForwardLocation();
 	const FVector EndLocation = StartLocation + (ForwardLocation * WeaponItemInfo.TraceDistance);
 
 	FCollisionObjectQueryParams	RV_ObjectQueryParam(ECollisionChannel::ECC_Camera);
@@ -328,7 +307,7 @@ void AWeaponBase::AsyncTraceUpdate(const float DeltaTime)
 	if (bWantsTrace)
 	{
 		LastTraceHandle = World->AsyncLineTraceByChannel(
-			EAsyncTraceType::Single, //EAsyncTraceType::Multi
+			EAsyncTraceType::Multi,
 			StartLocation,
 			EndLocation,
 			ECollisionChannel::ECC_Camera,

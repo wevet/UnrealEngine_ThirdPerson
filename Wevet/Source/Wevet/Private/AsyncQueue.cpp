@@ -77,9 +77,9 @@ void FAsyncQueue::Add(const FAsyncDelegate& AsyncDelegate)
 	Queue.Enqueue(AsyncDelegate);
 }
 
-void FAsyncQueue::StoreHardReferenceToSelf(TSharedRef<FAsyncQueue, ESPMode::ThreadSafe> HardReferenceToSelf)
+void FAsyncQueue::StoreHardReferenceToSelf(TSharedRef<FAsyncQueue, ESPMode::ThreadSafe> NewHardReferenceToSelf)
 {
-	this->HardReferenceToSelf = TSharedPtr<FAsyncQueue, ESPMode::ThreadSafe>(HardReferenceToSelf);
+	this->HardReferenceToSelf = TSharedPtr<FAsyncQueue, ESPMode::ThreadSafe>(NewHardReferenceToSelf);
 }
 
 void FAsyncQueue::ReleaseHardReferenceToSelf()

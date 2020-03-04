@@ -72,6 +72,12 @@ protected:
 	FTimerHandle ReloadTimerHandle;
 	TWeakObjectPtr<class ACharacterBase> CharacterOwner;
 
+	UFUNCTION(BlueprintCallable, Category="AWeaponBase|Character")
+	ACharacterBase* const GetCharacterOwner() 
+	{
+		return CharacterOwner.Get();
+	}
+
 	virtual void TakeHitDamage(const FHitResult HitResult);
 	virtual void PlayBulletEffect(UWorld* const World, const FHitResult HitResult);
 

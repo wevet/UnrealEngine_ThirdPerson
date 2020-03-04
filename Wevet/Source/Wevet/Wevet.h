@@ -19,6 +19,8 @@ DECLARE_LOG_CATEGORY_EXTERN(LogWevetClient, Verbose, All);
 #define MONTAGE_DELAY 1.6f
 #define HALF_WEIGHT 0.5f
 #define MIN_VOLUME 0.f
+#define ATTACK_CONST 2
+#define DEFFENCE_CONST 4
 
 //stencil range
 #define STENCIL_MAX 255
