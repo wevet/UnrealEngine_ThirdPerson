@@ -15,6 +15,8 @@ rmdir /q /s ..\\Plugins\\FullbodyIK\\Binaries
 rmdir /q /s ..\\Plugins\\FullbodyIK\\Intermediate
 rmdir /q /s ..\\Plugins\\LocomotionSystem\\Binaries
 rmdir /q /s ..\\Plugins\\LocomotionSystem\\Intermediate
+rmdir /q /s ..\\Plugins\\LoadingScreen\\Binaries
+rmdir /q /s ..\\Plugins\\LoadingScreen\\Intermediate
 del ..\\Wevet.sln
 
 pause

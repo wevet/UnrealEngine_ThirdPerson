@@ -8,8 +8,8 @@
 #include "Perception/AISenseConfig_Hearing.h"
 #include "Perception/AISenseConfig_Prediction.h"
 #include "BehaviorTree/BehaviorTree.h"
-#include "Macros.h"
-#include "STypes.h"
+#include "Wevet.h"
+#include "WevetTypes.h"
 #include "AIControllerBase.generated.h"
 
 class UBehaviorTreeComponent;
@@ -52,12 +52,6 @@ public:
 	}
 
 public:
-	UFUNCTION(BlueprintCallable, Category = "AAIControllerBase|Variable")
-	AAICharacterBase* GetAICharacter() const
-	{
-		return AICharacterOwner;
-	}
-
 	AWayPointBase* GetRandomAtWayPoint();
 	virtual void SetBlackboardTarget(APawn* NewTarget);
 	virtual void SetBlackboardWayPoint(AWayPointBase* NewWayPoint);
@@ -65,7 +59,6 @@ public:
 	virtual void SetBlackboardSeeActor(const bool NewCanSeeActor);
 	virtual void SetBlackboardHearActor(const bool NewCanHearActor);
 	virtual void SetBlackboardPatrolLocation(const FVector NewLocation);
-	ACharacterBase* GetTargetCharacter() const;
 	const float GetSearchRadius() { return SearchRadius; }
 
 protected:

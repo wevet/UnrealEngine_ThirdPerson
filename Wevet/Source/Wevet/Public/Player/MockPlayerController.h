@@ -5,7 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerController.h"
 #include "MockCharacter.h"
-#include "UMG/UMGManager.h"
+#include "Widget/UMGManager.h"
 #include "MockPlayerController.generated.h"
 
 /**

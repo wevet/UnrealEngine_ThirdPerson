@@ -1,8 +1,25 @@
 #pragma once
 #include "Engine/EngineTypes.h"
 #include "GameFramework/DamageType.h"
-#include "STypes.generated.h"
+#include "WevetTypes.generated.h"
 
+
+UENUM(BlueprintType)
+enum class EAIActionState : uint8
+{
+	None  UMETA(DisplayName = "None"),
+	Observation  UMETA(DisplayName = "Observation"),
+	Attack  UMETA(DisplayName = "Attack"),
+	ConditionCheck UMETA(DisplayName = "ConditionCheck"),
+};
+
+UENUM()
+enum class EBattlePhaseType : uint8
+{
+	Normal  UMETA(DisplayName = "Normal"),
+	Warning UMETA(DisplayName = "Warning"),
+	Alert   UMETA(DisplayName = "Alert"),
+};
 
 UENUM()
 enum class EBotBehaviorType : uint8

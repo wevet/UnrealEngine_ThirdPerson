@@ -21,7 +21,7 @@ public:
 	int32 GetMaxHealth() const { return MaxHealth; }
 
 	UFUNCTION(BlueprintCallable, Category = "CharacterCondition")
-	int32 GetCurrentHealth() const { return CurrentHealth; }
+	int32 GetHealth() const { return Health; }
 
 	UFUNCTION(BlueprintCallable, Category = "CharacterCondition")
 	int32 GetAttack() const { return Attack; }
@@ -32,32 +32,24 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "CharacterCondition")
 	int32 GetWisdom() const { return Wisdom; }
 
-	UFUNCTION(BlueprintCallable, Category = "CharacterCondition")
-	void SetCurrentHealthValue(int32 NewHealth);
+	void SetHealth(const int32 NewHealth);
+	void SetMaxHealth(const int32 NewMaxHealth);
+	void SetAttack(const int32 NewAttack);
+	void SetDefence(const int32 NewDefence);
+	void SetWisdom(const int32 NewWisdom);
+	void TakeDamage(const int32 InDamage);
 
-	UFUNCTION(BlueprintCallable, Category = "CharacterCondition")
-	void SetMaxHealthValue(int32 NewHealth);
-
-	UFUNCTION(BlueprintCallable, Category = "CharacterCondition")
-	void SetAttackValue(int32 NewAttack);
-
-	UFUNCTION(BlueprintCallable, Category = "CharacterCondition")
-	void SetDefenceValue(int32 NewDefence);
-
-	UFUNCTION(BlueprintCallable, Category = "CharacterCondition")
-	void SetWisdomValue(int32 NewWisdom);
-
-	UFUNCTION(BlueprintCallable, Category = "CharacterCondition")
 	float GetHealthToWidget() const;
 	bool IsHealthHalf() const;
 	bool IsHealthQuarter() const;
+	bool IsEmptyHealth() const;
 
 	void Die();
-	bool IsDie() const { return CurrentHealth <= 0 && bDie; }
-
+	bool IsDie() const;
+	
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "CharacterCondition")
-	int32 CurrentHealth;
+	int32 Health;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "CharacterCondition")
 	int32 MaxHealth;

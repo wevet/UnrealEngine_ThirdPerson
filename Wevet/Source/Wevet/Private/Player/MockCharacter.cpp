@@ -8,7 +8,7 @@
 #include "Math/RotationMatrix.h"
 #include "CharacterAnimInstanceBase.h"
 #include "Component/CharacterInventoryComponent.h"
-//#include "ShaderCompiler.h"
+
 
 AMockCharacter::AMockCharacter(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer),
@@ -25,17 +25,21 @@ AMockCharacter::AMockCharacter(const FObjectInitializer& ObjectInitializer)
 	GetCharacterMovement()->JumpZVelocity = 350.f;
 	GetCharacterMovement()->AirControl = 0.1f;
 
+	JumpMaxHoldTime = 0.5f;
+
 	CameraBoomComponent = ObjectInitializer.CreateDefaultSubobject<USpringArmComponent>(this, TEXT("CameraBoomComponent"));
 	CameraBoomComponent->SetupAttachment(RootComponent);
-	CameraBoomComponent->TargetArmLength = 325.0f;
+	CameraBoomComponent->TargetArmLength = 250.f;
 	CameraBoomComponent->bUsePawnControlRotation = true;
-	CameraBoomComponent->bDoCollisionTest = false;
 	CameraBoomComponent->bEnableCameraLag = true;
+	CameraBoomComponent->bDoCollisionTest = true;
+	CameraBoomComponent->CameraLagSpeed = 2.0f;
 	CameraBoomComponent->SocketOffset = FVector(0.f, 0.f, 45.f);
 
 	TPSCameraComponent = ObjectInitializer.CreateDefaultSubobject<UCameraComponent>(this, TEXT("TPSCameraComponent"));
 	TPSCameraComponent->SetupAttachment(CameraBoomComponent, USpringArmComponent::SocketName);
 	TPSCameraComponent->bUsePawnControlRotation = false;
+	TPSCameraComponent->SetRelativeLocation(FVector::ZeroVector);
 
 	FPSCameraComponent = ObjectInitializer.CreateDefaultSubobject<UCameraComponent>(this, TEXT("FPSCameraComponent"));
 	FPSCameraComponent->SetupAttachment(RootComponent);
@@ -58,11 +62,6 @@ void AMockCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInpu
 {
 	check(PlayerInputComponent);
 
-#if !WITH_EDITOR
-	PlayerInputComponent->BindTouch(IE_Pressed,   this, &AMockCharacter::TouchStarted);
-	PlayerInputComponent->BindTouch(IE_Released,  this, &AMockCharacter::TouchStopped);
-#endif
-
 	PlayerInputComponent->BindAction("ReleaseObjects", IE_Pressed, this, &AMockCharacter::ReleaseObjects);
 	PlayerInputComponent->BindAction("PickupObjects",  IE_Pressed, this, &AMockCharacter::PickupObjects);
 
@@ -77,18 +76,6 @@ void AMockCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 }
-
-#if !WITH_EDITOR
-void AMockCharacter::TouchStarted(ETouchIndex::Type FingerIndex, FVector Location)
-{
-	Super::Jump();
-}
-
-void AMockCharacter::TouchStopped(ETouchIndex::Type FingerIndex, FVector Location)
-{
-	Super::StopJumping();
-}
-#endif
 
 void AMockCharacter::TurnAtRate(float Rate)
 {
@@ -276,12 +263,12 @@ void AMockCharacter::UpdateWeapon()
 
 void AMockCharacter::Die_Implementation()
 {
-	if (Super::bDied)
+	if (Super::bWasDied)
 	{
 		return;
 	}
 
-	if (APlayerController* PC = ControllerExtension::GetPlayer(this, 0))
+	if (APlayerController* PC = ControllerExtension::GetPlayer(this))
 	{
 		Super::DisableInput(PC);
 	}
@@ -360,10 +347,10 @@ void AMockCharacter::OnPickupItemExecuter_Implementation(AActor* Actor)
 	Super::OnPickupItemExecuter_Implementation(Actor);
 }
 
-void AMockCharacter::OnTakeDamage_Implementation(FName BoneName, float Damage, AActor* Actor)
+void AMockCharacter::OnTakeDamage_Implementation(FName BoneName, float Damage, AActor* Actor, bool& bDied)
 {
-	Super::OnTakeDamage_Implementation(BoneName, Damage, Actor);
-	if (ICombatExecuter::Execute_IsDeath(this))
+	Super::OnTakeDamage_Implementation(BoneName, Damage, Actor, bDied);
+	if (IDamageInstigator::Execute_IsDeath(this))
 	{
 		Die_Implementation();
 	}
@@ -515,10 +502,6 @@ void AMockCharacter::ReleaseWeapon()
 	
 	if (AWeaponBase* Weapon = Super::GetUnEquipWeapon())
 	{
-		//if (WeaponList.Find(Weapon) != INDEX_NONE)
-		//{
-		//	WeaponList.Remove(Weapon);
-		//}
 		Super::InventoryComponent->RemoveWeaponInventory(Weapon);
 		Super::ReleaseWeaponToWorld(Transform, Weapon);
 	}

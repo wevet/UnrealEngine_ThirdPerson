@@ -16,13 +16,16 @@
 #include "AI/AIUserWidgetBase.h"
 
 AAICharacterBase::AAICharacterBase(const FObjectInitializer& ObjectInitializer)
-	: Super(ObjectInitializer), 
-	BulletDelay(1.4f),
+	: Super(ObjectInitializer),
 	SenseTimeOut(8.f),
 	bSeeTarget(false),
 	bHearTarget(false),
 	bWasVisibility(true)
 {
+	BulletDelay = 0.3f;
+	AttackTraceForwardDistance = 1000.f;
+	AttackTraceMiddleDistance = 2000.f;
+	AttackTraceLongDistance   = 3000.f;
 	PrimaryActorTick.bCanEverTick = true;
 
 	PawnSensingComponent = ObjectInitializer.CreateDefaultSubobject<UPawnSensingComponent>(this, TEXT("PawnSensingComponent"));
@@ -61,7 +64,7 @@ void AAICharacterBase::BeginPlay()
 void AAICharacterBase::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	if (ICombatExecuter::Execute_IsDeath(this))
+	if (IDamageInstigator::Execute_IsDeath(this))
 	{
 		return;
 	}
@@ -76,7 +79,7 @@ void AAICharacterBase::MainLoop(float DeltaTime)
 
 void AAICharacterBase::Die_Implementation()
 {
-	if (Super::bDied)
+	if (Super::bWasDied)
 	{
 		return;
 	}
@@ -137,28 +140,71 @@ void AAICharacterBase::UnEquipment_Implementation()
 	CurrentWeapon.Get()->AttachToComponent(Super::GetMesh(), Rules, SocketName);
 }
 
-void AAICharacterBase::OnTakeDamage_Implementation(FName BoneName, float Damage, AActor* Actor)
+void AAICharacterBase::OnTakeDamage_Implementation(FName BoneName, float Damage, AActor* Actor, bool& bDied)
 {
-	Super::OnTakeDamage_Implementation(BoneName, Damage, Actor);
-	if (ICombatExecuter::Execute_IsDeath(this))
+	Super::OnTakeDamage_Implementation(BoneName, Damage, Actor, bDied);
+	if (IDamageInstigator::Execute_IsDeath(this))
 	{
 		Die_Implementation();
 	}
 }
 
+#pragma region AIPawnOwner
+bool AAICharacterBase::IsSeeTarget_Implementation() const
+{
+	return bSeeTarget;
+}
+
+bool AAICharacterBase::IsHearTarget_Implementation() const
+{
+	return bHearTarget;
+}
+
+float AAICharacterBase::GetAttackTraceForwardDistance_Implementation() const
+{
+	return AttackTraceForwardDistance;
+}
+
+float AAICharacterBase::GetAttackTraceLongDistance_Implementation() const
+{
+	return AttackTraceLongDistance;
+}
+
+float AAICharacterBase::GetAttackTraceMiddleDistance_Implementation() const
+{
+	return AttackTraceMiddleDistance;
+}
+
+AActor* AAICharacterBase::GetTarget_Implementation()
+{
+	return TargetCharacter;
+}
+
+void AAICharacterBase::StateChange_Implementation(const EAIActionState NewAIActionState)
+{
+}
+
+bool AAICharacterBase::CanMeleeStrike_Implementation() const
+{
+	if (TargetCharacter)
+	{
+		const FVector TargetLocation = TargetCharacter->GetActorLocation();
+		const float AttackDistance = AttackTraceForwardDistance;
+		const float Distance = (GetActorLocation() - TargetLocation).Size();
+		return (AttackDistance > Distance);
+	}
+	return false;
+}
+#pragma endregion
+
 bool AAICharacterBase::HasEnemyFound() const
 {
-	return (TargetCharacter && bSeeTarget);
+	return (TargetCharacter && IsSeeTarget_Implementation());
 }
 
 void AAICharacterBase::InitializePosses()
 {
 	CreateWeaponInstance();
-}
-
-ACharacterBase* AAICharacterBase::GetTargetCharacter() const
-{
-	return TargetCharacter;
 }
 
 FVector AAICharacterBase::BulletTraceRelativeLocation() const
@@ -229,6 +275,7 @@ void AAICharacterBase::SetSeeTargetActor(ACharacterBase* const NewCharacter)
 {
 	TargetCharacter = NewCharacter;
 
+	const bool bWasSeeTarget = (TargetCharacter != nullptr);
 	if (TargetCharacter)
 	{
 		const FVector StartLocation  = GetActorLocation();
@@ -237,7 +284,7 @@ void AAICharacterBase::SetSeeTargetActor(ACharacterBase* const NewCharacter)
 		SetActorRotation(LookAtRotation);
 	}
 	AIController->SetBlackboardTarget(NewCharacter);
-	AIController->SetBlackboardSeeActor(HasEnemyFound());
+	AIController->SetBlackboardSeeActor(bWasSeeTarget);
 
 	if (NewCharacter)
 	{

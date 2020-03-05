@@ -102,12 +102,16 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "AWeaponBase|Variable")
 	FWeaponItemInfo WeaponItemInfo;
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AWeaponBase|Variable")
 	bool bEquip;
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AWeaponBase|Variable")
 	bool bFired;
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AWeaponBase|Variable")
 	bool bReload;
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AWeaponBase|Variable")
 	bool bEmpty;
 
@@ -170,10 +174,5 @@ public:
 	void CopyWeaponItemInfo(const FWeaponItemInfo RefWeaponItemInfo);
 
 protected:
-	FTraceDelegate TraceDelegate;
-	FTraceHandle LastTraceHandle;
-
-	virtual void AsyncTraceUpdate(const float DeltaTime);
-	virtual void OnTraceCompleted(const FTraceHandle& Handle, FTraceDatum& Data);
 	virtual void PrepareDestroy();
 };

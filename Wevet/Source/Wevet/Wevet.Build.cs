@@ -26,6 +26,7 @@ public class Wevet : ModuleRules
 				"RHI",
 				"FullbodyIK",
 				"LocomotionSystem",
+                "LoadingScreen",
 			}
 		);
 

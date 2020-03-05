@@ -3,7 +3,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "CharacterBase.h"
+#include "Character/CharacterBase.h"
+#include "Interface/AIPawnOwner.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Perception/PawnSensingComponent.h"
 #include "AICharacterBase.generated.h"
@@ -15,7 +16,7 @@ class AAIControllerBase;
 class UAIUserWidgetBase;
 
 UCLASS(ABSTRACT)
-class WEVET_API AAICharacterBase : public ACharacterBase
+class WEVET_API AAICharacterBase : public ACharacterBase, public IAIPawnOwner
 {
 	GENERATED_BODY()
 
@@ -31,53 +32,108 @@ protected:
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Components, meta = (AllowPrivateAccess = "true"))
 	class UPawnSensingComponent* PawnSensingComponent;
+
+#pragma region Combat
 public:
 	virtual void Die_Implementation() override;
+	virtual void OnTakeDamage_Implementation(FName BoneName, float Damage, AActor* Actor, bool& bDied) override;
 	virtual void Equipment_Implementation() override;
-	virtual void UnEquipment_Implementation() override;
-	virtual void OnTakeDamage_Implementation(FName BoneName, float Damage, AActor* Actor) override;
+	virtual void UnEquipment_Implementation() override;	
+#pragma endregion
+
+#pragma region AIPawnOwner
+public:
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AI|AIPawnOwner")
+	bool IsSeeTarget() const;
+	virtual bool IsSeeTarget_Implementation() const override;
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AI|AIPawnOwner")
+	bool IsHearTarget() const;
+	virtual bool IsHearTarget_Implementation() const override;
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AI|AIPawnOwner")
+	float GetAttackTraceForwardDistance() const;
+	virtual float GetAttackTraceForwardDistance_Implementation() const override;
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AI|AIPawnOwner")
+	float GetAttackTraceLongDistance() const;
+	virtual float GetAttackTraceLongDistance_Implementation() const override;
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AI|AIPawnOwner")
+	float GetAttackTraceMiddleDistance() const;
+	virtual float GetAttackTraceMiddleDistance_Implementation() const override;
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AI|AIPawnOwner")
+	AActor* GetTarget();
+	virtual AActor* GetTarget_Implementation() override;
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AI|AIPawnOwner")
+	void StateChange(const EAIActionState NewAIActionState);
+	virtual void StateChange_Implementation(const EAIActionState NewAIActionState) override;
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AI|AIPawnOwner")
+	bool CanMeleeStrike() const;
+	virtual bool CanMeleeStrike_Implementation() const override;	
+#pragma endregion
+
+public:
 	virtual void CreateWayPointList(TArray<AWayPointBase*>& OutWayPointList);
 	virtual void CreateWeaponInstance();
 
-	FORCEINLINE class UPawnSensingComponent* GetPawnSensingComponent() const { return PawnSensingComponent; }
+	FORCEINLINE class UPawnSensingComponent* GetPawnSensingComponent() const 
+	{
+		return PawnSensingComponent; 
+	}
 
-	UFUNCTION(BlueprintCallable, Category = "AAICharacterBase|Variable")
+	UFUNCTION(BlueprintCallable, Category = "AICharacterBase|Variable")
 	bool HasEnemyFound() const;
 	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "AAICharacterBase|Variable")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "AICharacterBase|Variable")
 	class UBehaviorTree* BehaviorTree;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "AAICharacterBase|Variable")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "AICharacterBase|Variable")
 	TSubclassOf<class UAIUserWidgetBase> UIControllerTemplate;
 	class UAIUserWidgetBase* UIController;
 
-	UFUNCTION(BlueprintCallable, Category = "AAICharacterBase|Variable")
+	UFUNCTION(BlueprintCallable, Category = "AICharacterBase|Variable")
 	virtual void InitializePosses();
 
-	// @NOTE
-	// for Animation Blueprint
-	UFUNCTION(BlueprintCallable, Category = "AAICharacterBase|Target")
-	ACharacterBase* GetTargetCharacter() const;
 	virtual FVector BulletTraceRelativeLocation() const override;
+
 	virtual FVector BulletTraceForwardLocation() const override;
+	
 	virtual void MainLoop(float DeltaTime);
+	
 	virtual void SetSeeTargetActor(ACharacterBase* const NewCharacter);
+	
 	virtual void SetHearTargetActor(AActor* const OtherActor);
 
 protected:
 	ACharacterBase* TargetCharacter;
 	AAIControllerBase* AIController;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AAICharacterBase|Variable")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AICharacterBase|Variable")
 	TSubclassOf<class AWeaponBase> SpawnWeapon;
 
-	UFUNCTION(BlueprintCallable, Category = "AAICharacterBase|PawnSensing")
+	UFUNCTION(BlueprintCallable, Category = "AICharacterBase|PawnSensing")
 	virtual	void OnSeePawnRecieve(APawn* OtherPawn);
 
-	UFUNCTION(BlueprintCallable, Category = "AAICharacterBase|PawnSensing")
+	UFUNCTION(BlueprintCallable, Category = "AICharacterBase|PawnSensing")
 	virtual	void OnHearNoiseRecieve(APawn *OtherActor, const FVector &Location, float Volume);
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "AAICharacterBase|Variable")
+	/* Attack Trace ForwardDistance */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "AICharacterBase|Variable")
+	float AttackTraceForwardDistance;
+
+	/* Attack Trace Middle */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "AICharacterBase|Variable")
+	float AttackTraceMiddleDistance;
+
+	/* Attack Trace Long */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "AICharacterBase|Variable")
+	float AttackTraceLongDistance;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "AICharacterBase|Variable")
 	float BulletDelay;
 
 	/* Last bullet action after interval */
@@ -93,7 +149,7 @@ protected:
 	float LastMeleeAttackTime;
 
 	/* Time-out value to clear the sensed position of the player. Should be higher than Sense interval in the PawnSense component not never miss sense ticks. */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "AAICharacterBase|Variable")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "AICharacterBase|Variable")
 	float SenseTimeOut;
 
 	/* Resets after sense time-out to avoid unnecessary clearing of target each tick */

@@ -26,20 +26,22 @@ void UAICharacterAnimInstanceBase::NativeUpdateAnimation(float DeltaTimeX)
 void UAICharacterAnimInstanceBase::SetRotator()
 {
 	Super::SetRotator();
-	if (AICharacterOwner == nullptr)
+	if (AICharacterOwner == nullptr || IsEquip == false)
 	{
 		return;
 	}
 
-	if (AICharacterOwner->GetTargetCharacter() && IsEquip)
+	if (AICharacterOwner->GetTarget_Implementation() == nullptr)
 	{
-		const FVector Start  = AICharacterOwner->GetActorLocation();
-		const FVector Target = AICharacterOwner->GetTargetCharacter()->GetActorLocation();
-		const FRotator LookAtRotation = UKismetMathLibrary::FindLookAtRotation(Start, Target);
-		FRotator Rot = FRotator::ZeroRotator;
-		Pitch = LookAtRotation.Pitch;
-		//Yaw = LookAtRotation.Yaw;
-		Rot.Yaw = LookAtRotation.Yaw;
-		AICharacterOwner->SetActorRelativeRotation(Rot);
+		return;
 	}
+
+	const FVector Start = AICharacterOwner->GetActorLocation();
+	const FVector Target = AICharacterOwner->GetTarget_Implementation()->GetActorLocation();
+	const FRotator LookAtRotation = UKismetMathLibrary::FindLookAtRotation(Start, Target);
+	FRotator Rot = FRotator::ZeroRotator;
+	Pitch = LookAtRotation.Pitch;
+	//Yaw = LookAtRotation.Yaw;
+	Rot.Yaw = LookAtRotation.Yaw;
+	AICharacterOwner->SetActorRelativeRotation(Rot);
 }

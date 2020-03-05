@@ -52,14 +52,11 @@ void AWeaponBase::BeginPlay()
 		SphereComponent->OnComponentBeginOverlap.AddDynamic(this, &AWeaponBase::BeginOverlapRecieve);
 		SphereComponent->OnComponentEndOverlap.AddDynamic(this, &AWeaponBase::EndOverlapRecieve);
 	}
-
-	TraceDelegate.BindUObject(this, &AWeaponBase::OnTraceCompleted);
 }
 
 void AWeaponBase::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	AsyncTraceUpdate(DeltaTime);
 }
 
 void AWeaponBase::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -140,7 +137,9 @@ void AWeaponBase::OnFirePressedInternal()
 	UWorld* const World = GetWorld();
 
 	// not found owner
-	if (World == nullptr || !CharacterOwner.IsValid() || (CharacterOwner.IsValid() && ICombatExecuter::Execute_IsDeath(CharacterOwner.Get())))
+	if (World == nullptr || 
+		!CharacterOwner.IsValid() || 
+		IDamageInstigator::Execute_IsDeath(CharacterOwner.Get()))
 	{
 		return;
 	}
@@ -213,25 +212,12 @@ void AWeaponBase::PlayBulletEffect(UWorld* const World, const FHitResult HitResu
 	EmitterTransform.SetIdentity();
 	EmitterTransform.SetLocation(HitResult.Location);
 
-	//UParticleSystemComponent* ImpactMetalEmitterComponent = UGameplayStatics::SpawnEmitterAtLocation(
-	//	World,
-	//	ImpactMetalEmitterTemplate,
-	//	EmitterTransform,
-	//	true);
 	UGameplayStatics::SpawnEmitterAtLocation(
 		World,
 		ImpactMetalEmitterTemplate,
 		EmitterTransform,
 		true);
 
-	//UParticleSystemComponent* MuzzleFlashEmitterComponent = UGameplayStatics::SpawnEmitterAttached(
-	//	MuzzleFlashEmitterTemplate,
-	//	GetSkeletalMeshComponent(),
-	//	MuzzleSocketName,
-	//	GetMuzzleTransform().GetLocation(),
-	//	FRotator(GetMuzzleTransform().GetRotation()),
-	//	EAttachLocation::KeepWorldPosition,
-	//	true);
 	UGameplayStatics::SpawnEmitterAttached(
 		MuzzleFlashEmitterTemplate,
 		GetSkeletalMeshComponent(),
@@ -258,62 +244,27 @@ void AWeaponBase::TakeHitDamage(const FHitResult HitResult)
 	}
 
 	auto Character = CharacterOwner.Get();
-	const int32 Attack = (Character->GetCharacterModel()->GetAttack() / ATTACK_CONST);
-	const int32 Deffence = (Target->GetCharacterModel()->GetDefence() / DEFFENCE_CONST);
-	const int32 Wisdom = Character->GetCharacterModel()->GetWisdom();
 	const float WeaponDamage = WeaponItemInfo.Damage;
-	const float TotalDamage = (float)(Attack - Deffence) + (Wisdom + WeaponDamage);
-	ICombatExecuter::Execute_OnTakeDamage(Target, HitResult.BoneName, TotalDamage, Character);
-	UE_LOG(LogWevetClient, Log, TEXT("Damage : %f"), TotalDamage);
-
-}
-
-void AWeaponBase::AsyncTraceUpdate(const float DeltaTime)
-{
-	if (!CharacterOwner.IsValid())
+	UCharacterModel* const Model = IDamageInstigator::Execute_GetPropertyModel(Character);
+	UCharacterModel* const TargetModel = IDamageInstigator::Execute_GetPropertyModel(Target);
+	if (Model && TargetModel)
 	{
-		return;
+		const int32 BaseAttack = Model->GetAttack() + WeaponDamage;
+		const int32 Attack = BaseAttack;
+		const int32 Deffence = TargetModel->GetDefence();
+		const int32 Wisdom = TargetModel->GetWisdom();
+		const int32 TotalDamage = (Attack - (Deffence + Wisdom)) / DEFFENCE_CONST;
+
+		float Damage = (float)TotalDamage;
+		Damage = FMath::Abs(Damage);
+
+		bool bDie = false;
+		IDamageInstigator::Execute_OnTakeDamage(Target, HitResult.BoneName, Damage, Character, bDie);
+		UE_LOG(LogWevetClient, Log, TEXT("Damage : %f \n funcName : %s"), Damage, *FString(__FUNCTION__));
 	}
-
-	UWorld* const World = GetWorld();
-	if (World == nullptr)
+	else
 	{
-		return;
-	}
-
-	const FVector StartLocation = CharacterOwner.Get()->BulletTraceRelativeLocation();
-	const FVector ForwardLocation = CharacterOwner.Get()->BulletTraceForwardLocation();
-	const FVector EndLocation = StartLocation + (ForwardLocation * WeaponItemInfo.TraceDistance);
-
-	FCollisionObjectQueryParams	RV_ObjectQueryParam(ECollisionChannel::ECC_Camera);
-	FCollisionQueryParams TraceParams = FCollisionQueryParams(TEXT("ForwardCheck"), false, this);
-	TraceParams.TraceTag = FName("");
-	TraceParams.OwnerTag = FName("");
-	//TraceParams.bTraceAsyncScene = true;
-	TraceParams.bTraceComplex = true;
-	TraceParams.bFindInitialOverlaps = false;
-	TraceParams.bReturnFaceIndex = false;
-	TraceParams.bReturnPhysicalMaterial = false;
-	TraceParams.bIgnoreBlocks = false;
-	TraceParams.IgnoreMask = 0;
-	TraceParams.AddIgnoredActor(this);
-
-	bool bWantsTrace = false;
-	if (World->IsTraceHandleValid(LastTraceHandle, false))
-	{
-		bWantsTrace = true;
-	}
-
-	if (bWantsTrace)
-	{
-		LastTraceHandle = World->AsyncLineTraceByChannel(
-			EAsyncTraceType::Multi,
-			StartLocation,
-			EndLocation,
-			ECollisionChannel::ECC_Camera,
-			TraceParams,
-			FCollisionResponseParams::DefaultResponseParam,
-			&TraceDelegate);
+		UE_LOG(LogWevetClient, Error, TEXT("nullptr Interface \n funcName : %s"), *FString(__FUNCTION__));
 	}
 }
 
@@ -440,31 +391,12 @@ void AWeaponBase::CopyWeaponItemInfo(const FWeaponItemInfo RefWeaponItemInfo)
 	WeaponItemInfo.Texture  = RefWeaponItemInfo.Texture;
 }
 
-void AWeaponBase::OnTraceCompleted(const FTraceHandle& Handle, FTraceDatum& Data)
-{
-	ensure(Handle == LastTraceHandle);
-
-	for (TArray<struct FHitResult>::TConstIterator it = Data.OutHits.CreateConstIterator(); 
-		it; 
-		++it)
-	{
-		const auto Name = it->Actor.IsValid() ? it->GetActor()->GetName() : TEXT("Unknown");
-		//GEngine->AddOnScreenDebugMessage(-1, 3.f, FColor::Red, TEXT("Hit : %s"), *Name);
-	}
-	LastTraceHandle._Data.FrameNumber = 0;
-}
-
 void AWeaponBase::PrepareDestroy()
 {
 	UWorld* const World = GetWorld();
 	if (World && World->GetTimerManager().IsTimerActive(ReloadTimerHandle))
 	{
 		World->GetTimerManager().ClearTimer(ReloadTimerHandle);
-	}
-
-	if (TraceDelegate.IsBound())
-	{
-		TraceDelegate.Unbind();
 	}
 	if (CharacterOwner.IsValid())
 	{

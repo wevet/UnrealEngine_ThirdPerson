@@ -3,9 +3,9 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "CharacterBase.h"
-#include "WeaponBase.h"
-#include "ItemBase.h"
+#include "Character/CharacterBase.h"
+#include "Weapon/WeaponBase.h"
+#include "Item/ItemBase.h"
 #include "MockCharacter.generated.h"
 
 /**
@@ -26,15 +26,6 @@ protected:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 public:
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Components, meta = (AllowPrivateAccess = "true"))
-	class USpringArmComponent* CameraBoomComponent;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Components, meta = (AllowPrivateAccess = "true"))
-	class UCameraComponent* TPSCameraComponent;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Components, meta = (AllowPrivateAccess = "true"))
-	class UCameraComponent* FPSCameraComponent;
-
 	FORCEINLINE class USpringArmComponent* GetCameraBoomComponent() const 
 	{ 
 		return CameraBoomComponent; 
@@ -53,7 +44,7 @@ public:
 	virtual void Die_Implementation() override;
 	virtual void OnReleaseItemExecuter_Implementation() override;
 	virtual void OnPickupItemExecuter_Implementation(AActor* Actor) override;
-	virtual void OnTakeDamage_Implementation(FName BoneName, float Damage, AActor* Actor) override;
+	virtual void OnTakeDamage_Implementation(FName BoneName, float Damage, AActor* Actor, bool& bDied) override;
 	virtual void Equipment_Implementation() override;
 	virtual void UnEquipment_Implementation() override;
 	virtual void ClimbLedge_Implementation(bool InClimbLedge) override;
@@ -65,6 +56,16 @@ public:
 	virtual FVector BulletTraceForwardLocation() const override;
 
 protected:
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Components, meta = (AllowPrivateAccess = "true"))
+	class USpringArmComponent* CameraBoomComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Components, meta = (AllowPrivateAccess = "true"))
+	class UCameraComponent* TPSCameraComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Components, meta = (AllowPrivateAccess = "true"))
+	class UCameraComponent* FPSCameraComponent;
+
+protected:
 	virtual void UpdateWeapon();
 	virtual void OnCrouch() override;
 	virtual void PickupObjects() override;
@@ -72,10 +73,6 @@ protected:
 	virtual void Jump() override;
 	virtual void StopJumping() override;
 
-#if !WITH_EDITOR
-	void TouchStarted(ETouchIndex::Type FingerIndex, FVector Location);
-	void TouchStopped(ETouchIndex::Type FingerIndex, FVector Location);
-#endif
 	void TurnAtRate(float Rate);
 	void LookUpAtRate(float Rate);
 	void MoveForward(float Value);

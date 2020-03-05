@@ -1,8 +1,8 @@
 // Copyright 2018 wevet works All Rights Reserved.
 
-#include "UMGManager.h"
+#include "Widget/UMGManager.h"
+#include "Widget/MainUIController.h"
 #include "CharacterBase.h"
-#include "MainUIController.h"
 
 
 UUMGManager::UUMGManager(const FObjectInitializer& ObjectInitializer)

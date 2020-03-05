@@ -19,25 +19,43 @@ ACharacterBase::ACharacterBase(const FObjectInitializer& ObjectInitializer)
 	BaseTurnRate(45.f),
 	BaseLookUpRate(45.f),
 	MovementSpeed(300.f),
-	HeadSocketName(FName(TEXT("head"))),
-	PelvisSocketName(FName(TEXT("PelvisSocket"))),
 	TakeDamageInterval(0.f),
 	ComboTakeInterval(0.f)
 {
 	PrimaryActorTick.bCanEverTick = true;
+
+	HeadBoneName = FName(TEXT("head"));
+	HeadSocketName = FName(TEXT("Head_Socket"));
+	PelvisSocketName = FName(TEXT("Pelvis_Socket"));
+	ChestSocketName = FName(TEXT("Chest_Socket"));
+
 	bCrouch  = false;
 	bSprint  = false;
-	bDied    = false;
+	bWasDied = false;
 	bHanging = false;
 	bClimbingLedge = false;
 	bClimbJumping = false;
+
 	PawnNoiseEmitterComponent = ObjectInitializer.CreateDefaultSubobject<UPawnNoiseEmitterComponent>(this, TEXT("PawnNoiseEmitterComponent"));
+	PawnNoiseEmitterComponent->bAutoActivate = 1;
+	PawnNoiseEmitterComponent->bAutoRegister = 1;
+
 	AudioComponent = ObjectInitializer.CreateDefaultSubobject<UAudioComponent>(this, TEXT("AudioComponent"));
 	AudioComponent->bAutoActivate = false;
 	AudioComponent->bAutoDestroy = false;
 	AudioComponent->SetupAttachment(GetMesh());
-	PickupComponent    = ObjectInitializer.CreateDefaultSubobject<UCharacterPickupComponent>(this, TEXT("PickupComponent"));
+
+	PickupComponent = ObjectInitializer.CreateDefaultSubobject<UCharacterPickupComponent>(this, TEXT("PickupComponent"));
+	PickupComponent->bAutoActivate = 1;
+	PickupComponent->bAutoRegister = 1;
+
 	InventoryComponent = ObjectInitializer.CreateDefaultSubobject<UCharacterInventoryComponent>(this, TEXT("InventoryComponent"));
+	InventoryComponent->bAutoActivate = 1;
+	InventoryComponent->bAutoRegister = 1;
+
+	GetCharacterMovement()->SetWalkableFloorAngle(50.f);
+	GetCharacterMovement()->MaxWalkSpeed = 800.f;
+	GetCharacterMovement()->bCanWalkOffLedgesWhenCrouching = 1;
 }
 
 void ACharacterBase::OnConstruction(const FTransform& Transform)
@@ -211,47 +229,54 @@ void ACharacterBase::TurnConerResult_Implementation()
 
 bool ACharacterBase::IsDeath_Implementation()
 {
-	if (bDied || CharacterModel == nullptr)
+	if (bWasDied || CharacterModel == nullptr)
 	{
 		return true;
 	}
 	return CharacterModel->IsDie();
 }
 
-void ACharacterBase::OnTakeDamage_Implementation(FName BoneName, float Damage, AActor* Actor)
+void ACharacterBase::OnTakeDamage_Implementation(FName BoneName, float Damage, AActor* Actor, bool& bDied)
 {
-	if (BoneName == HeadSocketName) 
+	if (BoneName == HeadBoneName) 
 	{
 		USkeletalMeshComponent* SkeletalMeshComponent = Super::GetMesh();
-		if (SkeletalMeshComponent)
+		auto RefSkeleton = SkeletalMeshComponent->SkeletalMesh->Skeleton->GetReferenceSkeleton();
+		if (RefSkeleton.FindBoneIndex(BoneName) != INDEX_NONE)
 		{
-			auto RefSkeleton = SkeletalMeshComponent->SkeletalMesh->Skeleton->GetReferenceSkeleton();
-			if (RefSkeleton.FindBoneIndex(BoneName) != INDEX_NONE)
-			{
-				CharacterModel->SetCurrentHealthValue(INDEX_NONE);
-			}
+			CharacterModel->SetHealth(INDEX_NONE);
 		}
 	} 
 	else
 	{
-		TakeDamageActionMontage();
+		CharacterModel->TakeDamage((int32)Damage);
 	}
 
-	if (CharacterModel->GetCurrentHealth() <= INDEX_NONE)
+	bDied = CharacterModel->IsEmptyHealth();
+	if (bDied)
 	{
 		CharacterModel->Die();
 		Die_Implementation();
 	}
+	else
+	{
+		TakeDamageActionMontage();
+	}
+}
+
+void ACharacterBase::InfrictionDamage_Implementation(AActor* InfrictionActor, const bool bInfrictionDie)
+{
+	//	
 }
 
 void ACharacterBase::Die_Implementation()
 {
-	if (bDied)
+	if (bWasDied)
 	{
 		return;
 	}
 
-	bDied = true;
+	bWasDied = true;
 	if (CurrentWeapon.IsValid())
 	{
 		CurrentWeapon.Reset();
@@ -262,12 +287,12 @@ void ACharacterBase::Die_Implementation()
 	SkelMesh->SetSimulatePhysics(true);
 	SkelMesh->WakeAllRigidBodies();
 	SkelMesh->bBlendPhysics = true;
+
 	Super::GetCharacterMovement()->DisableMovement();
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
 	UWorld* const World = GetWorld();
 	check(World);
-
 	const FVector ForwardOffset = Controller ? Controller->GetControlRotation().Vector() : Super::GetActorForwardVector();
 	const FRotator Rotation = Super::GetActorRotation();
 	const FVector Forward   = Super::GetActorLocation() + (ForwardOffset * DEFAULT_FORWARD);
@@ -306,6 +331,11 @@ void ACharacterBase::UnEquipment_Implementation()
 	{
 		CurrentWeapon.Get()->SetEquip(false);
 	}
+}
+
+UCharacterModel* ACharacterBase::GetPropertyModel_Implementation() const
+{
+	return CharacterModel;
 }
 
 FVector ACharacterBase::BulletTraceRelativeLocation() const
@@ -362,22 +392,13 @@ void ACharacterBase::OnCrouch()
 	}
 }
 
-const bool ACharacterBase::HasEquipWeapon()
-{
-	if (CurrentWeapon.IsValid())
-	{
-		return CurrentWeapon.Get()->bEquip;
-	}
-	return false;
-}
-
 float ACharacterBase::GetHealthToWidget() const
 {
 	if (CharacterModel->IsValidLowLevel())
 	{
 		return CharacterModel->GetHealthToWidget();
 	}
-	return 0.f;
+	return ZERO_VALUE;
 }
 
 bool ACharacterBase::IsHealthHalf() const
@@ -447,48 +468,48 @@ AWeaponBase* ACharacterBase::GetSelectedWeapon() const
 	return nullptr;
 }
 
-UCharacterModel* ACharacterBase::GetCharacterModel() const
-{
-	if (CharacterModel->IsValidLowLevel())
-	{
-		return CharacterModel;
-	}
-	return nullptr;
-}
-
 UCharacterAnimInstanceBase* ACharacterBase::GetCharacterAnimInstance() const
 {
 	return Cast<UCharacterAnimInstanceBase>(GetMesh()->GetAnimInstance());
 }
 
-const bool ACharacterBase::HasCrouch()
+bool ACharacterBase::HasCrouch() const
 {
 	return bCrouch;
 }
 
-const bool ACharacterBase::HasSprint()
+bool ACharacterBase::HasSprint() const
 {
 	return bSprint;
 }
 
-const bool ACharacterBase::HasHanging()
+bool ACharacterBase::HasHanging() const
 {
 	return bHanging;
 }
 
-const bool ACharacterBase::HasClimbingLedge()
+bool ACharacterBase::HasClimbingLedge() const
 {
 	return bClimbingLedge;
 }
 
-const bool ACharacterBase::HasClimbingMoveLeft()
+bool ACharacterBase::HasClimbingMoveLeft() const
 {
 	return bCanClimbMoveLeft;
 }
 
-const bool ACharacterBase::HasClimbingMoveRight()
+bool ACharacterBase::HasClimbingMoveRight() const
 {
 	return bCanClimbMoveRight;
+}
+
+bool ACharacterBase::HasEquipWeapon() const
+{
+	if (CurrentWeapon.IsValid())
+	{
+		return CurrentWeapon.Get()->bEquip;
+	}
+	return false;
 }
 
 AWeaponBase* ACharacterBase::GetUnEquipWeapon()
@@ -644,4 +665,53 @@ void ACharacterBase::TakeDamageActionMontage()
 			}
 		}
 	}
+}
+
+
+FVector ACharacterBase::GetHeadSocketLocation() const
+{
+	FVector Position = GetActorLocation();
+	if (GetMesh())
+	{
+		// FindBone
+		if (GetMesh()->GetBoneIndex(HeadSocketName) != INDEX_NONE)
+		{
+			FVector BoneLocation = GetMesh()->GetBoneLocation(HeadSocketName);
+			Position.Z = BoneLocation.Z;
+		}
+		else
+		{
+			// Not Found Try FindSocket
+			FVector SocketLocation = GetMesh()->GetSocketLocation(HeadSocketName);
+			if (SocketLocation != FVector::ZeroVector)
+			{
+				Position.Z = SocketLocation.Z;
+			}
+		}
+	}
+	return Position;
+}
+
+FVector ACharacterBase::GetChestSocketLocation() const
+{
+	FVector Position = GetActorLocation();
+	if (GetMesh())
+	{
+		// FindBone
+		if (GetMesh()->GetBoneIndex(ChestSocketName) != INDEX_NONE)
+		{
+			FVector BoneLocation = GetMesh()->GetBoneLocation(ChestSocketName);
+			Position.Z = BoneLocation.Z;
+		}
+		else
+		{
+			// Not Found Try FindSocket
+			FVector SocketLocation = GetMesh()->GetSocketLocation(ChestSocketName);
+			if (SocketLocation != FVector::ZeroVector)
+			{
+				Position.Z = SocketLocation.Z;
+			}
+		}
+	}
+	return Position;
 }

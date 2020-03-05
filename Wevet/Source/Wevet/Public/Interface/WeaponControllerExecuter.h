@@ -4,11 +4,8 @@
 
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
-#include "STypes.h"
+#include "WevetTypes.h"
 #include "WeaponControllerExecuter.generated.h"
-
-class AWeaponBase;
-class UTexture2D;
 
 /*
 * require interface

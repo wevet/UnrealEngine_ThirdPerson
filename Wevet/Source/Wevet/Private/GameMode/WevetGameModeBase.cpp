@@ -1,6 +1,6 @@
 // Copyright 2018 wevet works All Rights Reserved.
 
-#include "WevetGameModeBase.h"
+#include "GameMode/WevetGameModeBase.h"
 #include "Engine.h"
 
 

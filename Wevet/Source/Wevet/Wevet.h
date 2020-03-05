@@ -18,13 +18,16 @@ DECLARE_LOG_CATEGORY_EXTERN(LogWevetClient, Verbose, All);
 #define DEFAULT_FORWARD 200.f
 #define MONTAGE_DELAY 1.6f
 #define HALF_WEIGHT 0.5f
+#define QUART_WEIGHT 0.25f
 #define MIN_VOLUME 0.f
-#define ATTACK_CONST 2
-#define DEFFENCE_CONST 4
-
+#define DEFFENCE_CONST 2
+#define ZERO_VALUE 0.0f
+#define PTG_TEAM_ID_PLAYER 0
+#define PTG_TEAM_ID_ENEMY 1
+#define PTG_TEAM_ID_NPC 2
 //stencil range
 #define STENCIL_MAX 255
-
+#define INT_ZERO 0
 
 namespace Wevet
 {
@@ -32,10 +35,15 @@ namespace Wevet
 	{
 	public:
 		// usage
-		// Wevet::ControllerExtension::GetPlayer(this, 0)
-		static FORCEINLINE APlayerController* GetPlayer(const UObject* WorldContextObject, int32 PlayerIndex)
+		// Flare::ControllerExtension::GetPlayer(this, 0)
+		static FORCEINLINE APlayerController* GetPlayer(const UObject* WorldContextObject, int32 PlayerIndex = 0)
 		{
 			return UGameplayStatics::GetPlayerController(WorldContextObject, PlayerIndex);
+		}
+
+		static FORCEINLINE APlayerCameraManager* GetCameraManager(const UObject* WorldContextObject, int32 PlayerIndex = 0)
+		{
+			return UGameplayStatics::GetPlayerCameraManager(WorldContextObject, PlayerIndex);
 		}
 	};
 
@@ -66,6 +74,18 @@ namespace Wevet
 		{
 			return (Array.Num() <= 0);
 		}
+
+		template<typename T>
+		static FORCEINLINE bool NullOrEmpty(const TArray<T> Array)
+		{
+			return (Array.Num() <= 0);
+		}
+
+		template<typename T>
+		static FORCEINLINE bool NullOrEmpty(const TArray<TWeakObjectPtr<T>> Array)
+		{
+			return (Array.Num() <= 0);
+		}
 	};
 
 	class WEVET_API ComponentExtension
@@ -86,6 +106,22 @@ namespace Wevet
 				}
 			}
 			return Array;
+		}
+
+		// usage
+		// auto TargetComponent = ComponentExtension::GetComponentFirstOrDefault<USkeletalMeshComponent>(this);
+		template<typename T>
+		static FORCEINLINE T* GetComponentFirstOrDefault(const AActor* Owner)
+		{
+			TArray<UActorComponent*> Components = Owner->GetComponentsByClass(T::StaticClass());
+			for (UActorComponent* Component : Components)
+			{
+				if (T * CustomComp = Cast<T>(Component))
+				{
+					return CustomComp;
+				}
+			}
+			return nullptr;
 		}
 
 		static FORCEINLINE bool HasValid(const UActorComponent* Component)

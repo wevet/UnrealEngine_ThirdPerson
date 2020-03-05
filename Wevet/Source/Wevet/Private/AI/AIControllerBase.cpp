@@ -151,27 +151,14 @@ void AAIControllerBase::SetBlackboardPatrolLocation(const FVector NewLocation)
 	}
 }
 
-ACharacterBase* AAIControllerBase::GetTargetCharacter() const
-{
-	if (AICharacterOwner)
-	{
-		return AICharacterOwner->GetTargetCharacter();
-	}
-	return nullptr;
-}
-
 void AAIControllerBase::OnTargetPerceptionUpdatedRecieve(AActor* Actor, FAIStimulus Stimulus)
 {
-	if (AICharacterOwner == nullptr || ICombatExecuter::Execute_IsDeath(AICharacterOwner))
-	{
-		return;
-	}
-	if (!GetTargetCharacter())
+	if (AICharacterOwner == nullptr || IDamageInstigator::Execute_IsDeath(AICharacterOwner))
 	{
 		return;
 	}
 
-	bool bSuccess = (!ICombatExecuter::Execute_IsDeath(GetTargetCharacter())) && Stimulus.WasSuccessfullySensed() ? true : false;
+	//bool bSuccess = (!IDamageInstigator::Execute_IsDeath(AICharacterOwner)) && Stimulus.WasSuccessfullySensed() ? true : false;
 	//UE_LOG(LogWevetClient, Log, TEXT("WasSuccessfullySensed : %s"), bSuccess ? TEXT("True") : TEXT("false"));
 }
 
