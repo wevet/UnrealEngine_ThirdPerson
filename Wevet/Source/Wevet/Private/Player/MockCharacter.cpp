@@ -8,7 +8,9 @@
 #include "Math/RotationMatrix.h"
 #include "CharacterAnimInstanceBase.h"
 #include "Component/CharacterInventoryComponent.h"
+#include "WevetExtension.h"
 
+using namespace Wevet;
 
 AMockCharacter::AMockCharacter(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer),
@@ -497,7 +499,7 @@ void AMockCharacter::ReleaseWeapon()
 
 	const FVector ForwardOffset = Controller ? Controller->GetControlRotation().Vector() : Super::GetActorForwardVector();
 	const FRotator Rotation = Super::GetActorRotation();
-	const FVector Forward   = Super::GetActorLocation() + (ForwardOffset * DEFAULT_FORWARD);
+	const FVector Forward   = Super::GetActorLocation() + (ForwardOffset * DEFAULT_FORWARD_VECTOR);
 	const FTransform Transform  = UKismetMathLibrary::MakeTransform(Forward, Rotation, FVector::OneVector);
 	
 	if (AWeaponBase* Weapon = Super::GetUnEquipWeapon())

@@ -14,6 +14,9 @@
 #include "Kismet/KismetMathLibrary.h"
 #include "Component/CharacterInventoryComponent.h"
 #include "AI/AIUserWidgetBase.h"
+#include "WevetExtension.h"
+
+using namespace Wevet;
 
 AAICharacterBase::AAICharacterBase(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer),

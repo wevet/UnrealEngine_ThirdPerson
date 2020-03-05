@@ -8,7 +8,9 @@
 #include "BehaviorTree/BlackboardComponent.h"
 #include "BehaviorTree/BehaviorTreeComponent.h"
 #include "Blueprint/AIBlueprintHelperLibrary.h"
+#include "WevetExtension.h"
 
+using namespace Wevet;
 
 AAIControllerBase::AAIControllerBase(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)

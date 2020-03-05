@@ -1,4 +1,4 @@
-// Copyright G2-Studios All Rights Reserved.
+// Copyright 2018 wevet works All Rights Reserved.
 
 
 #include "Widget/AIHealthController.h"
@@ -8,6 +8,7 @@
 #include "Components/SizeBox.h"
 #include "AI/AICharacterBase.h"
 #include "Wevet.h"
+#include "WevetExtension.h"
 
 UAIHealthController::UAIHealthController(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)

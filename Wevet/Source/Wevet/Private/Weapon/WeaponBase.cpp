@@ -8,6 +8,9 @@
 #include "Engine.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "WevetExtension.h"
+
+using namespace Wevet;
 
 AWeaponBase::AWeaponBase(const FObjectInitializer& ObjectInitializer) 
 	: Super(ObjectInitializer),

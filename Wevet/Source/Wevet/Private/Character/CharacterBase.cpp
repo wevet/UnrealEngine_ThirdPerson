@@ -11,6 +11,9 @@
 #include "Engine.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "WevetExtension.h"
+
+using namespace Wevet;
 
 DEFINE_LOG_CATEGORY(LogWevetClient);
 
@@ -295,7 +298,7 @@ void ACharacterBase::Die_Implementation()
 	check(World);
 	const FVector ForwardOffset = Controller ? Controller->GetControlRotation().Vector() : Super::GetActorForwardVector();
 	const FRotator Rotation = Super::GetActorRotation();
-	const FVector Forward   = Super::GetActorLocation() + (ForwardOffset * DEFAULT_FORWARD);
+	const FVector Forward   = Super::GetActorLocation() + (ForwardOffset * DEFAULT_FORWARD_VECTOR);
 	const FTransform Transform = UKismetMathLibrary::MakeTransform(Forward, Rotation, FVector::OneVector);
 
 	if (Controller)

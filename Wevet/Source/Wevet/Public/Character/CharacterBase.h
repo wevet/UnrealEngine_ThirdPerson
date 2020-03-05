@@ -21,8 +21,6 @@ class UCharacterInventoryComponent;
 class UCharacterModel;
 class UCharacterAnimInstanceBase;
 
-using namespace Wevet;
-
 UCLASS(ABSTRACT)
 class WEVET_API ACharacterBase : public ACharacter, public IDamageInstigator, public IInteractionExecuter, public IGrabExecuter
 {
