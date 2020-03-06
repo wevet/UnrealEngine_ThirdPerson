@@ -10,8 +10,6 @@
 #include "AICharacterBase.generated.h"
 
 
-class AWeaponBase;
-class AWayPointBase;
 class AAIControllerBase;
 class UAIUserWidgetBase;
 
@@ -33,8 +31,8 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Components, meta = (AllowPrivateAccess = "true"))
 	class UPawnSensingComponent* PawnSensingComponent;
 
-#pragma region Combat
 public:
+#pragma region Combat
 	virtual void Die_Implementation() override;
 	virtual void OnTakeDamage_Implementation(FName BoneName, float Damage, AActor* Actor, bool& bDied) override;
 	virtual void Equipment_Implementation() override;
@@ -42,7 +40,6 @@ public:
 #pragma endregion
 
 #pragma region AIPawnOwner
-public:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AI|AIPawnOwner")
 	bool IsSeeTarget() const;
 	virtual bool IsSeeTarget_Implementation() const override;
@@ -77,9 +74,6 @@ public:
 #pragma endregion
 
 public:
-	virtual void CreateWayPointList(TArray<AWayPointBase*>& OutWayPointList);
-	virtual void CreateWeaponInstance();
-
 	FORCEINLINE class UPawnSensingComponent* GetPawnSensingComponent() const 
 	{
 		return PawnSensingComponent; 
@@ -109,11 +103,11 @@ public:
 	virtual void SetHearTargetActor(AActor* const OtherActor);
 
 protected:
-	ACharacterBase* TargetCharacter;
-	AAIControllerBase* AIController;
+	class ACharacterBase* TargetCharacter;
+	class AAIControllerBase* AIController;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AICharacterBase|Variable")
-	TSubclassOf<class AWeaponBase> SpawnWeapon;
+	TSubclassOf<class AAbstractWeapon> WeaponTemplate;
 
 	UFUNCTION(BlueprintCallable, Category = "AICharacterBase|PawnSensing")
 	virtual	void OnSeePawnRecieve(APawn* OtherPawn);

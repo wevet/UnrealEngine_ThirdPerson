@@ -50,4 +50,7 @@ public:
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "DamageInstigator")
 	UCharacterModel* GetPropertyModel() const;
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "DamageInstigator")
+	void ApplyDamage(UCharacterModel* DamageModel, const int InWeaponDamage, float& OutDamage);
 };

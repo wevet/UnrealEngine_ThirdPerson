@@ -1,10 +1,11 @@
 // Copyright 2018 wevet works All Rights Reserved.
 
-#include "WeaponBase.h"
-#include "CharacterBase.h"
-#include "BulletBase.h"
-#include "CharacterPickupComponent.h"
-#include "CharacterModel.h"
+#include "Weapon/WeaponBase.h"
+#include "Weapon/BulletBase.h"
+#include "Character/CharacterBase.h"
+#include "Component/CharacterPickupComponent.h"
+#include "Character/CharacterModel.h"
+#include "Player/MockCharacter.h"
 #include "Engine.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
@@ -13,18 +14,11 @@
 using namespace Wevet;
 
 AWeaponBase::AWeaponBase(const FObjectInitializer& ObjectInitializer) 
-	: Super(ObjectInitializer),
-	MuzzleSocketName(FName(TEXT("MuzzleFlash"))),
-	BulletDuration(0.1f),
-	ReloadDuration(2.f)
+	: Super(ObjectInitializer)
 {
-	bEmpty  = false;
-	bEquip  = false;
-	bReload = false;
-	bFired  = false;
+	BulletDuration = 0.1f;
+	ReloadDuration = 0.2f;
 	PrimaryActorTick.bCanEverTick = true;
-	SceneComponent = ObjectInitializer.CreateDefaultSubobject<USceneComponent>(this, TEXT("SceneComponent"));
-	RootComponent  = SceneComponent;
 
 	SphereComponent = ObjectInitializer.CreateDefaultSubobject<USphereComponent>(this, TEXT("SphereComponent"));
 	SphereComponent->SetSphereRadius(90.0f);
@@ -39,6 +33,42 @@ AWeaponBase::AWeaponBase(const FObjectInitializer& ObjectInitializer)
 	WidgetComponent->SetDrawSize(FVector2D(180.f, 70.f));
 	WidgetComponent->SetWorldLocation(FVector(0.f, 0.f, 60.f));
 	WidgetComponent->SetupAttachment(SphereComponent);
+
+	{
+		static ConstructorHelpers::FObjectFinder<USkeletalMesh> FindAsset(TEXT("/Game/Assets/MilitaryWeapon/Weapons/Assault_Rifle_A"));
+		USkeletalMesh* Asset = FindAsset.Object;
+		SkeletalMeshComponent->SetSkeletalMesh(Asset);
+	}
+
+	{
+		static ConstructorHelpers::FObjectFinder<USoundBase> FindAsset(TEXT("/Game/Assets/MilitaryWeapon/Sound/Rifle/Cues/RifleA_Fire_Cue"));
+		FireSound = FindAsset.Object;
+	}
+
+	{
+		static ConstructorHelpers::FObjectFinder<USoundBase> FindAsset(TEXT("/Game/Assets/MilitaryWeapon/Sound/Rifle/Cues/Rifle_ImpactSurface_Cue"));
+		ImpactSound = FindAsset.Object;
+	}
+
+	{
+		static ConstructorHelpers::FObjectFinder<USoundBase> FindAsset(TEXT("/Engine/VREditor/Sounds/UI/Object_PickUp"));
+		PickupSound = FindAsset.Object;
+	}
+
+	{
+		static ConstructorHelpers::FObjectFinder<UParticleSystem> FindAsset(TEXT("/Game/Assets/MilitaryWeapon/FX/P_AssaultRifle_MuzzleFlash"));
+		FlashEmitterTemplate = FindAsset.Object;
+	}
+
+	{
+		static ConstructorHelpers::FObjectFinder<UParticleSystem> FindAsset(TEXT("/Game/Assets/MilitaryWeapon/FX/P_Impact_Metal_Medium_01"));
+		ImpactEmitterTemplate = FindAsset.Object;
+	}
+
+	{
+		static ConstructorHelpers::FObjectFinder<UClass> FindAsset(TEXT("/Game/Game/Blueprints/Bullet/BP_MasterBullet.BP_MasterBullet_C"));
+		BulletsTemplate = FindAsset.Object;
+	}
 }
 
 void AWeaponBase::BeginPlay()
@@ -68,40 +98,21 @@ void AWeaponBase::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	Super::EndPlay(EndPlayReason);
 }
 
-void AWeaponBase::SetEquip(const bool Equip)
+bool AWeaponBase::CanMeleeStrike_Implementation() const
 {
-	bEquip = Equip;
-}
+	// was nullptr
+	if (!Super::CharacterPtr.IsValid())
+	{
+		return false;
+	}
 
-void AWeaponBase::SetReload(const bool Reload)
-{
-	bReload = Reload;
-}
-
-void AWeaponBase::OnFirePress_Implementation()
-{
-	bFired = true;
-}
-
-void AWeaponBase::OnFireRelease_Implementation()
-{
-	bFired = false;
-}
-
-void AWeaponBase::OffVisible_Implementation()
-{
-	SkeletalMeshComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	SkeletalMeshComponent->SetSimulatePhysics(false);
-	WidgetComponent->SetVisibility(false);
-	SphereComponent->Deactivate();
-}
-
-void AWeaponBase::OnVisible_Implementation()
-{
-	SkeletalMeshComponent->SetCollisionEnabled(ECollisionEnabled::PhysicsOnly);
-	SkeletalMeshComponent->SetSimulatePhysics(true);
-	WidgetComponent->SetVisibility(true);
-	SphereComponent->Activate();
+	// was death
+	if (IDamageInstigator::Execute_IsDeath(CharacterPtr.Get()))
+	{
+		return false;
+	}
+	bool bWasEmpty = (WeaponItemInfo.MaxAmmo <= 0);
+	return (bWasEmpty == false);
 }
 
 void AWeaponBase::BeginOverlapRecieve(
@@ -112,11 +123,15 @@ void AWeaponBase::BeginOverlapRecieve(
 	bool bFromSweep, 
 	const FHitResult & SweepResult)
 {
-	WidgetComponent->SetVisibility(true);
-	SkeletalMeshComponent->SetRenderCustomDepth(true);
-
-	if (ACharacterBase* Character = Cast<ACharacterBase>(OtherActor))
+	if (GetOwner())
 	{
+		UE_LOG(LogWevetClient, Warning, TEXT("Already Owner : %s"), *GetOwner()->GetName());
+		return;
+	}
+	if (AMockCharacter * Character = Cast<AMockCharacter>(OtherActor))
+	{
+		WidgetComponent->SetVisibility(true);
+		SkeletalMeshComponent->SetRenderCustomDepth(true);
 		Character->GetPickupComponent()->SetPickupActor(this);
 	}
 }
@@ -127,40 +142,46 @@ void AWeaponBase::EndOverlapRecieve(
 	UPrimitiveComponent* OtherComp, 
 	int32 OtherBodyIndex)
 {
-	WidgetComponent->SetVisibility(false);
-	SkeletalMeshComponent->SetRenderCustomDepth(false);
-	if (ACharacterBase* Character = Cast<ACharacterBase>(OtherActor))
+	if (GetOwner())
 	{
+		UE_LOG(LogWevetClient, Warning, TEXT("Already Owner : %s"), *GetOwner()->GetName());
+		return;
+	}
+	if (AMockCharacter * Character = Cast<AMockCharacter>(OtherActor))
+	{
+		WidgetComponent->SetVisibility(false);
+		SkeletalMeshComponent->SetRenderCustomDepth(false);
 		Character->GetPickupComponent()->SetPickupActor(nullptr);
 	}
 }
 
-void AWeaponBase::OnFirePressedInternal()
+void AWeaponBase::OnFirePressInternal()
 {
 	UWorld* const World = GetWorld();
 
-	// not found owner
-	if (World == nullptr || 
-		!CharacterOwner.IsValid() || 
-		IDamageInstigator::Execute_IsDeath(CharacterOwner.Get()))
+	if (World == nullptr)
 	{
 		return;
 	}
 
-	if (bEmpty || bReload)
+	if (!CanMeleeStrike_Implementation())
 	{
 		return;
 	}
 
+	if (Super::bReload)
+	{
+		return;
+	}
 	if (WeaponItemInfo.CurrentAmmo <= 0)
 	{
 		UE_LOG(LogWevetClient, Log, TEXT("Out Of Ammos"));
-		OnReloading_Implementation();
+		DoReload_Implementation();
 		return;
 	}
 
-	const FVector StartLocation   = CharacterOwner->BulletTraceRelativeLocation();
-	const FVector ForwardLocation = CharacterOwner->BulletTraceForwardLocation();
+	const FVector StartLocation   = CharacterPtr.Get()->BulletTraceRelativeLocation();
+	const FVector ForwardLocation = CharacterPtr.Get()->BulletTraceForwardLocation();
 	const FVector EndLocation     = StartLocation + (ForwardLocation * WeaponItemInfo.TraceDistance);
 
 	FHitResult HitData(ForceInit);
@@ -174,8 +195,7 @@ void AWeaponBase::OnFirePressedInternal()
 	CollisionQueryParams.bReturnPhysicalMaterial = false;
 	CollisionQueryParams.bIgnoreBlocks = false;
 	CollisionQueryParams.IgnoreMask = 0;
-	CollisionQueryParams.AddIgnoredActor(this);
-	CollisionQueryParams.AddIgnoredActor(CharacterOwner.Get());
+	CollisionQueryParams.AddIgnoredActors(IgnoreActors);
 
 	const bool bSuccess = World->LineTraceSingleByChannel(
 		HitData, 
@@ -186,11 +206,11 @@ void AWeaponBase::OnFirePressedInternal()
 
 	const FVector MuzzleLocation  = GetMuzzleTransform().GetLocation();
 	const FRotator MuzzleRotation = FRotator(GetMuzzleTransform().GetRotation());
-	IInteractionExecuter::Execute_ReportNoiseOther(CharacterOwner.Get(), this, FireSoundAsset, DEFAULT_VOLUME, MuzzleLocation);
-	CharacterOwner->FireActionMontage();
+	IInteractionExecuter::Execute_ReportNoiseOther(CharacterPtr.Get(), this, FireSound, DEFAULT_VOLUME, MuzzleLocation);
+	CharacterPtr.Get()->FireActionMontage();
 	--WeaponItemInfo.CurrentAmmo;
 
-	IInteractionExecuter::Execute_ReportNoiseOther(CharacterOwner.Get(), this, FireImpactSoundAsset, DEFAULT_VOLUME, HitData.Location);
+	IInteractionExecuter::Execute_ReportNoiseOther(CharacterPtr.Get(), this, ImpactSound, DEFAULT_VOLUME, HitData.Location);
 	const FVector StartPoint = MuzzleLocation;
 	const FVector EndPoint   = UKismetMathLibrary::SelectVector(HitData.ImpactPoint, HitData.TraceEnd, bSuccess);
 	const FRotator Rotation  = UKismetMathLibrary::FindLookAtRotation(StartPoint, EndPoint);
@@ -199,79 +219,22 @@ void AWeaponBase::OnFirePressedInternal()
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.Owner = this;
 	SpawnParams.Instigator = Instigator;
-	ABulletBase* const Bullet = World->SpawnActor<ABulletBase>(BulletsBP, Transform, SpawnParams);
+	ABulletBase* const Bullet = World->SpawnActor<ABulletBase>(Super::BulletsTemplate, Transform, SpawnParams);
 
 #if WITH_EDITOR
 	Bullet->SetFolderPath("/BulletsRoot");
 #endif
 
-	TakeHitDamage(HitData);
-	PlayBulletEffect(World, HitData);
+	bool bCanDamageResult = false;
+	Super::CheckIfValid(HitData.GetActor(), bCanDamageResult);
+	if (bCanDamageResult)
+	{
+		Super::TakeDamageOuter(HitData.GetActor(), HitData.BoneName, WeaponItemInfo.Damage);
+	}
+	Super::PlayEffect(HitData, SkeletalMeshComponent);
 }
 
-void AWeaponBase::PlayBulletEffect(UWorld* const World, const FHitResult HitResult)
-{
-	FTransform EmitterTransform;
-	EmitterTransform.SetIdentity();
-	EmitterTransform.SetLocation(HitResult.Location);
-
-	UGameplayStatics::SpawnEmitterAtLocation(
-		World,
-		ImpactMetalEmitterTemplate,
-		EmitterTransform,
-		true);
-
-	UGameplayStatics::SpawnEmitterAttached(
-		MuzzleFlashEmitterTemplate,
-		GetSkeletalMeshComponent(),
-		MuzzleSocketName,
-		GetMuzzleTransform().GetLocation(),
-		FRotator(GetMuzzleTransform().GetRotation()),
-		EAttachLocation::KeepWorldPosition,
-		true);
-}
-
-void AWeaponBase::TakeHitDamage(const FHitResult HitResult)
-{
-	if (!HitResult.Actor.IsValid())
-	{
-		return;
-	}
-
-	AActor* HitActor = HitResult.GetActor();
-	ACharacterBase* Target = Cast<ACharacterBase>(HitActor);
-
-	if (Target == nullptr)
-	{
-		return;
-	}
-
-	auto Character = CharacterOwner.Get();
-	const float WeaponDamage = WeaponItemInfo.Damage;
-	UCharacterModel* const Model = IDamageInstigator::Execute_GetPropertyModel(Character);
-	UCharacterModel* const TargetModel = IDamageInstigator::Execute_GetPropertyModel(Target);
-	if (Model && TargetModel)
-	{
-		const int32 BaseAttack = Model->GetAttack() + WeaponDamage;
-		const int32 Attack = BaseAttack;
-		const int32 Deffence = TargetModel->GetDefence();
-		const int32 Wisdom = TargetModel->GetWisdom();
-		const int32 TotalDamage = (Attack - (Deffence + Wisdom)) / DEFFENCE_CONST;
-
-		float Damage = (float)TotalDamage;
-		Damage = FMath::Abs(Damage);
-
-		bool bDie = false;
-		IDamageInstigator::Execute_OnTakeDamage(Target, HitResult.BoneName, Damage, Character, bDie);
-		UE_LOG(LogWevetClient, Log, TEXT("Damage : %f \n funcName : %s"), Damage, *FString(__FUNCTION__));
-	}
-	else
-	{
-		UE_LOG(LogWevetClient, Error, TEXT("nullptr Interface \n funcName : %s"), *FString(__FUNCTION__));
-	}
-}
-
-void AWeaponBase::OnReloading_Implementation()
+void AWeaponBase::DoReload_Implementation()
 {
 	UWorld* const World = GetWorld();
 	if (World == nullptr)
@@ -282,7 +245,6 @@ void AWeaponBase::OnReloading_Implementation()
 	if (WeaponItemInfo.MaxAmmo <= 0)
 	{
 		UE_LOG(LogWevetClient, Log, TEXT("Empty Ammos Current:%d, ClipType:%d"), WeaponItemInfo.CurrentAmmo, WeaponItemInfo.ClipType);
-		bEmpty = true;
 		return;
 	}
 
@@ -293,6 +255,8 @@ void AWeaponBase::OnReloading_Implementation()
 	}
 
 	SetReload(true);
+	CharacterPtr.Get()->ReloadActionMontage(ReloadDuration);
+
 	OnReloadInternal();
 	FTimerDelegate TimerCallback;
 	TimerCallback.BindLambda([&]
@@ -302,33 +266,15 @@ void AWeaponBase::OnReloading_Implementation()
 	World->GetTimerManager().SetTimer(ReloadTimerHandle, TimerCallback, ReloadDuration, false);
 }
 
-void AWeaponBase::OnFireReleaseInternal()
+void AWeaponBase::Take_Implementation(ACharacterBase* NewCharacter)
 {
-}
-
-void AWeaponBase::OnReloadInternal()
-{
-	bFired = false;
-	CharacterOwner->ReloadActionMontage();
-	NeededAmmo = (WeaponItemInfo.ClipType - WeaponItemInfo.CurrentAmmo);
-
-	if (WeaponItemInfo.MaxAmmo <= NeededAmmo)
-	{
-		WeaponItemInfo.MaxAmmo = 0;
-		WeaponItemInfo.CurrentAmmo = (WeaponItemInfo.CurrentAmmo + WeaponItemInfo.MaxAmmo);
-	}
-	else
-	{
-		WeaponItemInfo.MaxAmmo = (WeaponItemInfo.MaxAmmo - NeededAmmo);
-		WeaponItemInfo.CurrentAmmo = WeaponItemInfo.ClipType;
-	}
-}
-
-void AWeaponBase::Take(ACharacterBase* NewCharacter)
-{
-	SetCharacterOwner(NewCharacter);
+	Super::Take_Implementation(NewCharacter);
 	SetEquip(false);
-	OffVisible_Implementation();
+
+	SkeletalMeshComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	SkeletalMeshComponent->SetSimulatePhysics(false);
+	WidgetComponent->SetVisibility(false);
+	SphereComponent->Deactivate();
 
 	if (ComponentExtension::HasValid(SphereComponent))
 	{
@@ -338,71 +284,35 @@ void AWeaponBase::Take(ACharacterBase* NewCharacter)
 
 	UWorld* const World = GetWorld();
 
-	if (PickupSoundAsset && World)
+	if (PickupSound && World)
 	{
-		const FVector Location = CharacterOwner.IsValid() ? CharacterOwner.Get()->GetActorLocation() : GetActorLocation();
-		UGameplayStatics::PlaySoundAtLocation(World, PickupSoundAsset, Location);
+		UGameplayStatics::PlaySoundAtLocation(World, PickupSound, GetActorLocation());
 	}
 	SkeletalMeshComponent->SetRenderCustomDepth(false);
 }
 
-void AWeaponBase::Release(ACharacterBase* NewCharacter)
+FTransform AWeaponBase::GetMuzzleTransform() const
 {
-	SetCharacterOwner(NewCharacter);
-	SetEquip(false);
-
-	if (IsValidLowLevel())
-	{
-		PrepareDestroy();
-		Super::Destroy();
-		Super::ConditionalBeginDestroy();
-	}
+	return SkeletalMeshComponent->GetSocketTransform(MuzzleSocketName);
 }
 
-void AWeaponBase::Recover(const FWeaponItemInfo RefWeaponItemInfo)
+void AWeaponBase::SetEquip(const bool InEquip)
 {
-	WeaponItemInfo.MaxAmmo += RefWeaponItemInfo.MaxAmmo;
-	NeededAmmo = (WeaponItemInfo.ClipType - WeaponItemInfo.CurrentAmmo);
-	if (WeaponItemInfo.MaxAmmo <= NeededAmmo)
+	Super::SetEquip(InEquip);
+	if (WasEquip())
 	{
-		WeaponItemInfo.MaxAmmo = 0;
-		WeaponItemInfo.CurrentAmmo = (WeaponItemInfo.CurrentAmmo + WeaponItemInfo.MaxAmmo);
-	}
-	else
-	{
-		WeaponItemInfo.MaxAmmo = (WeaponItemInfo.MaxAmmo - NeededAmmo);
-		WeaponItemInfo.CurrentAmmo = WeaponItemInfo.ClipType;
-	}
-}
+		SkeletalMeshComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		SkeletalMeshComponent->SetSimulatePhysics(false);
+		WidgetComponent->SetVisibility(false);
+		SphereComponent->Deactivate();
 
-void AWeaponBase::SetCharacterOwner(ACharacterBase* NewCharacter)
-{
-	CharacterOwner = MakeWeakObjectPtr<ACharacterBase>(NewCharacter);
-	Super::SetOwner(CharacterOwner.IsValid() ? CharacterOwner.Get() : nullptr);
-}
-
-void AWeaponBase::CopyWeaponItemInfo(const FWeaponItemInfo RefWeaponItemInfo)
-{
-	WeaponItemInfo.UnEquipSocketName = RefWeaponItemInfo.UnEquipSocketName;
-	WeaponItemInfo.EquipSocketName = RefWeaponItemInfo.EquipSocketName;
-	WeaponItemInfo.WeaponItemType  = RefWeaponItemInfo.WeaponItemType;
-	WeaponItemInfo.WeaponClass = RefWeaponItemInfo.WeaponClass;
-	WeaponItemInfo.CurrentAmmo = RefWeaponItemInfo.CurrentAmmo;
-	WeaponItemInfo.ClipType = RefWeaponItemInfo.ClipType;
-	WeaponItemInfo.MaxAmmo  = RefWeaponItemInfo.MaxAmmo;
-	WeaponItemInfo.Damage   = RefWeaponItemInfo.Damage;
-	WeaponItemInfo.Texture  = RefWeaponItemInfo.Texture;
-}
-
-void AWeaponBase::PrepareDestroy()
-{
-	UWorld* const World = GetWorld();
-	if (World && World->GetTimerManager().IsTimerActive(ReloadTimerHandle))
-	{
-		World->GetTimerManager().ClearTimer(ReloadTimerHandle);
-	}
-	if (CharacterOwner.IsValid())
-	{
-		CharacterOwner.Reset();
+		if (SphereComponent->OnComponentBeginOverlap.IsBound())
+		{
+			SphereComponent->OnComponentBeginOverlap.RemoveDynamic(this, &AWeaponBase::BeginOverlapRecieve);
+		}
+		if (SphereComponent->OnComponentEndOverlap.IsBound())
+		{
+			SphereComponent->OnComponentEndOverlap.RemoveDynamic(this, &AWeaponBase::EndOverlapRecieve);
+		}
 	}
 }

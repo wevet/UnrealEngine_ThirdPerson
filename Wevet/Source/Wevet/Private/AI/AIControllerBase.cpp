@@ -8,6 +8,7 @@
 #include "BehaviorTree/BlackboardComponent.h"
 #include "BehaviorTree/BehaviorTreeComponent.h"
 #include "Blueprint/AIBlueprintHelperLibrary.h"
+#include "Lib/WevetBlueprintFunctionLibrary.h"
 #include "WevetExtension.h"
 
 using namespace Wevet;
@@ -63,15 +64,12 @@ void AAIControllerBase::OnPossess(APawn* InPawn)
 {
 	Super::OnPossess(InPawn);
 	AICharacterOwner = Cast<AAICharacterBase>(InPawn);
-	bool bInitialized = false;
+
 	if (AICharacterOwner)
 	{
-		bInitialized = BlackboardComponent->InitializeBlackboard(*AICharacterOwner->BehaviorTree->BlackboardAsset);
-	}
-	if (bInitialized)
-	{
 		AICharacterOwner->InitializePosses();
-		AICharacterOwner->CreateWayPointList(WayPointList);
+		BlackboardComponent->InitializeBlackboard(*AICharacterOwner->BehaviorTree->BlackboardAsset);
+		UWevetBlueprintFunctionLibrary::GetWorldWayPointsArray(InPawn, FLT_MAX, WayPointList);
 		BehaviorTreeComponent->StartTree(*AICharacterOwner->BehaviorTree);
 	}
 }
@@ -100,7 +98,8 @@ AWayPointBase* AAIControllerBase::GetRandomAtWayPoint()
 	{
 		return nullptr;
 	}
-	const int32 RandomIndex = FMath::RandRange(0, WayPointList.Num() - 1);
+	const int32 LastIndex = (WayPointList.Num() - 1);
+	const int32 RandomIndex = FMath::RandRange(0, LastIndex);
 	return WayPointList[RandomIndex];
 }
 

@@ -6,23 +6,26 @@
 #include "GameFramework/Character.h"
 #include "Wevet.h"
 #include "WevetTypes.h"
+#include "Weapon/AbstractWeapon.h"
 
 // Interface
 #include "Interface/DamageInstigator.h"
 #include "Interface/InteractionExecuter.h"
-#include "Interface/GrabExecuter.h"
+#include "Interface/GrabInstigator.h"
+
+// Components
+#include "Component/CharacterInventoryComponent.h"
+#include "Component/CharacterPickupComponent.h"
 
 // Plugins Locomotion
 #include "LocomotionSystemTypes.h"
 #include "CharacterBase.generated.h"
 
-class UCharacterPickupComponent;
-class UCharacterInventoryComponent;
 class UCharacterModel;
 class UCharacterAnimInstanceBase;
 
 UCLASS(ABSTRACT)
-class WEVET_API ACharacterBase : public ACharacter, public IDamageInstigator, public IInteractionExecuter, public IGrabExecuter
+class WEVET_API ACharacterBase : public ACharacter, public IDamageInstigator, public IInteractionExecuter, public IGrabInstigator
 {
 	GENERATED_BODY()
 
@@ -44,9 +47,8 @@ public:
 	virtual void OnCrouch();
 
 public:
-
-#pragma region interaction
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|IInteractionExecuter")
+#pragma region InteractionExecuter
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|InteractionExecuter")
 	void OnReleaseItemExecuter();
 	virtual void OnReleaseItemExecuter_Implementation() override;
 
@@ -54,20 +56,20 @@ public:
 	void OnPickupItemExecuter(AActor* Actor);
 	virtual void OnPickupItemExecuter_Implementation(AActor* Actor) override;
 
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|IInteractionExecuter")
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|InteractionExecuter")
 	void ReportNoise(USoundBase* Sound, float Volume);
 	virtual void ReportNoise_Implementation(USoundBase* Sound, float Volume) override;
 
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|IInteractionExecuter")
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|InteractionExecuter")
 	void FootStep(USoundBase* Sound, float Volume);
 	virtual void FootStep_Implementation(USoundBase* Sound, float Volume) override;
 
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|IInteractionExecuter")
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|InteractionExecuter")
 	void ReportNoiseOther(AActor* Actor, USoundBase* Sound, const float Volume, const FVector Location);
 	virtual void ReportNoiseOther_Implementation(AActor* Actor, USoundBase* Sound, const float Volume, const FVector Location) override;
 #pragma endregion
 
-#pragma region combat
+#pragma region DamageInstigator
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|IDamageInstigator")
 	bool IsDeath();
 	virtual bool IsDeath_Implementation() override;
@@ -95,42 +97,46 @@ public:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|IDamageInstigator")
 	UCharacterModel* GetPropertyModel() const;
 	virtual UCharacterModel* GetPropertyModel_Implementation() const override;
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|IDamageInstigator")
+	void ApplyDamage(UCharacterModel* DamageModel, const int InWeaponDamage, float& OutDamage);	
+	virtual void ApplyDamage_Implementation(UCharacterModel* DamageModel, const int InWeaponDamage, float& OutDamage) override;
 #pragma endregion
 
-#pragma region climb
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|IGrabExecuter")
+#pragma region IGrabInstigator
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|GrabInstigator")
 	void CanGrab(bool InCanGrab);
 	virtual void CanGrab_Implementation(bool InCanGrab) override;
 
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|IGrabExecuter")
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|GrabInstigator")
 	void ClimbLedge(bool InClimbLedge);
 	virtual void ClimbLedge_Implementation(bool InClimbLedge) override;
 
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|IGrabExecuter")
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|GrabInstigator")
 	void ReportClimbEnd();
 	virtual void ReportClimbEnd_Implementation() override;
 
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|IGrabExecuter")
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|GrabInstigator")
 	void ClimbMove(float Value);
 	virtual void ClimbMove_Implementation(float Value) override;
 
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|IGrabExecuter")
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|GrabInstigator")
 	void ClimbJump();
 	virtual void ClimbJump_Implementation() override;
 
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|IGrabExecuter")
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|GrabInstigator")
 	void ReportClimbJumpEnd();
 	virtual void ReportClimbJumpEnd_Implementation() override;
 
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|IGrabExecuter")
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|GrabInstigator")
 	void TurnConerLeftUpdate();
 	virtual void TurnConerLeftUpdate_Implementation() override;
 
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|IGrabExecuter")
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|GrabInstigator")
 	void TurnConerRightUpdate();
 	virtual void TurnConerRightUpdate_Implementation() override;
 
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|IGrabExecuter")
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|GrabInstigator")
 	void TurnConerResult();
 	virtual void TurnConerResult_Implementation() override;
 #pragma endregion
@@ -143,13 +149,13 @@ public:
 	UFUNCTION(BlueprintCallable)
 	virtual FVector BulletTraceForwardLocation() const;
 
-	AWeaponBase* FindByWeapon(const EWeaponItemType WeaponItemType);
+	AAbstractWeapon* FindByWeapon(const EWeaponItemType WeaponItemType);
 
-	UFUNCTION(BlueprintCallable, Category = "CharacterBase|AnimationBlueprint")
+	UFUNCTION(BlueprintCallable, Category = "CharacterBase|AnimInstance")
 	virtual UCharacterAnimInstanceBase* GetCharacterAnimInstance() const;
 
 	UFUNCTION(BlueprintCallable, Category = "CharacterBase|Weapon")
-	AWeaponBase* GetSelectedWeapon() const;
+	AAbstractWeapon* GetSelectedWeapon() const;
 
 	bool HasCrouch() const;
 	bool HasSprint() const;
@@ -158,7 +164,7 @@ public:
 	bool HasClimbingMoveLeft() const;
 	bool HasClimbingMoveRight() const;
 	bool HasEquipWeapon() const;
-	virtual void ReleaseWeaponToWorld(const FTransform& Transform, AWeaponBase* &Weapon);
+	virtual void ReleaseWeaponToWorld(const FTransform& Transform, AAbstractWeapon* &Weapon);
 
 	UFUNCTION(BlueprintCallable, Category = "CharacterBase|CharacterModel")
 	float GetHealthToWidget() const;
@@ -234,8 +240,10 @@ protected:
 	class USoundBase* FootStepSoundAsset;
 
 	bool bCrouch;
-	bool bSprint;
 	bool bWasDied;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "CharacterBase|Variable")
+	bool bSprint;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "CharacterBase|Climbsystem")
 	bool bHanging;
@@ -288,7 +296,7 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "CharacterBase|Variable")
 	float BaseLookUpRate;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "CharacterBase|Variable")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "CharacterBase|Variable")
 	float MovementSpeed;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "CharacterBase|Variable")
@@ -310,37 +318,33 @@ protected:
 	float DefaultMaxSpeed;
 
 	/* get unequip weapon */
-	AWeaponBase* GetUnEquipWeapon();
+	AAbstractWeapon* GetUnEquipWeapon();
 
 	/* out unequip weaponlist */
-	void OutUnEquipWeaponList(TArray<AWeaponBase*>& OutWeaponList);
+	void OutUnEquipWeaponList(TArray<AAbstractWeapon*>& OutWeaponList);
 
 	/* pickup before had same weaponList */
-	const bool SameWeapon(AWeaponBase* const Weapon);
+	const bool SameWeapon(AAbstractWeapon* const Weapon);
 
 	/* pickup actor */
 	virtual void PickupObjects();
 
 	/* release actor */
 	virtual void ReleaseObjects();
-	TWeakObjectPtr<class AWeaponBase> CurrentWeapon;
-
-public:
-	UFUNCTION(BlueprintImplementableEvent, Category = "CharacterBase|NativeEvent")
-	void BP_FirePressReceive();
-
-	UFUNCTION(BlueprintImplementableEvent, Category = "CharacterBase|NativeEvent")
-	void BP_FireReleaseReceive();
-
-	UFUNCTION(BlueprintImplementableEvent, Category = "CharacterBase|NativeEvent")
-	void BP_ReloadReceive();
+	TWeakObjectPtr<class AAbstractWeapon> CurrentWeapon;
 
 public:
 	virtual void EquipmentActionMontage();
 	virtual void UnEquipmentActionMontage();
 	virtual void FireActionMontage();
-	virtual void ReloadActionMontage();
+
+	virtual void ReloadActionMontage(float &OutReloadDuration);
 	virtual void TakeDamageActionMontage();
+
+	virtual void FirePressed();
+	virtual void FireReleassed();
+	virtual void Reload();
+	virtual void ReleaseWeapon();
 
 protected:
 	float TakeDamageInterval;
@@ -350,4 +354,7 @@ public:
 	FVector GetHeadSocketLocation() const;
 	FVector GetChestSocketLocation() const;
 
+
+protected:
+	virtual void CreateWeaponInstance(const TSubclassOf<class AAbstractWeapon> InTemplate, bool bSetEquip = false);
 };

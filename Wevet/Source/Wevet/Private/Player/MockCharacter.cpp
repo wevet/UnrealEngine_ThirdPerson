@@ -29,6 +29,9 @@ AMockCharacter::AMockCharacter(const FObjectInitializer& ObjectInitializer)
 
 	JumpMaxHoldTime = 0.5f;
 
+	BaseTurnRate = 150.f;
+	BaseLookUpRate = 150.f;
+
 	CameraBoomComponent = ObjectInitializer.CreateDefaultSubobject<USpringArmComponent>(this, TEXT("CameraBoomComponent"));
 	CameraBoomComponent->SetupAttachment(RootComponent);
 	CameraBoomComponent->TargetArmLength = 250.f;
@@ -67,11 +70,14 @@ void AMockCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInpu
 	PlayerInputComponent->BindAction("ReleaseObjects", IE_Pressed, this, &AMockCharacter::ReleaseObjects);
 	PlayerInputComponent->BindAction("PickupObjects",  IE_Pressed, this, &AMockCharacter::PickupObjects);
 
-	PlayerInputComponent->BindAction("EquipWeapon", IE_Pressed, this, &AMockCharacter::EquipmentHandleEvent);
+	PlayerInputComponent->BindAction("EquipWeapon", IE_Pressed, this, &AMockCharacter::ToggleEquip);
 	PlayerInputComponent->BindAction("SwapWeapon",  IE_Pressed, this, &AMockCharacter::UpdateWeapon);
 	PlayerInputComponent->BindAction("Fire", IE_Pressed,   this, &AMockCharacter::FirePressed);
 	PlayerInputComponent->BindAction("Fire", IE_Released,  this, &AMockCharacter::FireReleassed);
 	PlayerInputComponent->BindAction("Reload", IE_Pressed, this, &AMockCharacter::Reload);
+
+	PlayerInputComponent->BindAxis("LookRight", this, &AMockCharacter::TurnAtRate);
+	PlayerInputComponent->BindAxis("LookUp", this, &AMockCharacter::LookUpAtRate);
 }
 
 void AMockCharacter::Tick(float DeltaTime)
@@ -102,7 +108,7 @@ void AMockCharacter::MoveForward(float Value)
 		{
 			if (Super::bHanging)
 			{
-				IGrabExecuter::Execute_CanGrab(this, false);
+				IGrabInstigator::Execute_CanGrab(this, false);
 			}
 		}
 		else
@@ -135,12 +141,12 @@ void AMockCharacter::MoveRight(float Value)
 		if (Super::bCanTurnLeft && bCanNotClimbJumpLeft)
 		{
 			Super::DisableInput(PC);
-			IGrabExecuter::Execute_TurnConerLeftUpdate(this);
+			IGrabInstigator::Execute_TurnConerLeftUpdate(this);
 		}
 		if (Super::bCanTurnRight && bCanNotClimbJumpRight)
 		{
 			Super::DisableInput(PC);
-			IGrabExecuter::Execute_TurnConerRightUpdate(this);
+			IGrabInstigator::Execute_TurnConerRightUpdate(this);
 		}
 	}
 	else
@@ -206,26 +212,21 @@ void AMockCharacter::StopJumping()
 
 void AMockCharacter::FirePressed()
 {
-	if (CurrentWeapon.IsValid())
+	if (HasSprint())
 	{
-		BP_FirePressReceive();
+		return;
 	}
+	Super::FirePressed();
 }
 
 void AMockCharacter::FireReleassed()
 {
-	if (CurrentWeapon.IsValid())
-	{
-		BP_FireReleaseReceive();
-	}
+	Super::FireReleassed();
 }
 
 void AMockCharacter::Reload()
 {
-	if (CurrentWeapon.IsValid())
-	{
-		BP_ReloadReceive();
-	}
+	Super::Reload();
 }
 
 void AMockCharacter::OnCrouch()
@@ -252,7 +253,7 @@ void AMockCharacter::UpdateWeapon()
 		return;
 	}
 
-	const TArray<AWeaponBase*> WeaponArray = Super::InventoryComponent->GetWeaponInventory();
+	const TArray<AAbstractWeapon*> WeaponArray = Super::InventoryComponent->GetWeaponInventory();
 	if (WeaponCurrentIndex >= WeaponArray.Num() - 1) 
 	{
 		WeaponCurrentIndex = 0;
@@ -291,37 +292,16 @@ void AMockCharacter::OnPickupItemExecuter_Implementation(AActor* Actor)
 	}
 
 	UWorld* const World = GetWorld();
-	if (AWeaponBase* Weapon = Cast<AWeaponBase>(Actor))
+	if (AAbstractWeapon* Weapon = Cast<AWeaponBase>(Actor))
 	{
 		if (Super::SameWeapon(Weapon))
 		{
 			//UE_LOG(LogWevetClient, Warning, TEXT("SameWeapon : %s"), *(Weapon->GetName()));
 			return;
 		}
-		FWeaponItemInfo WeaponItemInfo = Weapon->WeaponItemInfo;
-		if (WeaponItemInfo.WeaponItemType == EWeaponItemType::None)
-		{
-			UE_LOG(LogWevetClient, Warning, TEXT("Unknown WeaponType : %s"), *(Weapon->GetName()));
-			return;
-		}
-
-		const FName SocketName(WeaponItemInfo.UnEquipSocketName);
-		TSubclassOf<class AWeaponBase> WeaponClass = WeaponItemInfo.WeaponClass;
-		const FTransform Transform = Super::GetMesh()->GetSocketTransform(SocketName);
-		AWeaponBase* const SpawningObject = World->SpawnActorDeferred<AWeaponBase>(
-			WeaponClass,
-			Transform,
-			nullptr,
-			nullptr,
-			ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
-
-		FAttachmentTransformRules Rules(EAttachmentRule::SnapToTarget, true);
-		SpawningObject->CopyWeaponItemInfo(WeaponItemInfo);
-		SpawningObject->FinishSpawning(Transform);
-		SpawningObject->AttachToComponent(Super::GetMesh(), Rules, SocketName);
-		SpawningObject->Take(this);
-		Super::InventoryComponent->AddWeaponInventory(SpawningObject);
-		Weapon->Release(nullptr);
+		// Create
+		Super::CreateWeaponInstance(Weapon->GetClass());
+		IInteractionInstigator::Execute_Release(Weapon, nullptr);
 		Actor = nullptr;
 	}
 
@@ -335,8 +315,9 @@ void AMockCharacter::OnPickupItemExecuter_Implementation(AActor* Actor)
 				const FWeaponItemInfo ItemInfo = Item->WeaponItemInfo;
 				if (auto Weapon = Super::FindByWeapon(ItemInfo.WeaponItemType))
 				{
-					Weapon->Recover(ItemInfo);
+					IWeaponInstigator::Execute_DoReplenishment(Weapon, ItemInfo);
 					Item->Release();
+					Actor->ConditionalBeginDestroy();
 					Actor = nullptr;
 				}
 			}
@@ -370,8 +351,8 @@ void AMockCharacter::Equipment_Implementation()
 		UpdateWeapon();
 	}
 
-	const TArray<AWeaponBase*> WeaponItem = Super::InventoryComponent->GetWeaponInventoryOriginal();
-	CurrentWeapon = MakeWeakObjectPtr<AWeaponBase>(WeaponItem[WeaponCurrentIndex]);
+	const TArray<AAbstractWeapon*> WeaponItem = Super::InventoryComponent->GetWeaponInventoryOriginal();
+	CurrentWeapon = MakeWeakObjectPtr<AAbstractWeapon>(WeaponItem[WeaponCurrentIndex]);
 	if (!CurrentWeapon.IsValid())
 	{
 		return;
@@ -401,7 +382,7 @@ void AMockCharacter::UnEquipment_Implementation()
 
 void AMockCharacter::ClimbLedge_Implementation(bool InClimbLedge)
 {
-	if (CurrentWeapon.IsValid() && CurrentWeapon.Get()->bEquip)
+	if (CurrentWeapon.IsValid() && CurrentWeapon.Get()->WasEquip())
 	{
 		UE_LOG(LogWevetClient, Warning, TEXT("UnEquip Weapon : [%s]"), *FString(__FUNCTION__));
 		return;
@@ -419,8 +400,8 @@ void AMockCharacter::ClimbLedge_Implementation(bool InClimbLedge)
 	{
 		bHanging = false;
 	}
-	IGrabExecuter::Execute_CanGrab(GetCharacterAnimInstance(), bHanging);
-	IGrabExecuter::Execute_ClimbLedge(GetCharacterAnimInstance(), bClimbingLedge);
+	IGrabInstigator::Execute_CanGrab(GetCharacterAnimInstance(), bHanging);
+	IGrabInstigator::Execute_ClimbLedge(GetCharacterAnimInstance(), bClimbingLedge);
 	if (ClimbLedgeMontage)
 	{
 		PlayAnimMontage(ClimbLedgeMontage);
@@ -476,7 +457,7 @@ FVector AMockCharacter::BulletTraceForwardLocation() const
 	return GetTPSCameraComponent()->GetForwardVector();
 }
 
-void AMockCharacter::EquipmentHandleEvent()
+void AMockCharacter::ToggleEquip()
 {
 	if (CurrentWeapon.IsValid())
 	{
@@ -502,7 +483,7 @@ void AMockCharacter::ReleaseWeapon()
 	const FVector Forward   = Super::GetActorLocation() + (ForwardOffset * DEFAULT_FORWARD_VECTOR);
 	const FTransform Transform  = UKismetMathLibrary::MakeTransform(Forward, Rotation, FVector::OneVector);
 	
-	if (AWeaponBase* Weapon = Super::GetUnEquipWeapon())
+	if (AAbstractWeapon* Weapon = Super::GetUnEquipWeapon())
 	{
 		Super::InventoryComponent->RemoveWeaponInventory(Weapon);
 		Super::ReleaseWeaponToWorld(Transform, Weapon);

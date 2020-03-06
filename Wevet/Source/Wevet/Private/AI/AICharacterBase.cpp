@@ -1,20 +1,17 @@
 // Copyright 2018 wevet works All Rights Reserved.
 
-#include "AICharacterBase.h"
-#include "AIUserWidgetBase.h"
-#include "WeaponBase.h"
-#include "WayPointBase.h"
-#include "MockCharacter.h"
-#include "AIControllerBase.h"
-#include "Kismet/KismetMathLibrary.h"
+#include "AI/AICharacterBase.h"
+#include "AI/AIUserWidgetBase.h"
+#include "AI/AIControllerBase.h"
+#include "Weapon/WeaponBase.h"
+#include "Player/MockCharacter.h"
 #include "Perception/AiPerceptionComponent.h"
 #include "Perception/AISenseConfig_Hearing.h"
 #include "Perception/AISense_Hearing.h"
 #include "Engine.h"
 #include "Kismet/KismetMathLibrary.h"
-#include "Component/CharacterInventoryComponent.h"
-#include "AI/AIUserWidgetBase.h"
 #include "WevetExtension.h"
+#include "Lib/WevetBlueprintFunctionLibrary.h"
 
 using namespace Wevet;
 
@@ -90,25 +87,26 @@ void AAICharacterBase::Die_Implementation()
 	{
 		UIController->RemoveFromParent();
 	}
+	if (GetController())
+	{
+		auto ControllerRef = GetController();
+		ControllerRef->UnPossess();
+		ControllerRef->Destroy();
+	}
+
 	TargetCharacter = nullptr;
 	// not spawned WeaponActor
 	if (Super::InventoryComponent)
 	{
 		Super::InventoryComponent->RemoveAllInventory();
 	}
-	GetController()->UnPossess();
 
 	if (ComponentExtension::HasValid(PawnSensingComponent))
 	{
 		PawnSensingComponent->OnSeePawn.RemoveDynamic(this, &AAICharacterBase::OnSeePawnRecieve);
 		PawnSensingComponent->OnHearNoise.RemoveDynamic(this, &AAICharacterBase::OnHearNoiseRecieve);
 	}
-
-	USkeletalMeshComponent* SkeltalMesh = Super::GetMesh();
-	if (SkeltalMesh && SkeltalMesh->bRenderCustomDepth)
-	{
-		SkeltalMesh->SetRenderCustomDepth(false);
-	}
+	Super::GetMesh()->SetRenderCustomDepth(false);
 	Super::Die_Implementation();
 }
 
@@ -146,10 +144,6 @@ void AAICharacterBase::UnEquipment_Implementation()
 void AAICharacterBase::OnTakeDamage_Implementation(FName BoneName, float Damage, AActor* Actor, bool& bDied)
 {
 	Super::OnTakeDamage_Implementation(BoneName, Damage, Actor, bDied);
-	if (IDamageInstigator::Execute_IsDeath(this))
-	{
-		Die_Implementation();
-	}
 }
 
 #pragma region AIPawnOwner
@@ -207,7 +201,7 @@ bool AAICharacterBase::HasEnemyFound() const
 
 void AAICharacterBase::InitializePosses()
 {
-	CreateWeaponInstance();
+	Super::CreateWeaponInstance(WeaponTemplate, true);
 }
 
 FVector AAICharacterBase::BulletTraceRelativeLocation() const
@@ -226,47 +220,6 @@ FVector AAICharacterBase::BulletTraceForwardLocation() const
 		return CurrentWeapon.Get()->GetMuzzleTransform().GetRotation().GetForwardVector();
 	}
 	return Super::BulletTraceForwardLocation();
-}
-
-void AAICharacterBase::CreateWeaponInstance()
-{
-	UWorld* const World = GetWorld();
-
-	if (SpawnWeapon == nullptr)
-	{
-		return;
-	}
-
-	FActorSpawnParameters SpawnParams;
-	SpawnParams.Owner = this;
-	SpawnParams.Instigator = Instigator;
-	const FTransform Transform = FTransform::Identity;
-	AWeaponBase* const SpawningObject = World->SpawnActor<AWeaponBase>(SpawnWeapon, Transform, SpawnParams);
-	
-	CurrentWeapon = MakeWeakObjectPtr<AWeaponBase>(SpawningObject);
-	const FName SocketName(CurrentWeapon.Get()->WeaponItemInfo.UnEquipSocketName);
-	FAttachmentTransformRules Rules(EAttachmentRule::SnapToTarget, true);
-	CurrentWeapon.Get()->AttachToComponent(Super::GetMesh(), Rules, SocketName);
-	CurrentWeapon.Get()->Take(this);
-	CurrentWeapon.Get()->GetSphereComponent()->DestroyComponent();
-	Super::InventoryComponent->AddWeaponInventory(CurrentWeapon.Get());
-}
-
-void AAICharacterBase::CreateWayPointList(TArray<AWayPointBase*>& OutWayPointList)
-{
-	UWorld* const World = GetWorld();
-	if (World == nullptr)
-	{
-		return;
-	}
-
-	for (TActorIterator<AWayPointBase> ActorIterator(World); ActorIterator; ++ActorIterator)
-	{
-		if (AWayPointBase* WayPoint = *ActorIterator)
-		{
-			OutWayPointList.Emplace(WayPoint);
-		}
-	}
 }
 
 void AAICharacterBase::OnSeePawnRecieve(APawn* OtherPawn)
@@ -291,13 +244,11 @@ void AAICharacterBase::SetSeeTargetActor(ACharacterBase* const NewCharacter)
 
 	if (NewCharacter)
 	{
-		//ForceSprint();
 		Super::EquipmentActionMontage();
 	}
 	else
 	{
-		//UnForceSprint();
-		BP_FireReleaseReceive();
+		Super::FireReleassed();
 		Super::UnEquipmentActionMontage();
 	}
 }
@@ -334,7 +285,11 @@ bool AAICharacterBase::CanShotup() const
 	{
 		return false;
 	}
-	if ((CurrentWeapon.Get()->bEmpty) || (CurrentWeapon.Get()->bReload))
+	if (!CurrentWeapon.Get()->CanMeleeStrike_Implementation())
+	{
+		return false;
+	}
+	if (CurrentWeapon.Get()->WasReload())
 	{
 		return false;
 	}

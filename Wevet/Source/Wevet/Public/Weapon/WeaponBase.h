@@ -3,18 +3,15 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/Actor.h"
-#include "WeaponControllerExecuter.h"
+#include "Weapon/AbstractWeapon.h"
 #include "Components/SphereComponent.h"
 #include "Components/WidgetComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "WeaponBase.generated.h"
 
-class ACharacterBase;
-class ABulletBase;
 
-UCLASS(ABSTRACT)
-class WEVET_API AWeaponBase : public AActor, public IWeaponControllerExecuter
+UCLASS()
+class WEVET_API AWeaponBase : public AAbstractWeapon
 {
 	GENERATED_BODY()
 
@@ -28,37 +25,14 @@ public:
 protected:
 	virtual void BeginPlay() override;
 
+public:
+	virtual bool CanMeleeStrike_Implementation() const override;
+	virtual void DoReload_Implementation() override;
+	virtual void Take_Implementation(ACharacterBase* NewCharacter) override;
+	virtual FTransform GetMuzzleTransform() const override;
+	virtual void SetEquip(const bool InEquip) override;
+
 protected:
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Variable")
-	FName MuzzleSocketName;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Variable")
-	int32 NeededAmmo;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Variable")
-	USoundBase* FireSoundAsset;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Variable")
-	USoundBase* FireImpactSoundAsset;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Variable")
-	USoundBase* PickupSoundAsset;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Variable")
-	UParticleSystem* MuzzleFlashEmitterTemplate;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Variable")
-	UParticleSystem* ImpactMetalEmitterTemplate;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Variable")
-	TSubclassOf<class ABulletBase> BulletsBP;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Variable")
-	float BulletDuration;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Variable")
-	float ReloadDuration;
-
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Components, meta = (AllowPrivateAccess = "true"))
 	class USkeletalMeshComponent* SkeletalMeshComponent;
 
@@ -67,19 +41,6 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Components, meta = (AllowPrivateAccess = "true"))
 	class UWidgetComponent* WidgetComponent;
-
-	USceneComponent* SceneComponent;
-	FTimerHandle ReloadTimerHandle;
-	TWeakObjectPtr<class ACharacterBase> CharacterOwner;
-
-	UFUNCTION(BlueprintCallable, Category="AWeaponBase|Character")
-	ACharacterBase* const GetCharacterOwner() 
-	{
-		return CharacterOwner.Get();
-	}
-
-	virtual void TakeHitDamage(const FHitResult HitResult);
-	virtual void PlayBulletEffect(UWorld* const World, const FHitResult HitResult);
 
 public:
 	FORCEINLINE class USkeletalMeshComponent* GetSkeletalMeshComponent() const
@@ -97,82 +58,21 @@ public:
 		return WidgetComponent;
 	}
 
-	virtual void SetEquip(const bool Equip);
-	virtual void SetReload(const bool Reload);
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "AWeaponBase|Variable")
-	FWeaponItemInfo WeaponItemInfo;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AWeaponBase|Variable")
-	bool bEquip;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AWeaponBase|Variable")
-	bool bFired;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AWeaponBase|Variable")
-	bool bReload;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AWeaponBase|Variable")
-	bool bEmpty;
-
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AWeaponBase|Interface")
-	void OnFirePress();
-	virtual void OnFirePress_Implementation() override;
-
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AWeaponBase|Interface")
-	void OnFireRelease();
-	virtual void OnFireRelease_Implementation() override;
-
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AWeaponBase|Interface")
-	void OnReloading();
-	virtual void OnReloading_Implementation() override;
-
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AWeaponBase|Interface")
-	void OffVisible();
-	virtual void OffVisible_Implementation() override;
-
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AWeaponBase|Interface")
-	void OnVisible();
-	virtual void OnVisible_Implementation() override;
-
-	UFUNCTION(BlueprintCallable, Category = Components)
+protected:
 	virtual	void BeginOverlapRecieve(
 		UPrimitiveComponent* OverlappedComponent,
 		AActor* OtherActor,
 		UPrimitiveComponent* OtherComp,
 		int32 OtherBodyIndex,
 		bool bFromSweep,
-		const FHitResult &SweepResult);
+		const FHitResult &SweepResult) override;
 
-	UFUNCTION(BlueprintCallable, Category = Components)
 	virtual	void EndOverlapRecieve(
 		UPrimitiveComponent* OverlappedComp,
 		AActor* OtherActor,
 		UPrimitiveComponent* OtherComp,
-		int32 OtherBodyIndex);
+		int32 OtherBodyIndex) override;
 
-	UFUNCTION(BlueprintCallable, Category = API)
-	virtual void OnFirePressedInternal();
+	virtual void OnFirePressInternal() override;
 
-	virtual void OnFireReleaseInternal();
-	virtual void OnReloadInternal();
-	virtual void Take(ACharacterBase* NewCharacter);
-	virtual void Release(ACharacterBase* NewCharacter);
-	virtual void Recover(const FWeaponItemInfo RefWeaponItemInfo);
-
-	const FTransform GetMuzzleTransform()
-	{
-		return SkeletalMeshComponent->GetSocketTransform(MuzzleSocketName);
-	}
-
-	bool HasMatchTypes(EWeaponItemType InWeaponItemType) const
-	{
-		return WeaponItemInfo.WeaponItemType == InWeaponItemType;
-	}
-
-	virtual void SetCharacterOwner(ACharacterBase* NewCharacter);
-	void CopyWeaponItemInfo(const FWeaponItemInfo RefWeaponItemInfo);
-
-protected:
-	virtual void PrepareDestroy();
 };

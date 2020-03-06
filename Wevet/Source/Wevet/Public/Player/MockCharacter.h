@@ -72,16 +72,16 @@ protected:
 	virtual void ReleaseObjects() override;
 	virtual void Jump() override;
 	virtual void StopJumping() override;
+	virtual void FirePressed() override;
+	virtual void FireReleassed() override;
+	virtual void Reload() override;
+	virtual void ReleaseWeapon() override;
 
 	void TurnAtRate(float Rate);
 	void LookUpAtRate(float Rate);
 	void MoveForward(float Value);
 	void MoveRight(float Value);
-	void FirePressed();
-	void FireReleassed();
-	void Reload();
-	void ReleaseWeapon();
-	void EquipmentHandleEvent();
+	void ToggleEquip();
 
 private:
 	int32 WeaponCurrentIndex;

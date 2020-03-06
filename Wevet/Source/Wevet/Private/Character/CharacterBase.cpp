@@ -1,12 +1,9 @@
 // Copyright 2018 wevet works All Rights Reserved.
 
-#include "CharacterBase.h"
-#include "WeaponBase.h"
-#include "ItemBase.h"
-#include "CharacterModel.h"
-#include "CharacterPickupComponent.h"
-#include "CharacterInventoryComponent.h"
-#include "CharacterAnimInstanceBase.h"
+#include "Character/CharacterBase.h"
+#include "Item/ItemBase.h"
+#include "Character/CharacterModel.h"
+#include "AnimationBlueprint/CharacterAnimInstanceBase.h"
 
 #include "Engine.h"
 #include "Kismet/GameplayStatics.h"
@@ -115,6 +112,7 @@ float ACharacterBase::TakeDamage(float Damage, struct FDamageEvent const& Damage
 	return Super::TakeDamage(Damage, DamageEvent, EventInstigator, DamageCauser);
 }
 
+#pragma region InteractionExecuter
 void ACharacterBase::OnReleaseItemExecuter_Implementation() 
 {
 }
@@ -177,13 +175,14 @@ void ACharacterBase::ReportNoiseOther_Implementation(AActor* Actor, USoundBase* 
 		PawnNoiseEmitterComponent->MakeNoise(Actor, InVolume, Location);
 	}
 }
+#pragma endregion
 
+#pragma region IGrabInstigator
 void ACharacterBase::CanGrab_Implementation(bool InCanGrab)
 {
 	bHanging = InCanGrab;
 	GetCharacterMovement()->SetMovementMode(bHanging ? EMovementMode::MOVE_Flying : EMovementMode::MOVE_Walking);
-	IGrabExecuter::Execute_CanGrab(GetCharacterAnimInstance(), bHanging);
-	//UE_LOG(LogWevetClient, Log, TEXT("Hanging : %s"), bHanging ? TEXT("true") : TEXT("false"));
+	IGrabInstigator::Execute_CanGrab(GetCharacterAnimInstance(), bHanging);
 }
 
 void ACharacterBase::ClimbLedge_Implementation(bool InClimbLedge)
@@ -194,19 +193,19 @@ void ACharacterBase::ReportClimbEnd_Implementation()
 {
 	bHanging = false;
 	bClimbingLedge = false;
-	IGrabExecuter::Execute_CanGrab(GetCharacterAnimInstance(), bHanging);
-	IGrabExecuter::Execute_ClimbLedge(GetCharacterAnimInstance(), bClimbingLedge);
+	IGrabInstigator::Execute_CanGrab(GetCharacterAnimInstance(), bHanging);
+	IGrabInstigator::Execute_ClimbLedge(GetCharacterAnimInstance(), bClimbingLedge);
 	GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
 }
 
 void ACharacterBase::ClimbMove_Implementation(float Value)
 {
-	IGrabExecuter::Execute_ClimbMove(GetCharacterAnimInstance(), Value);
+	IGrabInstigator::Execute_ClimbMove(GetCharacterAnimInstance(), Value);
 }
 
 void ACharacterBase::ClimbJump_Implementation()
 {
-	IGrabExecuter::Execute_ClimbJump(GetCharacterAnimInstance());
+	IGrabInstigator::Execute_ClimbJump(GetCharacterAnimInstance());
 }
 
 void ACharacterBase::ReportClimbJumpEnd_Implementation()
@@ -215,7 +214,7 @@ void ACharacterBase::ReportClimbJumpEnd_Implementation()
 	bCanClimbJumpLeft = false;
 	bCanClimbJumpRight = false;
 	//bClimbJumping = false;
-	IGrabExecuter::Execute_ClimbJump(GetCharacterAnimInstance());
+	IGrabInstigator::Execute_ClimbJump(GetCharacterAnimInstance());
 }
 
 void ACharacterBase::TurnConerLeftUpdate_Implementation()
@@ -229,7 +228,9 @@ void ACharacterBase::TurnConerRightUpdate_Implementation()
 void ACharacterBase::TurnConerResult_Implementation()
 {
 }
+#pragma endregion
 
+#pragma region DamageInstigator
 bool ACharacterBase::IsDeath_Implementation()
 {
 	if (bWasDied || CharacterModel == nullptr)
@@ -265,6 +266,17 @@ void ACharacterBase::OnTakeDamage_Implementation(FName BoneName, float Damage, A
 	{
 		TakeDamageActionMontage();
 	}
+}
+
+void ACharacterBase::ApplyDamage_Implementation(UCharacterModel* DamageModel, const int InWeaponDamage, float& OutDamage)
+{
+	const int32 BaseAttack = CharacterModel->GetAttack() + InWeaponDamage;
+	const int32 Attack = BaseAttack;
+	const int32 Deffence = DamageModel->GetDefence();
+	const int32 Wisdom = DamageModel->GetWisdom();
+	const int32 TotalDamage = (Attack - (Deffence + Wisdom)) / DEFFENCE_CONST;
+	float Damage = (float)TotalDamage;
+	OutDamage = FMath::Abs(Damage);
 }
 
 void ACharacterBase::InfrictionDamage_Implementation(AActor* InfrictionActor, const bool bInfrictionDie)
@@ -306,18 +318,22 @@ void ACharacterBase::Die_Implementation()
 		Controller->UnPossess();
 	}
 
-	if (!InventoryComponent->HasInventoryWeaponItems())
+	if (InventoryComponent->HasInventoryWeaponItems())
 	{
-		for (AWeaponBase*& Weapon : InventoryComponent->GetWeaponInventoryOriginal())
-		{
-			if (!Weapon)
-			{
-				continue;
-			}
-			ReleaseWeaponToWorld(Transform, Weapon);
-		}
-		InventoryComponent->ClearWeaponInventory();
+		return;
 	}
+
+	for (AAbstractWeapon*& Weapon : InventoryComponent->GetWeaponInventoryOriginal())
+	{
+		if (!Weapon)
+		{
+			continue;
+		}
+		ReleaseWeaponToWorld(Transform, Weapon);
+	}
+	InventoryComponent->ClearWeaponInventory();
+	InventoryComponent->ConditionalBeginDestroy();
+	InventoryComponent = nullptr;
 }
 
 void ACharacterBase::Equipment_Implementation()
@@ -340,6 +356,7 @@ UCharacterModel* ACharacterBase::GetPropertyModel_Implementation() const
 {
 	return CharacterModel;
 }
+#pragma endregion
 
 FVector ACharacterBase::BulletTraceRelativeLocation() const
 {
@@ -422,7 +439,7 @@ bool ACharacterBase::IsHealthQuarter() const
 	return false;
 }
 
-void ACharacterBase::ReleaseWeaponToWorld(const FTransform& Transform, AWeaponBase* &Weapon)
+void ACharacterBase::ReleaseWeaponToWorld(const FTransform& Transform, AAbstractWeapon* &Weapon)
 {
 	UWorld* const World = GetWorld();
 
@@ -431,11 +448,11 @@ void ACharacterBase::ReleaseWeaponToWorld(const FTransform& Transform, AWeaponBa
 		return;
 	}
 	const FWeaponItemInfo WeaponItemInfo = Weapon->WeaponItemInfo;
-	TSubclassOf<class AWeaponBase> WeaponClass = WeaponItemInfo.WeaponClass;
-	Weapon->Release(nullptr);
+	TSubclassOf<class AAbstractWeapon> WeaponClass = Weapon->GetClass();
+	IInteractionInstigator::Execute_Release(Weapon, nullptr);
 	Weapon = nullptr;
 
-	AWeaponBase* const SpawningObject = World->SpawnActorDeferred<AWeaponBase>(
+	AAbstractWeapon* const SpawningObject = World->SpawnActorDeferred<AAbstractWeapon>(
 		WeaponClass,
 		Transform,
 		nullptr,
@@ -446,15 +463,15 @@ void ACharacterBase::ReleaseWeaponToWorld(const FTransform& Transform, AWeaponBa
 	SpawningObject->FinishSpawning(Transform);
 }
 
-AWeaponBase* ACharacterBase::FindByWeapon(const EWeaponItemType WeaponItemType)
+AAbstractWeapon* ACharacterBase::FindByWeapon(const EWeaponItemType WeaponItemType)
 {
 	if (InventoryComponent->HasInventoryWeaponItems())
 	{
 		return nullptr;
 	}
-	for (AWeaponBase*& Weapon : InventoryComponent->GetWeaponInventoryOriginal())
+	for (AAbstractWeapon*& Weapon : InventoryComponent->GetWeaponInventoryOriginal())
 	{
-		if (Weapon && Weapon->HasMatchTypes(WeaponItemType))
+		if (Weapon && Weapon->WasSameWeaponType(WeaponItemType))
 		{
 			return Weapon;
 		}
@@ -462,7 +479,7 @@ AWeaponBase* ACharacterBase::FindByWeapon(const EWeaponItemType WeaponItemType)
 	return nullptr;
 }
 
-AWeaponBase* ACharacterBase::GetSelectedWeapon() const
+AAbstractWeapon* ACharacterBase::GetSelectedWeapon() const
 {
 	if (CurrentWeapon.IsValid())
 	{
@@ -510,20 +527,20 @@ bool ACharacterBase::HasEquipWeapon() const
 {
 	if (CurrentWeapon.IsValid())
 	{
-		return CurrentWeapon.Get()->bEquip;
+		return CurrentWeapon.Get()->WasEquip();
 	}
 	return false;
 }
 
-AWeaponBase* ACharacterBase::GetUnEquipWeapon()
+AAbstractWeapon* ACharacterBase::GetUnEquipWeapon()
 {
 	if (InventoryComponent->HasInventoryWeaponItems())
 	{
 		return nullptr;
 	}
-	for (AWeaponBase*& Weapon : InventoryComponent->GetWeaponInventoryOriginal())
+	for (AAbstractWeapon*& Weapon : InventoryComponent->GetWeaponInventoryOriginal())
 	{
-		if (Weapon && !Weapon->bEquip)
+		if (Weapon && !Weapon->WasEquip())
 		{
 			return Weapon;
 		}
@@ -531,27 +548,27 @@ AWeaponBase* ACharacterBase::GetUnEquipWeapon()
 	return nullptr;
 }
 
-void ACharacterBase::OutUnEquipWeaponList(TArray<AWeaponBase*>& OutWeaponList)
+void ACharacterBase::OutUnEquipWeaponList(TArray<AAbstractWeapon*>& OutWeaponList)
 {
 	if (InventoryComponent->HasInventoryWeaponItems())
 	{
 		return;
 	}
-	for (AWeaponBase* &Weapon : InventoryComponent->GetWeaponInventoryOriginal())
+	for (AAbstractWeapon* &Weapon : InventoryComponent->GetWeaponInventoryOriginal())
 	{
-		if (Weapon && !Weapon->bEquip)
+		if (Weapon && !Weapon->WasEquip())
 		{
 			OutWeaponList.Emplace(Weapon);
 		}
 	}
 }
 
-const bool ACharacterBase::SameWeapon(AWeaponBase* const Weapon)
+const bool ACharacterBase::SameWeapon(AAbstractWeapon* const Weapon)
 {
 	const EWeaponItemType ItemType = Weapon->WeaponItemInfo.WeaponItemType;
-	if (AWeaponBase* const InWeapon = FindByWeapon(ItemType))
+	if (AAbstractWeapon * const InWeapon = FindByWeapon(ItemType))
 	{
-		return InWeapon->HasMatchTypes(ItemType);
+		return InWeapon->WasSameWeaponType(ItemType);
 	}
 	return false;
 }
@@ -605,11 +622,16 @@ void ACharacterBase::FireActionMontage()
 				//
 			}
 			break;
+			case EWeaponItemType::Knife:
+			{
+				//
+			}
+			break;
 		}
 	}
 }
 
-void ACharacterBase::ReloadActionMontage()
+void ACharacterBase::ReloadActionMontage(float& OutReloadDuration)
 {
 	if (CurrentWeapon.IsValid())
 	{
@@ -619,7 +641,7 @@ void ACharacterBase::ReloadActionMontage()
 			case EWeaponItemType::Rifle:
 			case EWeaponItemType::Sniper:
 			{
-				PlayAnimMontage(ReloadMontage);
+				OutReloadDuration += PlayAnimMontage(ReloadMontage);
 			}
 			break;
 			case EWeaponItemType::Bomb:
@@ -628,6 +650,11 @@ void ACharacterBase::ReloadActionMontage()
 			}
 			break;
 			case EWeaponItemType::Pistol:
+			{
+				//
+			}
+			break;
+			case EWeaponItemType::Knife:
 			{
 				//
 			}
@@ -669,7 +696,6 @@ void ACharacterBase::TakeDamageActionMontage()
 		}
 	}
 }
-
 
 FVector ACharacterBase::GetHeadSocketLocation() const
 {
@@ -717,4 +743,60 @@ FVector ACharacterBase::GetChestSocketLocation() const
 		}
 	}
 	return Position;
+}
+
+void ACharacterBase::FirePressed()
+{
+	if (CurrentWeapon.IsValid())
+	{
+		IWeaponInstigator::Execute_DoFirePressed(CurrentWeapon.Get());
+	}
+}
+
+void ACharacterBase::FireReleassed()
+{
+	if (CurrentWeapon.IsValid())
+	{
+		IWeaponInstigator::Execute_DoFireRelease(CurrentWeapon.Get());
+	}
+}
+
+void ACharacterBase::Reload()
+{
+	if (CurrentWeapon.IsValid())
+	{
+		IWeaponInstigator::Execute_DoReload(CurrentWeapon.Get());
+	}
+}
+
+void ACharacterBase::ReleaseWeapon()
+{
+}
+
+void ACharacterBase::CreateWeaponInstance(const TSubclassOf<class AAbstractWeapon> InTemplate, bool bSetEquip)
+{
+	if (InTemplate == nullptr)
+	{
+		return;
+	}
+
+	AAbstractWeapon* const SpawningObject = GetWorld()->SpawnActorDeferred<AAbstractWeapon>(
+		InTemplate,
+		GetActorTransform(),
+		nullptr,
+		nullptr,
+		ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
+
+	FWeaponItemInfo WeaponItemInfo = SpawningObject->WeaponItemInfo;
+	FAttachmentTransformRules Rules(EAttachmentRule::SnapToTarget, true);
+	SpawningObject->CopyWeaponItemInfo(WeaponItemInfo);
+	SpawningObject->FinishSpawning(GetActorTransform());
+	SpawningObject->AttachToComponent(Super::GetMesh(), Rules, WeaponItemInfo.UnEquipSocketName);
+	InventoryComponent->AddWeaponInventory(SpawningObject);
+	IInteractionInstigator::Execute_Take(SpawningObject, this);
+
+	if (bSetEquip)
+	{
+		CurrentWeapon = MakeWeakObjectPtr<AAbstractWeapon>(SpawningObject);
+	}
 }
