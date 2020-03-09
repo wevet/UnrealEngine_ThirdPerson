@@ -1,6 +1,6 @@
 // Copyright 2018 wevet works All Rights Reserved.
 
-#include "CharacterAnimInstanceBase.h"
+#include "AnimInstance/CharacterAnimInstanceBase.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "GameFramework/Pawn.h"
 #include "GameFramework/PawnMovementComponent.h"
@@ -59,6 +59,7 @@ void UCharacterAnimInstanceBase::NativeUpdateAnimation(float DeltaTimeX)
 	SetHanging();
 	SetClimbingLedge();
 	SetClimbingMove();
+	SetWeaponItemType();
 	BlendWeight = (IsEquip) ? FMath::Clamp<float>(CombatBlendWeight, 0.f, 1.f) : 0.f;
 }
 
@@ -120,6 +121,14 @@ FRotator UCharacterAnimInstanceBase::NormalizedDeltaRotator(FRotator A, FRotator
 	FRotator Diff = A - B;
 	Diff.Normalize();
 	return Diff;
+}
+
+void UCharacterAnimInstanceBase::SetWeaponItemType()
+{
+	if (Owner)
+	{
+		WeaponItemType = Owner->GetCurrentWeaponType();
+	}
 }
 
 void UCharacterAnimInstanceBase::CanGrab_Implementation(bool InCanGrab)

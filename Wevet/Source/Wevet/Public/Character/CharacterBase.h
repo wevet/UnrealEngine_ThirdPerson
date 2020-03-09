@@ -13,6 +13,9 @@
 #include "Interface/InteractionExecuter.h"
 #include "Interface/GrabInstigator.h"
 
+// ActionInfo
+#include "Structs/WeaponActionInfo.h"
+
 // Components
 #include "Component/CharacterInventoryComponent.h"
 #include "Component/CharacterPickupComponent.h"
@@ -41,8 +44,8 @@ protected:
 	virtual void BeginPlay() override;
 
 public:
-	virtual void Jump();
-	virtual void StopJumping();
+	virtual void Jump() override;
+	virtual void StopJumping() override;
 	virtual void OnSprint();
 	virtual void OnCrouch();
 
@@ -142,20 +145,18 @@ public:
 #pragma endregion
 
 public:
-
-	UFUNCTION(BlueprintCallable)
 	virtual FVector BulletTraceRelativeLocation() const;
-
-	UFUNCTION(BlueprintCallable)
 	virtual FVector BulletTraceForwardLocation() const;
-
 	AAbstractWeapon* FindByWeapon(const EWeaponItemType WeaponItemType);
 
-	UFUNCTION(BlueprintCallable, Category = "CharacterBase|AnimInstance")
+	UFUNCTION(BlueprintCallable, Category = "CharacterBase|Function")
 	virtual UCharacterAnimInstanceBase* GetCharacterAnimInstance() const;
 
-	UFUNCTION(BlueprintCallable, Category = "CharacterBase|Weapon")
+	UFUNCTION(BlueprintCallable, Category = "CharacterBase|Function")
 	AAbstractWeapon* GetSelectedWeapon() const;
+
+	UFUNCTION(BlueprintCallable, Category = "CharacterBase|Function")
+	float GetHealthToWidget() const;
 
 	bool HasCrouch() const;
 	bool HasSprint() const;
@@ -164,24 +165,18 @@ public:
 	bool HasClimbingMoveLeft() const;
 	bool HasClimbingMoveRight() const;
 	bool HasEquipWeapon() const;
-	virtual void ReleaseWeaponToWorld(const FTransform& Transform, AAbstractWeapon* &Weapon);
-
-	UFUNCTION(BlueprintCallable, Category = "CharacterBase|CharacterModel")
-	float GetHealthToWidget() const;
-
 	bool IsHealthHalf() const;
 	bool IsHealthQuarter() const;
+	virtual void ReleaseWeaponToWorld(const FTransform& Transform, AAbstractWeapon*& Weapon);
 
 	FORCEINLINE class UAudioComponent* GetAudioComponent() const 
 	{
 		return AudioComponent; 
 	}
-
 	FORCEINLINE class UCharacterPickupComponent* GetPickupComponent() const 
 	{
 		return PickupComponent; 
 	}
-
 	FORCEINLINE class UCharacterInventoryComponent* GetInventoryComponent() const 
 	{
 		return InventoryComponent; 
@@ -200,40 +195,28 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Components, meta = (AllowPrivateAccess = "true"))
 	class UCharacterInventoryComponent* InventoryComponent;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "CharacterBase|Asset|LargeWeapon")
-	class UAnimMontage* EquipMontage;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "CharacterBase|ActionInfo")
+	TArray<FWeaponActionInfo> ActionInfoArray;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "CharacterBase|Asset|LargeWeapon")
-	class UAnimMontage* UnEquipMontage;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "CharacterBase|Asset|LargeWeapon")
-	class UAnimMontage* FireMontage;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "CharacterBase|Asset|LargeWeapon")
-	class UAnimMontage* ReloadMontage;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "CharacterBase|Asset|Damage")
-	class UAnimMontage* RifleHitDamageMontage;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "CharacterBase|Asset|Damage")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "CharacterBase|Asset")
 	class UAnimMontage* DefaultHitDamageMontage;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "CharacterBase|Asset|Climbsystem")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "CharacterBase|Climbsystem")
 	class UAnimMontage* ClimbLedgeMontage;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "CharacterBase|Asset|Climbsystem")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "CharacterBase|Climbsystem")
 	class UAnimMontage* ClimbJumpLeftMontage;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "CharacterBase|Asset|Climbsystem")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "CharacterBase|Climbsystem")
 	class UAnimMontage* ClimbJumpRightMontage;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "CharacterBase|Asset|Climbsystem")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "CharacterBase|Climbsystem")
 	class UAnimMontage* ClimbJumpUpMontage;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "CharacterBase|Asset|Climbsystem")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "CharacterBase|Climbsystem")
 	class UAnimMontage* ClimbCornerLeftMontage;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "CharacterBase|Asset|Climbsystem")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "CharacterBase|Climbsystem")
 	class UAnimMontage* ClimbCornerRightMontage;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "CharacterBase|Asset")
@@ -331,11 +314,12 @@ protected:
 
 	/* release actor */
 	virtual void ReleaseObjects();
+	virtual void EquipmentActionMontage();
+	virtual void UnEquipmentActionMontage();
+
 	TWeakObjectPtr<class AAbstractWeapon> CurrentWeapon;
 
 public:
-	virtual void EquipmentActionMontage();
-	virtual void UnEquipmentActionMontage();
 	virtual void FireActionMontage();
 
 	virtual void ReloadActionMontage(float &OutReloadDuration);
@@ -345,6 +329,8 @@ public:
 	virtual void FireReleassed();
 	virtual void Reload();
 	virtual void ReleaseWeapon();
+
+	EWeaponItemType GetCurrentWeaponType() const;
 
 protected:
 	float TakeDamageInterval;
@@ -357,4 +343,6 @@ public:
 
 protected:
 	virtual void CreateWeaponInstance(const TSubclassOf<class AAbstractWeapon> InTemplate, bool bSetEquip = false);
+
+	virtual void SetActionInfo(const EWeaponItemType InWeaponItemType, FWeaponActionInfo &OutWeaponActionInfo);
 };

@@ -3,7 +3,7 @@
 #include "Character/CharacterBase.h"
 #include "Item/ItemBase.h"
 #include "Character/CharacterModel.h"
-#include "AnimationBlueprint/CharacterAnimInstanceBase.h"
+#include "AnimInstance/CharacterAnimInstanceBase.h"
 
 #include "Engine.h"
 #include "Kismet/GameplayStatics.h"
@@ -24,7 +24,7 @@ ACharacterBase::ACharacterBase(const FObjectInitializer& ObjectInitializer)
 {
 	PrimaryActorTick.bCanEverTick = true;
 
-	HeadBoneName = FName(TEXT("head"));
+	HeadBoneName = FName(TEXT("Head"));
 	HeadSocketName = FName(TEXT("Head_Socket"));
 	PelvisSocketName = FName(TEXT("Pelvis_Socket"));
 	ChestSocketName = FName(TEXT("Chest_Socket"));
@@ -61,6 +61,12 @@ ACharacterBase::ACharacterBase(const FObjectInitializer& ObjectInitializer)
 void ACharacterBase::OnConstruction(const FTransform& Transform)
 {
 	Super::OnConstruction(Transform);
+
+	if (GetCharacterMovement())
+	{
+		DefaultMaxSpeed = GetCharacterMovement()->MaxWalkSpeed;
+		GetCharacterMovement()->MaxWalkSpeed = MovementSpeed;
+	}
 }
 
 void ACharacterBase::BeginDestroy()
@@ -84,13 +90,6 @@ void ACharacterBase::EndPlay(const EEndPlayReason::Type EndPlayReason)
 void ACharacterBase::BeginPlay()
 {
 	Super::BeginPlay();
-	DefaultMaxSpeed = GetCharacterMovement()->MaxWalkSpeed;
-	GetCharacterMovement()->MaxWalkSpeed = MovementSpeed;
-
-	if (ComponentExtension::HasValid(PawnNoiseEmitterComponent))
-	{
-		//
-	}
 }
 
 void ACharacterBase::Tick(float DeltaTime)
@@ -479,15 +478,6 @@ AAbstractWeapon* ACharacterBase::FindByWeapon(const EWeaponItemType WeaponItemTy
 	return nullptr;
 }
 
-AAbstractWeapon* ACharacterBase::GetSelectedWeapon() const
-{
-	if (CurrentWeapon.IsValid())
-	{
-		return CurrentWeapon.Get();
-	}
-	return nullptr;
-}
-
 UCharacterAnimInstanceBase* ACharacterBase::GetCharacterAnimInstance() const
 {
 	return Cast<UCharacterAnimInstanceBase>(GetMesh()->GetAnimInstance());
@@ -521,6 +511,33 @@ bool ACharacterBase::HasClimbingMoveLeft() const
 bool ACharacterBase::HasClimbingMoveRight() const
 {
 	return bCanClimbMoveRight;
+}
+
+void ACharacterBase::PickupObjects()
+{
+}
+
+void ACharacterBase::ReleaseObjects()
+{
+}
+
+#pragma region Weapon
+AAbstractWeapon* ACharacterBase::GetSelectedWeapon() const
+{
+	if (CurrentWeapon.IsValid())
+	{
+		return CurrentWeapon.Get();
+	}
+	return nullptr;
+}
+
+EWeaponItemType ACharacterBase::GetCurrentWeaponType() const
+{
+	if (CurrentWeapon.IsValid())
+	{
+		return CurrentWeapon.Get()->WeaponItemInfo.WeaponItemType;
+	}
+	return EWeaponItemType::None;
 }
 
 bool ACharacterBase::HasEquipWeapon() const
@@ -572,22 +589,31 @@ const bool ACharacterBase::SameWeapon(AAbstractWeapon* const Weapon)
 	}
 	return false;
 }
+#pragma endregion
 
-void ACharacterBase::PickupObjects()
-{
-}
-
-void ACharacterBase::ReleaseObjects()
-{
-}
-
+// Only Player override
 void ACharacterBase::EquipmentActionMontage()
 {
 	if (InventoryComponent->HasInventoryWeaponItems())
 	{
 		return;
 	}
-	PlayAnimMontage(EquipMontage, MONTAGE_DELAY);
+
+	if (CurrentWeapon.IsValid())
+	{
+		const EWeaponItemType WeaponType = CurrentWeapon.Get()->WeaponItemInfo.WeaponItemType;
+		FWeaponActionInfo ActionInfo;
+		SetActionInfo(WeaponType, ActionInfo);
+
+		if (ActionInfo.EquipMontage)
+		{
+			PlayAnimMontage(ActionInfo.EquipMontage, MONTAGE_DELAY);
+		}
+		else
+		{
+			UE_LOG(LogWevetClient, Error, TEXT("nullptr AnimMontage : %s"), *FString(__FUNCTION__));
+		}
+	}
 }
 
 void ACharacterBase::UnEquipmentActionMontage()
@@ -596,7 +622,22 @@ void ACharacterBase::UnEquipmentActionMontage()
 	{
 		return;
 	}
-	PlayAnimMontage(UnEquipMontage, MONTAGE_DELAY);
+
+	if (CurrentWeapon.IsValid())
+	{
+		const EWeaponItemType WeaponType = CurrentWeapon.Get()->WeaponItemInfo.WeaponItemType;
+		FWeaponActionInfo ActionInfo;
+		SetActionInfo(WeaponType, ActionInfo);
+
+		if (ActionInfo.UnEquipMontage)
+		{
+			PlayAnimMontage(ActionInfo.UnEquipMontage, MONTAGE_DELAY);
+		}
+		else
+		{
+			UE_LOG(LogWevetClient, Error, TEXT("nullptr AnimMontage : %s"), *FString(__FUNCTION__));
+		}
+	}
 }
 
 void ACharacterBase::FireActionMontage()
@@ -604,30 +645,21 @@ void ACharacterBase::FireActionMontage()
 	if (CurrentWeapon.IsValid())
 	{
 		const EWeaponItemType WeaponType = CurrentWeapon.Get()->WeaponItemInfo.WeaponItemType;
-		switch (WeaponType)
+		FWeaponActionInfo ActionInfo;
+		SetActionInfo(WeaponType, ActionInfo);
+
+		if (ActionInfo.FireMontage)
 		{
-			case EWeaponItemType::Rifle:
-			case EWeaponItemType::Sniper:
-			{
-				PlayAnimMontage(FireMontage);
-			}
-			break;
-			case EWeaponItemType::Bomb:
-			{
-				//
-			}
-			break;
-			case EWeaponItemType::Pistol:
-			{
-				//
-			}
-			break;
-			case EWeaponItemType::Knife:
-			{
-				//
-			}
-			break;
+			PlayAnimMontage(ActionInfo.FireMontage);
 		}
+		else
+		{
+			UE_LOG(LogWevetClient, Error, TEXT("nullptr AnimMontage : %s"), *FString(__FUNCTION__));
+		}
+	}
+	else
+	{
+		UE_LOG(LogWevetClient, Error, TEXT("Not Equiped Weapon : %s"), *FString(__FUNCTION__));
 	}
 }
 
@@ -636,63 +668,47 @@ void ACharacterBase::ReloadActionMontage(float& OutReloadDuration)
 	if (CurrentWeapon.IsValid())
 	{
 		const EWeaponItemType WeaponType = CurrentWeapon.Get()->WeaponItemInfo.WeaponItemType;
-		switch (WeaponType)
+		FWeaponActionInfo ActionInfo;
+		SetActionInfo(WeaponType, ActionInfo);
+
+		if (ActionInfo.ReloadMontage)
 		{
-			case EWeaponItemType::Rifle:
-			case EWeaponItemType::Sniper:
-			{
-				OutReloadDuration += PlayAnimMontage(ReloadMontage);
-			}
-			break;
-			case EWeaponItemType::Bomb:
-			{
-				//
-			}
-			break;
-			case EWeaponItemType::Pistol:
-			{
-				//
-			}
-			break;
-			case EWeaponItemType::Knife:
-			{
-				//
-			}
-			break;
+			OutReloadDuration += PlayAnimMontage(ActionInfo.ReloadMontage);
 		}
+		else
+		{
+			UE_LOG(LogWevetClient, Error, TEXT("nullptr AnimMontage : %s"), *FString(__FUNCTION__));
+		}
+	}
+	else
+	{
+		UE_LOG(LogWevetClient, Error, TEXT("Not Equiped Weapon : %s"), *FString(__FUNCTION__));
 	}
 }
 
 void ACharacterBase::TakeDamageActionMontage()
 {
-	if (FMath::IsNearlyZero(TakeDamageInterval))
+	if (!FMath::IsNearlyZero(TakeDamageInterval))
 	{
-		if (CurrentWeapon.IsValid())
+		return;
+	}
+
+	if (CurrentWeapon.IsValid())
+	{
+		const EWeaponItemType WeaponType = CurrentWeapon.Get()->WeaponItemInfo.WeaponItemType;
+		FWeaponActionInfo ActionInfo;
+		SetActionInfo(WeaponType, ActionInfo);
+
+		if (ActionInfo.HitDamageMontage)
 		{
-			const EWeaponItemType WeaponType = CurrentWeapon.Get()->WeaponItemInfo.WeaponItemType;
-			switch (WeaponType)
-			{
-			case EWeaponItemType::Rifle:
-			case EWeaponItemType::Sniper:
-				if (RifleHitDamageMontage)
-				{
-					TakeDamageInterval = PlayAnimMontage(RifleHitDamageMontage);
-				}
-				break;
-			case EWeaponItemType::Bomb:
-				//
-				break;
-			case EWeaponItemType::Pistol:
-				//
-				break;
-			};
+			TakeDamageInterval = PlayAnimMontage(ActionInfo.HitDamageMontage);
 		}
-		else
+	}
+	else
+	{
+		if (DefaultHitDamageMontage)
 		{
-			if (DefaultHitDamageMontage)
-			{
-				TakeDamageInterval = PlayAnimMontage(DefaultHitDamageMontage);
-			}
+			TakeDamageInterval = PlayAnimMontage(DefaultHitDamageMontage);
 		}
 	}
 }
@@ -800,3 +816,21 @@ void ACharacterBase::CreateWeaponInstance(const TSubclassOf<class AAbstractWeapo
 		CurrentWeapon = MakeWeakObjectPtr<AAbstractWeapon>(SpawningObject);
 	}
 }
+
+void ACharacterBase::SetActionInfo(const EWeaponItemType InWeaponItemType, FWeaponActionInfo& OutWeaponActionInfo)
+{
+	if (Wevet::ArrayExtension::NullOrEmpty(ActionInfoArray))
+	{
+		return;
+	}
+
+	for (FWeaponActionInfo& Info : ActionInfoArray)
+	{
+		if (InWeaponItemType == Info.WeaponItemType)
+		{
+			OutWeaponActionInfo = Info;
+			break;
+		}
+	}
+}
+

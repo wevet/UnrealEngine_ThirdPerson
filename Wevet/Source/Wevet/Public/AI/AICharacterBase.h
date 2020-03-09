@@ -89,17 +89,13 @@ public:
 	TSubclassOf<class UAIUserWidgetBase> UIControllerTemplate;
 	class UAIUserWidgetBase* UIController;
 
-	UFUNCTION(BlueprintCallable, Category = "AICharacterBase|Variable")
 	virtual void InitializePosses();
 
 	virtual FVector BulletTraceRelativeLocation() const override;
-
 	virtual FVector BulletTraceForwardLocation() const override;
 	
-	virtual void MainLoop(float DeltaTime);
-	
-	virtual void SetSeeTargetActor(ACharacterBase* const NewCharacter);
-	
+	virtual void MainLoop(float DeltaTime);	
+	virtual void SetSeeTargetActor(ACharacterBase* const NewCharacter);	
 	virtual void SetHearTargetActor(AActor* const OtherActor);
 
 protected:
@@ -142,7 +138,8 @@ protected:
 	/* Last time we attacked something */
 	float LastMeleeAttackTime;
 
-	/* Time-out value to clear the sensed position of the player. Should be higher than Sense interval in the PawnSense component not never miss sense ticks. */
+	/* Time-out value to clear the sensed position of the player. */
+	/* Should be higher than Sense interval in the PawnSense component not never miss sense ticks.  */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "AICharacterBase|Variable")
 	float SenseTimeOut;
 
@@ -150,7 +147,6 @@ protected:
 	bool bSeeTarget;
 	bool bHearTarget;
 
-	virtual bool CanShotup() const;
 	virtual void ForceSprint();
 	virtual void UnForceSprint();
 

@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "AnimationBlueprint/CharacterAnimInstanceBase.h"
+#include "CharacterAnimInstanceBase.h"
 #include "AICharacterAnimInstanceBase.generated.h"
 
 class AAICharacterBase;
@@ -17,15 +17,10 @@ class WEVET_API UAICharacterAnimInstanceBase : public UCharacterAnimInstanceBase
 	
 public:
 	UAICharacterAnimInstanceBase(const FObjectInitializer& ObjectInitializer);
-
 	virtual void NativeInitializeAnimation() override;
-
 	virtual void NativeUpdateAnimation(float DeltaTimeX) override;
 
 protected:	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
-	FName TargetSocketName;
-
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Variable")
 	AAICharacterBase* AICharacterOwner;
 

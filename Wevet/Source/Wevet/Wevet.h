@@ -42,5 +42,4 @@ DECLARE_LOG_CATEGORY_EXTERN(LogWevetClient, Verbose, All);
 #define PTG_TEAM_ID_NPC 2
 //stencil range
 #define STENCIL_MAX 255
-#define INT_ZERO 0
 

@@ -49,15 +49,6 @@ enum class EWeaponItemType : uint8
 	Bomb   UMETA(DisplayName = "Bomb"),
 };
 
-UENUM()
-enum class EWeaponSizeType : uint8
-{
-	None   UMETA(DisplayName = "None"),
-	Short  UMETA(DisplayName = "Short"),
-	Middle UMETA(DisplayName = "Middle"),
-	Large  UMETA(DisplayName = "Large"),
-};
-
 UENUM(BlueprintType)
 enum class EItemType : uint8
 {
@@ -77,9 +68,6 @@ public:
 	EWeaponItemType WeaponItemType;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
-	TSubclassOf<class AWeaponBase> WeaponClass;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
 	int32 ClipType;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
@@ -95,7 +83,7 @@ public:
 	float TraceDistance;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
-	UTexture2D* Texture;
+	class UTexture2D* Texture;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
 	FName EquipSocketName;
@@ -105,8 +93,6 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
 	float DamageRange;
-
-	EWeaponSizeType SizeType;
 
 	FWeaponItemInfo()
 	{
@@ -123,7 +109,6 @@ public:
 		UnEquipSocketName = InWeaponItemInfo.UnEquipSocketName;
 		EquipSocketName = InWeaponItemInfo.EquipSocketName;
 		WeaponItemType = InWeaponItemInfo.WeaponItemType;
-		WeaponClass = InWeaponItemInfo.WeaponClass;
 		CurrentAmmo = InWeaponItemInfo.CurrentAmmo;
 		ClipType = InWeaponItemInfo.ClipType;
 		MaxAmmo = InWeaponItemInfo.MaxAmmo;

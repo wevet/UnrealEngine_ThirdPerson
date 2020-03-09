@@ -3,7 +3,6 @@
 #include "AI/AICharacterBase.h"
 #include "AI/AIUserWidgetBase.h"
 #include "AI/AIControllerBase.h"
-#include "Weapon/WeaponBase.h"
 #include "Player/MockCharacter.h"
 #include "Perception/AiPerceptionComponent.h"
 #include "Perception/AISenseConfig_Hearing.h"
@@ -179,6 +178,10 @@ AActor* AAICharacterBase::GetTarget_Implementation()
 
 void AAICharacterBase::StateChange_Implementation(const EAIActionState NewAIActionState)
 {
+	if (AIController)
+	{
+		AIController->SetBlackboardActionState(NewAIActionState);
+	}
 }
 
 bool AAICharacterBase::CanMeleeStrike_Implementation() const
@@ -239,10 +242,10 @@ void AAICharacterBase::SetSeeTargetActor(ACharacterBase* const NewCharacter)
 		FRotator LookAtRotation = UKismetMathLibrary::FindLookAtRotation(StartLocation, TargetLocation);
 		SetActorRotation(LookAtRotation);
 	}
-	AIController->SetBlackboardTarget(NewCharacter);
+	AIController->SetBlackboardTarget(TargetCharacter);
 	AIController->SetBlackboardSeeActor(bWasSeeTarget);
 
-	if (NewCharacter)
+	if (TargetCharacter)
 	{
 		Super::EquipmentActionMontage();
 	}
@@ -277,23 +280,6 @@ void AAICharacterBase::SetHearTargetActor(AActor* const OtherActor)
 		Super::UnEquipmentActionMontage();
 	}
 	AIController->SetBlackboardHearActor(bHearTarget);
-}
-
-bool AAICharacterBase::CanShotup() const
-{
-	if (!CurrentWeapon.IsValid())
-	{
-		return false;
-	}
-	if (!CurrentWeapon.Get()->CanMeleeStrike_Implementation())
-	{
-		return false;
-	}
-	if (CurrentWeapon.Get()->WasReload())
-	{
-		return false;
-	}
-	return true;
 }
 
 void AAICharacterBase::ForceSprint()

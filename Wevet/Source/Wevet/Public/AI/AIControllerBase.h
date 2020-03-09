@@ -59,7 +59,7 @@ public:
 	virtual void SetBlackboardSeeActor(const bool NewCanSeeActor);
 	virtual void SetBlackboardHearActor(const bool NewCanHearActor);
 	virtual void SetBlackboardPatrolLocation(const FVector NewLocation);
-	const float GetSearchRadius() { return SearchRadius; }
+	virtual void SetBlackboardActionState(const EAIActionState NewAIActionState);
 
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Components, meta = (AllowPrivateAccess = "true"))
@@ -71,7 +71,7 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Components, meta = (AllowPrivateAccess = "true"))
 	class UAIPerceptionComponent* AIPerceptionComponent;
 
-	UFUNCTION(BlueprintCallable, Category = "AAIControllerBase|Perception")
+	UFUNCTION(BlueprintCallable, Category = "AIControllerBase|Perception")
 	virtual void OnTargetPerceptionUpdatedRecieve(AActor* Actor, FAIStimulus Stimulus);
 
 	AAICharacterBase* AICharacterOwner;
@@ -81,21 +81,28 @@ protected:
 	class UAISenseConfig_Hearing* HearConfig;
 	class UAISenseConfig_Prediction* PredictionConfig;
 
-	UPROPERTY(EditDefaultsOnly, Category = "AAIControllerBase|Variable")
+	UPROPERTY(EditDefaultsOnly, Category = "AIControllerBase|Variable")
 	FName CanSeePlayerKeyName;
 
-	UPROPERTY(EditDefaultsOnly, Category = "AAIControllerBase|Variable")
+	UPROPERTY(EditDefaultsOnly, Category = "AIControllerBase|Variable")
 	FName CanHearPlayerKeyName;
 
-	UPROPERTY(EditDefaultsOnly, Category = "AAIControllerBase|Variable")
-	FName TargetEnemyKeyName;
+	UPROPERTY(EditDefaultsOnly, Category = "AIControllerBase|Variable")
+	FName TargetKeyName;
 
-	UPROPERTY(EditDefaultsOnly, Category = "AAIControllerBase|Variable")
+	UPROPERTY(EditDefaultsOnly, Category = "AIControllerBase|Variable")
 	FName PatrolLocationKeyName;
 
-	UPROPERTY(EditDefaultsOnly, Category = "AAIControllerBase|Variable")
+	UPROPERTY(EditDefaultsOnly, Category = "AIControllerBase|Variable")
 	FName BotTypeKeyName;
 
-	float SearchRadius;
+	UPROPERTY(EditDefaultsOnly, Category = "AIControllerBase|Variable")
+	FName ActionStateKeyName;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AIControllerBase|Variable")
+	TArray<FVector> PointsArray;
+
+public:
+	UFUNCTION(BlueprintCallable, Category = "AIControllerBase|Function")
+	const TArray<FVector>& GetPathPointArray();
 };

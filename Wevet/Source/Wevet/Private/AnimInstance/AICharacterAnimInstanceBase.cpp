@@ -1,13 +1,12 @@
 // Copyright 2018 wevet works All Rights Reserved.
 
-#include "AICharacterAnimInstanceBase.h"
+#include "AnimInstance/AICharacterAnimInstanceBase.h"
 #include "GameFramework/Pawn.h"
-#include "AICharacterBase.h"
+#include "AI/AICharacterBase.h"
 #include "Kismet/KismetMathLibrary.h"
 
 UAICharacterAnimInstanceBase::UAICharacterAnimInstanceBase(const FObjectInitializer& ObjectInitializer) 
-	: Super(ObjectInitializer),
-	TargetSocketName(TEXT("spine_03"))
+	: Super(ObjectInitializer)
 {
 	//
 }
@@ -19,7 +18,10 @@ void UAICharacterAnimInstanceBase::NativeInitializeAnimation()
 
 void UAICharacterAnimInstanceBase::NativeUpdateAnimation(float DeltaTimeX)
 {
-	AICharacterOwner = Cast<AAICharacterBase>(OwningPawn);
+	if (AICharacterOwner == nullptr)
+	{
+		AICharacterOwner = Cast<AAICharacterBase>(OwningPawn);
+	}
 	Super::NativeUpdateAnimation(DeltaTimeX);
 }
 

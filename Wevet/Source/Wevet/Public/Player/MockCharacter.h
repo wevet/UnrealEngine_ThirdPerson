@@ -4,8 +4,6 @@
 
 #include "CoreMinimal.h"
 #include "Character/CharacterBase.h"
-#include "Weapon/WeaponBase.h"
-#include "Item/ItemBase.h"
 #include "MockCharacter.generated.h"
 
 /**
@@ -54,6 +52,7 @@ public:
 
 	virtual FVector BulletTraceRelativeLocation() const override;
 	virtual FVector BulletTraceForwardLocation() const override;
+	virtual void EquipmentActionMontage() override;
 
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Components, meta = (AllowPrivateAccess = "true"))

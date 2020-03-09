@@ -10,6 +10,8 @@
 #include "Component/CharacterInventoryComponent.h"
 #include "WevetExtension.h"
 
+#include "Item/AbstractItem.h"
+
 using namespace Wevet;
 
 AMockCharacter::AMockCharacter(const FObjectInitializer& ObjectInitializer)
@@ -212,10 +214,6 @@ void AMockCharacter::StopJumping()
 
 void AMockCharacter::FirePressed()
 {
-	if (HasSprint())
-	{
-		return;
-	}
 	Super::FirePressed();
 }
 
@@ -291,8 +289,7 @@ void AMockCharacter::OnPickupItemExecuter_Implementation(AActor* Actor)
 		return;
 	}
 
-	UWorld* const World = GetWorld();
-	if (AAbstractWeapon* Weapon = Cast<AWeaponBase>(Actor))
+	if (AAbstractWeapon* Weapon = Cast<AAbstractWeapon>(Actor))
 	{
 		if (Super::SameWeapon(Weapon))
 		{
@@ -305,7 +302,7 @@ void AMockCharacter::OnPickupItemExecuter_Implementation(AActor* Actor)
 		Actor = nullptr;
 	}
 
-	if (AItemBase* Item = Cast<AItemBase>(Actor))
+	if (AAbstractItem* Item = Cast<AAbstractItem>(Actor))
 	{
 		const EItemType ItemType = Item->GetItemType();
 		switch (ItemType)
@@ -316,8 +313,7 @@ void AMockCharacter::OnPickupItemExecuter_Implementation(AActor* Actor)
 				if (auto Weapon = Super::FindByWeapon(ItemInfo.WeaponItemType))
 				{
 					IWeaponInstigator::Execute_DoReplenishment(Weapon, ItemInfo);
-					Item->Release();
-					Actor->ConditionalBeginDestroy();
+					IInteractionInstigator::Execute_Release(Item, nullptr);
 					Actor = nullptr;
 				}
 			}
@@ -333,10 +329,6 @@ void AMockCharacter::OnPickupItemExecuter_Implementation(AActor* Actor)
 void AMockCharacter::OnTakeDamage_Implementation(FName BoneName, float Damage, AActor* Actor, bool& bDied)
 {
 	Super::OnTakeDamage_Implementation(BoneName, Damage, Actor, bDied);
-	if (IDamageInstigator::Execute_IsDeath(this))
-	{
-		Die_Implementation();
-	}
 }
 
 void AMockCharacter::Equipment_Implementation()
@@ -432,9 +424,9 @@ void AMockCharacter::ClimbJump_Implementation()
 
 void AMockCharacter::ReportClimbJumpEnd_Implementation()
 {
-	if (auto Anim = GetCharacterAnimInstance())
+	if (GetCharacterAnimInstance())
 	{
-		Anim->Montage_Stop(0.f);
+		GetCharacterAnimInstance()->StopAllMontages(ZERO_VALUE);
 	}
 	Super::ReportClimbJumpEnd_Implementation();
 }
@@ -457,6 +449,42 @@ FVector AMockCharacter::BulletTraceForwardLocation() const
 	return GetTPSCameraComponent()->GetForwardVector();
 }
 
+void AMockCharacter::EquipmentActionMontage()
+{
+	if (InventoryComponent->HasInventoryWeaponItems())
+	{
+		return;
+	}
+
+	if (WeaponCurrentIndex == INDEX_NONE)
+	{
+		UpdateWeapon();
+	}
+
+	// Fake WeaponPointer
+	const TArray<AAbstractWeapon*> WeaponItem = Super::InventoryComponent->GetWeaponInventoryOriginal();
+	auto WeaponPtr = WeaponItem[WeaponCurrentIndex];
+	if (WeaponPtr)
+	{
+		const EWeaponItemType WeaponType = WeaponPtr->WeaponItemInfo.WeaponItemType;
+		FWeaponActionInfo ActionInfo;
+		SetActionInfo(WeaponType, ActionInfo);
+
+		if (ActionInfo.EquipMontage)
+		{
+			PlayAnimMontage(ActionInfo.EquipMontage, MONTAGE_DELAY);
+		}
+		else
+		{
+			UE_LOG(LogWevetClient, Error, TEXT("nullptr AnimMontage : %s"), *FString(__FUNCTION__));
+		}
+	}
+	else
+	{
+		UE_LOG(LogWevetClient, Error, TEXT("Weapon nullptr : %s"), *FString(__FUNCTION__));
+	}
+}
+
 void AMockCharacter::ToggleEquip()
 {
 	if (CurrentWeapon.IsValid())
@@ -465,7 +493,7 @@ void AMockCharacter::ToggleEquip()
 	}
 	else
 	{
-		Super::EquipmentActionMontage();
+		EquipmentActionMontage();
 	}
 }
 

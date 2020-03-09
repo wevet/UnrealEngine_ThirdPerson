@@ -1,8 +1,8 @@
 // Copyright 2018 wevet works All Rights Reserved.
-#include "AIControllerBase.h"
-#include "MockCharacter.h"
-#include "AICharacterBase.h"
-#include "WayPointBase.h"
+#include "AI/AIControllerBase.h"
+#include "AI/AICharacterBase.h"
+#include "AI/WayPointBase.h"
+#include "Player/MockCharacter.h"
 
 #include "Perception/AIPerceptionComponent.h"
 #include "BehaviorTree/BlackboardComponent.h"
@@ -11,20 +11,23 @@
 #include "Lib/WevetBlueprintFunctionLibrary.h"
 #include "WevetExtension.h"
 
+#include "NavigationSystem.h"
+#include "NavigationPath.h"
+
 using namespace Wevet;
 
 AAIControllerBase::AAIControllerBase(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
 	BotTypeKeyName = (FName(TEXT("BotType")));
+	TargetKeyName = (FName(TEXT("Target")));
 	CanSeePlayerKeyName   = (FName(TEXT("CanSeePlayer")));
 	CanHearPlayerKeyName  = (FName(TEXT("CanHearPlayer")));
-	TargetEnemyKeyName    = (FName(TEXT("TargetEnemy")));
 	PatrolLocationKeyName = (FName(TEXT("PatrolLocation")));
+	ActionStateKeyName    = (FName(TEXT("ActionState")));
 	SightConfig = nullptr;
 	HearConfig  = nullptr;
 	PredictionConfig = nullptr;
-	SearchRadius = 200.f;
 
 	BehaviorTreeComponent = ObjectInitializer.CreateDefaultSubobject<UBehaviorTreeComponent>(this, TEXT("BehaviorTreeComponent"));
 	BlackboardComponent   = ObjectInitializer.CreateDefaultSubobject<UBlackboardComponent>(this, TEXT("BlackboardComponent"));
@@ -107,7 +110,7 @@ void AAIControllerBase::SetBlackboardTarget(APawn* NewTarget)
 {
 	if (BlackboardComponent)
 	{
-		BlackboardComponent->SetValueAsObject(TargetEnemyKeyName, NewTarget);
+		BlackboardComponent->SetValueAsObject(TargetKeyName, NewTarget);
 	}
 }
 
@@ -152,6 +155,14 @@ void AAIControllerBase::SetBlackboardPatrolLocation(const FVector NewLocation)
 	}
 }
 
+void AAIControllerBase::SetBlackboardActionState(const EAIActionState NewAIActionState)
+{
+	if (BlackboardComponent)
+	{
+		BlackboardComponent->SetValueAsEnum(ActionStateKeyName, (uint8)NewAIActionState);
+	}
+}
+
 void AAIControllerBase::OnTargetPerceptionUpdatedRecieve(AActor* Actor, FAIStimulus Stimulus)
 {
 	if (AICharacterOwner == nullptr || IDamageInstigator::Execute_IsDeath(AICharacterOwner))
@@ -163,4 +174,54 @@ void AAIControllerBase::OnTargetPerceptionUpdatedRecieve(AActor* Actor, FAIStimu
 	//UE_LOG(LogWevetClient, Log, TEXT("WasSuccessfullySensed : %s"), bSuccess ? TEXT("True") : TEXT("false"));
 }
 
+const TArray<FVector>& AAIControllerBase::GetPathPointArray()
+{
+	PointsArray.Reset(0);
+	UWorld* World = GetWorld();
+	check(World);
+
+	if (BlackboardComponent == nullptr || GetPawn() == nullptr)
+	{
+		UE_LOG(LogWevetClient, Error, TEXT("nullptr Pawn or BB : %s"), *FString(__FUNCTION__));
+		return PointsArray;
+	}
+
+	APawn* ControllPawn = GetPawn();
+	FVector TargetLocation = FVector::ZeroVector;
+	UNavigationPath* NavPath = nullptr;
+
+	if (IAIPawnOwner::Execute_IsSeeTarget(ControllPawn))
+	{
+		AActor* Target = Cast<AActor>(BlackboardComponent->GetValueAsObject(TargetKeyName));
+		if (Target)
+		{
+
+			NavPath = UNavigationSystemV1::FindPathToActorSynchronously(
+				World,
+				ControllPawn->GetActorLocation(),
+				Target);
+		}
+		else
+		{
+			UE_LOG(LogWevetClient, Error, TEXT("nullptr TargetActor : %s"), *FString(__FUNCTION__));
+		}
+	}
+	else
+	{
+		TargetLocation = BlackboardComponent->GetValueAsVector(PatrolLocationKeyName);
+		NavPath = UNavigationSystemV1::FindPathToLocationSynchronously(
+			World,
+			ControllPawn->GetActorLocation(),
+			TargetLocation);
+	}
+
+	if (NavPath)
+	{
+		for (FVector P : NavPath->PathPoints)
+		{
+			PointsArray.Add(P);
+		}
+	}
+	return PointsArray;
+}
 
