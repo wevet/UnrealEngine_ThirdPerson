@@ -2,11 +2,9 @@
 
 #include "Interface/InteractionInstigator.h"
 
-UInteractionInstigator::UInteractionInstigator(const FObjectInitializer& ObjectInitializer)
+UInteractionInstigator::UInteractionInstigator(const class FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
 	//
 }
-
-
 

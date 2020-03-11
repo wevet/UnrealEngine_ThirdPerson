@@ -111,12 +111,8 @@ float ACharacterBase::TakeDamage(float Damage, struct FDamageEvent const& Damage
 	return Super::TakeDamage(Damage, DamageEvent, EventInstigator, DamageCauser);
 }
 
-#pragma region InteractionExecuter
-void ACharacterBase::OnReleaseItemExecuter_Implementation() 
-{
-}
-
-void ACharacterBase::OnPickupItemExecuter_Implementation(AActor* Actor)
+#pragma region InteractionPawn
+void ACharacterBase::Pickup_Implementation(const EItemType InItemType, AActor* Actor)
 {
 	if (Actor)
 	{
@@ -124,6 +120,17 @@ void ACharacterBase::OnPickupItemExecuter_Implementation(AActor* Actor)
 	}
 }
 
+const bool ACharacterBase::CanPickup_Implementation()
+{
+	return false;
+}
+
+void ACharacterBase::Release_Implementation()
+{
+}
+#pragma endregion
+
+#pragma region SoundInstigator
 void ACharacterBase::ReportNoise_Implementation(USoundBase* Sound, float Volume)
 {
 	UWorld* const World = GetWorld();
@@ -446,8 +453,9 @@ void ACharacterBase::ReleaseWeaponToWorld(const FTransform& Transform, AAbstract
 	{
 		return;
 	}
+
 	const FWeaponItemInfo WeaponItemInfo = Weapon->WeaponItemInfo;
-	TSubclassOf<class AAbstractWeapon> WeaponClass = Weapon->GetClass();
+	const TSubclassOf<class AAbstractWeapon> WeaponClass = Weapon->GetClass();
 	IInteractionInstigator::Execute_Release(Weapon, nullptr);
 	Weapon = nullptr;
 
@@ -591,6 +599,7 @@ const bool ACharacterBase::SameWeapon(AAbstractWeapon* const Weapon)
 }
 #pragma endregion
 
+#pragma region Montages
 // Only Player override
 void ACharacterBase::EquipmentActionMontage()
 {
@@ -712,6 +721,7 @@ void ACharacterBase::TakeDamageActionMontage()
 		}
 	}
 }
+#pragma endregion
 
 FVector ACharacterBase::GetHeadSocketLocation() const
 {

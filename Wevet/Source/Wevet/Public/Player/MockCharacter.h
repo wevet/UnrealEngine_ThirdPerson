@@ -6,9 +6,8 @@
 #include "Character/CharacterBase.h"
 #include "MockCharacter.generated.h"
 
-/**
- * 
- */
+class AMockPlayerController;
+
 UCLASS(Blueprintable, BlueprintType)
 class WEVET_API AMockCharacter : public ACharacterBase
 {
@@ -40,11 +39,16 @@ public:
 	}
 
 	virtual void Die_Implementation() override;
-	virtual void OnReleaseItemExecuter_Implementation() override;
-	virtual void OnPickupItemExecuter_Implementation(AActor* Actor) override;
 	virtual void OnTakeDamage_Implementation(FName BoneName, float Damage, AActor* Actor, bool& bDied) override;
 	virtual void Equipment_Implementation() override;
 	virtual void UnEquipment_Implementation() override;
+
+	// InteractionPawn
+	virtual void Pickup_Implementation(const EItemType InItemType, AActor* Actor) override;
+	virtual const bool CanPickup_Implementation() override;
+	virtual void Release_Implementation() override;
+
+	// Climb
 	virtual void ClimbLedge_Implementation(bool InClimbLedge) override;
 	virtual void ClimbJump_Implementation() override;
 	virtual void ReportClimbJumpEnd_Implementation() override;
@@ -64,6 +68,9 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Components, meta = (AllowPrivateAccess = "true"))
 	class UCameraComponent* FPSCameraComponent;
 
+	UPROPERTY()
+	class AMockPlayerController* PlayerController;
+
 protected:
 	virtual void UpdateWeapon();
 	virtual void OnCrouch() override;
@@ -74,7 +81,6 @@ protected:
 	virtual void FirePressed() override;
 	virtual void FireReleassed() override;
 	virtual void Reload() override;
-	virtual void ReleaseWeapon() override;
 
 	void TurnAtRate(float Rate);
 	void LookUpAtRate(float Rate);

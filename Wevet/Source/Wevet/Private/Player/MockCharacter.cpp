@@ -1,18 +1,18 @@
 // Copyright 2018 wevet works All Rights Reserved.
 
-#include "MockCharacter.h"
-#include "CharacterPickupComponent.h"
+#include "Player/MockCharacter.h"
+#include "Player/MockPlayerController.h"
+#include "Component/CharacterPickupComponent.h"
+#include "Component/CharacterInventoryComponent.h"
+#include "AnimInstance/CharacterAnimInstanceBase.h"
+
 #include "Engine.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Math/RotationMatrix.h"
-#include "CharacterAnimInstanceBase.h"
-#include "Component/CharacterInventoryComponent.h"
 #include "WevetExtension.h"
-
 #include "Item/AbstractItem.h"
 
-using namespace Wevet;
 
 AMockCharacter::AMockCharacter(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer),
@@ -63,8 +63,15 @@ void AMockCharacter::OnConstruction(const FTransform& Transform)
 void AMockCharacter::BeginPlay()
 {
 	Super::BeginPlay();
+	PlayerController = Cast<AMockPlayerController>(Wevet::ControllerExtension::GetPlayer(this));
 }
 
+void AMockCharacter::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+}
+
+#pragma region Input
 void AMockCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent)
 {
 	check(PlayerInputComponent);
@@ -72,19 +79,15 @@ void AMockCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInpu
 	PlayerInputComponent->BindAction("ReleaseObjects", IE_Pressed, this, &AMockCharacter::ReleaseObjects);
 	PlayerInputComponent->BindAction("PickupObjects",  IE_Pressed, this, &AMockCharacter::PickupObjects);
 
-	PlayerInputComponent->BindAction("EquipWeapon", IE_Pressed, this, &AMockCharacter::ToggleEquip);
-	PlayerInputComponent->BindAction("SwapWeapon",  IE_Pressed, this, &AMockCharacter::UpdateWeapon);
-	PlayerInputComponent->BindAction("Fire", IE_Pressed,   this, &AMockCharacter::FirePressed);
-	PlayerInputComponent->BindAction("Fire", IE_Released,  this, &AMockCharacter::FireReleassed);
+	PlayerInputComponent->BindAction("Equip", IE_Pressed, this, &AMockCharacter::ToggleEquip);
+	PlayerInputComponent->BindAction("Swap",  IE_Pressed, this, &AMockCharacter::UpdateWeapon);
+	PlayerInputComponent->BindAction("Fire",  IE_Pressed,   this, &AMockCharacter::FirePressed);
+	PlayerInputComponent->BindAction("Fire",  IE_Released,  this, &AMockCharacter::FireReleassed);
 	PlayerInputComponent->BindAction("Reload", IE_Pressed, this, &AMockCharacter::Reload);
 
+	// joystick Input
 	PlayerInputComponent->BindAxis("LookRight", this, &AMockCharacter::TurnAtRate);
 	PlayerInputComponent->BindAxis("LookUp", this, &AMockCharacter::LookUpAtRate);
-}
-
-void AMockCharacter::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
 }
 
 void AMockCharacter::TurnAtRate(float Rate)
@@ -138,16 +141,15 @@ void AMockCharacter::MoveRight(float Value)
 	{
 		const bool bCanNotClimbJumpLeft  = (!Super::bCanClimbJumpLeft && Value < 0.f);
 		const bool bCanNotClimbJumpRight = (!Super::bCanClimbJumpRight && Value > 0.f);
-		APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0);
 
 		if (Super::bCanTurnLeft && bCanNotClimbJumpLeft)
 		{
-			Super::DisableInput(PC);
+			Super::DisableInput(PlayerController);
 			IGrabInstigator::Execute_TurnConerLeftUpdate(this);
 		}
 		if (Super::bCanTurnRight && bCanNotClimbJumpRight)
 		{
-			Super::DisableInput(PC);
+			Super::DisableInput(PlayerController);
 			IGrabInstigator::Execute_TurnConerRightUpdate(this);
 		}
 	}
@@ -166,12 +168,12 @@ void AMockCharacter::MoveRight(float Value)
 
 void AMockCharacter::ReleaseObjects()
 {
-	OnReleaseItemExecuter_Implementation();
+	Release_Implementation();
 }
 
 void AMockCharacter::PickupObjects()
 {
-	OnPickupItemExecuter_Implementation(GetPickupComponent()->GetPickupActor());
+	Pickup_Implementation(EItemType::None, GetPickupComponent()->GetPickupActor());
 }
 
 void AMockCharacter::Jump()
@@ -262,6 +264,19 @@ void AMockCharacter::UpdateWeapon()
 	}
 }
 
+void AMockCharacter::ToggleEquip()
+{
+	if (CurrentWeapon.IsValid())
+	{
+		Super::UnEquipmentActionMontage();
+	}
+	else
+	{
+		EquipmentActionMontage();
+	}
+}
+#pragma endregion
+
 void AMockCharacter::Die_Implementation()
 {
 	if (Super::bWasDied)
@@ -269,61 +284,8 @@ void AMockCharacter::Die_Implementation()
 		return;
 	}
 
-	if (APlayerController* PC = ControllerExtension::GetPlayer(this))
-	{
-		Super::DisableInput(PC);
-	}
+	Super::DisableInput(PlayerController);
 	Super::Die_Implementation();
-}
-
-void AMockCharacter::OnReleaseItemExecuter_Implementation()
-{
-	ReleaseWeapon();
-	Super::OnReleaseItemExecuter_Implementation();
-}
-
-void AMockCharacter::OnPickupItemExecuter_Implementation(AActor* Actor)
-{
-	if (Actor == nullptr)
-	{
-		return;
-	}
-
-	if (AAbstractWeapon* Weapon = Cast<AAbstractWeapon>(Actor))
-	{
-		if (Super::SameWeapon(Weapon))
-		{
-			//UE_LOG(LogWevetClient, Warning, TEXT("SameWeapon : %s"), *(Weapon->GetName()));
-			return;
-		}
-		// Create
-		Super::CreateWeaponInstance(Weapon->GetClass());
-		IInteractionInstigator::Execute_Release(Weapon, nullptr);
-		Actor = nullptr;
-	}
-
-	if (AAbstractItem* Item = Cast<AAbstractItem>(Actor))
-	{
-		const EItemType ItemType = Item->GetItemType();
-		switch (ItemType)
-		{
-		case EItemType::Weapon:
-			{
-				const FWeaponItemInfo ItemInfo = Item->WeaponItemInfo;
-				if (auto Weapon = Super::FindByWeapon(ItemInfo.WeaponItemType))
-				{
-					IWeaponInstigator::Execute_DoReplenishment(Weapon, ItemInfo);
-					IInteractionInstigator::Execute_Release(Item, nullptr);
-					Actor = nullptr;
-				}
-			}
-			break;
-		case EItemType::Health:
-			// @TODO
-			break;
-		}
-	}
-	Super::OnPickupItemExecuter_Implementation(Actor);
 }
 
 void AMockCharacter::OnTakeDamage_Implementation(FName BoneName, float Damage, AActor* Actor, bool& bDied)
@@ -433,9 +395,79 @@ void AMockCharacter::ReportClimbJumpEnd_Implementation()
 
 void AMockCharacter::TurnConerResult_Implementation()
 {
-	if (APlayerController* PC = ControllerExtension::GetPlayer(this, 0))
+	if (PlayerController)
 	{
-		Super::EnableInput(PC);
+		Super::EnableInput(PlayerController);
+	}
+}
+
+// Always Pickup
+const bool AMockCharacter::CanPickup_Implementation()
+{
+	return true;
+}
+
+void AMockCharacter::Release_Implementation()
+{
+	UWorld* const World = GetWorld();
+
+	if (World == nullptr)
+	{
+		return;
+	}
+
+	const FVector ForwardOffset = Controller ? Controller->GetControlRotation().Vector() : Super::GetActorForwardVector();
+	const FRotator Rotation = Super::GetActorRotation();
+	const FVector Forward = Super::GetActorLocation() + (ForwardOffset * DEFAULT_FORWARD_VECTOR);
+	const FTransform Transform = UKismetMathLibrary::MakeTransform(Forward, Rotation, FVector::OneVector);
+
+	if (AAbstractWeapon * Weapon = Super::GetUnEquipWeapon())
+	{
+		Super::InventoryComponent->RemoveWeaponInventory(Weapon);
+		Super::ReleaseWeaponToWorld(Transform, Weapon);
+	}
+}
+
+void AMockCharacter::Pickup_Implementation(const EItemType InItemType, AActor* Actor)
+{
+	if (Actor == nullptr)
+	{
+		return;
+	}
+
+	if (AAbstractWeapon * Weapon = Cast<AAbstractWeapon>(Actor))
+	{
+		if (Super::SameWeapon(Weapon))
+		{
+			//UE_LOG(LogWevetClient, Warning, TEXT("SameWeapon : %s"), *(Weapon->GetName()));
+			return;
+		}
+		// Create
+		Super::CreateWeaponInstance(Weapon->GetClass());
+		IInteractionInstigator::Execute_Release(Weapon, nullptr);
+		Actor = nullptr;
+	}
+
+	if (AAbstractItem * Item = Cast<AAbstractItem>(Actor))
+	{
+		const EItemType ItemType = Item->GetItemType();
+		switch (ItemType)
+		{
+		case EItemType::Weapon:
+		{
+			const FWeaponItemInfo ItemInfo = Item->WeaponItemInfo;
+			if (auto Weapon = Super::FindByWeapon(ItemInfo.WeaponItemType))
+			{
+				IWeaponInstigator::Execute_DoReplenishment(Weapon, ItemInfo);
+				IInteractionInstigator::Execute_Release(Item, nullptr);
+				Actor = nullptr;
+			}
+		}
+		break;
+		case EItemType::Health:
+			// @TODO
+			break;
+		}
 	}
 }
 
@@ -485,35 +517,3 @@ void AMockCharacter::EquipmentActionMontage()
 	}
 }
 
-void AMockCharacter::ToggleEquip()
-{
-	if (CurrentWeapon.IsValid())
-	{
-		Super::UnEquipmentActionMontage();
-	}
-	else
-	{
-		EquipmentActionMontage();
-	}
-}
-
-void AMockCharacter::ReleaseWeapon()
-{
-	UWorld* const World = GetWorld();
-
-	if (World == nullptr)
-	{
-		return;
-	}
-
-	const FVector ForwardOffset = Controller ? Controller->GetControlRotation().Vector() : Super::GetActorForwardVector();
-	const FRotator Rotation = Super::GetActorRotation();
-	const FVector Forward   = Super::GetActorLocation() + (ForwardOffset * DEFAULT_FORWARD_VECTOR);
-	const FTransform Transform  = UKismetMathLibrary::MakeTransform(Forward, Rotation, FVector::OneVector);
-	
-	if (AAbstractWeapon* Weapon = Super::GetUnEquipWeapon())
-	{
-		Super::InventoryComponent->RemoveWeaponInventory(Weapon);
-		Super::ReleaseWeaponToWorld(Transform, Weapon);
-	}
-}

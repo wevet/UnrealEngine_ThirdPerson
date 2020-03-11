@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
+#include "WevetTypes.h"
 #include "InteractionInstigator.generated.h"
 
 class ACharacterBase;
@@ -27,4 +28,7 @@ public :
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "InteractionInstigator")
 	void Release(ACharacterBase* NewCharacter);
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "InteractionInstigator")
+	EItemType GetItemType() const;
 };

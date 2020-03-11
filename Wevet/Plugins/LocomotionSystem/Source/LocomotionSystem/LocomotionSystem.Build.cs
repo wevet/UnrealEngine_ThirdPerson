@@ -1,51 +1,33 @@
+// Copyright 1998-2019 Epic Games, Inc. All Rights Reserved.
 
-namespace UnrealBuildTool.Rules
+using UnrealBuildTool;
+
+public class LocomotionSystem : ModuleRules
 {
-	public class LocomotionSystem : ModuleRules
+	public LocomotionSystem(ReadOnlyTargetRules Target) : base(Target)
 	{
-		public LocomotionSystem(ReadOnlyTargetRules Target) : base(Target)
-		{
+		PrivatePCHHeaderFile = "Public/LocomotionSystem.h";		
 
-			PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
+		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 
-			PublicIncludePaths.AddRange(
-				new string[] 
-				{
-					"LocomotionSystem/Public"
-					// ... add public include paths required here ...
-				}
-			);
+		PrivateIncludePaths.Add("LocomotionSystem/Private");
 
-			PrivateIncludePaths.AddRange(
-				new string[] 
-				{
-					"LocomotionSystem/Private",
-					// ... add other private include paths required here ...
-				}
-			);
+		PublicDependencyModuleNames.AddRange(
+			new string[]
+			{
+				"Core",
+			}
+		);
 
-			PublicDependencyModuleNames.AddRange(
-				new string[]
-				{
-					"Core",
-					// ... add other public dependencies that you statically link with here ...
-				}
-			);
-
-			PrivateDependencyModuleNames.AddRange(
-				new string[]
-				{
-					"CoreUObject",
-					"Engine",
-					"InputCore",
-					"Slate",
-					"SlateCore",
-					// ... add private dependencies that you statically link with here ...	
-				}
-			);
-
-		}
+		PrivateDependencyModuleNames.AddRange(
+			new string[]
+			{
+				"CoreUObject",
+				"Engine",
+				"Slate",
+				"SlateCore",
+			}
+		);
 	}
-
-
 }
+

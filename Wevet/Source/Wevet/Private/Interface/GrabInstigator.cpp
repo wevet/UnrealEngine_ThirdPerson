@@ -2,7 +2,7 @@
 
 #include "Interface/GrabInstigator.h"
 
-UGrabInstigator::UGrabInstigator(const FObjectInitializer& ObjectInitializer)
+UGrabInstigator::UGrabInstigator(const class FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
 	//

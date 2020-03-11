@@ -131,6 +131,15 @@ void ARifle::BeginOverlapRecieve(
 		UE_LOG(LogWevetClient, Warning, TEXT("Already Owner : %s"), *GetOwner()->GetName());
 		return;
 	}
+
+	if (IInteractionPawn* Interface = Cast<IInteractionPawn>(OtherActor))
+	{
+		if (!IInteractionPawn::Execute_CanPickup(Interface->_getUObject()))
+		{
+			return;
+		}
+	}
+
 	if (AMockCharacter * Character = Cast<AMockCharacter>(OtherActor))
 	{
 		WidgetComponent->SetVisibility(true);
@@ -150,6 +159,15 @@ void ARifle::EndOverlapRecieve(
 		UE_LOG(LogWevetClient, Warning, TEXT("Already Owner : %s"), *GetOwner()->GetName());
 		return;
 	}
+
+	if (IInteractionPawn * Interface = Cast<IInteractionPawn>(OtherActor))
+	{
+		if (!IInteractionPawn::Execute_CanPickup(Interface->_getUObject()))
+		{
+			return;
+		}
+	}
+
 	if (AMockCharacter * Character = Cast<AMockCharacter>(OtherActor))
 	{
 		WidgetComponent->SetVisibility(false);
@@ -209,11 +227,11 @@ void ARifle::OnFirePressInternal()
 
 	const FVector MuzzleLocation  = GetMuzzleTransform().GetLocation();
 	const FRotator MuzzleRotation = FRotator(GetMuzzleTransform().GetRotation());
-	IInteractionExecuter::Execute_ReportNoiseOther(CharacterPtr.Get(), this, FireSound, DEFAULT_VOLUME, MuzzleLocation);
+	ISoundInstigator::Execute_ReportNoiseOther(CharacterPtr.Get(), this, FireSound, DEFAULT_VOLUME, MuzzleLocation);
 	CharacterPtr.Get()->FireActionMontage();
 	--WeaponItemInfo.CurrentAmmo;
 
-	IInteractionExecuter::Execute_ReportNoiseOther(CharacterPtr.Get(), this, ImpactSound, DEFAULT_VOLUME, HitData.Location);
+	ISoundInstigator::Execute_ReportNoiseOther(CharacterPtr.Get(), this, ImpactSound, DEFAULT_VOLUME, HitData.Location);
 	const FVector StartPoint = MuzzleLocation;
 	const FVector EndPoint   = UKismetMathLibrary::SelectVector(HitData.ImpactPoint, HitData.TraceEnd, bSuccess);
 	const FRotator Rotation  = UKismetMathLibrary::FindLookAtRotation(StartPoint, EndPoint);

@@ -10,8 +10,9 @@
 
 // Interface
 #include "Interface/DamageInstigator.h"
-#include "Interface/InteractionExecuter.h"
+#include "Interface/SoundInstigator.h"
 #include "Interface/GrabInstigator.h"
+#include "Interface/InteractionPawn.h"
 
 // ActionInfo
 #include "Structs/WeaponActionInfo.h"
@@ -28,7 +29,7 @@ class UCharacterModel;
 class UCharacterAnimInstanceBase;
 
 UCLASS(ABSTRACT)
-class WEVET_API ACharacterBase : public ACharacter, public IDamageInstigator, public IInteractionExecuter, public IGrabInstigator
+class WEVET_API ACharacterBase : public ACharacter, public IDamageInstigator, public ISoundInstigator, public IGrabInstigator, public IInteractionPawn
 {
 	GENERATED_BODY()
 
@@ -50,24 +51,30 @@ public:
 	virtual void OnCrouch();
 
 public:
-#pragma region InteractionExecuter
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|InteractionExecuter")
-	void OnReleaseItemExecuter();
-	virtual void OnReleaseItemExecuter_Implementation() override;
+#pragma region InteractionPawn
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|InteractionPawn")
+	void Pickup(const EItemType InItemType, AActor* Actor);
+	virtual void Pickup_Implementation(const EItemType InItemType, AActor* Actor) override;
 
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|InteractionExecuter")
-	void OnPickupItemExecuter(AActor* Actor);
-	virtual void OnPickupItemExecuter_Implementation(AActor* Actor) override;
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|InteractionPawn")
+	const bool CanPickup();
+	virtual const bool CanPickup_Implementation() override;
 
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|InteractionExecuter")
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|InteractionPawn")
+	void Release();
+	virtual void Release_Implementation() override;
+#pragma endregion
+
+#pragma region SoundInstigator
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|SoundInstigator")
 	void ReportNoise(USoundBase* Sound, float Volume);
 	virtual void ReportNoise_Implementation(USoundBase* Sound, float Volume) override;
 
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|InteractionExecuter")
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|SoundInstigator")
 	void FootStep(USoundBase* Sound, float Volume);
 	virtual void FootStep_Implementation(USoundBase* Sound, float Volume) override;
 
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|InteractionExecuter")
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|SoundInstigator")
 	void ReportNoiseOther(AActor* Actor, USoundBase* Sound, const float Volume, const FVector Location);
 	virtual void ReportNoiseOther_Implementation(AActor* Actor, USoundBase* Sound, const float Volume, const FVector Location) override;
 #pragma endregion
