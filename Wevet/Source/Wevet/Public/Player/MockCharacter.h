@@ -71,6 +71,13 @@ protected:
 	UPROPERTY()
 	class AMockPlayerController* PlayerController;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "MockPlayer|Variable")
+	float ViewPitchMin;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "MockPlayer|Variable")
+	float ViewPitchMax;
+
+
 protected:
 	virtual void UpdateWeapon();
 	virtual void OnCrouch() override;

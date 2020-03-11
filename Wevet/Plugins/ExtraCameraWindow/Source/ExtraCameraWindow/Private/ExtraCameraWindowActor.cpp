@@ -1,5 +1,5 @@
 #include "ExtraCameraWindowActor.h"
-#include "IExtraCameraWindowPlugin.h"
+#include "ExtraCameraWindow.h"
 #include "GameDelegates.h"
 
 

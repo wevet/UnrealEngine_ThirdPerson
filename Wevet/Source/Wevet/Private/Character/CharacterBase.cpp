@@ -10,8 +10,6 @@
 #include "Kismet/KismetMathLibrary.h"
 #include "WevetExtension.h"
 
-using namespace Wevet;
-
 DEFINE_LOG_CATEGORY(LogWevetClient);
 
 ACharacterBase::ACharacterBase(const FObjectInitializer& ObjectInitializer)

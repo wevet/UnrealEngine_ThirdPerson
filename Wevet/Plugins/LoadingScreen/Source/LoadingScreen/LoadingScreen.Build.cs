@@ -1,4 +1,4 @@
-// Copyright 1998-2019 Epic Games, Inc. All Rights Reserved.
+// Copyright 2018 wevet works All Rights Reserved.
 
 using UnrealBuildTool;
 

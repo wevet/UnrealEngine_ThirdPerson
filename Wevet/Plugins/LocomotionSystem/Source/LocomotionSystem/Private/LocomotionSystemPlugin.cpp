@@ -1,4 +1,4 @@
-#include "ILocomotionSystemPlugin.h"
+#include "LocomotionSystem.h"
 
 class FLocomotionSystemPlugin : public ILocomotionSystemPlugin
 {

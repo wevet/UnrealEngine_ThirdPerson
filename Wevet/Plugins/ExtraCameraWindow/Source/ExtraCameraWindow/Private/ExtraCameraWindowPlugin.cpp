@@ -1,6 +1,6 @@
-#include "IExtraCameraWindowPlugin.h"
+#include "ExtraCameraWindow.h"
 
-class FExtraCameraWindowPlugin : public IExtraCameraWindowPlugin
+class FExtraCameraWindowPlugin : public IExtraCameraWindowModule
 {
 	virtual void StartupModule() override;
 	virtual void ShutdownModule() override;

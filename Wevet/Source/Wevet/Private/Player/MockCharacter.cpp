@@ -34,6 +34,9 @@ AMockCharacter::AMockCharacter(const FObjectInitializer& ObjectInitializer)
 	BaseTurnRate = 150.f;
 	BaseLookUpRate = 150.f;
 
+	ViewPitchMin = -50.f;
+	ViewPitchMax = 50.f;
+
 	CameraBoomComponent = ObjectInitializer.CreateDefaultSubobject<USpringArmComponent>(this, TEXT("CameraBoomComponent"));
 	CameraBoomComponent->SetupAttachment(RootComponent);
 	CameraBoomComponent->TargetArmLength = 250.f;
@@ -64,6 +67,10 @@ void AMockCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 	PlayerController = Cast<AMockPlayerController>(Wevet::ControllerExtension::GetPlayer(this));
+
+	auto CameraMGR = Wevet::ControllerExtension::GetCameraManager(this);
+	CameraMGR->ViewPitchMin = ViewPitchMin;
+	CameraMGR->ViewPitchMax = ViewPitchMax;
 }
 
 void AMockCharacter::Tick(float DeltaTime)
