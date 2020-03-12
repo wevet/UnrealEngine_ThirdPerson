@@ -11,7 +11,6 @@
 #include "Kismet/KismetMathLibrary.h"
 #include "WevetExtension.h"
 
-using namespace Wevet;
 
 ARifle::ARifle(const FObjectInitializer& ObjectInitializer) 
 	: Super(ObjectInitializer)
@@ -51,11 +50,6 @@ ARifle::ARifle(const FObjectInitializer& ObjectInitializer)
 	}
 
 	{
-		static ConstructorHelpers::FObjectFinder<USoundBase> FindAsset(TEXT("/Engine/VREditor/Sounds/UI/Object_PickUp"));
-		PickupSound = FindAsset.Object;
-	}
-
-	{
 		static ConstructorHelpers::FObjectFinder<UParticleSystem> FindAsset(TEXT("/Game/Assets/MilitaryWeapon/FX/P_AssaultRifle_MuzzleFlash"));
 		FlashEmitterTemplate = FindAsset.Object;
 	}
@@ -63,11 +57,6 @@ ARifle::ARifle(const FObjectInitializer& ObjectInitializer)
 	{
 		static ConstructorHelpers::FObjectFinder<UParticleSystem> FindAsset(TEXT("/Game/Assets/MilitaryWeapon/FX/P_Impact_Metal_Medium_01"));
 		ImpactEmitterTemplate = FindAsset.Object;
-	}
-
-	{
-		static ConstructorHelpers::FObjectFinder<UClass> FindAsset(TEXT("/Game/Game/Blueprints/Bullet/BP_MasterBullet.BP_MasterBullet_C"));
-		BulletsTemplate = FindAsset.Object;
 	}
 
 	NeededAmmo = 50;
@@ -78,12 +67,12 @@ void ARifle::BeginPlay()
 {
 	Super::BeginPlay();
 
-	if (ComponentExtension::HasValid(WidgetComponent))
+	if (Wevet::ComponentExtension::HasValid(WidgetComponent))
 	{
 		WidgetComponent->SetVisibility(false);
 	}
 
-	if (ComponentExtension::HasValid(SphereComponent))
+	if (Wevet::ComponentExtension::HasValid(SphereComponent))
 	{
 		SphereComponent->OnComponentBeginOverlap.AddDynamic(this, &ARifle::BeginOverlapRecieve);
 		SphereComponent->OnComponentEndOverlap.AddDynamic(this, &ARifle::EndOverlapRecieve);
@@ -297,7 +286,7 @@ void ARifle::Take_Implementation(ACharacterBase* NewCharacter)
 	WidgetComponent->SetVisibility(false);
 	SphereComponent->Deactivate();
 
-	if (ComponentExtension::HasValid(SphereComponent))
+	if (Wevet::ComponentExtension::HasValid(SphereComponent))
 	{
 		SphereComponent->OnComponentBeginOverlap.RemoveDynamic(this, &ARifle::BeginOverlapRecieve);
 		SphereComponent->OnComponentEndOverlap.RemoveDynamic(this, &ARifle::EndOverlapRecieve);
