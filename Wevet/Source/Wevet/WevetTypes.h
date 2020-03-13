@@ -1,8 +1,23 @@
 #pragma once
 #include "Engine/EngineTypes.h"
-#include "GameFramework/DamageType.h"
 #include "WevetTypes.generated.h"
 
+/** List of versions, native code will handle fixups for any old versions */
+namespace ESaveGameVersion
+{
+	enum type
+	{
+		// Initial version
+		Initial,
+		// Added Inventory
+		AddedInventory,
+		// Added ItemData to store count/level
+		AddedItemData,
+		// -----<new versions must be added before this line>-------------------------------------------------
+		VersionPlusOne,
+		LatestVersion = VersionPlusOne - 1
+	};
+}
 
 UENUM(BlueprintType)
 enum class EAIActionState : uint8
@@ -55,164 +70,4 @@ enum class EItemType : uint8
 	None   UMETA(DisplayName = "None"),
 	Weapon UMETA(DisplayName = "Weapon"),
 	Health UMETA(DisplayName = "Health"),
-};
-
-USTRUCT(BlueprintType)
-struct WEVET_API FWeaponItemInfo
-{
-	GENERATED_USTRUCT_BODY();
-
-public:
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
-	EWeaponItemType WeaponItemType;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
-	int32 ClipType;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
-	int32 CurrentAmmo;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
-	int32 MaxAmmo;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
-	float Damage;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
-	float TraceDistance;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
-	class UTexture2D* Texture;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
-	FName EquipSocketName;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
-	FName UnEquipSocketName;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
-	float DamageRange;
-
-	FWeaponItemInfo()
-	{
-		EquipSocketName = FName(TEXT("Lancer_Root_Socket"));
-		Damage = 20.f;
-		TraceDistance = 15000.f;
-		DamageRange = 0.f;
-	}
-
-public:
-
-	void CopyTo(const FWeaponItemInfo& InWeaponItemInfo)
-	{
-		UnEquipSocketName = InWeaponItemInfo.UnEquipSocketName;
-		EquipSocketName = InWeaponItemInfo.EquipSocketName;
-		WeaponItemType = InWeaponItemInfo.WeaponItemType;
-		CurrentAmmo = InWeaponItemInfo.CurrentAmmo;
-		ClipType = InWeaponItemInfo.ClipType;
-		MaxAmmo = InWeaponItemInfo.MaxAmmo;
-		Damage = InWeaponItemInfo.Damage;
-		Texture = InWeaponItemInfo.Texture;
-	}
-
-};
-
-
-USTRUCT(BlueprintType)
-struct WEVET_API FTakeHitInfo
-{
-	GENERATED_USTRUCT_BODY()
-
-public:
-	UPROPERTY()
-	float ActualDamage;
-
-	UPROPERTY()
-	UClass* DamageTypeClass;
-
-	UPROPERTY()
-	TWeakObjectPtr<class ACharacterBase> PawnInstigator;
-
-	UPROPERTY()
-	TWeakObjectPtr<class AActor> DamageCauser;
-
-	UPROPERTY()
-	uint8 DamageEventClassID;
-
-	UPROPERTY()
-	bool bKilled;
-
-private:
-
-	UPROPERTY()
-	uint8 EnsureReplicationByte;
-
-	UPROPERTY()
-	FDamageEvent GeneralDamageEvent;
-
-	UPROPERTY()
-	FPointDamageEvent PointDamageEvent;
-
-	UPROPERTY()
-	FRadialDamageEvent RadialDamageEvent;
-
-public:
-	FTakeHitInfo() 
-		: ActualDamage(0),
-		DamageTypeClass(nullptr),
-		PawnInstigator(nullptr),
-		DamageCauser(nullptr),
-		DamageEventClassID(0),
-		bKilled(false),
-		EnsureReplicationByte(0)
-	{}
-
-	FDamageEvent& GetDamageEvent()
-	{
-		switch (DamageEventClassID)
-		{
-		case FPointDamageEvent::ClassID:
-			if (PointDamageEvent.DamageTypeClass == nullptr)
-			{
-				PointDamageEvent.DamageTypeClass = DamageTypeClass ? DamageTypeClass : UDamageType::StaticClass();
-			}
-			return PointDamageEvent;
-
-		case FRadialDamageEvent::ClassID:
-			if (RadialDamageEvent.DamageTypeClass == nullptr)
-			{
-				RadialDamageEvent.DamageTypeClass = DamageTypeClass ? DamageTypeClass : UDamageType::StaticClass();
-			}
-			return RadialDamageEvent;
-
-		default:
-			if (GeneralDamageEvent.DamageTypeClass == nullptr)
-			{
-				GeneralDamageEvent.DamageTypeClass = DamageTypeClass ? DamageTypeClass : UDamageType::StaticClass();
-			}
-			return GeneralDamageEvent;
-		}
-	}
-
-	void SetDamageEvent(const FDamageEvent& DamageEvent)
-	{
-		DamageEventClassID = DamageEvent.GetTypeID();
-		switch (DamageEventClassID)
-		{
-		case FPointDamageEvent::ClassID:
-			PointDamageEvent = *((FPointDamageEvent const*)(&DamageEvent));
-			break;
-		case FRadialDamageEvent::ClassID:
-			RadialDamageEvent = *((FRadialDamageEvent const*)(&DamageEvent));
-			break;
-		default:
-			GeneralDamageEvent = DamageEvent;
-		}
-	}
-
-	void EnsureReplication()
-	{
-		++EnsureReplicationByte;
-	}
 };

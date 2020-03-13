@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
-#include "WevetTypes.h"
+#include "Structs/WeaponItemInfo.h"
 #include "WeaponInstigator.generated.h"
 
 
