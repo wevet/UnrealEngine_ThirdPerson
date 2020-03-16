@@ -71,6 +71,7 @@ void AMockCharacter::BeginPlay()
 	auto CameraMGR = Wevet::ControllerExtension::GetCameraManager(this);
 	CameraMGR->ViewPitchMin = ViewPitchMin;
 	CameraMGR->ViewPitchMax = ViewPitchMax;
+	Super::CreateWeaponInstance(DefaultWeapon);
 }
 
 void AMockCharacter::Tick(float DeltaTime)

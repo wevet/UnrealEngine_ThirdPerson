@@ -244,38 +244,6 @@ void ARifle::OnFirePressInternal()
 	Super::PlayEffect(HitData, SkeletalMeshComponent);
 }
 
-void ARifle::DoReload_Implementation()
-{
-	UWorld* const World = GetWorld();
-	if (World == nullptr)
-	{
-		return;
-	}
-
-	if (WeaponItemInfo.MaxAmmo <= 0)
-	{
-		UE_LOG(LogWevetClient, Log, TEXT("Empty Ammos Current:%d, ClipType:%d"), WeaponItemInfo.CurrentAmmo, WeaponItemInfo.ClipType);
-		return;
-	}
-
-	if (WeaponItemInfo.CurrentAmmo >= WeaponItemInfo.ClipType)
-	{
-		UE_LOG(LogWevetClient, Log, TEXT("Full Ammos Current:%d, ClipType:%d"), WeaponItemInfo.CurrentAmmo, WeaponItemInfo.ClipType);
-		return;
-	}
-
-	SetReload(true);
-	CharacterPtr.Get()->ReloadActionMontage(ReloadDuration);
-
-	OnReloadInternal();
-	FTimerDelegate TimerCallback;
-	TimerCallback.BindLambda([&]
-	{
-		SetReload(false);
-	});
-	World->GetTimerManager().SetTimer(ReloadTimerHandle, TimerCallback, ReloadDuration, false);
-}
-
 void ARifle::Take_Implementation(ACharacterBase* NewCharacter)
 {
 	Super::Take_Implementation(NewCharacter);

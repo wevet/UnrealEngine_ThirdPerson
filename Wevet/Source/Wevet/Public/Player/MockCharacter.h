@@ -77,6 +77,8 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "MockPlayer|Variable")
 	float ViewPitchMax;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "MockPlayer|Variable")
+	TSubclassOf<class AAbstractWeapon> DefaultWeapon;
 
 protected:
 	virtual void UpdateWeapon();

@@ -106,7 +106,26 @@ void ACharacterBase::Tick(float DeltaTime)
 
 float ACharacterBase::TakeDamage(float Damage, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
-	return Super::TakeDamage(Damage, DamageEvent, EventInstigator, DamageCauser);
+	if (IDamageInstigator::Execute_IsDeath(this))
+	{
+		return DEFAULT_VALUE;
+	}
+
+	const float ActualDamage = Super::TakeDamage(Damage, DamageEvent, EventInstigator, DamageCauser);
+	const bool bWasDeath = CharacterModel->IsEmptyHealth();
+	if (!bWasDeath)
+	{
+		CharacterModel->TakeDamage((int32)ActualDamage);
+		TakeDamageActionMontage();
+	}
+	else
+	{
+		CharacterModel->Die();
+		Die_Implementation();
+	}
+	//UE_LOG(LogWevetClient, Warning, TEXT("Damage : %f"), Damage);
+	//UE_LOG(LogWevetClient, Warning, TEXT("ActualDamage : %f"), ActualDamage);
+	return ActualDamage;
 }
 
 #pragma region InteractionPawn
@@ -257,19 +276,19 @@ void ACharacterBase::OnTakeDamage_Implementation(FName BoneName, float Damage, A
 	} 
 	else
 	{
-		CharacterModel->TakeDamage((int32)Damage);
+		//CharacterModel->TakeDamage((int32)Damage);
 	}
 
-	bDied = CharacterModel->IsEmptyHealth();
-	if (bDied)
-	{
-		CharacterModel->Die();
-		Die_Implementation();
-	}
-	else
-	{
-		TakeDamageActionMontage();
-	}
+	//bDied = CharacterModel->IsEmptyHealth();
+	//if (bDied)
+	//{
+	//	CharacterModel->Die();
+	//	Die_Implementation();
+	//}
+	//else
+	//{
+	//	TakeDamageActionMontage();
+	//}
 }
 
 void ACharacterBase::ApplyDamage_Implementation(UCharacterModel* DamageModel, const int InWeaponDamage, float& OutDamage)
@@ -618,7 +637,7 @@ void ACharacterBase::EquipmentActionMontage()
 		}
 		else
 		{
-			UE_LOG(LogWevetClient, Error, TEXT("nullptr AnimMontage : %s"), *FString(__FUNCTION__));
+			UE_LOG(LogWevetClient, Error, TEXT("nullptr EquipmentActionMontage : %s"), *FString(__FUNCTION__));
 		}
 	}
 }
@@ -642,7 +661,7 @@ void ACharacterBase::UnEquipmentActionMontage()
 		}
 		else
 		{
-			UE_LOG(LogWevetClient, Error, TEXT("nullptr AnimMontage : %s"), *FString(__FUNCTION__));
+			UE_LOG(LogWevetClient, Error, TEXT("nullptr UnEquipmentActionMontage : %s"), *FString(__FUNCTION__));
 		}
 	}
 }
@@ -661,7 +680,7 @@ void ACharacterBase::FireActionMontage()
 		}
 		else
 		{
-			UE_LOG(LogWevetClient, Error, TEXT("nullptr AnimMontage : %s"), *FString(__FUNCTION__));
+			UE_LOG(LogWevetClient, Error, TEXT("nullptr FireActionMontage : %s"), *FString(__FUNCTION__));
 		}
 	}
 	else
@@ -684,7 +703,7 @@ void ACharacterBase::ReloadActionMontage(float& OutReloadDuration)
 		}
 		else
 		{
-			UE_LOG(LogWevetClient, Error, TEXT("nullptr AnimMontage : %s"), *FString(__FUNCTION__));
+			UE_LOG(LogWevetClient, Error, TEXT("nullptr ReloadActionMontage : %s"), *FString(__FUNCTION__));
 		}
 	}
 	else

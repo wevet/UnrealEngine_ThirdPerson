@@ -27,7 +27,6 @@ protected:
 
 public:
 	virtual bool CanMeleeStrike_Implementation() const override;
-	virtual void DoReload_Implementation() override;
 	virtual void Take_Implementation(ACharacterBase* NewCharacter) override;
 	virtual FTransform GetMuzzleTransform() const override;
 	virtual void SetEquip(const bool InEquip) override;
