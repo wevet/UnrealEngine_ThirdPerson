@@ -24,10 +24,6 @@ class WEVET_API IDamageInstigator
 	GENERATED_IINTERFACE_BODY()
 
 public:
-	// Damage Receive Owner
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "DamageInstigator")
-	void OnTakeDamage(FName BoneName, float Damage, AActor* Actor, bool& bDied);
-
 	// Damage Sender Owner
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "DamageInstigator")
 	void InfrictionDamage(AActor* InfrictionActor, const bool bInfrictionDie);
@@ -52,5 +48,9 @@ public:
 	UCharacterModel* GetPropertyModel() const;
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "DamageInstigator")
-	void ApplyDamage(UCharacterModel* DamageModel, const int InWeaponDamage, float& OutDamage);
+	void MakeDamage(UCharacterModel* DamageModel, const int InWeaponDamage, float& OutDamage);
+
+	// etc HeadShot Damage onkill
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "DamageInstigator")
+	bool CanKillDealDamage(const FName BoneName) const;
 };

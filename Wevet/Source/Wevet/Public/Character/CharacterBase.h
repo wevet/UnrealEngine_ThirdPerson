@@ -81,16 +81,16 @@ public:
 
 #pragma region DamageInstigator
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|IDamageInstigator")
+	void MakeDamage(UCharacterModel* DamageModel, const int InWeaponDamage, float& OutDamage);
+	virtual void MakeDamage_Implementation(UCharacterModel* DamageModel, const int InWeaponDamage, float& OutDamage) override;
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|IDamageInstigator")
 	bool IsDeath();
 	virtual bool IsDeath_Implementation() override;
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|IDamageInstigator")
 	void Die();
 	virtual void Die_Implementation() override;
-
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|IDamageInstigator")
-	void OnTakeDamage(FName BoneName, float Damage, AActor* Actor, bool& bDied);
-	virtual void OnTakeDamage_Implementation(FName BoneName, float Damage, AActor* Actor, bool& bDied) override;
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|IDamageInstigator")
 	void InfrictionDamage(AActor* InfrictionActor, const bool bInfrictionDie);
@@ -109,8 +109,8 @@ public:
 	virtual UCharacterModel* GetPropertyModel_Implementation() const override;
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|IDamageInstigator")
-	void ApplyDamage(UCharacterModel* DamageModel, const int InWeaponDamage, float& OutDamage);	
-	virtual void ApplyDamage_Implementation(UCharacterModel* DamageModel, const int InWeaponDamage, float& OutDamage) override;
+	bool CanKillDealDamage(const FName BoneName) const;
+	virtual bool CanKillDealDamage_Implementation(const FName BoneName) const override;
 #pragma endregion
 
 #pragma region IGrabInstigator

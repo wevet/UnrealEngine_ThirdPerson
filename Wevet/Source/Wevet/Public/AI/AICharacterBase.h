@@ -23,6 +23,7 @@ public:
 	virtual void OnConstruction(const FTransform& Transform) override;
 	virtual void PostInitializeComponents() override;
 	virtual void Tick(float DeltaTime) override;
+	virtual float TakeDamage(float Damage, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
 
 protected:
 	virtual void BeginPlay() override;
@@ -34,7 +35,6 @@ protected:
 public:
 #pragma region Combat
 	virtual void Die_Implementation() override;
-	virtual void OnTakeDamage_Implementation(FName BoneName, float Damage, AActor* Actor, bool& bDied) override;
 	virtual void Equipment_Implementation() override;
 	virtual void UnEquipment_Implementation() override;	
 #pragma endregion

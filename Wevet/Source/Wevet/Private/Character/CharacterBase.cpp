@@ -104,7 +104,11 @@ void ACharacterBase::Tick(float DeltaTime)
 	}
 }
 
-float ACharacterBase::TakeDamage(float Damage, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
+float ACharacterBase::TakeDamage(
+	float Damage, 
+	struct FDamageEvent const& DamageEvent, 
+	AController* EventInstigator, 
+	AActor* DamageCauser)
 {
 	if (IDamageInstigator::Execute_IsDeath(this))
 	{
@@ -123,8 +127,7 @@ float ACharacterBase::TakeDamage(float Damage, struct FDamageEvent const& Damage
 		CharacterModel->Die();
 		Die_Implementation();
 	}
-	//UE_LOG(LogWevetClient, Warning, TEXT("Damage : %f"), Damage);
-	//UE_LOG(LogWevetClient, Warning, TEXT("ActualDamage : %f"), ActualDamage);
+	IDamageInstigator::Execute_InfrictionDamage(EventInstigator->GetPawn(), this, bWasDeath);
 	return ActualDamage;
 }
 
@@ -263,7 +266,7 @@ bool ACharacterBase::IsDeath_Implementation()
 	return CharacterModel->IsDie();
 }
 
-void ACharacterBase::OnTakeDamage_Implementation(FName BoneName, float Damage, AActor* Actor, bool& bDied)
+bool ACharacterBase::CanKillDealDamage_Implementation(const FName BoneName) const
 {
 	if (BoneName == HeadBoneName) 
 	{
@@ -271,27 +274,13 @@ void ACharacterBase::OnTakeDamage_Implementation(FName BoneName, float Damage, A
 		auto RefSkeleton = SkeletalMeshComponent->SkeletalMesh->Skeleton->GetReferenceSkeleton();
 		if (RefSkeleton.FindBoneIndex(BoneName) != INDEX_NONE)
 		{
-			CharacterModel->SetHealth(INDEX_NONE);
+			return true;
 		}
 	} 
-	else
-	{
-		//CharacterModel->TakeDamage((int32)Damage);
-	}
-
-	//bDied = CharacterModel->IsEmptyHealth();
-	//if (bDied)
-	//{
-	//	CharacterModel->Die();
-	//	Die_Implementation();
-	//}
-	//else
-	//{
-	//	TakeDamageActionMontage();
-	//}
+	return false;
 }
 
-void ACharacterBase::ApplyDamage_Implementation(UCharacterModel* DamageModel, const int InWeaponDamage, float& OutDamage)
+void ACharacterBase::MakeDamage_Implementation(UCharacterModel* DamageModel, const int InWeaponDamage, float& OutDamage)
 {
 	const int32 BaseAttack = CharacterModel->GetAttack() + InWeaponDamage;
 	const int32 Attack = BaseAttack;

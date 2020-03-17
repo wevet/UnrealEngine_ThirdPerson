@@ -39,7 +39,6 @@ public:
 	}
 
 	virtual void Die_Implementation() override;
-	virtual void OnTakeDamage_Implementation(FName BoneName, float Damage, AActor* Actor, bool& bDied) override;
 	virtual void Equipment_Implementation() override;
 	virtual void UnEquipment_Implementation() override;
 

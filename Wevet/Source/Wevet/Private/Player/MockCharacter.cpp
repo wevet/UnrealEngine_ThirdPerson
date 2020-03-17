@@ -296,11 +296,6 @@ void AMockCharacter::Die_Implementation()
 	Super::Die_Implementation();
 }
 
-void AMockCharacter::OnTakeDamage_Implementation(FName BoneName, float Damage, AActor* Actor, bool& bDied)
-{
-	Super::OnTakeDamage_Implementation(BoneName, Damage, Actor, bDied);
-}
-
 void AMockCharacter::Equipment_Implementation()
 {
 	if (Super::bHanging)

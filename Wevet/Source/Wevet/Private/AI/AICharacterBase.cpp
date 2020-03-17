@@ -76,6 +76,20 @@ void AAICharacterBase::MainLoop(float DeltaTime)
 	//Subclass Extend
 }
 
+float AAICharacterBase::TakeDamage(
+	float Damage,
+	struct FDamageEvent const& DamageEvent,
+	AController* EventInstigator,
+	AActor* DamageCauser)
+{
+	const float ActualDamage = Super::TakeDamage(Damage, DamageEvent, EventInstigator, DamageCauser);
+	if (!IDamageInstigator::Execute_IsDeath(this))
+	{
+		OnSeePawnRecieve(EventInstigator->GetPawn());
+	}
+	return ActualDamage;
+}
+
 void AAICharacterBase::Die_Implementation()
 {
 	if (Super::bWasDied)
@@ -138,11 +152,6 @@ void AAICharacterBase::UnEquipment_Implementation()
 	const FName SocketName(CurrentWeapon.Get()->WeaponItemInfo.UnEquipSocketName);
 	FAttachmentTransformRules Rules(EAttachmentRule::SnapToTarget, true);
 	CurrentWeapon.Get()->AttachToComponent(Super::GetMesh(), Rules, SocketName);
-}
-
-void AAICharacterBase::OnTakeDamage_Implementation(FName BoneName, float Damage, AActor* Actor, bool& bDied)
-{
-	Super::OnTakeDamage_Implementation(BoneName, Damage, Actor, bDied);
 }
 
 #pragma region AIPawnOwner

@@ -239,7 +239,7 @@ void ARifle::OnFirePressInternal()
 	Super::CheckIfValid(HitData.GetActor(), bCanDamageResult);
 	if (bCanDamageResult)
 	{
-		Super::TakeDamageOuter(HitData.GetActor(), HitData.BoneName, WeaponItemInfo.Damage);
+		Super::TakeDamageOuter(HitData, WeaponItemInfo.Damage);
 	}
 	Super::PlayEffect(HitData, SkeletalMeshComponent);
 }
