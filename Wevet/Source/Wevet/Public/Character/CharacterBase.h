@@ -6,6 +6,7 @@
 #include "GameFramework/Character.h"
 #include "Wevet.h"
 #include "WevetTypes.h"
+#include "CharacterModel.h"
 #include "Weapon/AbstractWeapon.h"
 
 // Interface
@@ -25,7 +26,6 @@
 #include "LocomotionSystemTypes.h"
 #include "CharacterBase.generated.h"
 
-class UCharacterModel;
 class UCharacterAnimInstanceBase;
 
 UCLASS(ABSTRACT)
@@ -336,6 +336,7 @@ public:
 	virtual void FireReleassed();
 	virtual void Reload();
 	virtual void ReleaseWeapon();
+	void ReloadBulletAction();
 
 	EWeaponItemType GetCurrentWeaponType() const;
 

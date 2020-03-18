@@ -2,7 +2,6 @@
 
 #include "Character/CharacterBase.h"
 #include "Item/ItemBase.h"
-#include "Character/CharacterModel.h"
 #include "AnimInstance/CharacterAnimInstanceBase.h"
 
 #include "Engine.h"
@@ -54,6 +53,12 @@ ACharacterBase::ACharacterBase(const FObjectInitializer& ObjectInitializer)
 	GetCharacterMovement()->SetWalkableFloorAngle(50.f);
 	GetCharacterMovement()->MaxWalkSpeed = 800.f;
 	GetCharacterMovement()->bCanWalkOffLedgesWhenCrouching = 1;
+	GetCharacterMovement()->NavAgentProps.bCanCrouch = 1;
+	GetCharacterMovement()->NavAgentProps.bCanFly = 1;
+
+	bCanBeDamaged = 1;
+	Tags.Add(FName(TEXT("Character")));
+	Tags.Add(FName(TEXT("DamageInstigator")));
 }
 
 void ACharacterBase::OnConstruction(const FTransform& Transform)
@@ -803,6 +808,14 @@ void ACharacterBase::Reload()
 
 void ACharacterBase::ReleaseWeapon()
 {
+}
+
+void ACharacterBase::ReloadBulletAction()
+{
+	if (CurrentWeapon.IsValid())
+	{
+		CurrentWeapon.Get()->OnReloadInternal();
+	}
 }
 
 void ACharacterBase::CreateWeaponInstance(const TSubclassOf<class AAbstractWeapon> InTemplate, bool bSetEquip)
