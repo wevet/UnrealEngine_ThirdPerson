@@ -181,7 +181,10 @@ void AMockCharacter::ReleaseObjects()
 
 void AMockCharacter::PickupObjects()
 {
-	Pickup_Implementation(EItemType::None, GetPickupComponent()->GetPickupActor());
+	if (AActor* Actor = GetPickupComponent()->GetPickupActor())
+	{
+		Pickup_Implementation(IInteractionInstigator::Execute_GetItemType(Actor), Actor);
+	}
 }
 
 void AMockCharacter::Jump()
@@ -255,7 +258,7 @@ void AMockCharacter::OnCrouch()
 
 void AMockCharacter::UpdateWeapon()
 {
-	check(Super::InventoryComponent);	
+	check(Super::InventoryComponent);
 	if (Super::InventoryComponent->HasInventoryWeaponItems())
 	{
 		return;
@@ -308,7 +311,13 @@ void AMockCharacter::Equipment_Implementation()
 		UpdateWeapon();
 	}
 
-	const TArray<AAbstractWeapon*> WeaponItem = Super::InventoryComponent->GetWeaponInventoryOriginal();
+	const TArray<AAbstractWeapon*> WeaponItem = Super::InventoryComponent->GetWeaponInventory();
+	if (WeaponItem.Find(WeaponItem[WeaponCurrentIndex]) == INDEX_NONE)
+	{
+		UE_LOG(LogWevetClient, Error, TEXT("NotFound WeaponArray Index : %d"), WeaponCurrentIndex);
+		return;
+	}
+
 	CurrentWeapon = MakeWeakObjectPtr<AAbstractWeapon>(WeaponItem[WeaponCurrentIndex]);
 	if (!CurrentWeapon.IsValid())
 	{
@@ -438,40 +447,32 @@ void AMockCharacter::Pickup_Implementation(const EItemType InItemType, AActor* A
 		return;
 	}
 
-	if (AAbstractWeapon * Weapon = Cast<AAbstractWeapon>(Actor))
-	{
-		if (Super::SameWeapon(Weapon))
-		{
-			//UE_LOG(LogWevetClient, Warning, TEXT("SameWeapon : %s"), *(Weapon->GetName()));
-			return;
-		}
-		// Create
-		Super::CreateWeaponInstance(Weapon->GetClass());
-		IInteractionInstigator::Execute_Release(Weapon, nullptr);
-		Actor = nullptr;
-	}
+	UE_LOG(LogWevetClient, Log, TEXT("ItemType : %s"), *GETENUMSTRING("EItemType", InItemType));
 
-	if (AAbstractItem * Item = Cast<AAbstractItem>(Actor))
+	switch (InItemType)
 	{
-		const EItemType ItemType = Item->GetItemType();
-		switch (ItemType)
-		{
 		case EItemType::Weapon:
+		if (AAbstractWeapon* Weapon = Cast<AAbstractWeapon>(Actor))
 		{
-			const FWeaponItemInfo ItemInfo = Item->WeaponItemInfo;
-			if (auto Weapon = Super::FindByWeapon(ItemInfo.WeaponItemType))
+			if (Super::SameWeapon(Weapon))
 			{
+				const FWeaponItemInfo ItemInfo = Weapon->WeaponItemInfo;
 				IWeaponInstigator::Execute_DoReplenishment(Weapon, ItemInfo);
-				IInteractionInstigator::Execute_Release(Item, nullptr);
-				Actor = nullptr;
 			}
+			else
+			{
+				// Create
+				Super::CreateWeaponInstance(Weapon->GetClass());
+			}
+			IInteractionInstigator::Execute_Release(Weapon, nullptr);
+			Actor = nullptr;
 		}
 		break;
 		case EItemType::Health:
-			// @TODO
-			break;
-		}
+		//
+		break;
 	}
+
 }
 
 FVector AMockCharacter::BulletTraceRelativeLocation() const
@@ -486,7 +487,8 @@ FVector AMockCharacter::BulletTraceForwardLocation() const
 
 void AMockCharacter::EquipmentActionMontage()
 {
-	if (InventoryComponent->HasInventoryWeaponItems())
+	check(Super::InventoryComponent);
+	if (Super::InventoryComponent->HasInventoryWeaponItems())
 	{
 		return;
 	}
@@ -497,7 +499,13 @@ void AMockCharacter::EquipmentActionMontage()
 	}
 
 	// Fake WeaponPointer
-	const TArray<AAbstractWeapon*> WeaponItem = Super::InventoryComponent->GetWeaponInventoryOriginal();
+	const TArray<AAbstractWeapon*> WeaponItem = Super::InventoryComponent->GetWeaponInventory();
+	if (WeaponItem.Find(WeaponItem[WeaponCurrentIndex]) == INDEX_NONE)
+	{
+		UE_LOG(LogWevetClient, Error, TEXT("NotFound WeaponArray Index : %d"), WeaponCurrentIndex);
+		return;
+	}
+
 	auto WeaponPtr = WeaponItem[WeaponCurrentIndex];
 	if (WeaponPtr)
 	{

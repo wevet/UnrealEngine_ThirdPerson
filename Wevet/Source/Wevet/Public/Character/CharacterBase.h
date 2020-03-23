@@ -27,6 +27,7 @@
 #include "CharacterBase.generated.h"
 
 class UCharacterAnimInstanceBase;
+class UIKAnimInstance;
 
 UCLASS(ABSTRACT)
 class WEVET_API ACharacterBase : public ACharacter, public IDamageInstigator, public ISoundInstigator, public IGrabInstigator, public IInteractionPawn
@@ -48,6 +49,8 @@ public:
 	virtual void Jump() override;
 	virtual void StopJumping() override;
 	virtual void OnSprint();
+
+	UFUNCTION(BlueprintCallable, Category = "CharacterBase|Function")
 	virtual void OnCrouch();
 
 public:
@@ -160,10 +163,16 @@ public:
 	virtual UCharacterAnimInstanceBase* GetCharacterAnimInstance() const;
 
 	UFUNCTION(BlueprintCallable, Category = "CharacterBase|Function")
+	virtual UIKAnimInstance* GetIKAnimInstance() const;
+
+	UFUNCTION(BlueprintCallable, Category = "CharacterBase|Function")
 	AAbstractWeapon* GetSelectedWeapon() const;
 
 	UFUNCTION(BlueprintCallable, Category = "CharacterBase|Function")
 	float GetHealthToWidget() const;
+
+	UFUNCTION(BlueprintCallable, Category = "CharacterBase|Function")
+	bool HasAiming() const;
 
 	bool HasCrouch() const;
 	bool HasSprint() const;
@@ -235,6 +244,9 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "CharacterBase|Variable")
 	bool bSprint;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "CharacterBase|Variable")
+	bool bAiming;
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "CharacterBase|Climbsystem")
 	bool bHanging;
 
@@ -290,6 +302,12 @@ protected:
 	float MovementSpeed;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "CharacterBase|Variable")
+	float ForwardAxisValue;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "CharacterBase|Variable")
+	float RightAxisValue;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "CharacterBase|Variable")
 	FName HeadSocketName;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "CharacterBase|Variable")
@@ -304,14 +322,11 @@ protected:
 	UPROPERTY(EditAnywhere, Instanced, Category = "CharacterBase|CharacterModel")
 	UCharacterModel* CharacterModel;
 
-	/* cacehd init speed */
+	/* cached init speed */
 	float DefaultMaxSpeed;
 
 	/* get unequip weapon */
-	AAbstractWeapon* GetUnEquipWeapon();
-
-	/* out unequip weaponlist */
-	void OutUnEquipWeaponList(TArray<AAbstractWeapon*>& OutWeaponList);
+	AAbstractWeapon* GetUnEquipWeapon() const;
 
 	/* pickup before had same weaponList */
 	const bool SameWeapon(AAbstractWeapon* const Weapon);
@@ -336,7 +351,6 @@ public:
 	virtual void FireReleassed();
 	virtual void Reload();
 	virtual void ReleaseWeapon();
-	void ReloadBulletAction();
 
 	EWeaponItemType GetCurrentWeaponType() const;
 
@@ -351,6 +365,8 @@ public:
 
 protected:
 	virtual void CreateWeaponInstance(const TSubclassOf<class AAbstractWeapon> InTemplate, bool bSetEquip = false);
-
 	virtual void SetActionInfo(const EWeaponItemType InWeaponItemType, FWeaponActionInfo &OutWeaponActionInfo);
+
+	UFUNCTION(BlueprintCallable, Category = "CharacterBase|LS")
+	uint8 DoifDifferentByte(const uint8 A, const uint8 B) const;
 };

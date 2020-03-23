@@ -3,6 +3,7 @@
 #include "Character/CharacterBase.h"
 #include "Item/ItemBase.h"
 #include "AnimInstance/CharacterAnimInstanceBase.h"
+#include "AnimInstance/IKAnimInstance.h"
 
 #include "Engine.h"
 #include "Kismet/GameplayStatics.h"
@@ -30,6 +31,7 @@ ACharacterBase::ACharacterBase(const FObjectInitializer& ObjectInitializer)
 	bSprint  = false;
 	bWasDied = false;
 	bHanging = false;
+	bAiming = false;
 	bClimbingLedge = false;
 	bClimbJumping = false;
 
@@ -107,33 +109,6 @@ void ACharacterBase::Tick(float DeltaTime)
 	{
 		ComboTakeInterval -= DeltaTime;
 	}
-}
-
-float ACharacterBase::TakeDamage(
-	float Damage, 
-	struct FDamageEvent const& DamageEvent, 
-	AController* EventInstigator, 
-	AActor* DamageCauser)
-{
-	if (IDamageInstigator::Execute_IsDeath(this))
-	{
-		return DEFAULT_VALUE;
-	}
-
-	const float ActualDamage = Super::TakeDamage(Damage, DamageEvent, EventInstigator, DamageCauser);
-	const bool bWasDeath = CharacterModel->IsEmptyHealth();
-	if (!bWasDeath)
-	{
-		CharacterModel->TakeDamage((int32)ActualDamage);
-		TakeDamageActionMontage();
-	}
-	else
-	{
-		CharacterModel->Die();
-		Die_Implementation();
-	}
-	IDamageInstigator::Execute_InfrictionDamage(EventInstigator->GetPawn(), this, bWasDeath);
-	return ActualDamage;
 }
 
 #pragma region InteractionPawn
@@ -262,6 +237,29 @@ void ACharacterBase::TurnConerResult_Implementation()
 #pragma endregion
 
 #pragma region DamageInstigator
+float ACharacterBase::TakeDamage(float Damage, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
+{
+	if (IDamageInstigator::Execute_IsDeath(this))
+	{
+		return DEFAULT_VALUE;
+	}
+
+	const float ActualDamage = Super::TakeDamage(Damage, DamageEvent, EventInstigator, DamageCauser);
+	const bool bWasDeath = CharacterModel->IsEmptyHealth();
+	if (!bWasDeath)
+	{
+		CharacterModel->TakeDamage((int32)ActualDamage);
+		TakeDamageActionMontage();
+	}
+	else
+	{
+		CharacterModel->Die();
+		Die_Implementation();
+	}
+	IDamageInstigator::Execute_InfrictionDamage(EventInstigator->GetPawn(), this, bWasDeath);
+	return ActualDamage;
+}
+
 bool ACharacterBase::IsDeath_Implementation()
 {
 	if (bWasDied || CharacterModel == nullptr)
@@ -340,7 +338,7 @@ void ACharacterBase::Die_Implementation()
 		return;
 	}
 
-	for (AAbstractWeapon*& Weapon : InventoryComponent->GetWeaponInventoryOriginal())
+	for (AAbstractWeapon* Weapon : InventoryComponent->GetWeaponInventory())
 	{
 		if (!Weapon)
 		{
@@ -415,7 +413,7 @@ void ACharacterBase::OnSprint()
 void ACharacterBase::OnCrouch()
 {
 	bCrouch = !bCrouch;
-	Super::bIsCrouched = bCrouch ? 1 : 0;
+	Super::bIsCrouched = bCrouch ? 0 : 1;
 	if (bCrouch)
 	{
 		if (Super::CanCrouch())
@@ -487,7 +485,7 @@ AAbstractWeapon* ACharacterBase::FindByWeapon(const EWeaponItemType WeaponItemTy
 	{
 		return nullptr;
 	}
-	for (AAbstractWeapon*& Weapon : InventoryComponent->GetWeaponInventoryOriginal())
+	for (AAbstractWeapon* Weapon : InventoryComponent->GetWeaponInventory())
 	{
 		if (Weapon && Weapon->WasSameWeaponType(WeaponItemType))
 		{
@@ -500,6 +498,16 @@ AAbstractWeapon* ACharacterBase::FindByWeapon(const EWeaponItemType WeaponItemTy
 UCharacterAnimInstanceBase* ACharacterBase::GetCharacterAnimInstance() const
 {
 	return Cast<UCharacterAnimInstanceBase>(GetMesh()->GetAnimInstance());
+}
+
+UIKAnimInstance* ACharacterBase::GetIKAnimInstance() const
+{
+	return Cast<UIKAnimInstance>(GetMesh()->GetPostProcessInstance());
+}
+
+bool ACharacterBase::HasAiming() const
+{
+	return bAiming;
 }
 
 bool ACharacterBase::HasCrouch() const
@@ -568,13 +576,13 @@ bool ACharacterBase::HasEquipWeapon() const
 	return false;
 }
 
-AAbstractWeapon* ACharacterBase::GetUnEquipWeapon()
+AAbstractWeapon* ACharacterBase::GetUnEquipWeapon() const
 {
 	if (InventoryComponent->HasInventoryWeaponItems())
 	{
 		return nullptr;
 	}
-	for (AAbstractWeapon*& Weapon : InventoryComponent->GetWeaponInventoryOriginal())
+	for (AAbstractWeapon* Weapon : InventoryComponent->GetWeaponInventory())
 	{
 		if (Weapon && !Weapon->WasEquip())
 		{
@@ -582,21 +590,6 @@ AAbstractWeapon* ACharacterBase::GetUnEquipWeapon()
 		}
 	}
 	return nullptr;
-}
-
-void ACharacterBase::OutUnEquipWeaponList(TArray<AAbstractWeapon*>& OutWeaponList)
-{
-	if (InventoryComponent->HasInventoryWeaponItems())
-	{
-		return;
-	}
-	for (AAbstractWeapon* &Weapon : InventoryComponent->GetWeaponInventoryOriginal())
-	{
-		if (Weapon && !Weapon->WasEquip())
-		{
-			OutWeaponList.Emplace(Weapon);
-		}
-	}
 }
 
 const bool ACharacterBase::SameWeapon(AAbstractWeapon* const Weapon)
@@ -810,14 +803,6 @@ void ACharacterBase::ReleaseWeapon()
 {
 }
 
-void ACharacterBase::ReloadBulletAction()
-{
-	if (CurrentWeapon.IsValid())
-	{
-		CurrentWeapon.Get()->OnReloadInternal();
-	}
-}
-
 void ACharacterBase::CreateWeaponInstance(const TSubclassOf<class AAbstractWeapon> InTemplate, bool bSetEquip)
 {
 	if (InTemplate == nullptr)
@@ -863,3 +848,11 @@ void ACharacterBase::SetActionInfo(const EWeaponItemType InWeaponItemType, FWeap
 	}
 }
 
+uint8 ACharacterBase::DoifDifferentByte(const uint8 A, const uint8 B) const
+{
+	if (A != B)
+	{
+		return A;
+	}
+	return B;
+}
