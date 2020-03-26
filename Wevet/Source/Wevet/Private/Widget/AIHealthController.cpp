@@ -28,6 +28,15 @@ void UAIHealthController::Initializer(ACharacterBase* const NewCharacterOwner)
 	AICharacterPtr = MakeWeakObjectPtr<AAICharacterBase>(Cast<AAICharacterBase>(NewCharacterOwner));
 }
 
+void UAIHealthController::ResetCharacterOwner()
+{
+	if (AICharacterPtr.IsValid())
+	{
+		AICharacterPtr.Reset();
+	}
+	Super::ResetCharacterOwner();
+}
+
 void UAIHealthController::TickRenderer(const float InDeltaTime)
 {
 	
@@ -37,64 +46,44 @@ void UAIHealthController::TickRenderer(const float InDeltaTime)
 		return;
 	}
 
+	if (Super::PlayerController == nullptr)
+	{
+		Super::PlayerController = Wevet::ControllerExtension::GetPlayer(AICharacterPtr->GetWorld());
+	}
+
+	// @NOTE
+	// GetHead Position
 	OwnerLocation = AICharacterPtr->GetHeadSocketLocation();
+
 	if (HealthProgressBar)
 	{
 		HealthProgressBar->SetPercent(AICharacterPtr->IsDeath_Implementation() ? ZERO_VALUE : AICharacterPtr->GetHealthToWidget());
 	}
 
-	if (AICharacterPtr->IsDeath_Implementation() || !AICharacterPtr->IsSeeTarget_Implementation() || !AICharacterPtr->WasRecentlyRendered())
+	// @NOTE
+	// not renering or not found target or death 
+	// equals hidden widget
+	if (AICharacterPtr->IsDeath_Implementation() ||
+		!AICharacterPtr->IsSeeTarget_Implementation() ||
+		!AICharacterPtr->WasRecentlyRendered())
 	{
-		if (Container->GetVisibility() != ESlateVisibility::Hidden)
+		if (bWasVisible)
 		{
 			Super::Visibility(false);
 		}
 		return;
 	}
-	UpdateRenderingViewport();
-}
 
-void UAIHealthController::UpdateRenderingViewport()
-{
-	UWorld* World = AICharacterPtr.Get()->GetWorld();
-	if (World == nullptr)
+	if (Super::PlayerController)
 	{
-		return;
+		FVector2D ScreenLocation;
+		ESlateVisibility SlateVisibility = Container->GetVisibility();
+		bool bCanRendering = Super::PlayerController->ProjectWorldLocationToScreen(
+			OwnerLocation, 
+			ScreenLocation, 
+			true);
+		
+		Super::Visibility(bCanRendering);
+		Super::SetPositionInViewport(ScreenLocation);
 	}
-
-	if (Super::PlayerController == nullptr)
-	{
-		Super::PlayerController = Wevet::ControllerExtension::GetPlayer(World);
-	}
-
-	if (Super::PlayerController == nullptr)
-	{
-		return;
-	}
-
-	FVector2D ScreenLocation;
-	ESlateVisibility SlateVisibility = Container->GetVisibility();
-	bool bCanRendering = Super::PlayerController->ProjectWorldLocationToScreen(OwnerLocation, ScreenLocation, true);
-	if (!bCanRendering)
-	{
-		SlateVisibility = ESlateVisibility::Hidden;
-	}
-	else if (bCanRendering)
-	{
-		SlateVisibility = ESlateVisibility::SelfHitTestInvisible;
-	}
-	if (Container->GetVisibility() != SlateVisibility)
-	{
-		Container->SetVisibility(SlateVisibility);
-	}
-	Super::SetPositionInViewport(ScreenLocation);
-}
-
-void UAIHealthController::ResetCharacterOwner()
-{
-	if (AICharacterPtr.IsValid())
-	{
-		AICharacterPtr.Reset();
-	}
-	Super::ResetCharacterOwner();
 }

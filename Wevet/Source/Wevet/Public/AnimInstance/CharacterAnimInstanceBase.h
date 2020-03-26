@@ -67,6 +67,12 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Variable")
 	EWeaponItemType WeaponItemType;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Variable")
+	class UCharacterMovementComponent* CharacterMovementComponent;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Variable")
+	class UCapsuleComponent* CapsuleComponent;
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Climbsystem")
 	bool IsHanging;
 

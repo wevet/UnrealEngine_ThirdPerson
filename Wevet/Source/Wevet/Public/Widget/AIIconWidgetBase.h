@@ -19,43 +19,42 @@ public:
 	virtual void NativeConstruct() override;
 
 protected:
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "UAIIconWidgetBase|Variable")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "IconWidgetBase|Variable")
 	FName ContainerKeyName;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "UAIIconWidgetBase|Variable")
-	FVector	OwnerLocation;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "UAIIconWidgetBase|Variable")
-	FVector2D ViewPortOffset;
 
 	class USizeBox* Container;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "UAIIconWidgetBase|Variable")
-	class APlayerController* PlayerController;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "UAIIconWidgetBase|Variable")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "IconWidgetBase|Variable")
 	float Offset;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "UAIIconWidgetBase|Variable")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "IconWidgetBase|Variable")
 	float Subtract;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "UAIIconWidgetBase|Variable")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "IconWidgetBase|Variable")
 	float MinScaleValue;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "UAIIconWidgetBase|Variable")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "IconWidgetBase|Variable")
 	float MaxScaleValue;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "IconWidgetBase|Variable")
+	class APlayerController* PlayerController;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "IconWidgetBase|Variable")
+	FVector	OwnerLocation;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "IconWidgetBase|Variable")
+	FVector2D ViewPortOffset;
+
 	TWeakObjectPtr<class ACharacterBase> CharacterPtr;
+	bool bWasVisible;
 
 public:
 	virtual void Initializer(ACharacterBase* const NewCharacterOwner);
 	virtual void ResetCharacterOwner();
+	void Visibility(const bool InVisibility);
+	void SetViewPortOffset(const FVector2D InViewPortOffset);
 
-	virtual void SetViewPortOffset(const FVector2D InViewPortOffset);
-
-	UFUNCTION(BlueprintCallable, Category = "UAIIconWidgetBase|Function")
+protected:
+	UFUNCTION(BlueprintCallable, Category = "IconWidgetBase|Function")
 	virtual void TickRenderer(const float InDeltaTime);
-
-	virtual void UpdateRenderingViewport();
-	virtual void Visibility(const bool InVisibility);
 };

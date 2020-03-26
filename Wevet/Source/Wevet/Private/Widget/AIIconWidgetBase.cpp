@@ -10,7 +10,8 @@
 
 
 UAIIconWidgetBase::UAIIconWidgetBase(const FObjectInitializer& ObjectInitializer)
-	: Super(ObjectInitializer)
+	: Super(ObjectInitializer),
+	bWasVisible(false)
 {
 	ContainerKeyName = (TEXT("Container"));
 	ViewPortOffset = FVector2D(0.5f, 0.f);
@@ -30,15 +31,6 @@ void UAIIconWidgetBase::TickRenderer(const float InDeltaTime)
 {
 }
 
-void UAIIconWidgetBase::UpdateRenderingViewport()
-{
-}
-
-void UAIIconWidgetBase::SetViewPortOffset(const FVector2D InViewPortOffset)
-{
-	ViewPortOffset = InViewPortOffset;
-}
-
 void UAIIconWidgetBase::Initializer(ACharacterBase* const NewCharacterOwner)
 {
 	CharacterPtr = MakeWeakObjectPtr<ACharacterBase>(NewCharacterOwner);
@@ -56,6 +48,13 @@ void UAIIconWidgetBase::Visibility(const bool InVisibility)
 {
 	if (Container)
 	{
-		Container->SetVisibility(InVisibility ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
+		bWasVisible = InVisibility;
+		Container->SetVisibility(InVisibility ? ESlateVisibility::SelfHitTestInvisible : ESlateVisibility::Hidden);
 	}
 }
+
+void UAIIconWidgetBase::SetViewPortOffset(const FVector2D InViewPortOffset)
+{
+	ViewPortOffset = InViewPortOffset;
+}
+

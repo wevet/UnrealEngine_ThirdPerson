@@ -18,6 +18,9 @@ DECLARE_LOG_CATEGORY_EXTERN(LogWevetClient, Verbose, All);
 #define GETENUMSTRING(etype, evalue)\
 	 ((FindObject<UEnum>(ANY_PACKAGE, TEXT(etype), true) != nullptr) ? FindObject<UEnum>(ANY_PACKAGE, TEXT(etype), true)->GetNameStringByIndex((int32)evalue) : FString("Invalid - UENUM() macro?"))
 
+#define DEFAULT_PLAY_RATE 1.f
+#define DEFAULT_ANIM_TRANSITION 0.2f
+
 #define MIN_VOLUME 0.001f
 #define DEFAULT_VOLUME 1.f
 

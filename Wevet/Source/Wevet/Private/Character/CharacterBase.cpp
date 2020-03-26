@@ -817,11 +817,15 @@ void ACharacterBase::CreateWeaponInstance(const TSubclassOf<class AAbstractWeapo
 		nullptr,
 		ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
 
-	FWeaponItemInfo WeaponItemInfo = SpawningObject->WeaponItemInfo;
+	if (!SpawningObject)
+	{
+		return;
+	}
+
 	FAttachmentTransformRules Rules(EAttachmentRule::SnapToTarget, true);
-	SpawningObject->CopyWeaponItemInfo(WeaponItemInfo);
+	SpawningObject->CopyWeaponItemInfo(SpawningObject->WeaponItemInfo);
 	SpawningObject->FinishSpawning(GetActorTransform());
-	SpawningObject->AttachToComponent(Super::GetMesh(), Rules, WeaponItemInfo.UnEquipSocketName);
+	SpawningObject->AttachToComponent(Super::GetMesh(), Rules, SpawningObject->WeaponItemInfo.UnEquipSocketName);
 	InventoryComponent->AddWeaponInventory(SpawningObject);
 	IInteractionInstigator::Execute_Take(SpawningObject, this);
 

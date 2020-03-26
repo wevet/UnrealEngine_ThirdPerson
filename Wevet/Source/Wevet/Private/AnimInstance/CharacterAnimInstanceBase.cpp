@@ -18,6 +18,13 @@ void UCharacterAnimInstanceBase::NativeInitializeAnimation()
 {
 	Super::NativeInitializeAnimation();
 	OwningPawn = TryGetPawnOwner();
+	Owner = Cast<ACharacterBase>(OwningPawn);
+
+	if (Owner)
+	{
+		CharacterMovementComponent = Owner->GetCharacterMovement();
+		CapsuleComponent = Owner->GetCapsuleComponent();
+	}
 }
 
 void UCharacterAnimInstanceBase::NativeUpdateAnimation(float DeltaTimeX)
@@ -29,15 +36,12 @@ void UCharacterAnimInstanceBase::NativeUpdateAnimation(float DeltaTimeX)
 		return;
 	}
 
-	Owner = Cast<ACharacterBase>(OwningPawn);
 	bHasMoving = (OwningPawn->GetVelocity().SizeSquared() > 25);
 	MovementSpeed = OwningPawn->GetVelocity().Size();
 
-	if (UPawnMovementComponent* MovementComponent = OwningPawn->GetMovementComponent())
+	if (CharacterMovementComponent)
 	{
-		IsFalling = MovementComponent->IsFalling();
-		//const bool isInAir = MovementComponent->MovementMode == EMovementMode::MOVE_Falling;
-		//const float Velocity = MovementComponent->GetVelocity();
+		IsFalling = CharacterMovementComponent->IsFalling();
 	}
 	if (IsFalling)
 	{

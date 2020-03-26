@@ -1,7 +1,6 @@
 // Copyright 2018 wevet works All Rights Reserved.
 
 #include "AI/AICharacterBase.h"
-#include "AI/AIUserWidgetBase.h"
 #include "AI/AIControllerBase.h"
 #include "Player/MockCharacter.h"
 #include "Perception/AiPerceptionComponent.h"
@@ -11,6 +10,7 @@
 #include "Kismet/KismetMathLibrary.h"
 #include "WevetExtension.h"
 #include "Lib/WevetBlueprintFunctionLibrary.h"
+#include "Widget/AIHealthController.h"
 
 using namespace Wevet;
 
@@ -21,6 +21,7 @@ AAICharacterBase::AAICharacterBase(const FObjectInitializer& ObjectInitializer)
 	bHearTarget(false),
 	bWasVisibility(true)
 {
+	WidgetViewPortOffset = FVector2D(0.5f, 0.0f);
 	BulletDelay = 0.3f;
 	AttackTraceForwardDistance = 1000.f;
 	AttackTraceMiddleDistance = 2000.f;
@@ -56,8 +57,8 @@ void AAICharacterBase::BeginPlay()
 		PawnSensingComponent->OnSeePawn.AddDynamic(this, &AAICharacterBase::OnSeePawnRecieve);
 		PawnSensingComponent->OnHearNoise.AddDynamic(this, &AAICharacterBase::OnHearNoiseRecieve);
 	}
-	AIController = Cast<AAIControllerBase>(GetController());
-	CreateUIController();
+	CreateWeaponInstance(WeaponTemplate, true);
+	CreateHealthController();
 }
 
 void AAICharacterBase::Tick(float DeltaTime)
@@ -76,11 +77,8 @@ void AAICharacterBase::MainLoop(float DeltaTime)
 	//Subclass Extend
 }
 
-float AAICharacterBase::TakeDamage(
-	float Damage,
-	struct FDamageEvent const& DamageEvent,
-	AController* EventInstigator,
-	AActor* DamageCauser)
+#pragma region DamageInstigator
+float AAICharacterBase::TakeDamage(float Damage, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
 	const float ActualDamage = Super::TakeDamage(Damage, DamageEvent, EventInstigator, DamageCauser);
 	if (!IDamageInstigator::Execute_IsDeath(this))
@@ -96,9 +94,12 @@ void AAICharacterBase::Die_Implementation()
 	{
 		return;
 	}
-	if (UIController->IsValidLowLevel())
+	if (UIHealthController && UIHealthController->IsValidLowLevel())
 	{
-		UIController->RemoveFromParent();
+		UIHealthController->ResetCharacterOwner();
+		UIHealthController->RemoveFromParent();
+		UIHealthController->ConditionalBeginDestroy();
+		UIHealthController = nullptr;
 	}
 	if (GetController())
 	{
@@ -153,6 +154,7 @@ void AAICharacterBase::UnEquipment_Implementation()
 	FAttachmentTransformRules Rules(EAttachmentRule::SnapToTarget, true);
 	CurrentWeapon.Get()->AttachToComponent(Super::GetMesh(), Rules, SocketName);
 }
+#pragma endregion
 
 #pragma region AIPawnOwner
 bool AAICharacterBase::IsSeeTarget_Implementation() const
@@ -213,7 +215,7 @@ bool AAICharacterBase::HasEnemyFound() const
 
 void AAICharacterBase::InitializePosses()
 {
-	Super::CreateWeaponInstance(WeaponTemplate, true);
+	AIController = Cast<AAIControllerBase>(GetController());
 }
 
 FVector AAICharacterBase::BulletTraceRelativeLocation() const
@@ -305,18 +307,22 @@ void AAICharacterBase::UnForceSprint()
 	GetCharacterMovement()->MaxWalkSpeed = MovementSpeed;
 }
 
-void AAICharacterBase::CreateUIController()
+void AAICharacterBase::CreateHealthController()
 {
-	UWorld* World = GetWorld();
-	if (UIControllerTemplate && World)
+	if (UIHealthController)
 	{
-		if (APlayerController * PC = Wevet::ControllerExtension::GetPlayer(World, 0))
+		return;
+	}
+	if (UIHealthControllerTemplate)
+	{
+		if (APlayerController* PC = Wevet::ControllerExtension::GetPlayer(GetWorld()))
 		{
-			UIController = CreateWidget<UAIUserWidgetBase>(PC, UIControllerTemplate);
-			if (UIController)
+			UIHealthController = CreateWidget<UAIHealthController>(PC, UIHealthControllerTemplate);
+			if (UIHealthController)
 			{
-				UIController->AddToViewport((int32)EUMGLayerType::Main);
-				UIController->Initializer(this);
+				UIHealthController->AddToViewport((int32)EUMGLayerType::Main);
+				UIHealthController->SetViewPortOffset(WidgetViewPortOffset);
+				UIHealthController->Initializer(this);
 			}
 		}
 	}

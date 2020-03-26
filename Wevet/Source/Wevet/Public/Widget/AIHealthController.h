@@ -21,15 +21,16 @@ public:
 	virtual void NativeConstruct() override;
 
 protected:
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "UAIHealthController|Variable")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "AIHealthController|Variable")
 	FName HealthProgressBarKeyName;
 
 	class UProgressBar* HealthProgressBar;
 	TWeakObjectPtr<class AAICharacterBase> AICharacterPtr;
 
 public:
-	virtual void UpdateRenderingViewport() override;
-	virtual void TickRenderer(const float InDeltaTime) override;
 	virtual void Initializer(ACharacterBase* const NewCharacterOwner) override;
 	virtual void ResetCharacterOwner() override;
+
+protected:
+	virtual void TickRenderer(const float InDeltaTime) override;
 };

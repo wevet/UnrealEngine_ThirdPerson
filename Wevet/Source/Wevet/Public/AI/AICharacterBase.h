@@ -11,7 +11,7 @@
 
 
 class AAIControllerBase;
-class UAIUserWidgetBase;
+class UAIHealthController;
 
 UCLASS(ABSTRACT)
 class WEVET_API AAICharacterBase : public ACharacterBase, public IAIPawnOwner
@@ -86,8 +86,8 @@ public:
 	class UBehaviorTree* BehaviorTree;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "AICharacterBase|Variable")
-	TSubclassOf<class UAIUserWidgetBase> UIControllerTemplate;
-	class UAIUserWidgetBase* UIController;
+	TSubclassOf<class UAIHealthController> UIHealthControllerTemplate;
+	class UAIHealthController* UIHealthController;
 
 	virtual void InitializePosses();
 
@@ -126,6 +126,9 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "AICharacterBase|Variable")
 	float BulletDelay;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "AICharacterBase|Widget")
+	FVector2D WidgetViewPortOffset;
+
 	/* Last bullet action after interval */
 	float BulletInterval;
 
@@ -154,5 +157,5 @@ protected:
 	/* Cache rendering */
 	bool bWasVisibility;
 
-	virtual void CreateUIController();
+	virtual void CreateHealthController();
 };

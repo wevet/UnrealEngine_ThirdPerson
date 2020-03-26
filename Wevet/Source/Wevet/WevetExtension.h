@@ -26,7 +26,7 @@ namespace Wevet
 		}
 	};
 
-	class WEVET_API ArrayExtension
+	class WEVET_API AssetExtension
 	{
 	public:
 		template<typename T>
@@ -47,7 +47,11 @@ namespace Wevet
 			}
 			return nullptr;
 		}
+	};
 
+	class WEVET_API ArrayExtension
+	{
+	public:
 		template<typename T>
 		static FORCEINLINE bool NullOrEmpty(const TArray<T*> Array)
 		{
