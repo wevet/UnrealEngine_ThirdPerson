@@ -9,6 +9,8 @@
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "WevetExtension.h"
+#include "Weapon/AbstractWeapon.h"
+#include "Weapon/BulletBase.h"
 
 DEFINE_LOG_CATEGORY(LogWevetClient);
 
@@ -58,6 +60,10 @@ ACharacterBase::ACharacterBase(const FObjectInitializer& ObjectInitializer)
 	GetCharacterMovement()->NavAgentProps.bCanCrouch = 1;
 	GetCharacterMovement()->NavAgentProps.bCanFly = 1;
 
+	GetCapsuleComponent()->SetNotifyRigidBodyCollision(true);
+	GetCapsuleComponent()->SetCollisionProfileName(FName(TEXT("Pawn")));
+	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+
 	bCanBeDamaged = 1;
 	Tags.Add(FName(TEXT("Character")));
 	Tags.Add(FName(TEXT("DamageInstigator")));
@@ -89,12 +95,15 @@ void ACharacterBase::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	{
 		CurrentWeapon.Reset();
 	}
+	GetCapsuleComponent()->OnComponentHit.RemoveDynamic(this, &ACharacterBase::HitReceive);
 	Super::EndPlay(EndPlayReason);
 }
 
 void ACharacterBase::BeginPlay()
 {
 	Super::BeginPlay();
+
+	GetCapsuleComponent()->OnComponentHit.AddDynamic(this, &ACharacterBase::HitReceive);
 }
 
 void ACharacterBase::Tick(float DeltaTime)
@@ -860,3 +869,17 @@ uint8 ACharacterBase::DoifDifferentByte(const uint8 A, const uint8 B) const
 	}
 	return B;
 }
+
+void ACharacterBase::HitReceive(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
+{
+	if (ABulletBase* Bullet = Cast<ABulletBase>(Hit.GetActor()))
+	{
+		UE_LOG(
+			LogWevetClient, 
+			Log, 
+			TEXT("hit : %s, Self : %s"), 
+			*Hit.GetActor()->GetName(),
+			*GetName());
+	}
+}
+

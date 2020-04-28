@@ -12,7 +12,7 @@ class WEVET_API ABulletBase : public AActor
 	GENERATED_BODY()
 	
 public:	
-	ABulletBase();
+	ABulletBase(const FObjectInitializer& ObjectInitializer);
 
 protected:
 	virtual void BeginPlay() override;
@@ -23,6 +23,10 @@ protected:
 public:	
 	virtual void Tick(float DeltaTime) override;
 
-	
-	
+protected:
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Bullet|Variable")
+	bool bWasHit;
+
+	UFUNCTION(BlueprintCallable, Category = "Bullet|Function")
+	void HitReceive(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
 };

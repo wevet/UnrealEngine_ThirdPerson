@@ -369,4 +369,7 @@ protected:
 
 	UFUNCTION(BlueprintCallable, Category = "CharacterBase|LS")
 	uint8 DoifDifferentByte(const uint8 A, const uint8 B) const;
+
+	UFUNCTION()
+	virtual void HitReceive(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
 };
