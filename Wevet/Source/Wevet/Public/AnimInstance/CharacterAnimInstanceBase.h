@@ -3,16 +3,17 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Animation/AnimInstance.h"
+#include "FullbodyAnimInstance.h"
 #include "Character/CharacterBase.h"
 #include "Interface/GrabInstigator.h"
+#include "LocomotionSystemSpeed.h"
 #include "CharacterAnimInstanceBase.generated.h"
 
 /**
- * 
- */
+* inheritance FullbodyAnimInstance
+*/
 UCLASS(transient, Blueprintable, hideCategories = AnimInstance, BlueprintType)
-class WEVET_API UCharacterAnimInstanceBase : public UAnimInstance, public IGrabInstigator
+class WEVET_API UCharacterAnimInstanceBase : public UFullbodyAnimInstance, public IGrabInstigator, public ILocomotionSystemSpeed
 {
 	GENERATED_BODY()
 	
@@ -65,6 +66,12 @@ protected:
 	float CombatBlendWeight;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Variable")
+	bool bWasMoving;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Variable")
+	bool bWasAiming;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Variable")
 	EWeaponItemType WeaponItemType;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Variable")
@@ -73,6 +80,19 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Variable")
 	class UCapsuleComponent* CapsuleComponent;
 
+	virtual FRotator NormalizedDeltaRotator(FRotator A, FRotator B) const;
+
+	virtual void SetMovementSpeed();
+	virtual void SetRotator();
+	virtual void SetCrouch();
+	virtual void SetEquip();
+	virtual void SetHanging();
+	virtual void SetClimbingLedge();
+	virtual void SetClimbingMove();
+	virtual void SetWeaponItemType();
+
+#pragma region Climbsystem
+protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Climbsystem")
 	bool IsHanging;
 
@@ -96,19 +116,13 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Climbsystem")
 	float ClimbBlendWeight;
+#pragma endregion
 
-	// FRotator Delta
-	virtual FRotator NormalizedDeltaRotator(FRotator A, FRotator B) const;
+protected:
+	UFUNCTION(BlueprintCallable, Category = CharacterAnimInstance)
+	bool IsLocallyControlled() const;
 
-	virtual void SetRotator();
-	virtual void SetCrouch();
-	virtual void SetEquip();
-	virtual void SetHanging();
-	virtual void SetClimbingLedge();
-	virtual void SetClimbingMove();
-	virtual void SetWeaponItemType();
-
-
+#pragma region IGrabInstigator
 public:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "GrabInstigator")
 	void CanGrab(bool InCanGrab);
@@ -145,4 +159,39 @@ public:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "GrabInstigator")
 	void TurnConerResult();
 	virtual void TurnConerResult_Implementation() override;
+#pragma endregion
+
+#pragma region ALSInterface
+public:
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AnimInstance|ALS_Speed")
+	void SetWalkingSpeed(const float InWalkingSpeed);
+	virtual void SetWalkingSpeed_Implementation(const float InWalkingSpeed) override;
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AnimInstance|ALS_Speed")
+	void SetRunningSpeed(const float InRunningSpeed);
+	virtual void SetRunningSpeed_Implementation(const float InRunningSpeed) override;
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AnimInstance|ALS_Speed")
+	void SetSprintingSpeed(const float InSprintingSpeed);
+	virtual void SetSprintingSpeed_Implementation(const float InSprintingSpeed) override;
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AnimInstance|ALS_Speed")
+	void SetCrouchingSpeed(const float InCrouchingSpeed);
+	virtual void SetCrouchingSpeed_Implementation(const float InCrouchingSpeed) override;
+#pragma endregion
+
+#pragma region ALS
+protected:
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ALS")
+	float WalkingSpeed;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ALS")
+	float RunningSpeed;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ALS")
+	float SprintingSpeed;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ALS")
+	float CrouchingSpeed;
+#pragma endregion
 };

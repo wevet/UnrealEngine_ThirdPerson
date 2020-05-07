@@ -6,7 +6,9 @@
 #include "GameFramework/PawnMovementComponent.h"
 
 UCharacterAnimInstanceBase::UCharacterAnimInstanceBase(const FObjectInitializer& ObjectInitializer) 
-	: Super(ObjectInitializer)
+	: Super(ObjectInitializer),
+	bWasMoving(false),
+	bWasAiming(false)
 {
 	CombatBlendWeight = 0.8f;
 	ClimbBlendWeight  = 1.f;
@@ -37,7 +39,6 @@ void UCharacterAnimInstanceBase::NativeUpdateAnimation(float DeltaTimeX)
 	}
 
 	bHasMoving = (OwningPawn->GetVelocity().SizeSquared() > 25);
-	MovementSpeed = OwningPawn->GetVelocity().Size();
 
 	if (CharacterMovementComponent)
 	{
@@ -57,6 +58,7 @@ void UCharacterAnimInstanceBase::NativeUpdateAnimation(float DeltaTimeX)
 		FalloutTickTime = 0.f;
 	}
 
+	SetMovementSpeed();
 	SetRotator();
 	SetCrouch();
 	SetEquip();
@@ -65,6 +67,11 @@ void UCharacterAnimInstanceBase::NativeUpdateAnimation(float DeltaTimeX)
 	SetClimbingMove();
 	SetWeaponItemType();
 	BlendWeight = (IsEquip) ? FMath::Clamp<float>(CombatBlendWeight, 0.f, 1.f) : 0.f;
+}
+
+void UCharacterAnimInstanceBase::SetMovementSpeed()
+{
+	MovementSpeed = OwningPawn->GetVelocity().Size();
 }
 
 void UCharacterAnimInstanceBase::SetRotator()
@@ -135,6 +142,16 @@ void UCharacterAnimInstanceBase::SetWeaponItemType()
 	}
 }
 
+bool UCharacterAnimInstanceBase::IsLocallyControlled() const
+{
+	if (TryGetPawnOwner())
+	{
+		return TryGetPawnOwner()->IsLocallyControlled();
+	}
+	return false;
+}
+
+#pragma region IGrabInstigator
 void UCharacterAnimInstanceBase::CanGrab_Implementation(bool InCanGrab)
 {
 }
@@ -181,3 +198,30 @@ void UCharacterAnimInstanceBase::TurnConerResult_Implementation()
 {
 
 }
+#pragma endregion
+
+#pragma region ALSInterface
+void UCharacterAnimInstanceBase::SetWalkingSpeed_Implementation(const float InWalkingSpeed)
+{
+	WalkingSpeed = InWalkingSpeed;
+	UE_LOG(LogWevetClient, Log, TEXT("Walk : %s"), *FString(__FUNCTION__));
+}
+
+void UCharacterAnimInstanceBase::SetRunningSpeed_Implementation(const float InRunningSpeed)
+{
+	RunningSpeed = InRunningSpeed;
+	UE_LOG(LogWevetClient, Log, TEXT("Run : %s"), *FString(__FUNCTION__));
+}
+
+void UCharacterAnimInstanceBase::SetSprintingSpeed_Implementation(const float InSprintingSpeed)
+{
+	SprintingSpeed = InSprintingSpeed;
+	UE_LOG(LogWevetClient, Log, TEXT("Sprint : %s"), *FString(__FUNCTION__));
+}
+
+void UCharacterAnimInstanceBase::SetCrouchingSpeed_Implementation(const float InCrouchingSpeed)
+{
+	CrouchingSpeed = InCrouchingSpeed;
+	UE_LOG(LogWevetClient, Log, TEXT("Crouch : %s"), *FString(__FUNCTION__));
+}
+#pragma endregion

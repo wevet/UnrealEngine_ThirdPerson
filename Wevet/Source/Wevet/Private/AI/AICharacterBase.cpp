@@ -2,30 +2,25 @@
 
 #include "AI/AICharacterBase.h"
 #include "AI/AIControllerBase.h"
-#include "Player/MockCharacter.h"
 #include "Perception/AiPerceptionComponent.h"
 #include "Perception/AISenseConfig_Hearing.h"
 #include "Perception/AISense_Hearing.h"
 #include "Engine.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "Kismet/KismetSystemLibrary.h"
 #include "WevetExtension.h"
 #include "Lib/WevetBlueprintFunctionLibrary.h"
 #include "Widget/AIHealthController.h"
 
-using namespace Wevet;
 
 AAICharacterBase::AAICharacterBase(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer),
 	SenseTimeOut(8.f),
+	MeleeAttackTimeOut(6.f),
 	bSeeTarget(false),
 	bHearTarget(false),
 	bWasVisibility(true)
 {
-	WidgetViewPortOffset = FVector2D(0.5f, 0.0f);
-	BulletDelay = 0.3f;
-	AttackTraceForwardDistance = 1000.f;
-	AttackTraceMiddleDistance = 2000.f;
-	AttackTraceLongDistance   = 3000.f;
 	PrimaryActorTick.bCanEverTick = true;
 
 	PawnSensingComponent = ObjectInitializer.CreateDefaultSubobject<UPawnSensingComponent>(this, TEXT("PawnSensingComponent"));
@@ -36,11 +31,21 @@ AAICharacterBase::AAICharacterBase(const FObjectInitializer& ObjectInitializer)
 
 	GetMovementComponent()->NavAgentProps.AgentRadius = 42;
 	GetMovementComponent()->NavAgentProps.AgentRadius = 192;
+
+	BulletDelay = 0.3f;
+	WalkingSpeed = 300.f;
+	WidgetViewPortOffset = FVector2D(0.5f, 0.0f);
+	AttackTraceForwardDistance = 1000.f;
+	AttackTraceMiddleDistance = 2000.f;
+	AttackTraceLongDistance = 3000.f;
+
+	Tags.Add(FName(TEXT("DamageInstigator")));
 }
 
 void AAICharacterBase::OnConstruction(const FTransform & Transform)
 {
 	Super::OnConstruction(Transform);
+	GetCharacterMovement()->MaxWalkSpeed = WalkingSpeed;
 }
 
 void AAICharacterBase::PostInitializeComponents()
@@ -48,36 +53,47 @@ void AAICharacterBase::PostInitializeComponents()
 	Super::PostInitializeComponents();
 }
 
+void AAICharacterBase::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	if (UIHealthController)
+	{
+		UIHealthController->ResetCharacterOwner();
+		UIHealthController->RemoveFromParent();
+		UIHealthController->ConditionalBeginDestroy();
+		UIHealthController = nullptr;
+	}
+	Super::EndPlay(EndPlayReason);
+}
+
 void AAICharacterBase::BeginPlay()
 {
 	Super::BeginPlay();
 
-	if (ComponentExtension::HasValid(PawnSensingComponent))
+	if (Wevet::ComponentExtension::HasValid(PawnSensingComponent))
 	{
 		PawnSensingComponent->OnSeePawn.AddDynamic(this, &AAICharacterBase::OnSeePawnRecieve);
 		PawnSensingComponent->OnHearNoise.AddDynamic(this, &AAICharacterBase::OnHearNoiseRecieve);
 	}
-	CreateWeaponInstance(WeaponTemplate, true);
+	Super::CreateWeaponInstance(DefaultWeapon, true);
 	CreateHealthController();
 }
 
 void AAICharacterBase::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	if (IDamageInstigator::Execute_IsDeath(this))
-	{
-		return;
-	}
 	MainLoop(DeltaTime);
 }
 
 void AAICharacterBase::MainLoop(float DeltaTime)
 {
-	//@NOTE
-	//Subclass Extend
 }
 
-#pragma region DamageInstigator
+void AAICharacterBase::InitializePosses()
+{
+	AIController = Cast<AAIControllerBase>(GetController());
+}
+
+#pragma region Interface
 float AAICharacterBase::TakeDamage(float Damage, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
 	const float ActualDamage = Super::TakeDamage(Damage, DamageEvent, EventInstigator, DamageCauser);
@@ -94,28 +110,25 @@ void AAICharacterBase::Die_Implementation()
 	{
 		return;
 	}
-	if (UIHealthController && UIHealthController->IsValidLowLevel())
+
+	Super::SetActorTickEnabled(false);
+	DetachFromControllerPendingDestroy();
+
+	if (UIHealthController)
 	{
 		UIHealthController->ResetCharacterOwner();
 		UIHealthController->RemoveFromParent();
 		UIHealthController->ConditionalBeginDestroy();
 		UIHealthController = nullptr;
 	}
-	if (GetController())
-	{
-		auto ControllerRef = GetController();
-		ControllerRef->UnPossess();
-		ControllerRef->Destroy();
-	}
 
 	TargetCharacter = nullptr;
-	// not spawned WeaponActor
 	if (Super::InventoryComponent)
 	{
 		Super::InventoryComponent->RemoveAllInventory();
 	}
 
-	if (ComponentExtension::HasValid(PawnSensingComponent))
+	if (Wevet::ComponentExtension::HasValid(PawnSensingComponent))
 	{
 		PawnSensingComponent->OnSeePawn.RemoveDynamic(this, &AAICharacterBase::OnSeePawnRecieve);
 		PawnSensingComponent->OnHearNoise.RemoveDynamic(this, &AAICharacterBase::OnHearNoiseRecieve);
@@ -126,37 +139,36 @@ void AAICharacterBase::Die_Implementation()
 
 void AAICharacterBase::Equipment_Implementation()
 {
-	if (!HasEquipWeapon())
+	if (!CurrentWeapon.IsValid())
 	{
-		if (!CurrentWeapon.IsValid())
-		{
-			return;
-		}
+		return;
+	}
+
+	if (!Super::HasEquipWeapon())
+	{
 		const FName SocketName(CurrentWeapon.Get()->WeaponItemInfo.EquipSocketName);
 		FAttachmentTransformRules Rules(EAttachmentRule::SnapToTarget, true);
-		Super::Equipment_Implementation();
 		CurrentWeapon.Get()->AttachToComponent(Super::GetMesh(), Rules, SocketName);
+		Super::Equipment_Implementation();
 	}
 }
 
 void AAICharacterBase::UnEquipment_Implementation()
 {
-	if (bSeeTarget || bHearTarget)
-	{
-		return;
-	}
 	if (!CurrentWeapon.IsValid())
 	{
 		return;
 	}
-	Super::UnEquipment_Implementation();
-	const FName SocketName(CurrentWeapon.Get()->WeaponItemInfo.UnEquipSocketName);
-	FAttachmentTransformRules Rules(EAttachmentRule::SnapToTarget, true);
-	CurrentWeapon.Get()->AttachToComponent(Super::GetMesh(), Rules, SocketName);
-}
-#pragma endregion
 
-#pragma region AIPawnOwner
+	if (Super::HasEquipWeapon())
+	{
+		const FName SocketName(CurrentWeapon.Get()->WeaponItemInfo.UnEquipSocketName);
+		FAttachmentTransformRules Rules(EAttachmentRule::SnapToTarget, true);
+		CurrentWeapon.Get()->AttachToComponent(Super::GetMesh(), Rules, SocketName);
+		Super::UnEquipment_Implementation();
+	}
+}
+
 bool AAICharacterBase::IsSeeTarget_Implementation() const
 {
 	return bSeeTarget;
@@ -182,7 +194,7 @@ float AAICharacterBase::GetAttackTraceMiddleDistance_Implementation() const
 	return AttackTraceMiddleDistance;
 }
 
-AActor* AAICharacterBase::GetTarget_Implementation()
+AActor* AAICharacterBase::GetTarget_Implementation() const
 {
 	return TargetCharacter;
 }
@@ -208,44 +220,19 @@ bool AAICharacterBase::CanMeleeStrike_Implementation() const
 }
 #pragma endregion
 
-bool AAICharacterBase::HasEnemyFound() const
-{
-	return (TargetCharacter && IsSeeTarget_Implementation());
-}
-
-void AAICharacterBase::InitializePosses()
-{
-	AIController = Cast<AAIControllerBase>(GetController());
-}
-
-FVector AAICharacterBase::BulletTraceRelativeLocation() const
-{
-	if (CurrentWeapon.IsValid())
-	{
-		return CurrentWeapon.Get()->GetMuzzleTransform().GetLocation();
-	}
-	return Super::BulletTraceRelativeLocation();
-}
-
-FVector AAICharacterBase::BulletTraceForwardLocation() const
-{
-	if (CurrentWeapon.IsValid())
-	{
-		return CurrentWeapon.Get()->GetMuzzleTransform().GetRotation().GetForwardVector();
-	}
-	return Super::BulletTraceForwardLocation();
-}
-
+#pragma region PawnSense
 void AAICharacterBase::OnSeePawnRecieve(APawn* OtherPawn)
 {
-	//
+}
+
+void AAICharacterBase::OnHearNoiseRecieve(APawn* OtherActor, const FVector& Location, float Volume)
+{
 }
 
 void AAICharacterBase::SetSeeTargetActor(ACharacterBase* const NewCharacter)
 {
 	TargetCharacter = NewCharacter;
-
-	const bool bWasSeeTarget = (TargetCharacter != nullptr);
+	bSeeTarget = (TargetCharacter != nullptr);
 	if (TargetCharacter)
 	{
 		const FVector StartLocation  = GetActorLocation();
@@ -253,8 +240,6 @@ void AAICharacterBase::SetSeeTargetActor(ACharacterBase* const NewCharacter)
 		FRotator LookAtRotation = UKismetMathLibrary::FindLookAtRotation(StartLocation, TargetLocation);
 		SetActorRotation(LookAtRotation);
 	}
-	AIController->SetBlackboardTarget(TargetCharacter);
-	AIController->SetBlackboardSeeActor(bWasSeeTarget);
 
 	if (TargetCharacter)
 	{
@@ -265,46 +250,63 @@ void AAICharacterBase::SetSeeTargetActor(ACharacterBase* const NewCharacter)
 		Super::FireReleassed();
 		Super::UnEquipmentActionMontage();
 	}
-}
-
-void AAICharacterBase::OnHearNoiseRecieve(APawn* OtherActor, const FVector& Location, float Volume)
-{
-	//
+	AIController->SetBlackboardTarget(TargetCharacter);
+	AIController->SetBlackboardSeeActor(bSeeTarget);
 }
 
 void AAICharacterBase::SetHearTargetActor(AActor* const OtherActor)
 {
+	bHearTarget = (OtherActor != nullptr);
+	const FVector TargetLocation = bHearTarget ? OtherActor->GetActorLocation() : FVector::ZeroVector;
 	if (OtherActor)
 	{
 		const FVector StartLocation   = GetActorLocation();
-		const FVector TargetLocation  = OtherActor->GetActorLocation();
 		FRotator LookAtRotation = UKismetMathLibrary::FindLookAtRotation(StartLocation, TargetLocation);
-
 		FRotator Rot = FRotator::ZeroRotator;
 		Rot.Yaw = LookAtRotation.Yaw;
 		SetActorRotation(Rot);
-		AIController->SetBlackboardPatrolLocation(TargetLocation);
+	}
+
+	if (OtherActor)
+	{
 		Super::EquipmentActionMontage();
 	}
 	else
 	{
 		Super::UnEquipmentActionMontage();
 	}
+	AIController->SetBlackboardPatrolLocation(TargetLocation);
 	AIController->SetBlackboardHearActor(bHearTarget);
+}
+#pragma endregion
+
+
+void AAICharacterBase::DoCoverAI()
+{
+	TArray<class AAICharacterBase*> Characters;
+
+	// PawnÇÃÇ›ëŒè€
+	TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes = { EObjectTypeQuery::ObjectTypeQuery3 };
+
+	//const bool bResult = UKismetSystemLibrary::SphereOverlapActors(this, GetActorLocation(), AttackTraceForwardDistance);
 }
 
 void AAICharacterBase::ForceSprint()
 {
-	bSprint = true;
-	MovementSpeed = DefaultMaxSpeed;
-	GetCharacterMovement()->MaxWalkSpeed = MovementSpeed;
+	if (!bSprint)
+	{
+		bSprint = true;
+		GetCharacterMovement()->MaxWalkSpeed = SprintingSpeed;
+	}
 }
 
 void AAICharacterBase::UnForceSprint()
 {
-	bSprint = false;
-	MovementSpeed = DefaultMaxSpeed * HALF_WEIGHT;
-	GetCharacterMovement()->MaxWalkSpeed = MovementSpeed;
+	if (bSprint)
+	{
+		bSprint = false;
+		GetCharacterMovement()->MaxWalkSpeed = WalkingSpeed;
+	}
 }
 
 void AAICharacterBase::CreateHealthController()
@@ -313,17 +315,22 @@ void AAICharacterBase::CreateHealthController()
 	{
 		return;
 	}
-	if (UIHealthControllerTemplate)
+
+	if (UIHealthControllerTemplate == nullptr)
 	{
-		if (APlayerController* PC = Wevet::ControllerExtension::GetPlayer(GetWorld()))
-		{
-			UIHealthController = CreateWidget<UAIHealthController>(PC, UIHealthControllerTemplate);
-			if (UIHealthController)
-			{
-				UIHealthController->AddToViewport((int32)EUMGLayerType::Main);
-				UIHealthController->SetViewPortOffset(WidgetViewPortOffset);
-				UIHealthController->Initializer(this);
-			}
-		}
+		return;
 	}
+
+	if (APlayerController* PC = Wevet::ControllerExtension::GetPlayer(GetWorld()))
+	{
+		UIHealthController = CreateWidget<UAIHealthController>(PC, UIHealthControllerTemplate);
+	}
+
+	if (UIHealthController)
+	{
+		UIHealthController->AddToViewport((int32)EUMGLayerType::Main);
+		UIHealthController->SetViewPortOffset(WidgetViewPortOffset);
+		UIHealthController->Initializer(this);
+	}
+
 }

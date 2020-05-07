@@ -41,9 +41,13 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
 	float DamageRange;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
+	FString DisplayName;
+
 	FWeaponItemInfo()
 	{
-		EquipSocketName = FName(TEXT("Lancer_Root_Socket"));
+		WeaponItemType = EWeaponItemType::None;
+		EquipSocketName = FName(TEXT("Weapon_Socket"));
 		Damage = 20.f;
 		TraceDistance = 15000.f;
 		DamageRange = 0.f;
@@ -61,6 +65,7 @@ public:
 		MaxAmmo = InWeaponItemInfo.MaxAmmo;
 		Damage = InWeaponItemInfo.Damage;
 		Texture = InWeaponItemInfo.Texture;
+		DisplayName = InWeaponItemInfo.DisplayName;
 	}
 
 };

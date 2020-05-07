@@ -53,4 +53,7 @@ public:
 	// etc HeadShot Damage onkill
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "DamageInstigator")
 	bool CanKillDealDamage(const FName BoneName) const;
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "DamageInstigator")
+	void HitEffectReceive(const FHitResult& HitResult);
 };

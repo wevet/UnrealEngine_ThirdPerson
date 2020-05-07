@@ -4,17 +4,12 @@
 #include "AI/WayPointBase.h"
 #include "Player/MockCharacter.h"
 
-#include "Perception/AIPerceptionComponent.h"
-#include "BehaviorTree/BlackboardComponent.h"
-#include "BehaviorTree/BehaviorTreeComponent.h"
-#include "Blueprint/AIBlueprintHelperLibrary.h"
 #include "Lib/WevetBlueprintFunctionLibrary.h"
 #include "WevetExtension.h"
 
 #include "NavigationSystem.h"
 #include "NavigationPath.h"
 
-using namespace Wevet;
 
 AAIControllerBase::AAIControllerBase(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -57,7 +52,7 @@ AAIControllerBase::AAIControllerBase(const FObjectInitializer& ObjectInitializer
 void AAIControllerBase::BeginPlay()
 {
 	Super::BeginPlay();
-	if (ComponentExtension::HasValid(AIPerceptionComponent))
+	if (Wevet::ComponentExtension::HasValid(AIPerceptionComponent))
 	{
 		AIPerceptionComponent->OnTargetPerceptionUpdated.AddDynamic(this, &AAIControllerBase::OnTargetPerceptionUpdatedRecieve);
 	}
@@ -68,18 +63,20 @@ void AAIControllerBase::OnPossess(APawn* InPawn)
 	Super::OnPossess(InPawn);
 	AICharacterOwner = Cast<AAICharacterBase>(InPawn);
 
-	if (AICharacterOwner)
+	if (AICharacterOwner == nullptr)
 	{
-		AICharacterOwner->InitializePosses();
-		BlackboardComponent->InitializeBlackboard(*AICharacterOwner->BehaviorTree->BlackboardAsset);
-		UWevetBlueprintFunctionLibrary::GetWorldWayPointsArray(InPawn, FLT_MAX, WayPointList);
-		BehaviorTreeComponent->StartTree(*AICharacterOwner->BehaviorTree);
+		return;
 	}
+
+	BlackboardComponent->InitializeBlackboard(*AICharacterOwner->GetBehaviorTree()->BlackboardAsset);
+	UWevetBlueprintFunctionLibrary::GetWorldWayPointsArray(InPawn, FLT_MAX, WayPointList);
+	BehaviorTreeComponent->StartTree(*AICharacterOwner->GetBehaviorTree());
+	AICharacterOwner->InitializePosses();
 }
 
 void AAIControllerBase::OnUnPossess()
 {
-	if (ComponentExtension::HasValid(AIPerceptionComponent))
+	if (Wevet::ComponentExtension::HasValid(AIPerceptionComponent))
 	{
 		AIPerceptionComponent->OnTargetPerceptionUpdated.RemoveDynamic(this, &AAIControllerBase::OnTargetPerceptionUpdatedRecieve);
 	}
@@ -90,14 +87,25 @@ void AAIControllerBase::OnUnPossess()
 	Super::OnUnPossess();
 }
 
-FGenericTeamId AAIControllerBase::GetGenericTeamId() const
+void AAIControllerBase::StopTree()
 {
-	return PTG_TEAM_ID_ENEMY;
+	if (BehaviorTreeComponent)
+	{
+		BehaviorTreeComponent->StopTree();
+	}
 }
 
-AWayPointBase* AAIControllerBase::GetRandomAtWayPoint()
+void AAIControllerBase::ResumeTree()
 {
-	if (ArrayExtension::NullOrEmpty(WayPointList))
+	if (BehaviorTreeComponent)
+	{
+		BehaviorTreeComponent->RestartTree();
+	}
+}
+
+AWayPointBase* AAIControllerBase::GetWayPoint() const
+{
+	if (Wevet::ArrayExtension::NullOrEmpty(WayPointList))
 	{
 		return nullptr;
 	}
@@ -106,20 +114,12 @@ AWayPointBase* AAIControllerBase::GetRandomAtWayPoint()
 	return WayPointList[RandomIndex];
 }
 
+#pragma region Blackboard
 void AAIControllerBase::SetBlackboardTarget(APawn* NewTarget)
 {
 	if (BlackboardComponent)
 	{
 		BlackboardComponent->SetValueAsObject(TargetKeyName, NewTarget);
-	}
-}
-
-void AAIControllerBase::SetBlackboardWayPoint(AWayPointBase* NewWayPoint)
-{
-	if (BlackboardComponent)
-	{
-		//@TODO
-		//BlackboardComponent->SetValueAsObject(TargetEnemyKeyName, NewWayPoint);
 	}
 }
 
@@ -162,6 +162,7 @@ void AAIControllerBase::SetBlackboardActionState(const EAIActionState NewAIActio
 		BlackboardComponent->SetValueAsEnum(ActionStateKeyName, (uint8)NewAIActionState);
 	}
 }
+#pragma endregion
 
 void AAIControllerBase::OnTargetPerceptionUpdatedRecieve(AActor* Actor, FAIStimulus Stimulus)
 {
@@ -177,8 +178,6 @@ void AAIControllerBase::OnTargetPerceptionUpdatedRecieve(AActor* Actor, FAIStimu
 const TArray<FVector>& AAIControllerBase::GetPathPointArray()
 {
 	PointsArray.Reset(0);
-	UWorld* World = GetWorld();
-	check(World);
 
 	if (BlackboardComponent == nullptr || GetPawn() == nullptr)
 	{
@@ -186,20 +185,15 @@ const TArray<FVector>& AAIControllerBase::GetPathPointArray()
 		return PointsArray;
 	}
 
-	APawn* ControllPawn = GetPawn();
-	FVector TargetLocation = FVector::ZeroVector;
+	const FVector ActorLocation = GetPawn()->GetActorLocation();
 	UNavigationPath* NavPath = nullptr;
 
-	if (IAIPawnOwner::Execute_IsSeeTarget(ControllPawn))
+	if (IAIPawnOwner::Execute_IsSeeTarget(GetPawn()))
 	{
-		AActor* Target = Cast<AActor>(BlackboardComponent->GetValueAsObject(TargetKeyName));
-		if (Target)
+		AActor* TargetActor = Cast<AActor>(BlackboardComponent->GetValueAsObject(TargetKeyName));
+		if (TargetActor)
 		{
-
-			NavPath = UNavigationSystemV1::FindPathToActorSynchronously(
-				World,
-				ControllPawn->GetActorLocation(),
-				Target);
+			NavPath = UNavigationSystemV1::FindPathToActorSynchronously(GetWorld(), ActorLocation, TargetActor);
 		}
 		else
 		{
@@ -208,11 +202,8 @@ const TArray<FVector>& AAIControllerBase::GetPathPointArray()
 	}
 	else
 	{
-		TargetLocation = BlackboardComponent->GetValueAsVector(PatrolLocationKeyName);
-		NavPath = UNavigationSystemV1::FindPathToLocationSynchronously(
-			World,
-			ControllPawn->GetActorLocation(),
-			TargetLocation);
+		const FVector TargetLocation = BlackboardComponent->GetValueAsVector(PatrolLocationKeyName);
+		NavPath = UNavigationSystemV1::FindPathToLocationSynchronously(GetWorld(), ActorLocation, TargetLocation);
 	}
 
 	if (NavPath)

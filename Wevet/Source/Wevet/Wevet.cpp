@@ -4,3 +4,5 @@
 #include "Modules/ModuleManager.h"
 
 IMPLEMENT_PRIMARY_GAME_MODULE( FDefaultGameModuleImpl, Wevet, "Wevet" );
+
+DEFINE_LOG_CATEGORY(LogWevetClient);

@@ -39,42 +39,14 @@ void UCharacterModel::SetWisdom(const int32 NewWisdom)
 	Wisdom = NewWisdom;
 }
 
-float UCharacterModel::GetHealthToWidget() const
-{
-	return (float)Health / (float)MaxHealth;
-}
-
-bool UCharacterModel::IsHealthHalf() const
-{
-	float Value = ((float)MaxHealth * HALF_WEIGHT);
-	int32 HalfValue = (int32)Value;
-	return Health < HalfValue;
-}
-
-bool UCharacterModel::IsHealthQuarter() const
-{
-	float Value = ((float)MaxHealth * QUART_WEIGHT);
-	int32 QuartValue = (int32)Value;
-	return Health < QuartValue;
-}
-
 void UCharacterModel::TakeDamage(const int32 InDamage)
 {
 	const int32 CurrentHealth = GetHealth();
 	SetHealth(CurrentHealth - InDamage);
 }
 
-bool UCharacterModel::IsEmptyHealth() const
+void UCharacterModel::Recover(const int32 AddHealth)
 {
-	return (Health <= INT_ZERO);
-}
-
-void UCharacterModel::Die()
-{
-	bDie = true;
-}
-
-bool UCharacterModel::IsDie() const
-{
-	return (Health <= INT_ZERO) && bDie;
+	Health += AddHealth;
+	Health = FMath::Clamp<int32>(Health, INT_ZERO, MaxHealth);
 }

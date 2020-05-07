@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
+#include "Wevet.h"
 #include "CharacterModel.generated.h"
 
 /**
@@ -17,20 +18,45 @@ class WEVET_API UCharacterModel : public UObject
 public:
 	UCharacterModel(const FObjectInitializer& ObjectInitializer);
 
-	UFUNCTION(BlueprintCallable, Category = "CharacterCondition")
-	int32 GetMaxHealth() const { return MaxHealth; }
+	FORCEINLINE int32 GetMaxHealth() const { return MaxHealth; }
+	FORCEINLINE int32 GetHealth() const { return Health; }
+	FORCEINLINE int32 GetAttack() const { return Attack; }
+	FORCEINLINE int32 GetDefence() const { return Defence; }
+	FORCEINLINE int32 GetWisdom() const { return Wisdom; }
 
-	UFUNCTION(BlueprintCallable, Category = "CharacterCondition")
-	int32 GetHealth() const { return Health; }
+	FORCEINLINE float GetHealthToWidget() const
+	{
+		return (float)Health / (float)MaxHealth;
+	}
 
-	UFUNCTION(BlueprintCallable, Category = "CharacterCondition")
-	int32 GetAttack() const { return Attack; }
+	FORCEINLINE bool IsFullHealth() const
+	{
+		return Health >= MaxHealth;
+	}
 
-	UFUNCTION(BlueprintCallable, Category = "CharacterCondition")
-	int32 GetDefence() const { return Defence; }
+	FORCEINLINE bool IsHealthHalf() const
+	{
+		float Value = ((float)MaxHealth * HALF_WEIGHT);
+		int32 HalfValue = (int32)Value;
+		return Health < HalfValue;
+	}
 
-	UFUNCTION(BlueprintCallable, Category = "CharacterCondition")
-	int32 GetWisdom() const { return Wisdom; }
+	FORCEINLINE bool IsHealthQuarter() const
+	{
+		float Value = ((float)MaxHealth * QUART_WEIGHT);
+		int32 QuartValue = (int32)Value;
+		return Health < QuartValue;
+	}
+
+	FORCEINLINE bool IsEmptyHealth() const
+	{
+		return (Health <= INT_ZERO);
+	}
+
+	FORCEINLINE bool IsDie() const
+	{
+		return (Health <= INT_ZERO) && bDie;
+	}
 
 	void SetHealth(const int32 NewHealth);
 	void SetMaxHealth(const int32 NewMaxHealth);
@@ -39,28 +65,37 @@ public:
 	void SetWisdom(const int32 NewWisdom);
 	void TakeDamage(const int32 InDamage);
 
-	float GetHealthToWidget() const;
-	bool IsHealthHalf() const;
-	bool IsHealthQuarter() const;
-	bool IsEmptyHealth() const;
+	// ‰ñ•œ
+	void Recover(const int32 AddHealth);
 
-	void Die();
-	bool IsDie() const;
+	// Ž€–Sˆ—
+	void Die()
+	{
+		bDie = true;
+	}
+
+	// ‘h¶ˆ—
+	void Alive()
+	{
+		bDie = false;
+	}
 	
 protected:
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "CharacterCondition")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Variable")
 	int32 Health;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "CharacterCondition")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Variable")
 	int32 MaxHealth;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "CharacterCondition")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Variable")
 	int32 Attack;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "CharacterCondition")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Variable")
 	int32 Defence;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "CharacterCondition")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Variable")
 	int32 Wisdom;
+
+	UPROPERTY()
 	bool bDie;
 };

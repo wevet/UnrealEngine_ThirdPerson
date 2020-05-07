@@ -20,6 +20,7 @@ public:
 	AMockPlayerController(const FObjectInitializer& ObjectInitializer);
 
 protected:
+	virtual void BeginPlay() override;
 	virtual void OnPossess(APawn* InPawn) override;
 	virtual void OnUnPossess() override;
 
@@ -27,8 +28,14 @@ protected:
 	virtual void Initializer();
 	
 public:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AMockPlayerController|Variable")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "PlayerController|Variable")
 	TSubclassOf<class UUMGManager> UMGManagerClass;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "PlayerController|Variable")
+	float ViewPitchMin;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "PlayerController|Variable")
+	float ViewPitchMax;
 
 	UUMGManager* GetPlayerHUD() const;
 

@@ -7,6 +7,7 @@
 #include "Components/ProgressBar.h"
 #include "Components/SizeBox.h"
 #include "Character/CharacterBase.h"
+#include "WevetExtension.h"
 
 
 UAIIconWidgetBase::UAIIconWidgetBase(const FObjectInitializer& ObjectInitializer)

@@ -47,7 +47,11 @@ ARifle::ARifle(const FObjectInitializer& ObjectInitializer)
 		BulletsTemplate = FindAsset.Object;
 	}
 
-	NeededAmmo = 50;
-	WeaponItemInfo.UnEquipSocketName = FName(TEXT("Spine_Right_Socket"));
+	// AK47
+	NeededAmmo = 30;
+	WeaponItemInfo.MaxAmmo = 600;
+	WeaponItemInfo.UnEquipSocketName = FName(TEXT("Rifle_Socket"));
+	WeaponItemInfo.WeaponItemType = EWeaponItemType::Rifle;
+	WeaponItemInfo.DisplayName = FString(TEXT("FN SCAR"));
 }
 

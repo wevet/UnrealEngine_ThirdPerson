@@ -18,6 +18,8 @@ enum class ELSMovementMode : uint8
 	None     UMETA(DisplayName = "None"),
 	Grounded UMETA(DisplayName = "Grounded"),
 	Falling  UMETA(DisplayName = "Falling"),
+	Ragdoll  UMETA(DisplayName = "Ragdoll"),
+	Swimming UMETA(DisplayName = "Swimming"),
 };
 
 UENUM(BlueprintType)

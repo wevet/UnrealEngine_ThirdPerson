@@ -3,8 +3,6 @@
 #include "GameFramework/DamageType.h"
 #include "TakeHitInfo.generated.h"
 
-
-
 USTRUCT(BlueprintType)
 struct WEVET_API FTakeHitInfo
 {

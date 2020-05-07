@@ -16,30 +16,10 @@
  * Execute() accepts a callback and can be called multiple times. If queue is already running, Execute does nothing
  * except storing a callback.
  *
- * The example bellow will output:
- *
- * START
- * Starting Long Task ASYNC
- * //10 seconds later
- * Starting Short Task ASYNC
- * //1 second later
- * Doing Instant Task SYNC
- * Starting Longest Parallel ASYNC
- * Starting Shortest Parallel ASYNC
- * Starting Medium Parallel ASYNC
- * //1 second later
- * Finished Shortest Parallel ASYNC
- * //1 second later (2 seconds from parallel tasks started)
- * Finished Medium Parallel
- * //8 seconds later (10 seconds from parallel tasks started)
- * Finished Longest Parallel
- * DONESKIES
  *
  * The example itself:
  *
- *  // Don't store the Queue on the stack or it will get destroyed before it finishes
- *  // You can't use "new", only a factory method "FAsyncQueue::Create()" which always returns `TSharedRef<FAsyncQueue, ESPMode::ThreadSafe>`
- *	Queue = FAsyncQueue::Create();
+ *	TSharedRef<FAsyncQueue, ESPMode::ThreadSafe> Queue = FAsyncQueue::Create();
  *	Queue->Add(FAsyncDelegate::CreateLambda([this](const FCallbackDelegate& Callback)
  *	{
  *		UE_LOG(LogTemp, Warning, TEXT("Starting Long Task ASYNC"));
@@ -59,6 +39,9 @@
  *
  *	TArray<FAsyncDelegate> ParallelTasks;
  *	TArray<FAsyncDelegate> LongestParallel;
+ *	TArray<FAsyncDelegate> ShortestParallel;
+ *	TArray<FAsyncDelegate> MediumParallel;
+ *
  *	LongestParallel.Add(FAsyncDelegate::CreateLambda([this](const FCallbackDelegate& Callback)
  *	{
  *		UE_LOG(LogTemp, Warning, TEXT("Starting Longest Parallel ASYNC"));
@@ -71,7 +54,7 @@
  *	})));
  *	ParallelTasks.Add(FAsyncQueue::MakeSequence(LongestParallel));
  *
- *	TArray<FAsyncDelegate> ShortestParallel;
+ *
  *	ShortestParallel.Add(FAsyncDelegate::CreateLambda([this](const FCallbackDelegate& Callback)
  *	{
  *		UE_LOG(LogTemp, Warning, TEXT("Starting Shortest Parallel ASYNC"));
@@ -85,7 +68,6 @@
  *	ParallelTasks.Add(FAsyncQueue::MakeSequence(ShortestParallel));
  *
  *
- *	TArray<FAsyncDelegate> MediumParallel;
  *	MediumParallel.Add(FAsyncDelegate::CreateLambda([this](const FCallbackDelegate& Callback)
  *	{
  *		UE_LOG(LogTemp, Warning, TEXT("Starting Medium Parallel ASYNC"));
@@ -112,23 +94,88 @@ DECLARE_DELEGATE_OneParam(FAsyncDelegate, FCallbackDelegate);
 
 class WEVET_API FAsyncQueue : public TSharedFromThis<FAsyncQueue, ESPMode::ThreadSafe>
 {
+// Pointers need to create instances of a used class when compiled with WITH_HOT_RELOAD_CTORS
 #if WITH_HOT_RELOAD
-	/*
-	* WITH_HOT_RELOAD_CTORS 
-	*/
 	friend class TSharedRef<FAsyncQueue, ESPMode::ThreadSafe>;
 	friend class TSharedPtr<FAsyncQueue, ESPMode::ThreadSafe>;
 	friend class TWeakPtr<FAsyncQueue, ESPMode::ThreadSafe>;
 #endif
 
 public:
-	static FAsyncDelegate MakeSequence(const TArray<FAsyncDelegate>& SequenceDelegates);
-	static FAsyncDelegate MakeParallel(const TArray<FAsyncDelegate>& ParallelDelegates);
-	static FAsyncDelegate MakeSync(const FCallbackDelegate& SyncDelegates);
+	static FAsyncDelegate MakeParallel(const TArray<FAsyncDelegate>& ParallelDelegates)
+	{
+		return FAsyncDelegate::CreateLambda([ParallelDelegates](const FCallbackDelegate& Callback)
+		{
+			TSharedPtr<int32> ParallelCallbacksCounter = MakeShareable(new int32(ParallelDelegates.Num()));
+			FCallbackDelegate ParallelCallback = FCallbackDelegate::CreateLambda([ParallelCallbacksCounter, Callback]()
+			{
+				--(*ParallelCallbacksCounter);
+				if (*ParallelCallbacksCounter <= 0)
+				{
+					Callback.Execute();
+				}
+			});
 
-	static TSharedRef<FAsyncQueue, ESPMode::ThreadSafe> Create();
+			for (auto& Delegate : ParallelDelegates)
+			{
+				check(Delegate.IsBound());
+				Delegate.Execute(ParallelCallback);
+			}
+		});
+	}
 
-	void Add(const FAsyncDelegate& AsyncDelegate);
+	static FAsyncDelegate MakeSequence(const TArray<FAsyncDelegate>& SequenceDelegates)
+	{
+		return FAsyncDelegate::CreateLambda([SequenceDelegates](const FCallbackDelegate& Callback)
+		{
+			TSharedPtr<int32> SequenceCallbackCounter = MakeShareable(new int32(0));
+			TSharedPtr<FCallbackDelegate> SequenceCallback(new FCallbackDelegate());
+			SequenceCallback->BindLambda([SequenceCallback, SequenceCallbackCounter, &SequenceDelegates, Callback]()
+			{
+				int32 Index = (*SequenceCallbackCounter)++;
+				if (Index < SequenceDelegates.Num())
+				{
+					SequenceDelegates[Index].ExecuteIfBound(*SequenceCallback);
+				}
+				else
+				{
+					Callback.ExecuteIfBound();
+				}
+			});
+			SequenceCallback->Execute();
+		});
+	}
+
+	static FAsyncDelegate MakeSync(const FCallbackDelegate& SyncDelegates)
+	{
+		return FAsyncDelegate::CreateLambda([SyncDelegates](const FCallbackDelegate& Callback)
+		{
+			check(SyncDelegates.IsBound());
+			SyncDelegates.Execute();
+			Callback.Execute();
+		});
+	}
+
+	static FORCEINLINE const bool ValidPtr(const FAsyncDelegate* InDelegatePtr)
+	{
+		if (!InDelegatePtr)
+		{
+			return false;
+		}
+		return (InDelegatePtr && InDelegatePtr->IsBound());
+	}
+
+	static TSharedRef<FAsyncQueue, ESPMode::ThreadSafe> Create()
+	{
+		TSharedRef<FAsyncQueue, ESPMode::ThreadSafe> Result(new FAsyncQueue());
+		return Result;
+	}
+
+	void Add(const FAsyncDelegate& AsyncDelegate)
+	{
+		Queue.Enqueue(AsyncDelegate);
+	}
+
 	void AddSync(const FCallbackDelegate& SyncDelegate) 
 	{ 
 		Add(FAsyncQueue::MakeSync(SyncDelegate)); 
@@ -139,12 +186,44 @@ public:
 		Add(FAsyncQueue::MakeParallel(ParallelDelegates)); 
 	}
 	
-	void StoreHardReferenceToSelf(TSharedRef<FAsyncQueue, ESPMode::ThreadSafe> NewHardReferenceToSelf);
-	void ReleaseHardReferenceToSelf();
-	void Execute(const FCallbackDelegate& Callback);
-	void Execute();
-	void Empty();
-	void RemoveAllCallbacks();
+	void Execute(const FCallbackDelegate& Callback)
+	{
+		//Sometimes, for convenience, functions pass empty delegate to indicate the lack of callback
+		if (Callback.IsBound())
+		{
+			CompleteCallbacks.Add(Callback);
+			CompleteCallbacks.Shrink();
+		}
+		Execute();
+	}
+
+	void Execute()
+	{
+		if (!OnAsyncFinishedDelegate.IsBound())
+		{
+			//OnAsyncFinishedDelegate.Unbind();
+			OnAsyncFinishedDelegate.BindThreadSafeSP(this, &FAsyncQueue::OnAsyncDelegateFinished);
+		}
+
+		if (!IsExecuting())
+		{
+			ExecuteNextInQueue();
+		}
+	}
+
+	void Empty()
+	{
+		FAsyncDelegate Tmp;
+		while (!Queue.IsEmpty())
+		{
+			Queue.Dequeue(Tmp);
+		}
+	}
+
+	void RemoveAllCallbacks()
+	{
+		CompleteCallbacks.Empty();
+	}
 
 	bool IsExecuting()
 	{
@@ -156,16 +235,56 @@ public:
 		return Queue.IsEmpty(); 
 	}
 
-private:
-	FAsyncQueue();
+	void StoreHardReferenceToSelf(TSharedRef<FAsyncQueue, ESPMode::ThreadSafe> NewHardReferenceToSelf)
+	{
+		HardReferenceToSelf = TSharedPtr<FAsyncQueue, ESPMode::ThreadSafe>(NewHardReferenceToSelf);
+	}
 
+	void ReleaseHardReferenceToSelf()
+	{
+		check(HardReferenceToSelf.IsValid());
+		HardReferenceToSelf.Reset();
+	}
+
+private:
+	FAsyncQueue() : TSharedFromThis() {}
+
+	void ExecuteNextInQueue()
+	{
+		// Make sure previous delegate has been finished
+		check(!IsExecuting());
+
+		if (Queue.IsEmpty())
+		{
+			auto Tmp = CompleteCallbacks;
+			CompleteCallbacks.Empty();
+			for (auto& Callback : Tmp)
+			{
+				Callback.Execute();
+			}
+			return;
+		}
+		else
+		{
+			UE_LOG(LogTemp, Log, TEXT("CompleteCallbacks.Num : %d"), CompleteCallbacks.Num());
+		}
+
+		Queue.Dequeue(CurrentDelegate);
+		check(IsExecuting());
+		CurrentDelegate.Execute(OnAsyncFinishedDelegate);
+	}
+
+	void OnAsyncDelegateFinished()
+	{
+		CurrentDelegate.Unbind();
+		ExecuteNextInQueue();
+	}
+
+private:
 	TQueue<FAsyncDelegate> Queue;
 	TArray<FCallbackDelegate> CompleteCallbacks;
-	FCallbackDelegate OnAsyncDelegateFinishedDelegate;
+	FCallbackDelegate OnAsyncFinishedDelegate;
 	FAsyncDelegate CurrentDelegate;
 
 	TSharedPtr<FAsyncQueue, ESPMode::ThreadSafe> HardReferenceToSelf;
-
-	void ExecuteNextInQueue();
-	void OnAsyncDelegateFinished();
 };

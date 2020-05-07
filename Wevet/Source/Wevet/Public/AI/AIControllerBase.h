@@ -7,18 +7,18 @@
 #include "Perception/AISenseConfig_Sight.h"
 #include "Perception/AISenseConfig_Hearing.h"
 #include "Perception/AISenseConfig_Prediction.h"
+#include "Perception/AIPerceptionComponent.h"
 #include "BehaviorTree/BehaviorTree.h"
+#include "BehaviorTree/BlackboardComponent.h"
+#include "BehaviorTree/BehaviorTreeComponent.h"
+#include "Blueprint/AIBlueprintHelperLibrary.h"
+
 #include "Wevet.h"
 #include "WevetTypes.h"
 #include "AIControllerBase.generated.h"
 
-class UBehaviorTreeComponent;
 class AAICharacterBase;
 class AWayPointBase;
-
-class UBehaviorTreeComponent;
-class UBlackboardComponent;
-class UAIPerceptionComponent;
 
 
 UCLASS(ABSTRACT)
@@ -33,9 +33,13 @@ protected:
 	virtual void OnPossess(APawn* InPawn) override;
 	virtual void OnUnPossess() override;
 	virtual void BeginPlay() override;
-	FGenericTeamId GetGenericTeamId() const override;
 
 public:
+	FORCEINLINE FGenericTeamId GetGenericTeamId() const override
+	{
+		return PTG_TEAM_ID_ENEMY;
+	}
+
 	FORCEINLINE class UBehaviorTreeComponent* GetBehaviorTreeComponent()
 	{
 		return BehaviorTreeComponent;
@@ -52,18 +56,27 @@ public:
 	}
 
 public:
-	AWayPointBase* GetRandomAtWayPoint();
-	virtual void SetBlackboardTarget(APawn* NewTarget);
-	virtual void SetBlackboardWayPoint(AWayPointBase* NewWayPoint);
-	virtual void SetBlackboardBotType(EBotBehaviorType NewType);
-	virtual void SetBlackboardSeeActor(const bool NewCanSeeActor);
-	virtual void SetBlackboardHearActor(const bool NewCanHearActor);
-	virtual void SetBlackboardPatrolLocation(const FVector NewLocation);
-	virtual void SetBlackboardActionState(const EAIActionState NewAIActionState);
+	class AWayPointBase* GetWayPoint() const;
+	void SetBlackboardTarget(APawn* NewTarget);
+	void SetBlackboardBotType(EBotBehaviorType NewType);
+	void SetBlackboardSeeActor(const bool NewCanSeeActor);
+	void SetBlackboardHearActor(const bool NewCanHearActor);
+	void SetBlackboardPatrolLocation(const FVector NewLocation);
+	void SetBlackboardActionState(const EAIActionState NewAIActionState);
+
+	FORCEINLINE AActor* GetBlackboardTarget() const
+	{
+		return Cast<AActor>(BlackboardComponent->GetValueAsObject(TargetKeyName));
+	}
+
+	FORCEINLINE EAIActionState GetBlackboardActionState() const
+	{
+		return (EAIActionState)BlackboardComponent->GetValueAsEnum(ActionStateKeyName);
+	}
 
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Components, meta = (AllowPrivateAccess = "true"))
-	class UBehaviorTreeComponent * BehaviorTreeComponent;
+	class UBehaviorTreeComponent* BehaviorTreeComponent;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Components, meta = (AllowPrivateAccess = "true"))
 	class UBlackboardComponent* BlackboardComponent;
@@ -71,38 +84,44 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Components, meta = (AllowPrivateAccess = "true"))
 	class UAIPerceptionComponent* AIPerceptionComponent;
 
-	UFUNCTION(BlueprintCallable, Category = "AIControllerBase|Perception")
+protected:
+	UFUNCTION()
 	virtual void OnTargetPerceptionUpdatedRecieve(AActor* Actor, FAIStimulus Stimulus);
-
-	AAICharacterBase* AICharacterOwner;
-	TArray<AWayPointBase*> WayPointList;
 
 	class UAISenseConfig_Sight* SightConfig;
 	class UAISenseConfig_Hearing* HearConfig;
 	class UAISenseConfig_Prediction* PredictionConfig;
 
-	UPROPERTY(EditDefaultsOnly, Category = "AIControllerBase|Variable")
+protected:
+	class AAICharacterBase* AICharacterOwner;
+	TArray<class AWayPointBase*> WayPointList;
+
+	UPROPERTY(EditDefaultsOnly, Category = "AIController|Variable")
 	FName CanSeePlayerKeyName;
 
-	UPROPERTY(EditDefaultsOnly, Category = "AIControllerBase|Variable")
+	UPROPERTY(EditDefaultsOnly, Category = "AIController|Variable")
 	FName CanHearPlayerKeyName;
 
-	UPROPERTY(EditDefaultsOnly, Category = "AIControllerBase|Variable")
+	UPROPERTY(EditDefaultsOnly, Category = "AIController|Variable")
 	FName TargetKeyName;
 
-	UPROPERTY(EditDefaultsOnly, Category = "AIControllerBase|Variable")
+	UPROPERTY(EditDefaultsOnly, Category = "AIController|Variable")
 	FName PatrolLocationKeyName;
 
-	UPROPERTY(EditDefaultsOnly, Category = "AIControllerBase|Variable")
+	UPROPERTY(EditDefaultsOnly, Category = "AIController|Variable")
 	FName BotTypeKeyName;
 
-	UPROPERTY(EditDefaultsOnly, Category = "AIControllerBase|Variable")
+	UPROPERTY(EditDefaultsOnly, Category = "AIController|Variable")
 	FName ActionStateKeyName;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AIControllerBase|Variable")
+	UPROPERTY()
 	TArray<FVector> PointsArray;
 
 public:
-	UFUNCTION(BlueprintCallable, Category = "AIControllerBase|Function")
+	UFUNCTION(BlueprintCallable, Category = "AIController|Function")
 	const TArray<FVector>& GetPathPointArray();
+
+	void StopTree();
+	void ResumeTree();
+
 };

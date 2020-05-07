@@ -1,159 +1,168 @@
 {
 	"FileVersion": 3,
-	"EngineAssociation": "4.22",
+	"EngineAssociation": "4.24",
 	"Category": "Game",
 	"Description": "ActionGame",
 	"Modules": [
-    {
-      "Name": "Wevet",
-      "Type": "Runtime",
-      "LoadingPhase": "Default",
-      "AdditionalDependencies": [
-        "Engine",
-        "UMG",
-        "AIModule",
-        "LevelSequence",
-        "CoreUObject"
-      ]
-    }
+		{
+			"Name": "Wevet",
+			"Type": "Runtime",
+			"LoadingPhase": "Default",
+			"AdditionalDependencies": [
+				"Engine",
+				"UMG",
+				"AIModule",
+				"LevelSequence",
+				"CoreUObject"
+			]
+		},
+		{
+			"Name": "WevetEditor",
+			"Type": "Runtime",
+			"LoadingPhase": "PreDefault"
+		}
 	],
-  "Plugins": [
-    {
-      "Name": "ArchVisCharacter",
-      "Enabled": false
-    },
-    {
-      "Name": "AudioCapture",
-      "Enabled": false
-    },
-    {
-      "Name": "CryptoKeys",
-      "Enabled": false
-    },
-    {
-      "Name": "CustomMeshComponent",
-      "Enabled": false
-    },
-    {
-      "Name": "DatasmithContent",
-      "Enabled": true
-    },
-    {
-      "Name": "HTML5Networking",
-      "Enabled": false
-    },
-    {
-      "Name": "FacialAnimation",
-      "Enabled": true
-    },
-    {
-      "Name": "ImmediatePhysics",
-      "Enabled": false
-    },
-    {
-      "Name": "LinearTimecode",
-      "Enabled": false
-    },
-    {
-      "Name": "OculusVR",
-      "Enabled": false
-    },
-    {
-      "Name": "PhysXVehicles",
-      "Enabled": false
-    },
-    {
-      "Name": "ResonanceAudio",
-      "Enabled": false
-    },
-    {
-      "Name": "SteamVR",
-      "Enabled": false
-    },
-    {
-      "Name": "RuntimePhysXCooking",
-      "Enabled": false
-    },
-    {
-      "Name": "UObjectPlugin",
-      "Enabled": false
-    },
-    {
-      "Name": "WindowsMoviePlayer",
-      "Enabled": false
-    },
-    {
-      "Name": "CableComponent",
-      "Enabled": false
-    },
-    {
-      "Name": "CharacterAI",
-      "Enabled": false
-    },
-    {
-      "Name": "LightPropagationVolume",
-      "Enabled": false
-    },
-    {
-      "Name": "MediaCompositing",
-      "Enabled": false
-    },
-    {
-      "Name": "LocationServicesBPLibrary",
-      "Enabled": false
-    },
-    {
-      "Name": "MagicLeapEmulator",
-      "Enabled": false,
-      "SupportedTargetPlatforms": [
-        "Lumin"
-      ]
-    },
-    {
-      "Name": "MagicLeapMedia",
-      "Enabled": false,
-      "SupportedTargetPlatforms": [
-        "Lumin"
-      ]
-    },
-    {
-      "Name": "MagicLeap",
-      "Enabled": false,
-      "SupportedTargetPlatforms": [
-        "Lumin"
-      ]
-    },
-    {
-      "Name": "ProceduralMeshComponent",
-      "Enabled": true
-    },
-    {
-      "Name": "SlateRemote",
-      "Enabled": true
-    },
-    {
-      "Name": "GameplayAbilities",
-      "Enabled": true
-    },
-    {
-      "Name": "LoadingScreen",
-      "Enabled": true
-    },
-    {
-      "Name": "Niagara",
-      "Enabled": true
-    },
-    {
-      "Name": "NiagaraExtras",
-      "Enabled": true
-    },
-    {
-      "Name": "ApexDestruction",
-      "Enabled": true
-    },
-    {
-      "Name": "LocomotionSystem",
-      "Enabled": true
-    }
-  ]
+	"Plugins": [
+		{
+			"Name": "ArchVisCharacter",
+			"Enabled": false
+		},
+		{
+			"Name": "AudioCapture",
+			"Enabled": false
+		},
+		{
+			"Name": "CryptoKeys",
+			"Enabled": false
+		},
+		{
+			"Name": "CustomMeshComponent",
+			"Enabled": false
+		},
+		{
+			"Name": "DatasmithContent",
+			"Enabled": true
+		},
+		{
+			"Name": "HTML5Networking",
+			"Enabled": false
+		},
+		{
+			"Name": "FacialAnimation",
+			"Enabled": true
+		},
+		{
+			"Name": "ImmediatePhysics",
+			"Enabled": false
+		},
+		{
+			"Name": "LinearTimecode",
+			"Enabled": false
+		},
+		{
+			"Name": "OculusVR",
+			"Enabled": false
+		},
+		{
+			"Name": "PhysXVehicles",
+			"Enabled": false
+		},
+		{
+			"Name": "ResonanceAudio",
+			"Enabled": false
+		},
+		{
+			"Name": "SteamVR",
+			"Enabled": false
+		},
+		{
+			"Name": "RuntimePhysXCooking",
+			"Enabled": false
+		},
+		{
+			"Name": "UObjectPlugin",
+			"Enabled": false
+		},
+		{
+			"Name": "WindowsMoviePlayer",
+			"Enabled": false
+		},
+		{
+			"Name": "CableComponent",
+			"Enabled": true
+		},
+		{
+			"Name": "CharacterAI",
+			"Enabled": false
+		},
+		{
+			"Name": "LightPropagationVolume",
+			"Enabled": false
+		},
+		{
+			"Name": "MediaCompositing",
+			"Enabled": false
+		},
+		{
+			"Name": "LocationServicesBPLibrary",
+			"Enabled": false
+		},
+		{
+			"Name": "MagicLeapEmulator",
+			"Enabled": false,
+			"SupportedTargetPlatforms": [
+				"Lumin"
+			]
+		},
+		{
+			"Name": "MagicLeapMedia",
+			"Enabled": false,
+			"SupportedTargetPlatforms": [
+				"Lumin"
+			]
+		},
+		{
+			"Name": "MagicLeap",
+			"Enabled": false,
+			"SupportedTargetPlatforms": [
+				"Lumin"
+			]
+		},
+		{
+			"Name": "ProceduralMeshComponent",
+			"Enabled": true
+		},
+		{
+			"Name": "SlateRemote",
+			"Enabled": true
+		},
+		{
+			"Name": "GameplayAbilities",
+			"Enabled": true
+		},
+		{
+			"Name": "LoadingScreen",
+			"Enabled": true
+		},
+		{
+			"Name": "RTIK",
+			"Enabled": true
+		},
+		{
+			"Name": "Niagara",
+			"Enabled": true
+		},
+		{
+			"Name": "NiagaraExtras",
+			"Enabled": true
+		},
+		{
+			"Name": "ApexDestruction",
+			"Enabled": true
+		},
+		{
+			"Name": "LocomotionSystem",
+			"Enabled": true
+		}
+	]
 }

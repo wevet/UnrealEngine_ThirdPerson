@@ -1,27 +1,36 @@
 ﻿// Copyright 2018 wevet works All Rights Reserved.
 
-#include "MockPlayerController.h"
-#include "Engine.h"
+#include "Player/MockPlayerController.h"
 #include "Blueprint/UserWidget.h"
+#include "Engine.h"
+#include "WevetExtension.h"
+#include "Lib/WevetBlueprintFunctionLibrary.h"
 
 
 AMockPlayerController::AMockPlayerController(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer),
 	UMGManager(nullptr)
 {
-	//
+	ViewPitchMin = -50.f;
+	ViewPitchMax = 50.f;
+}
+
+void AMockPlayerController::BeginPlay()
+{
+	Super::BeginPlay();
+
+	if (APlayerCameraManager* CameraManager = Wevet::ControllerExtension::GetCameraManager(this))
+	{
+		CameraManager->ViewPitchMin = ViewPitchMin;
+		CameraManager->ViewPitchMax = ViewPitchMax;
+	}
 }
 
 void AMockPlayerController::OnPossess(APawn* InPawn)
 {
 	Super::OnPossess(InPawn);
-
-	if (AMockCharacter* OwnerPawn = Cast<AMockCharacter>(InPawn))
-	{
-		CharacterOwner = OwnerPawn;
-		check(CharacterOwner);
-		Initializer();
-	}
+	CharacterOwner = Cast<AMockCharacter>(InPawn);
+	Initializer();
 }
 
 void AMockPlayerController::OnUnPossess()
@@ -31,13 +40,12 @@ void AMockPlayerController::OnUnPossess()
 
 void AMockPlayerController::Initializer()
 {
-	if (UMGManagerClass == nullptr)
+	if (UMGManagerClass)
 	{
-		return;
+		UMGManager = CreateWidget<UUMGManager>(this, UMGManagerClass);
 	}
 
-	UMGManager = CreateWidget<UUMGManager>(this, UMGManagerClass);
-	if (UMGManager)
+	if (UMGManager && CharacterOwner)
 	{
 		UMGManager->Initializer(CharacterOwner);
 		UMGManager->AddToViewport();

@@ -7,8 +7,10 @@ public class WevetEditorTarget : TargetRules
 {
 	public WevetEditorTarget(TargetInfo Target) : base(Target)
 	{
-		Type = TargetType.Editor;
+        Type = TargetType.Editor;
+        //DefaultBuildSettings = BuildSettingsVersion.V2;
+        ShadowVariableWarningLevel = WarningLevel.Warning;
 
-		ExtraModuleNames.AddRange( new string[] { "Wevet" } );
+        ExtraModuleNames.AddRange( new string[] { "Wevet", "WevetEditor", } );
 	}
 }

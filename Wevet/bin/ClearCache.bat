@@ -11,8 +11,8 @@ rmdir /q /s ..\\Binaries
 
 rmdir /q /s ..\\Plugins\\ExtraCameraWindow\\Binaries
 rmdir /q /s ..\\Plugins\\ExtraCameraWindow\\Intermediate
-rmdir /q /s ..\\Plugins\\FullbodyIK\\Binaries
-rmdir /q /s ..\\Plugins\\FullbodyIK\\Intermediate
+rmdir /q /s ..\\Plugins\\RTIK\\Binaries
+rmdir /q /s ..\\Plugins\\RTIK\\Intermediate
 rmdir /q /s ..\\Plugins\\LocomotionSystem\\Binaries
 rmdir /q /s ..\\Plugins\\LocomotionSystem\\Intermediate
 rmdir /q /s ..\\Plugins\\LoadingScreen\\Binaries

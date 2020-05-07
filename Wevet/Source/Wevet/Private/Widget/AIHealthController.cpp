@@ -39,7 +39,6 @@ void UAIHealthController::ResetCharacterOwner()
 
 void UAIHealthController::TickRenderer(const float InDeltaTime)
 {
-	
 	Super::SetAlignmentInViewport(ViewPortOffset);
 	if (!AICharacterPtr.IsValid() || Container == nullptr)
 	{
@@ -78,11 +77,7 @@ void UAIHealthController::TickRenderer(const float InDeltaTime)
 	{
 		FVector2D ScreenLocation;
 		ESlateVisibility SlateVisibility = Container->GetVisibility();
-		bool bCanRendering = Super::PlayerController->ProjectWorldLocationToScreen(
-			OwnerLocation, 
-			ScreenLocation, 
-			true);
-		
+		bool bCanRendering = Super::PlayerController->ProjectWorldLocationToScreen(OwnerLocation, ScreenLocation, true);	
 		Super::Visibility(bCanRendering);
 		Super::SetPositionInViewport(ScreenLocation);
 	}

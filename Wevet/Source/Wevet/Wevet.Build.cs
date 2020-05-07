@@ -6,6 +6,7 @@ public class Wevet : ModuleRules
 {
 	public Wevet(ReadOnlyTargetRules Target) : base(Target)
 	{
+        PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
         PrivatePCHHeaderFile = "Wevet.h";
 
         PublicDependencyModuleNames.AddRange(new string[] 
@@ -15,8 +16,6 @@ public class Wevet : ModuleRules
                 "Engine"
             }
         );
-
-        //PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 
         PrivateDependencyModuleNames.AddRange(new string[]
 			{
@@ -40,6 +39,7 @@ public class Wevet : ModuleRules
                 "GameplayAbilities",
                 "LocomotionSystem",
                 "LoadingScreen",
+                "RTIK",
             }
 		);
 

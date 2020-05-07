@@ -14,15 +14,24 @@ namespace Wevet
 	{
 	public:
 		// usage
-		// Flare::ControllerExtension::GetPlayer(this, 0)
+		// Wevet::ControllerExtension::GetPlayer(this)
 		static FORCEINLINE APlayerController* GetPlayer(const UObject* WorldContextObject, int32 PlayerIndex = 0)
 		{
 			return UGameplayStatics::GetPlayerController(WorldContextObject, PlayerIndex);
 		}
 
+		// usage
+		// Wevet::ControllerExtension::GetCameraManager(this);
 		static FORCEINLINE APlayerCameraManager* GetCameraManager(const UObject* WorldContextObject, int32 PlayerIndex = 0)
 		{
 			return UGameplayStatics::GetPlayerCameraManager(WorldContextObject, PlayerIndex);
+		}
+
+		// usage
+		// Wevet::ControllerExtension::GetPlayerPawn(this)
+		static FORCEINLINE APawn* GetPlayerPawn(const UObject* WorldContextObject, int32 PlayerIndex = 0)
+		{
+			return UGameplayStatics::GetPlayerController(WorldContextObject, PlayerIndex)->GetPawn();
 		}
 	};
 

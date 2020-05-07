@@ -2,18 +2,20 @@
 
 class FLocomotionSystemPlugin : public ILocomotionSystemPlugin
 {
-	virtual void StartupModule() override;
-	virtual void ShutdownModule() override;
+	virtual void StartupModule() override
+	{
+
+	}
+
+	virtual bool IsGameModule() const override
+	{
+		return true;
+	}
+
+	virtual void ShutdownModule() override
+	{
+
+	}
 };
 
-IMPLEMENT_MODULE(FLocomotionSystemPlugin, LocomotionSystem)
-
-void FLocomotionSystemPlugin::StartupModule()
-{
-
-}
-
-void FLocomotionSystemPlugin::ShutdownModule()
-{
-
-}
+IMPLEMENT_GAME_MODULE(FLocomotionSystemPlugin, LocomotionSystem)

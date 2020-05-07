@@ -70,4 +70,5 @@ enum class EItemType : uint8
 	None   UMETA(DisplayName = "None"),
 	Weapon UMETA(DisplayName = "Weapon"),
 	Health UMETA(DisplayName = "Health"),
+	Ammos  UMETA(DisplayName = "Ammos"),
 };

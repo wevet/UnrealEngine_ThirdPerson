@@ -36,7 +36,7 @@ public:
 	float GetAttackTraceMiddleDistance() const;
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AIPawnOwner")
-	AActor* GetTarget();
+	AActor* GetTarget() const;
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AIPawnOwner")
 	void StateChange(const EAIActionState NewAIActionState);
