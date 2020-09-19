@@ -3,9 +3,11 @@
 #include "Player/MockCharacter.h"
 #include "Player/MockPlayerController.h"
 #include "AnimInstance/PlayerAnimInstance.h"
+#include "AnimInstance/IKAnimInstance.h"
 
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "Kismet/KismetSystemLibrary.h"
 #include "Math/RotationMatrix.h"
 
 #include "Wevet.h"
@@ -14,8 +16,7 @@
 #include "Lib/WevetBlueprintFunctionLibrary.h"
 
 
-AMockCharacter::AMockCharacter(const FObjectInitializer& ObjectInitializer)
-	: Super(ObjectInitializer)
+AMockCharacter::AMockCharacter(const FObjectInitializer& ObjectInitializer)	: Super(ObjectInitializer)
 {
 	PrimaryActorTick.bCanEverTick = true;
 	GetCapsuleComponent()->InitCapsuleSize(30.f, 90.0f);
@@ -31,6 +32,8 @@ AMockCharacter::AMockCharacter(const FObjectInitializer& ObjectInitializer)
 	GetCharacterMovement()->RotationRate = FRotator(0.0f, 0.0f, 0.0f);
 	GetCharacterMovement()->JumpZVelocity = 350.f;
 	GetCharacterMovement()->AirControl = 0.1f;
+
+	GetMesh()->ComponentTags.Add(WATER_TAG);
 
 	bEnableRagdoll = false;
 	JumpMaxHoldTime = 0.5f;
@@ -57,10 +60,10 @@ AMockCharacter::AMockCharacter(const FObjectInitializer& ObjectInitializer)
 	FPSCameraComponent->bUsePawnControlRotation = true;
 	FPSCameraComponent->SetFieldOfView(100.f);
 
-	WeaponCurrentIndex = INDEX_NONE;
+	WeaponCurrentIndex = 0;
 	RecoverHealthValue = 100;
 	RecoverTimer = 2.0f;
-	Tags.Add(FName(TEXT("DamageInstigator")));
+	Tags.Add(DAMAGE_TAG);
 
 	// ALS
 	bWasMovementInput = false;
@@ -68,10 +71,57 @@ AMockCharacter::AMockCharacter(const FObjectInitializer& ObjectInitializer)
 	bAiming = false;
 	bRightShoulder = true;
 	bRagdollOnGround = false;
-	RagdollPoseSnapshot = FName(TEXT("RagdollPose"));
+
 	// ALS Override
 	GetCharacterMovement()->BrakingFrictionFactor = ZERO_VALUE;
 	GetCharacterMovement()->CrouchedHalfHeight = 60.f;
+
+	// FPSSocketRotation
+	FPSSocketRotation = FRotator(0.f, 90.0f, -90.f);
+
+	// ItemPickupEffect
+	OutlinePostProcessComponent = ObjectInitializer.CreateDefaultSubobject<UPostProcessComponent>(this, TEXT("OutlinePostProcessComponent"));
+	OutlinePostProcessComponent->bAutoActivate = 1;
+	OutlinePostProcessComponent->bEnabled = 0;
+	OutlinePostProcessComponent->bUnbound = 0;
+	OutlinePostProcessComponent->BlendWeight = 0.0f;
+	OutlinePostProcessComponent->SetVisibility(false);
+	OutlinePostProcessComponent->SetupAttachment(GetCapsuleComponent());
+
+	// 死亡時Effect
+	DeathPostProcessComponent = ObjectInitializer.CreateDefaultSubobject<UPostProcessComponent>(this, TEXT("DeathPostProcessComponent"));
+	DeathPostProcessComponent->bAutoActivate = 1;
+	DeathPostProcessComponent->bEnabled = 0;
+	DeathPostProcessComponent->bUnbound = 0;
+	DeathPostProcessComponent->BlendWeight = 0.0f;
+	DeathPostProcessComponent->SetVisibility(false);
+	DeathPostProcessComponent->SetupAttachment(GetCapsuleComponent());
+
+	//wchar_t* Path = TEXT("/Game/Player_Assets/Blueprints/ALS/Curves/CameraLerpCurves/");
+	{
+		static ConstructorHelpers::FObjectFinder<UCurveFloat> FindAsset(TEXT("/Game/Player_Assets/Blueprints/ALS/Curves/CameraLerpCurves/DefaultCurve"));
+		DefaultCurve = FindAsset.Object;
+	}
+
+	{
+		static ConstructorHelpers::FObjectFinder<UCurveFloat> FindAsset(TEXT("/Game/Player_Assets/Blueprints/ALS/Curves/CameraLerpCurves/FastCurve"));
+		FastCurve = FindAsset.Object;
+	}
+
+	{
+		static ConstructorHelpers::FObjectFinder<UCurveFloat> FindAsset(TEXT("/Game/Player_Assets/Blueprints/ALS/Curves/CameraLerpCurves/SlowCurve"));
+		SlowCurve = FindAsset.Object;
+	}
+
+	{
+		static ConstructorHelpers::FObjectFinder<UAnimMontage> FindAsset(TEXT("/Game/Player_Assets/Character/Animation/Extra/Mantle/ALS_N_Mantle_1m_RH_Montage"));
+		DefaultLowMantleAsset.AnimMontage = FindAsset.Object;
+	}
+
+	{
+		static ConstructorHelpers::FObjectFinder<UAnimMontage> FindAsset(TEXT("/Game/Player_Assets/Character/Animation/Extra/Mantle/ALS_N_Mantle_2m_Montage"));
+		DefaultHighMantleAsset.AnimMontage = FindAsset.Object;
+	}
 }
 
 void AMockCharacter::OnConstruction(const FTransform& Transform)
@@ -87,7 +137,7 @@ void AMockCharacter::OnConstruction(const FTransform& Transform)
 
 	FAttachmentTransformRules Rules(EAttachmentRule::SnapToTarget, true);
 	FPSCameraComponent->AttachToComponent(GetMesh(), Rules, FPS_SOCKET);
-	FPSCameraComponent->SetRelativeRotation(FRotator(0.f, 90.0f, -90.f));
+	FPSCameraComponent->SetRelativeRotation(FPSSocketRotation);
 }
 
 void AMockCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -99,16 +149,42 @@ void AMockCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
 void AMockCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-	PlayerController = Cast<AMockPlayerController>(Wevet::ControllerExtension::GetPlayer(this));
+	PlayerController = Cast<AMockPlayerController>(GetController());
 	PlayerAnimInstance = Cast<UPlayerAnimInstance>(GetAnimInstance());
 	MeshArray = Wevet::ComponentExtension::GetComponentsArray<UMeshComponent>(this);
-	Super::CreateWeaponInstance(DefaultWeapon);
+	ILocomotionSystemPawn::Execute_OnALSViewModeChange(this);
+	ILocomotionSystemPawn::Execute_OnALSRotationModeChange(this);
+	ILocomotionSystemPawn::Execute_OnALSStanceChange(this);
+
+	Super::CreateWeaponInstance(PrimaryWeapon, [&](AAbstractWeapon* Weapon)
+	{
+		if (Weapon)
+		{
+			UE_LOG(LogWevetClient, Log, TEXT("Primary Weapon Instance Success : %s"), *FString(__FUNCTION__));
+		}
+		else
+		{
+			UE_LOG(LogWevetClient, Error, TEXT("Primary Weapon Instance Failer : %s"), *FString(__FUNCTION__));
+		}
+	});
+	Super::CreateWeaponInstance(SecondaryWeapon, [&](AAbstractWeapon* Weapon) 
+	{
+		if (Weapon)
+		{
+			UE_LOG(LogWevetClient, Log, TEXT("Secondary Weapon Instance Success : %s"), *FString(__FUNCTION__));
+		}
+		else
+		{
+			UE_LOG(LogWevetClient, Error, TEXT("Secondary Weapon Instance Failer : %s"), *FString(__FUNCTION__));
+		}
+	});
 }
 
 void AMockCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 	TickableRecover(DeltaTime);
+	CalculateEssentialVariables();
 }
 
 void AMockCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -119,30 +195,25 @@ void AMockCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 	DOREPLIFETIME_CONDITION(AMockCharacter, RagdollLocation, COND_SkipOwner);
 	DOREPLIFETIME_CONDITION(AMockCharacter, CharacterRotation, COND_SkipOwner);
 	DOREPLIFETIME_CONDITION(AMockCharacter, LookingRotation, COND_SkipOwner);
-	DOREPLIFETIME_CONDITION(AMockCharacter, TargetRotation, COND_SkipOwner);
+	//DOREPLIFETIME_CONDITION(AMockCharacter, TargetRotation, COND_SkipOwner);
 }
 
-// @NOTE
-// 自動回復
-void AMockCharacter::TickableRecover(const float InDeltaTime)
+void AMockCharacter::OnMovementModeChanged(EMovementMode PrevMovementMode, uint8 PreviousCustomMode)
 {
-	if (IDamageInstigator::Execute_IsDeath(this))
-	{
-		return;
-	}
+	Super::OnMovementModeChanged(PrevMovementMode, PreviousCustomMode);
+	ILocomotionSystemPawn::Execute_SetALSMovementMode(this, GetPawnMovementModeChanged(PrevMovementMode, PreviousCustomMode));
+}
 
-	if (!IsFullHealth())
-	{
-		if (RecoverInterval >= RecoverTimer)
-		{
-			RecoverInterval = ZERO_VALUE;
-			CharacterModel->Recover(RecoverHealthValue);
-		}
-		else
-		{
-			RecoverInterval += InDeltaTime;
-		}
-	}
+void AMockCharacter::OnStartCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjust)
+{
+	Super::OnStartCrouch(HalfHeightAdjust, ScaledHalfHeightAdjust);
+	ILocomotionSystemPawn::Execute_SetALSStance(this, ELSStance::Crouching);
+}
+
+void AMockCharacter::OnEndCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjust)
+{
+	Super::OnEndCrouch(HalfHeightAdjust, ScaledHalfHeightAdjust);
+	ILocomotionSystemPawn::Execute_SetALSStance(this, ELSStance::Standing);
 }
 
 void AMockCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent)
@@ -154,92 +225,145 @@ void AMockCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInpu
 
 	PlayerInputComponent->BindAction("Equip", IE_Pressed, this, &AMockCharacter::ToggleEquip);
 	PlayerInputComponent->BindAction("Swap", IE_Pressed, this, &AMockCharacter::UpdateWeapon);
+	PlayerInputComponent->BindAction("Reload", IE_Pressed, this, &AMockCharacter::Reload);
+
+	// Crouch
+	PlayerInputComponent->BindAction("CrouchAction", IE_Pressed, this, &AMockCharacter::OnCrouch);
+
+	// FirePress
 	PlayerInputComponent->BindAction("Fire", IE_Pressed, this, &AMockCharacter::FirePressed);
 	PlayerInputComponent->BindAction("Fire", IE_Released, this, &AMockCharacter::FireReleassed);
+
+	// MeleeAttack
+	PlayerInputComponent->BindAction("MeleeAttack", IE_Pressed, this, &AMockCharacter::MeleeAttack);
+
+	// Jump
 	PlayerInputComponent->BindAction("JumpAction", IE_Pressed, this, &AMockCharacter::Jump);
 	PlayerInputComponent->BindAction("JumpAction", IE_Released, this, &AMockCharacter::StopJumping);
-	PlayerInputComponent->BindAction("Reload", IE_Pressed, this, &AMockCharacter::Reload);
+
+	// Sprint
+	PlayerInputComponent->BindAction("SprintAction", IE_Pressed, this, &AMockCharacter::Sprint);
+	PlayerInputComponent->BindAction("SprintAction", IE_Released, this, &AMockCharacter::StopSprint);
+
+	// Aiming
+	PlayerInputComponent->BindAction("AimAction", IE_Pressed, this, &AMockCharacter::Aiming);
+	//PlayerInputComponent->BindAction("AimAction", IE_Released, this, &AMockCharacter::StopAiming);
 
 	// joystick Input
 	PlayerInputComponent->BindAxis("LookRight", this, &AMockCharacter::TurnAtRate);
 	PlayerInputComponent->BindAxis("LookUp", this, &AMockCharacter::LookUpAtRate);
+	PlayerInputComponent->BindAxis("MoveForward", this, &AMockCharacter::MoveForward);
+	PlayerInputComponent->BindAxis("MoveRight", this, &AMockCharacter::MoveRight);
 }
 
 #pragma region Input
 void AMockCharacter::TurnAtRate(float Rate)
 {
-	AddControllerYawInput(Rate * BaseTurnRate * GetWorld()->GetDeltaSeconds());
+	Super::TurnAtRate(Rate);
 }
 
 void AMockCharacter::LookUpAtRate(float Rate)
 {
-	AddControllerPitchInput(Rate * BaseLookUpRate * GetWorld()->GetDeltaSeconds());
+	Super::LookUpAtRate(Rate);
 }
 
 void AMockCharacter::MoveForward(float Value)
 {
-	if (Super::bClimbJumping)
-	{
-		return;
-	}
-	if (Controller && Value != 0.0f)
-	{
-		// backward hanging reset
-		if (Value <= 0.f)
-		{
-			if (Super::bHanging)
-			{
-				IGrabInstigator::Execute_CanGrab(this, false);
-			}
-		}
-		else
-		{
-			if (Super::bHanging)
-			{
-				return;
-			}
-		}
-		const FRotator Rotation = Controller->GetControlRotation();
-		const FRotator YawRotation(0.f, Rotation.Yaw, 0.f);
-		const FVector Dir = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
-		AddMovementInput(Dir, Value);
-	}
+	ForwardAxisValue = Value;
+	PlayerMovementInput(true);
 }
 
 void AMockCharacter::MoveRight(float Value)
 {
-	if (Super::bClimbJumping)
+	RightAxisValue = Value;
+	PlayerMovementInput(false);
+}
+
+void AMockCharacter::Aiming()
+{
+	if (bAiming)
 	{
+		StopAiming();
 		return;
 	}
 
-	if (Super::bHanging)
+	switch (ALSRotationMode)
 	{
-		const bool bCanNotClimbJumpLeft = (!Super::bCanClimbJumpLeft && Value < 0.f);
-		const bool bCanNotClimbJumpRight = (!Super::bCanClimbJumpRight && Value > 0.f);
+		case ELSRotationMode::VelocityDirection:
+		ILocomotionSystemPawn::Execute_SetALSRotationMode(this, ELSRotationMode::LookingDirection);
+		break;
+		case ELSRotationMode::LookingDirection:
+		break;
+	}
+	ILocomotionSystemPawn::Execute_SetALSAiming(this, true);
+}
 
-		if (Super::bCanTurnLeft && bCanNotClimbJumpLeft)
-		{
-			Super::DisableInput(PlayerController);
-			IGrabInstigator::Execute_TurnConerLeftUpdate(this);
-		}
-		if (Super::bCanTurnRight && bCanNotClimbJumpRight)
-		{
-			Super::DisableInput(PlayerController);
-			IGrabInstigator::Execute_TurnConerRightUpdate(this);
-		}
+void AMockCharacter::StopAiming()
+{
+	switch (ALSRotationMode)
+	{
+		case ELSRotationMode::VelocityDirection:
+		break;
+		case ELSRotationMode::LookingDirection:
+		ILocomotionSystemPawn::Execute_SetALSRotationMode(this, ELSRotationMode::VelocityDirection);
+		break;
+	}
+	ILocomotionSystemPawn::Execute_SetALSAiming(this, false);
+}
+
+void AMockCharacter::PlayerMovementInput(const bool bForwardAxis)
+{
+	switch (ALSMovementMode)
+	{
+		case ELSMovementMode::Grounded:
+		case ELSMovementMode::Swimming:
+		case ELSMovementMode::Falling:
+		GroundMovementInput(bForwardAxis);
+		break;
+		case ELSMovementMode::Ragdoll:
+		RagdollMovementInput();
+		break;
+	}
+}
+
+void AMockCharacter::GroundMovementInput(const bool bForwardAxis)
+{
+	FVector OutForwardVector;
+	FVector OutRightVector;
+	Super::SetForwardOrRightVector(OutForwardVector, OutRightVector);
+
+	if (bForwardAxis)
+	{
+		AddMovementInput(OutForwardVector, ForwardAxisValue);
 	}
 	else
 	{
-		if (Controller && Value != 0.f)
-		{
-			const FRotator Rotation = Controller->GetControlRotation();
-			const FRotator YawRotation(0.f, Rotation.Yaw, 0.f);
-			const FVector Dir = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
-			AddMovementInput(Dir, Value);
-		}
+		AddMovementInput(OutRightVector, RightAxisValue);
+	}
+}
+
+void AMockCharacter::RagdollMovementInput()
+{
+	FVector OutForwardVector;
+	FVector OutRightVector;
+	Super::SetForwardOrRightVector(OutForwardVector, OutRightVector);
+	const FVector Position = UKismetMathLibrary::Normal((OutForwardVector * ForwardAxisValue) + (OutRightVector * RightAxisValue));
+
+	float Speed = 0.0f;
+	switch (ALSGait)
+	{
+		case ELSGait::Walking:
+		case ELSGait::Running:
+		Speed = 500.f;
+		break;
+		case ELSGait::Sprinting:
+		Speed = 800.f;
+		break;
 	}
 
+	const FVector Torque = Position * Speed;
+	GetMesh()->AddTorqueInRadians(FVector(Torque.X * -1.f, Torque.Y, Torque.Z), PelvisBoneName, true);
+	GetCharacterMovement()->AddInputVector(Position);
 }
 
 void AMockCharacter::ReleaseObjects()
@@ -257,49 +381,80 @@ void AMockCharacter::PickupObjects()
 
 void AMockCharacter::Jump()
 {
-	if (Super::bClimbJumping)
+	if (ALSMovementAction != ELSMovementAction::None)
 	{
-		UE_LOG(LogWevetClient, Warning, TEXT("Using ClimbSystem.. : %s"), *FString(__FUNCTION__));
 		return;
 	}
-	else if (Super::bHanging)
-	{
-		const float Value = InputComponent->GetAxisValue(TEXT("MoveRight"));
-		const bool bCanAnyLeftOrRightJump = (Super::bCanClimbJumpLeft || Super::bCanClimbJumpRight);
-		//const bool bCanJumpUp = (Super::bCanClimbJumpUp && FMath::IsNearlyZero(Value));
 
-		if (bCanAnyLeftOrRightJump)
-		{
-			ClimbJump_Implementation();
-		}
-		else if (!bCanAnyLeftOrRightJump && FMath::IsNearlyZero(Value))
-		{
-			Super::bClimbJumping = false;
-			ClimbLedge_Implementation(true);
-		}
-		else
-		{
-			UE_LOG(LogWevetClient, Error, TEXT("Unknown state : %s"), *FString(__FUNCTION__));
-		}
-	}
-	else
+	switch (ALSMovementMode)
 	{
-		if (ALSStance == ELSStance::Crouching)
+		case ELSMovementMode::Grounded:
 		{
-			OnCrouch();
-			return;
-		}
+			bool bWasMantleFail = false;
+			if (bWasMovementInput)
+			{
+				bWasMantleFail = (!MantleCheck(GroundedTraceSettings));
+			}
+			else
+			{
+				bWasMantleFail = true;
+			}
 
-		if (!IsPlayingRootMotion())
-		{
-			Super::Jump();
+			if (bWasMantleFail)
+			{
+				switch (ALSStance)
+				{
+					case ELSStance::Standing:
+					Super::Jump();
+					break;
+					case ELSStance::Crouching:
+					OnCrouch();
+					break;
+				}
+			}
 		}
+		break;
+		case ELSMovementMode::Falling:
+		{
+			MantleCheck(FallingTraceSettings);
+		}
+		break;
+		case ELSMovementMode::Mantling:
+		break;
+		case ELSMovementMode::None:
+		break;
+		case ELSMovementMode::Ragdoll:
+		break;
+		case ELSMovementMode::Swimming:
+		break;
 	}
+
 }
 
 void AMockCharacter::StopJumping()
 {
 	Super::StopJumping();
+}
+
+void AMockCharacter::Sprint()
+{
+	Super::Sprint();
+
+	switch (ALSGait)
+	{
+		case ELSGait::Walking:
+		ILocomotionSystemPawn::Execute_SetALSGait(this, ELSGait::Running);
+		break;
+		case ELSGait::Running:
+		break;
+		case ELSGait::Sprinting:
+		break;
+	}
+}
+
+void AMockCharacter::StopSprint()
+{
+	Super::StopSprint();
 }
 
 void AMockCharacter::FirePressed()
@@ -312,6 +467,11 @@ void AMockCharacter::FireReleassed()
 	Super::FireReleassed();
 }
 
+void AMockCharacter::MeleeAttack()
+{
+	Super::MeleeAttack();
+}
+
 void AMockCharacter::Reload()
 {
 	Super::Reload();
@@ -319,16 +479,14 @@ void AMockCharacter::Reload()
 
 void AMockCharacter::OnCrouch()
 {
-	if (Super::bHanging)
+	if (ALSMovementMode == ELSMovementMode::Grounded)
 	{
-		return;
-	}
-	Super::OnCrouch();
-
-	if (Super::bCrouch)
-	{
-		Super::bSprint = false;
-		GetCharacterMovement()->MaxWalkSpeed = CrouchingSpeed;
+		Super::OnCrouch();
+		if (Super::bCrouch)
+		{
+			Super::bSprint = false;
+			GetCharacterMovement()->MaxWalkSpeed = CrouchingSpeed;
+		}
 	}
 }
 
@@ -342,6 +500,11 @@ void AMockCharacter::UpdateWeapon()
 		}
 	}
 
+	if (InventoryComponent->HasInventoryWeapon())
+	{
+		return;
+	}
+
 	const int32 WeaponNum = InventoryComponent->GetWeaponInventory().Num();
 	if (WeaponCurrentIndex >= (WeaponNum - 1))
 	{
@@ -351,15 +514,14 @@ void AMockCharacter::UpdateWeapon()
 	{
 		++WeaponCurrentIndex;
 	}
-
-	UE_LOG(LogWevetClient, Log, TEXT("CurrenIndex => %d, WeaponNum => %d"), WeaponCurrentIndex, WeaponNum);
+	//UE_LOG(LogWevetClient, Log, TEXT("CurrenIndex => %d, WeaponNum => %d"), WeaponCurrentIndex, WeaponNum);
 }
 
 void AMockCharacter::ToggleEquip()
 {
 	if (CurrentWeapon.IsValid())
 	{
-		Super::UnEquipmentActionMontage();
+		UnEquipmentActionMontage();
 	}
 	else
 	{
@@ -371,34 +533,49 @@ void AMockCharacter::ToggleEquip()
 #pragma region Interface
 void AMockCharacter::Die_Implementation()
 {
+	if (!IDamageInstigator::Execute_IsDeath(this))
+	{
+		CharacterModel->TakeDamage(CharacterModel->GetMaxHealth());
+		CharacterModel->Die();
+	}
+
 	if (Super::bWasDied)
 	{
 		return;
 	}
 
-	Super::DisableInput(PlayerController);
-	Super::Die_Implementation();
-	//SetReplicateMovement(false);
-	//TearOff();
-	//bWasDied = true;
-	//CurrentWeapon.Reset();
-	//GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_None);
-	//GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	//SetRagdollPhysics();
+	Super::bWasDied = true;
+	if (DeathDelegate.IsBound())
+	{
+		DeathDelegate.Broadcast();
+	}
+
+	if (PlayerAnimInstance)
+	{
+		PlayerAnimInstance->SetArmTorsoIKMode(false, false);
+	}
+
+	StopAiming();
+	ReleaseAllWeaponInventory();
+	VisibleDeathPostProcess(true);
+	//Super::DisableInput(PlayerController);
+}
+
+void AMockCharacter::Alive_Implementation()
+{
+	Super::Alive_Implementation();
+	Super::bWasDied = false;
+
+	if (AliveDelegate.IsBound())
+	{
+		AliveDelegate.Broadcast();
+	}
+	VisibleDeathPostProcess(false);
+	//Super::EnableInput(PlayerController);
 }
 
 void AMockCharacter::Equipment_Implementation()
 {
-	if (Super::bHanging)
-	{
-		return;
-	}
-
-	if (WeaponCurrentIndex == INDEX_NONE)
-	{
-		UpdateWeapon();
-	}
-
 	AAbstractWeapon* const WeaponPtr = InventoryComponent->FindByIndexWeapon(WeaponCurrentIndex);
 	CurrentWeapon = MakeWeakObjectPtr<AAbstractWeapon>(WeaponPtr);
 	if (!CurrentWeapon.IsValid())
@@ -406,100 +583,30 @@ void AMockCharacter::Equipment_Implementation()
 		return;
 	}
 	Super::Equipment_Implementation();
-	const FName SocketName(CurrentWeapon.Get()->WeaponItemInfo.EquipSocketName);
-	FAttachmentTransformRules Rules(EAttachmentRule::SnapToTarget, true);
-	CurrentWeapon.Get()->AttachToComponent(Super::GetMesh(), Rules, SocketName);
-	GetCharacterMovement()->bOrientRotationToMovement = false;
-	Super::bUseControllerRotationYaw = true;
 }
 
 void AMockCharacter::UnEquipment_Implementation()
 {
 	if (!CurrentWeapon.IsValid())
-	{
 		return;
-	}
+
 	Super::UnEquipment_Implementation();
-	const FName SocketName(CurrentWeapon.Get()->WeaponItemInfo.UnEquipSocketName);
-	FAttachmentTransformRules Rules(EAttachmentRule::SnapToTarget, true);
-	CurrentWeapon.Get()->AttachToComponent(Super::GetMesh(), Rules, SocketName);
-	GetCharacterMovement()->bOrientRotationToMovement = true;
-	Super::bUseControllerRotationYaw = false;
 	CurrentWeapon.Reset();
-}
-
-void AMockCharacter::ClimbLedge_Implementation(bool InClimbLedge)
-{
-	if (CurrentWeapon.IsValid() && CurrentWeapon.Get()->WasEquip())
-	{
-		UE_LOG(LogWevetClient, Warning, TEXT("UnEquip Weapon : [%s]"), *FString(__FUNCTION__));
-		return;
-	}
-	if (bClimbingLedge == InClimbLedge)
-	{
-		return;
-	}
-
-	bClimbingLedge = InClimbLedge;
-	if (!bHanging)
-	{
-		GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Flying);
-	}
-	else
-	{
-		bHanging = false;
-	}
-	IGrabInstigator::Execute_CanGrab(PlayerAnimInstance, bHanging);
-	IGrabInstigator::Execute_ClimbLedge(PlayerAnimInstance, bClimbingLedge);
-	if (ClimbLedgeMontage)
-	{
-		PlayAnimMontage(ClimbLedgeMontage);
-	}
-}
-
-void AMockCharacter::ClimbJump_Implementation()
-{
-	if (Super::bClimbJumping)
-	{
-		return;
-	}
-	check(bHanging);
-
-	float Value = InputComponent->GetAxisValue(TEXT("MoveRight"));
-	Value = FMath::Clamp<float>(Value, -1.f, 1.f);
-	GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Flying);
-	if (Value > 0.f && ClimbJumpRightMontage)
-	{
-		PlayAnimMontage(ClimbJumpRightMontage);
-	}
-	else if (Value < 0.f && ClimbJumpLeftMontage)
-	{
-		PlayAnimMontage(ClimbJumpLeftMontage);
-	}
-	Super::ClimbJump_Implementation();
-}
-
-void AMockCharacter::TurnConerResult_Implementation()
-{
-	if (PlayerController)
-	{
-		Super::EnableInput(PlayerController);
-	}
 }
 
 const bool AMockCharacter::CanPickup_Implementation()
 {
-	return true;
+	return !IDamageInstigator::Execute_IsDeath(this);
 }
 
 void AMockCharacter::Release_Implementation()
 {
-	const FVector ForwardOffset = Controller ? Controller->GetControlRotation().Vector() : Super::GetActorForwardVector();
+	const FVector ForwardOffset = PlayerController ? PlayerController->GetControlRotation().Vector() : Super::GetActorForwardVector();
 	const FRotator Rotation = Super::GetActorRotation();
 	const FVector Forward = Super::GetActorLocation() + (ForwardOffset * DEFAULT_FORWARD_VECTOR);
 	const FTransform Transform = UKismetMathLibrary::MakeTransform(Forward, Rotation, FVector::OneVector);
 
-	if (AAbstractWeapon* Weapon = Super::InventoryComponent->GetUnEquipWeapon())
+	if (AAbstractWeapon* Weapon = InventoryComponent->GetUnEquipWeaponByIndex(WeaponCurrentIndex))
 	{
 		Super::InventoryComponent->RemoveWeaponInventory(Weapon);
 		Super::ReleaseWeaponToWorld(Transform, Weapon);
@@ -514,52 +621,74 @@ void AMockCharacter::Pickup_Implementation(const EItemType InItemType, AActor* A
 	}
 
 	UE_LOG(LogWevetClient, Log, TEXT("ItemType : %s"), *GETENUMSTRING("EItemType", InItemType));
-
 	switch (InItemType)
 	{
-	case EItemType::Weapon:
-		if (AAbstractWeapon * Weapon = Cast<AAbstractWeapon>(Actor))
+		case EItemType::Weapon:
 		{
-			if (!Super::WasSameWeaponType(Weapon))
+			if (AAbstractWeapon* Weapon = Cast<AAbstractWeapon>(Actor))
 			{
-				//const FWeaponItemInfo ItemInfo = Weapon->WeaponItemInfo;
-				//IWeaponInstigator::Execute_DoReplenishment(Weapon, ItemInfo);
-				Super::CreateWeaponInstance(Weapon->GetClass());
+				if (!Super::WasSameWeaponType(Weapon))
+				{
+					FWeaponItemInfo WeaponItemInfo = Weapon->GetWeaponItemInfo();
+					Super::CreateWeaponInstance(Weapon->GetTemplateClass(), [&](AAbstractWeapon* InWeapon) 
+					{
+						if (InWeapon)
+						{
+							InWeapon->CopyWeaponItemInfo(&WeaponItemInfo);
+						}
+					});
+					IInteractionInstigator::Execute_Release(Weapon, this);
+					Actor = nullptr;
+				}
+				else
+				{
+					//SameWeaponType
+				}
 			}
-			IInteractionInstigator::Execute_Release(Weapon, nullptr);
-			Actor = nullptr;
 		}
 		break;
-	case EItemType::Health:
-		//
+
+		case EItemType::Health:
+		{
+			//
+		}
 		break;
-	case EItemType::Ammos:
-		//
+
+		case EItemType::Ammos:
+		{
+			if (AAbstractItem* Item = Cast<AAbstractItem>(Actor))
+			{
+				if (AAbstractWeapon* Weapon = FindByWeapon(Item->GetWeaponItemType()))
+				{
+					IWeaponInstigator::Execute_DoReplenishment(Weapon, Item->GetReplenishmentAmmo());
+					IInteractionInstigator::Execute_Release(Item, this);
+					Actor = nullptr;
+				}
+			}
+		}
 		break;
 	}
 
 }
 #pragma endregion
 
+#pragma region Montages
 void AMockCharacter::EquipmentActionMontage()
 {
-	check(InventoryComponent);
-
-	if (WeaponCurrentIndex == INDEX_NONE)
+	if (ALSMovementMode != ELSMovementMode::Grounded)
 	{
-		UpdateWeapon();
+		return;
 	}
+
+	check(InventoryComponent);
 
 	AAbstractWeapon* const WeaponPtr = InventoryComponent->FindByIndexWeapon(WeaponCurrentIndex);
 	if (WeaponPtr)
 	{
-		const EWeaponItemType WeaponType = WeaponPtr->WeaponItemInfo.WeaponItemType;
-		FWeaponActionInfo ActionInfo;
-		SetActionInfo(WeaponType, ActionInfo);
-
-		if (ActionInfo.EquipMontage)
+		SetActionInfo(WeaponPtr->GetWeaponItemInfo().WeaponItemType);
+		if (ActionInfoPtr && ActionInfoPtr->EquipMontage)
 		{
-			PlayAnimMontage(ActionInfo.EquipMontage, MONTAGE_DELAY);
+			PlayAnimMontage(ActionInfoPtr->EquipMontage, MONTAGE_DELAY);
 		}
 		else
 		{
@@ -571,23 +700,53 @@ void AMockCharacter::EquipmentActionMontage()
 		UE_LOG(LogWevetClient, Error, TEXT("Weapon nullptr : %s"), *FString(__FUNCTION__));
 	}
 }
+#pragma endregion
+
+void AMockCharacter::TickableRecover(const float InDeltaTime)
+{
+	if (IDamageInstigator::Execute_IsDeath(this))
+	{
+		return;
+	}
+	if (!IsFullHealth())
+	{
+		if (RecoverInterval >= RecoverTimer)
+		{
+			RecoverInterval = ZERO_VALUE;
+			CharacterModel->Recover(RecoverHealthValue);
+		}
+		else
+		{
+			RecoverInterval += InDeltaTime;
+		}
+	}
+}
 
 void AMockCharacter::SetOwnerNoSeeMesh(const bool NewOwnerNoSee)
 {
 	for (UMeshComponent* Component : MeshArray)
 	{
 		if (Component)
-		{
 			Component->SetOwnerNoSee(NewOwnerNoSee);
-		}
 	}
 	InventoryComponent->SetOwnerNoSeeMesh(NewOwnerNoSee);
+}
+
+void AMockCharacter::VisibleDeathPostProcess(const bool InEnabled)
+{
+	if (DeathPostProcessComponent)
+	{
+		DeathPostProcessComponent->bEnabled = InEnabled ? 1 : 0;
+		DeathPostProcessComponent->bUnbound = InEnabled ? 1 : 0;
+		DeathPostProcessComponent->BlendWeight = InEnabled ? 1.0f : 0.0f;
+		DeathPostProcessComponent->SetVisibility(InEnabled);
+	}
 }
 
 #pragma region ALSInterface
 void AMockCharacter::SetALSCharacterRotation_Implementation(const FRotator AddAmount)
 {
-	UE_LOG(LogWevetClient, Log, TEXT("Rotation : %s"), *FString(__FUNCTION__));
+	//UE_LOG(LogWevetClient, Log, TEXT("Rotation : %s"), *FString(__FUNCTION__));
 }
 
 void AMockCharacter::SetALSCameraShake_Implementation(TSubclassOf<class UCameraShake> InShakeClass, const float InScale)
@@ -597,19 +756,179 @@ void AMockCharacter::SetALSCameraShake_Implementation(TSubclassOf<class UCameraS
 		//PlayerController->ClientPlayCameraShake(InShakeClass, InScale, ECameraAnimPlaySpace::Type::CameraLocal);
 	}
 }
+
+void AMockCharacter::SetALSMovementMode_Implementation(const ELSMovementMode NewALSMovementMode)
+{
+	if (ALSMovementMode == NewALSMovementMode)
+	{
+		return;
+	}
+	ALSPrevMovementMode = ALSMovementMode;
+	ALSMovementMode = NewALSMovementMode;
+	ILocomotionSystemPawn::Execute_OnALSMovementModeChange(this);
+}
+
+void AMockCharacter::OnALSMovementModeChange_Implementation()
+{
+	ILocomotionSystemState::Execute_SetALSMovementMode(GetAnimInstance(), ALSMovementMode);
+	//ILocomotionSystemState::Execute_SetALSMovementMode(GetIKAnimInstance(), ALSMovementMode);
+	UpdateCharacterMovementSettings();
+}
+
+void AMockCharacter::SetALSMovementAction_Implementation(const ELSMovementAction NewALSMovementAction)
+{
+	if (ALSMovementAction == NewALSMovementAction)
+	{
+		return;
+	}
+	ALSPrevMovementAction = ALSMovementAction;
+	ALSMovementAction = NewALSMovementAction;
+	ILocomotionSystemPawn::Execute_OnALSMovementActionChange(this);
+}
+
+void AMockCharacter::OnALSMovementActionChange_Implementation()
+{
+	//
+}
+
+void AMockCharacter::SetALSGait_Implementation(const ELSGait NewALSGait)
+{
+	if (ALSGait == NewALSGait)
+	{
+		return;
+	}
+	ALSGait = NewALSGait;
+}
+
+void AMockCharacter::OnALSGaitChange_Implementation()
+{
+	ILocomotionSystemState::Execute_SetALSGait(GetAnimInstance(), ALSGait);
+	UpdateCharacterMovementSettings();
+	if (Super::IsLocallyControlled())
+	{
+		BP_UpdateCameraAction(bAiming ? FastCurve : SlowCurve);
+	}
+}
+
+void AMockCharacter::SetALSStance_Implementation(const ELSStance NewALSStance)
+{
+	if (ALSStance == NewALSStance)
+	{
+		return;
+	}
+	ALSStance = NewALSStance;
+	ILocomotionSystemPawn::Execute_OnALSStanceChange(this);
+}
+
+void AMockCharacter::OnALSStanceChange_Implementation()
+{
+	ILocomotionSystemState::Execute_SetALSStance(GetAnimInstance(), ALSStance);
+	//ILocomotionSystemState::Execute_SetALSStance(GetIKAnimInstance(), ALSStance);
+	UpdateCharacterMovementSettings();
+	BP_UpdateCameraAction(SlowCurve);
+}
+
+void AMockCharacter::SetALSRotationMode_Implementation(const ELSRotationMode NewALSRotationMode)
+{
+	if (ALSRotationMode == NewALSRotationMode)
+	{
+		return;
+	}
+	ALSRotationMode = NewALSRotationMode;
+}
+
+void AMockCharacter::OnALSRotationModeChange_Implementation()
+{
+	ILocomotionSystemState::Execute_SetALSRotationMode(GetAnimInstance(), ALSRotationMode);
+	BP_UpdateCameraAction(DefaultCurve);
+	if (bWasMoving)
+	{
+		RotationRateMultiplier = 0.0f;
+	}
+
+	switch (ALSRotationMode)
+	{
+		case ELSRotationMode::VelocityDirection:
+		{
+			switch (ALSViewMode)
+			{
+				case ELSViewMode::FirstPerson:
+				ILocomotionSystemPawn::Execute_SetALSViewMode(this, ELSViewMode::ThirdPerson);
+				break;
+				case ELSViewMode::ThirdPerson:
+				break;
+			}
+		}
+		break;
+		case ELSRotationMode::LookingDirection:
+		{
+		}
+		break;
+	}
+}
+
+void AMockCharacter::SetALSViewMode_Implementation(const ELSViewMode NewALSViewMode)
+{
+	if (ALSViewMode == NewALSViewMode)
+	{
+		return;
+	}
+	ALSViewMode = NewALSViewMode;
+	ILocomotionSystemPawn::Execute_OnALSViewModeChange(this);
+}
+
+void AMockCharacter::OnALSViewModeChange_Implementation()
+{
+	ILocomotionSystemState::Execute_SetALSViewMode(GetAnimInstance(), ALSViewMode);
+	switch (ALSViewMode)
+	{
+		case ELSViewMode::ThirdPerson:
+		{
+			FPSCameraComponent->SetActive(false);
+			TPSCameraComponent->SetActive(true);
+		}
+		break;
+		case ELSViewMode::FirstPerson:
+		{
+			TPSCameraComponent->SetActive(false);
+			FPSCameraComponent->SetActive(true);
+			ILocomotionSystemPawn::Execute_SetALSRotationMode(this, ELSRotationMode::LookingDirection);
+		}
+		break;
+	}
+}
+
+void AMockCharacter::SetALSAiming_Implementation(const bool NewALSAiming)
+{
+	if (bAiming == NewALSAiming)
+	{
+		return;
+	}
+	bAiming = NewALSAiming;
+}
+
+void AMockCharacter::OnALSAimingChange_Implementation()
+{
+	ILocomotionSystemAction::Execute_SetAiming(GetAnimInstance(), bAiming);
+	UpdateCharacterMovementSettings();
+	BP_UpdateCameraAction(bAiming ? FastCurve : DefaultCurve);
+}
 #pragma endregion
 
-#pragma region ALS
-// Ragdollを開始する
+#pragma region ALSRagdoll
 void AMockCharacter::StartRagdollAction()
 {
+	UnEquipment_Implementation();
+	Super::SetReplicateMovement(false);
+	GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_None);
+	ILocomotionSystemPawn::Execute_SetALSMovementMode(this, ELSMovementMode::Ragdoll);
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	GetMesh()->SetAllBodiesBelowSimulatePhysics(PelvisBoneName, true);
 }
 
-// Ragdollを終了する
 void AMockCharacter::RagdollToWakeUpAction()
 {
+	Super::SetReplicateMovement(true);
 	GetCharacterMovement()->SetMovementMode(bRagdollOnGround ? EMovementMode::MOVE_Walking : EMovementMode::MOVE_Falling);
 	GetCharacterMovement()->Velocity = RagdollVelocity;
 	ILocomotionSystemAction::Execute_PoseSnapShot(GetAnimInstance(), RagdollPoseSnapshot);
@@ -623,66 +942,238 @@ void AMockCharacter::RagdollToWakeUpAction()
 	GetMesh()->SetAllBodiesSimulatePhysics(false);
 }
 
-// Ragdoll後はWeaponを開放する
-void AMockCharacter::ReleaseWeaponInventory()
+void AMockCharacter::DoWhileRagdoll(FRotator& OutActorRotation, FVector& OutActorLocation)
 {
-	const int32 WeaponNum = InventoryComponent->GetWeaponInventory().Num();
-	const float Radius = DEFAULT_FORWARD_VECTOR;
-	TArray<FVector> Points;
-	UWevetBlueprintFunctionLibrary::CircleSpawnPoints(WeaponNum, Radius, GetActorLocation(), Points);
-
-	int32 Index = 0;
-	for (AAbstractWeapon* Weapon : InventoryComponent->GetWeaponInventory())
-	{
-		if (Weapon)
-		{
-			FTransform Transform = FTransform::Identity;
-			Transform.SetLocation(Points[Index]);
-			Super::ReleaseWeaponToWorld(Transform, Weapon);
-			++Index;
-		}
-	}
-	InventoryComponent->ClearWeaponInventory();
-}
-
-void AMockCharacter::DoWhileRagdoll()
-{
-	// 速度に基づいてラグドールの「固さ」を設定。
-	// ラグドールの動きが速いほど、ジョイントの剛性が高くなる。
+	// Set the "stiffness" of the ragdoll based on the speed.
+	// The faster the ragdoll moves, the more rigid the joint.
 	const float Length = UKismetMathLibrary::VSize(ChooseVelocity());
 	const float Value = UKismetMathLibrary::MapRangeClamped(Length, 0.0f, 1000.0f, 0.0f, 25000.0f);
 	GetMesh()->SetAllMotorsAngularDriveParams(Value, 0.0f, 0.0f, false);
 
-	// クライアントでローカルに制御されていないラグドールは、複製された「ラグドールの場所」ベクトルに向かってプッシュ。
-	// これらは引き続き個別にシミュレーションされるが、同じ場所に配置される。
+	// Ragdolls that are not locally controlled by the client are pushed towards the duplicated "Ragdoll Location" vector.
+	// These will continue to be simulated individually, but will be co-located.
 	if (!Super::IsLocallyControlled())
 	{
 		const FVector BoneLocation = GetMesh()->GetSocketLocation(PelvisBoneName);
 		const FVector Position = (RagdollLocation - BoneLocation) * 200.0f;
 		GetMesh()->AddForce(Position, PelvisBoneName, true);
+		return;
 	}
-	else
-	{
-		//
-	}
+
+	// If the fall is too fast, disable gravity to prevent the ragdoll from continuing to accelerate.
+	// Stabilize the movement of the Ragdoll and prevent it from falling off the floor.
+	GetMesh()->SetEnableGravity((ChooseVelocity().Z < -4000.f) ? false : true);
+
+	RagdollVelocity = ChooseVelocity();
+	RagdollLocation = GetMesh()->GetSocketLocation(PelvisBoneName);
+	const FRotator BoneRotation = GetMesh()->GetSocketRotation(PelvisBoneName);
+
+	CalculateActorTransformRagdoll(BoneRotation, RagdollLocation, OutActorRotation, OutActorLocation);
+	SetActorLocation(OutActorLocation);
+
+	TargetRotation = OutActorRotation;
+	RotationDifference = UKismetMathLibrary::NormalizedDeltaRotator(TargetRotation, CharacterRotation).Yaw;
+	CharacterRotation = OutActorRotation;
+	SetActorRotation(CharacterRotation);
 }
 
-void AMockCharacter::CustomAcceleration()
+void AMockCharacter::CalculateActorTransformRagdoll(const FRotator InRagdollRotation, const FVector InRagdollLocation, FRotator& OutActorRotation, FVector& OutActorLocation)
 {
-	const auto Velocity = FMath::Abs(VelocityDifference);
-	const float RangeA = 45.f;
-	const float RangeB = 130.f;
+	const float CapsuleHalfHeight = GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
+	const FVector StartLocation(InRagdollLocation);
+	const FVector EndLocation(InRagdollLocation.X, InRagdollLocation.Y, InRagdollLocation.Z - CapsuleHalfHeight);
+	FHitResult HitResult;
+
+	const bool bResult = UKismetSystemLibrary::LineTraceSingle(
+		GetWorld(),
+		StartLocation,
+		EndLocation,
+		UEngineTypes::ConvertToTraceType(ECC_Visibility),
+		true,
+		IgnoreActors,
+		bDebugTrace ? EDrawDebugTrace::ForOneFrame : EDrawDebugTrace::None,
+		HitResult,
+		true);
+
+	bRagdollOnGround = HitResult.bBlockingHit;
+	const float Offset = 2.0f;
+	const float Diff = FMath::Abs(HitResult.ImpactPoint.Z - HitResult.TraceStart.Z);
+	const float Value = bRagdollOnGround ? (CapsuleHalfHeight - Diff) + Offset : 0.0f;
+	OutActorLocation = FVector(InRagdollLocation.X, InRagdollLocation.Y, InRagdollLocation.Z + Value);
+
+	const float Yaw = (OutActorRotation.Roll > 0.0f) ? OutActorRotation.Yaw : OutActorRotation.Yaw - 180.f;
+	OutActorRotation = FRotator(0.0f, Yaw, 0.0f);
+}
+#pragma endregion
+
+#pragma region ALSUpdate
+void AMockCharacter::CalculateEssentialVariables()
+{
+	// Check if the Character is moving and set (last speed rotation) and (direction) only when it is moving .
+	// so that they do not return to 0 when the speed is 0.
 	{
-		auto ClampValue = UKismetMathLibrary::MapRangeClamped(Velocity, RangeA, RangeB, 1.0f, 0.2f);
-		GetCharacterMovement()->MaxAcceleration = RunningAcceleration * ClampValue;
+		const FVector Velocity(ChooseVelocity().X, ChooseVelocity().Y, 0.0f);
+		bWasMoving = UKismetMathLibrary::NotEqual_VectorVector(Velocity, FVector::ZeroVector, 1.0f);
+
+		if (bWasMoving)
+		{
+			LastVelocityRotation = UKismetMathLibrary::Conv_VectorToRotator(ChooseVelocity());
+			const FRotator DeltaRot = UKismetMathLibrary::NormalizedDeltaRotator(LastVelocityRotation, CharacterRotation);
+			Direction = DeltaRot.Yaw;
+		}
 	}
 
+	// Set MovementInput to local, send to server and duplicate (only if Game is NW connected)
 	{
-		auto ClampValue = UKismetMathLibrary::MapRangeClamped(Velocity, RangeA, RangeB, 1.0f, 0.4f);
-		GetCharacterMovement()->GroundFriction = RunningGroundFriction * ClampValue;
+		if (Super::IsLocallyControlled())
+		{
+			MovementInput = GetCharacterMovement()->GetLastInputVector();
+			bWasMovementInput = UKismetMathLibrary::NotEqual_VectorVector(MovementInput, FVector::ZeroVector, 0.0001f);
+
+			if (bWasMovementInput)
+			{
+				LastMovementInputRotation = UKismetMathLibrary::Conv_VectorToRotator(MovementInput);
+				const FRotator DeltaRot = UKismetMathLibrary::NormalizedDeltaRotator(LastMovementInputRotation, LastVelocityRotation);
+				VelocityDifference = DeltaRot.Yaw;
+			}
+		}
+	}
+
+	// Set LookRotation to local and send to server to duplicate (only if the game is connected to the network)
+	{
+		if (Super::IsLocallyControlled())
+		{
+			const float PrevAimYaw = LookingRotation.Yaw;
+			LookingRotation = GetControlRotation();
+
+			const float DeltaSeconds = GetWorld()->GetDeltaSeconds();
+			AimYawRate = (LookingRotation.Yaw - PrevAimYaw) / DeltaSeconds;
+		}
+
+		const FRotator DeltaRot = UKismetMathLibrary::NormalizedDeltaRotator(LookingRotation, CharacterRotation);
+		AimYawDelta = DeltaRot.Yaw;
 	}
 }
 
+void AMockCharacter::ManageCharacterRotation()
+{
+	if (Super::IsLocallyControlled())
+	{
+		switch (ALSMovementMode)
+		{
+			case ELSMovementMode::Grounded:
+			case ELSMovementMode::Swimming:
+			DoCharacterGrounded();
+			break;
+			case ELSMovementMode::Falling:
+			DoCharacterFalling();
+			break;
+			case ELSMovementMode::Ragdoll:
+			break;
+		}
+	}
+}
+
+void AMockCharacter::DoCharacterFalling()
+{
+	const float InterpSpeed = 10.0f;
+
+	switch (ALSRotationMode)
+	{
+		case ELSRotationMode::VelocityDirection:
+		if (bWasMoving)
+		{
+			ApplyCharacterRotation(FRotator(0.0f, JumpRotation.Yaw, 0.0f), true, InterpSpeed);
+		}
+		break;
+		case ELSRotationMode::LookingDirection:
+		{
+			JumpRotation = LookingRotation;
+			ApplyCharacterRotation(FRotator(0.0f, JumpRotation.Yaw, 0.0f), true, InterpSpeed);
+		}
+		break;
+	}
+}
+
+void AMockCharacter::DoCharacterGrounded()
+{
+	if (!bWasMoving)
+	{
+		if (!Super::IsPlayingRootMotion())
+		{
+			if (ALSRotationMode == ELSRotationMode::LookingDirection)
+			{
+				if (bAiming || ALSViewMode == ELSViewMode::FirstPerson)
+				{
+					LimitRotation(90.f, 15.f);
+				}
+			}
+		}
+		return;
+	}
+
+	// Moving
+	const FRotator Rotation = LookingDirectionWithOffset(5.f, 60.f, -60.f, 120.f, -120.f, 5.f);
+	const float SlowSpeed = 165.f;
+	const float FastSpeed = 375.f;
+	switch (ALSRotationMode)
+	{
+		case ELSRotationMode::VelocityDirection:
+		{
+			// use last speed rotation
+			const float RotationRate = CalculateRotationRate(SlowSpeed, 5.f, FastSpeed, 10.f);
+			ApplyCharacterRotation(FRotator(0.0f, LastVelocityRotation.Yaw, 0.0f), true, RotationRate);
+		}
+		break;
+
+		case ELSRotationMode::LookingDirection:
+		{
+			float RotationRate = 0.0f;
+			if (bAiming)
+			{
+				RotationRate = CalculateRotationRate(SlowSpeed, 15.f, FastSpeed, 15.f);
+			}
+			else
+			{
+				RotationRate = CalculateRotationRate(SlowSpeed, 10.f, FastSpeed, 15.f);
+			}
+
+			ApplyCharacterRotation(Rotation, true, RotationRate);
+		}
+		break;
+	}
+}
+
+void AMockCharacter::DoWhileGrounded()
+{
+	bool bWasStanding = false;
+	switch (ALSStance)
+	{
+		case ELSStance::Standing:
+		bWasStanding = true;
+		break;
+		case ELSStance::Crouching:
+		break;
+	}
+
+	if (!bWasStanding)
+	{
+		return;
+	}
+
+	switch (ALSGait)
+	{
+		case ELSGait::Walking:
+		break;
+		case ELSGait::Running:
+		case ELSGait::Sprinting:
+		CustomAcceleration();
+		break;
+	}
+}
+#pragma endregion
+
+#pragma region ALS
 void AMockCharacter::AddCharacterRotation(const FRotator AddAmount)
 {
 	// Node to InvertRotator
@@ -691,37 +1182,6 @@ void AMockCharacter::AddCharacterRotation(const FRotator AddAmount)
 	auto RotateDiff = UKismetMathLibrary::NormalizedDeltaRotator(TargetRotation, CharacterRotation);
 	RotationDifference = RotateDiff.Yaw;
 	CharacterRotation = UKismetMathLibrary::NormalizedDeltaRotator(CharacterRotation, RotateAmount);
-	SetActorRotation(CharacterRotation);
-}
-
-void AMockCharacter::LimitRotation(const float AimYawLimit, const float InterpSpeed)
-{
-	if (FMath::Abs(AimYawDelta) > AimYawLimit)
-	{
-		bool bResult = (AimYawLimit > 0.0f);
-
-		const float A = (LookingRotation.Yaw + AimYawLimit);
-		const float B = (LookingRotation.Yaw - AimYawLimit);
-		const float Value = bResult ? B : A;
-		const FRotator Rotation = FRotator(0.f, Value, 0.f);
-		ApplyCharacterRotation(Rotation, true, InterpSpeed);
-	}
-}
-
-void AMockCharacter::ApplyCharacterRotation(const FRotator InTargetRotation, const bool bInterpRotation, const float InterpSpeed)
-{
-	TargetRotation = InTargetRotation;
-	auto RotateDiff = UKismetMathLibrary::NormalizedDeltaRotator(TargetRotation, CharacterRotation);
-	RotationDifference = RotateDiff.Yaw;
-
-	if (bInterpRotation)
-	{
-		CharacterRotation = UKismetMathLibrary::RInterpTo(CharacterRotation, TargetRotation, GetWorld()->DeltaTimeSeconds, InterpSpeed);
-	}
-	else
-	{
-		CharacterRotation = TargetRotation;
-	}
 	SetActorRotation(CharacterRotation);
 }
 
@@ -736,11 +1196,11 @@ float AMockCharacter::ChooseMaxWalkSpeed() const
 			{
 				case ELSGait::Walking:
 				case ELSGait::Running:
-					Speed = WalkingSpeed;
-					break;
+				Speed = WalkingSpeed;
+				break;
 				case ELSGait::Sprinting:
-					Speed = RunningSpeed;
-					break;
+				Speed = RunningSpeed;
+				break;
 			}
 		}
 		else
@@ -748,14 +1208,14 @@ float AMockCharacter::ChooseMaxWalkSpeed() const
 			switch (ALSGait)
 			{
 				case ELSGait::Walking:
-					Speed = WalkingSpeed;
-					break;
+				Speed = WalkingSpeed;
+				break;
 				case ELSGait::Running:
-					Speed = RunningSpeed;
-					break;
+				Speed = RunningSpeed;
+				break;
 				case ELSGait::Sprinting:
-					Speed = SprintingSpeed;
-					break;
+				Speed = SprintingSpeed;
+				break;
 			}
 		}
 
@@ -766,14 +1226,14 @@ float AMockCharacter::ChooseMaxWalkSpeed() const
 		switch (ALSGait)
 		{
 			case ELSGait::Walking:
-				Speed = CrouchingSpeed - Offset;
-				break;
+			Speed = CrouchingSpeed - Offset;
+			break;
 			case ELSGait::Running:
-				Speed = CrouchingSpeed;
-				break;
+			Speed = CrouchingSpeed;
+			break;
 			case ELSGait::Sprinting:
-				Speed = CrouchingSpeed + Offset;
-				break;
+			Speed = CrouchingSpeed + Offset;
+			break;
 		}
 	}
 	return Speed;
@@ -828,4 +1288,106 @@ const float AMockCharacter::CalculateRotationRate(const float SlowSpeed, const f
 	return FMath::Clamp(Result, Min, Max);
 }
 
+const FRotator AMockCharacter::LookingDirectionWithOffset(const float OffsetInterpSpeed, const float NEAngle, const float NWAngle, const float SEAngle, const float SWAngle, const float Buffer)
+{
+	const FRotator LastRotation = bWasMovementInput ? LastMovementInputRotation : LastVelocityRotation;
+	const FRotator DeltaRot = UKismetMathLibrary::NormalizedDeltaRotator(LastRotation, LookingRotation);
+
+	if (CardinalDirectionAngles(DeltaRot.Yaw, NWAngle, NEAngle, Buffer, ELSCardinalDirection::North))
+	{
+		CardinalDirection = ELSCardinalDirection::North;
+	}
+	else if (CardinalDirectionAngles(DeltaRot.Yaw, NEAngle, SEAngle, Buffer, ELSCardinalDirection::East))
+	{
+		CardinalDirection = ELSCardinalDirection::East;
+	}
+	else if (CardinalDirectionAngles(DeltaRot.Yaw, SWAngle, NWAngle, Buffer, ELSCardinalDirection::West))
+	{
+		CardinalDirection = ELSCardinalDirection::West;
+	}
+	else
+	{
+		CardinalDirection = ELSCardinalDirection::South;
+	}
+
+	float Result = 0.0f;
+	switch (CardinalDirection)
+	{
+		case ELSCardinalDirection::North:
+		Result = DeltaRot.Yaw;
+		break;
+		case ELSCardinalDirection::East:
+		Result = (DeltaRot.Yaw - 90.f);
+		break;
+		case ELSCardinalDirection::West:
+		Result = (DeltaRot.Yaw + 90.f);
+		break;
+		case ELSCardinalDirection::South:
+		Result = UKismetMathLibrary::SelectFloat((DeltaRot.Yaw - 180.f), (DeltaRot.Yaw + 180.f), (DeltaRot.Yaw > 0.0f));
+		break;
+	}
+
+	if (bAiming)
+	{
+		if (ALSGait == ELSGait::Walking)
+		{
+			Result = 0.0f;
+		}
+	}
+	const float DeltaSeconds = GetWorld()->GetDeltaSeconds();
+	RotationOffset = UKismetMathLibrary::FInterpTo(RotationOffset, Result, DeltaSeconds, OffsetInterpSpeed);
+	return FRotator(0.0f, LookingRotation.Yaw + RotationOffset, 0.0f);
+}
+
+void AMockCharacter::UpdateCharacterMovementSettings()
+{
+	GetCharacterMovement()->MaxWalkSpeed = ChooseMaxWalkSpeed();
+	GetCharacterMovement()->MaxWalkSpeedCrouched = ChooseMaxWalkSpeed();
+
+	GetCharacterMovement()->MaxAcceleration = ChooseMaxAcceleration();
+	GetCharacterMovement()->BrakingDecelerationWalking = ChooseBrakingDeceleration();
+	GetCharacterMovement()->GroundFriction = ChooseGroundFriction();
+}
+
+void AMockCharacter::ApplyCharacterRotation(const FRotator InTargetRotation, const bool bInterpRotation, const float InterpSpeed)
+{
+	TargetRotation = InTargetRotation;
+	const FRotator RotateDiff = UKismetMathLibrary::NormalizedDeltaRotator(TargetRotation, CharacterRotation);
+	RotationDifference = RotateDiff.Yaw;
+	CharacterRotation = bInterpRotation ? 
+		UKismetMathLibrary::RInterpTo(CharacterRotation, TargetRotation, GetWorld()->DeltaTimeSeconds, InterpSpeed) : TargetRotation;
+	SetActorRotation(CharacterRotation);
+}
+
+void AMockCharacter::LimitRotation(const float AimYawLimit, const float InterpSpeed)
+{
+	if (FMath::Abs(AimYawDelta) > AimYawLimit)
+	{
+		const float A = (LookingRotation.Yaw + AimYawLimit);
+		const float B = (LookingRotation.Yaw - AimYawLimit);
+		const float Value = (AimYawLimit > 0.0f) ? B : A;
+		const FRotator Rotation = FRotator(0.f, Value, 0.f);
+		ApplyCharacterRotation(Rotation, true, InterpSpeed);
+	}
+}
+
+bool AMockCharacter::CardinalDirectionAngles(const float Value, const float Min, const float Max, const float Buffer, const ELSCardinalDirection InCardinalDirection) const
+{
+	const bool A = UKismetMathLibrary::InRange_FloatFloat(Value, (Min + Buffer), (Max - Buffer));
+	const bool B = UKismetMathLibrary::InRange_FloatFloat(Value, (Min - Buffer), (Max + Buffer));
+	return (CardinalDirection == InCardinalDirection) ? B : A;
+}
+
+void AMockCharacter::CustomAcceleration()
+{
+	const auto Velocity = FMath::Abs(VelocityDifference);
+	const float RangeA = 45.f;
+	const float RangeB = 130.f;
+
+	auto MaxAccelerationValue = UKismetMathLibrary::MapRangeClamped(Velocity, RangeA, RangeB, 1.0f, 0.2f);
+	GetCharacterMovement()->MaxAcceleration = RunningAcceleration * MaxAccelerationValue;
+	auto GroundFrictionValue = UKismetMathLibrary::MapRangeClamped(Velocity, RangeA, RangeB, 1.0f, 0.4f);
+	GetCharacterMovement()->GroundFriction = RunningGroundFriction * GroundFrictionValue;
+}
 #pragma endregion
+

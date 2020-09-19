@@ -9,6 +9,7 @@
 
 #include "NavigationSystem.h"
 #include "NavigationPath.h"
+#include "Singleton/BattleGameManager.h"
 
 
 AAIControllerBase::AAIControllerBase(const FObjectInitializer& ObjectInitializer)
@@ -63,15 +64,15 @@ void AAIControllerBase::OnPossess(APawn* InPawn)
 	Super::OnPossess(InPawn);
 	AICharacterOwner = Cast<AAICharacterBase>(InPawn);
 
-	if (AICharacterOwner == nullptr)
+	if (AICharacterOwner)
 	{
-		return;
+		BlackboardComponent->InitializeBlackboard(*AICharacterOwner->GetBehaviorTree()->BlackboardAsset);
+		UWevetBlueprintFunctionLibrary::GetWorldWayPointsArray(InPawn, FLT_MAX, WayPointList);
+		BehaviorTreeComponent->StartTree(*AICharacterOwner->GetBehaviorTree());
+		AICharacterOwner->InitializePosses();
+		AICharacterOwner->DeathDelegate.AddDynamic(this, &AAIControllerBase::OnDeath);
+		AICharacterOwner->KillDelegate.AddDynamic(this, &AAIControllerBase::OnKill);
 	}
-
-	BlackboardComponent->InitializeBlackboard(*AICharacterOwner->GetBehaviorTree()->BlackboardAsset);
-	UWevetBlueprintFunctionLibrary::GetWorldWayPointsArray(InPawn, FLT_MAX, WayPointList);
-	BehaviorTreeComponent->StartTree(*AICharacterOwner->GetBehaviorTree());
-	AICharacterOwner->InitializePosses();
 }
 
 void AAIControllerBase::OnUnPossess()
@@ -80,10 +81,15 @@ void AAIControllerBase::OnUnPossess()
 	{
 		AIPerceptionComponent->OnTargetPerceptionUpdated.RemoveDynamic(this, &AAIControllerBase::OnTargetPerceptionUpdatedRecieve);
 	}
-	if (BehaviorTreeComponent)
+
+	StopTree();
+
+	if (AICharacterOwner)
 	{
-		BehaviorTreeComponent->StopTree();
+		AICharacterOwner->DeathDelegate.RemoveDynamic(this, &AAIControllerBase::OnDeath);
+		AICharacterOwner->KillDelegate.RemoveDynamic(this, &AAIControllerBase::OnKill);
 	}
+
 	Super::OnUnPossess();
 }
 
@@ -133,18 +139,28 @@ void AAIControllerBase::SetBlackboardBotType(EBotBehaviorType NewType)
 
 void AAIControllerBase::SetBlackboardSeeActor(const bool NewCanSeeActor)
 {
+	const bool bWasSee = BlackboardComponent->GetValueAsBool(CanSeePlayerKeyName);
+	if (bWasSee == NewCanSeeActor)
+		return;
+
 	if (BlackboardComponent)
 	{
 		BlackboardComponent->SetValueAsBool(CanSeePlayerKeyName, NewCanSeeActor);
 	}
+	BattlePhaseUpdate();
 }
 
 void AAIControllerBase::SetBlackboardHearActor(const bool NewCanHearActor)
 {
+	const bool bWasHeard = BlackboardComponent->GetValueAsBool(CanHearPlayerKeyName);
+	if (bWasHeard == NewCanHearActor)
+		return;
+
 	if (BlackboardComponent)
 	{
 		BlackboardComponent->SetValueAsBool(CanHearPlayerKeyName, NewCanHearActor);
 	}
+	BattlePhaseUpdate();
 }
 
 void AAIControllerBase::SetBlackboardPatrolLocation(const FVector NewLocation)
@@ -157,6 +173,10 @@ void AAIControllerBase::SetBlackboardPatrolLocation(const FVector NewLocation)
 
 void AAIControllerBase::SetBlackboardActionState(const EAIActionState NewAIActionState)
 {
+	const EAIActionState ActionState = GetBlackboardActionState();
+	if (ActionState == NewAIActionState)
+		return;
+
 	if (BlackboardComponent)
 	{
 		BlackboardComponent->SetValueAsEnum(ActionStateKeyName, (uint8)NewAIActionState);
@@ -216,3 +236,28 @@ const TArray<FVector>& AAIControllerBase::GetPathPointArray()
 	return PointsArray;
 }
 
+void AAIControllerBase::OnDeath()
+{
+	UE_LOG(LogWevetClient, Log, TEXT("Death : %s"), *FString(__FUNCTION__));
+}
+
+void AAIControllerBase::OnKill(AActor* InActor)
+{
+	UE_LOG(LogWevetClient, Log, TEXT("Kill : %s"), *FString(__FUNCTION__));
+}
+
+void AAIControllerBase::BattlePhaseUpdate()
+{
+	const bool bWasHeard = BlackboardComponent->GetValueAsBool(CanHearPlayerKeyName);
+	const bool bWasSee = BlackboardComponent->GetValueAsBool(CanSeePlayerKeyName);
+	Wevet::BattlePhase BP = Wevet::BattlePhase::Normal;
+	if (bWasSee)
+	{
+		BP = Wevet::BattlePhase::Alert;
+	}
+	else if (!bWasSee && bWasHeard)
+	{
+		BP = Wevet::BattlePhase::Warning;
+	}
+	ABattleGameManager::GetInstance()->SetBattlePhase(BP);
+}

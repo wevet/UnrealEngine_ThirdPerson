@@ -47,10 +47,14 @@ void UAIIconWidgetBase::ResetCharacterOwner()
 
 void UAIIconWidgetBase::Visibility(const bool InVisibility)
 {
-	if (Container)
+	if (!Container)
+	{
+		return;
+	}
+	if (bWasVisible != InVisibility)
 	{
 		bWasVisible = InVisibility;
-		Container->SetVisibility(InVisibility ? ESlateVisibility::SelfHitTestInvisible : ESlateVisibility::Hidden);
+		Container->SetVisibility(bWasVisible ? ESlateVisibility::SelfHitTestInvisible : ESlateVisibility::Hidden);
 	}
 }
 

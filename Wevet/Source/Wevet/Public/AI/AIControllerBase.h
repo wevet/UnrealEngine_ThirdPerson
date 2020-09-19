@@ -124,4 +124,13 @@ public:
 	void StopTree();
 	void ResumeTree();
 
+
+private:
+	UFUNCTION()
+	void OnDeath();
+
+	UFUNCTION()
+	void OnKill(AActor* InActor);
+
+	void BattlePhaseUpdate();
 };

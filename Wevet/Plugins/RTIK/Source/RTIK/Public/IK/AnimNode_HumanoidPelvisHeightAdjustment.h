@@ -1,8 +1,10 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "IKTypes.h"
 #include "HumanoidIK.h"
 #include "BoneControllers/AnimNode_SkeletalControlBase.h"
+#include "Engine/SkeletalMeshSocket.h"
 #include "AnimNode_HumanoidPelvisHeightAdjustment.generated.h"
 
 USTRUCT()
@@ -45,23 +47,17 @@ public:
 		LastPelvisOffset = FVector::ZeroVector;
 	}
 
-	// 更新処理
 	virtual void UpdateInternal(const FAnimationUpdateContext& Context) override
 	{
 		DeltaTime = Context.GetDeltaTime();
 	}
 	
-	// 影響を受けるボーンの新しいコンポーネント空間変換を評価
 	virtual void EvaluateSkeletalControl_AnyThread(FComponentSpacePoseContext& Output, TArray<FBoneTransform>& OutBoneTransforms) override;
 	
-	// ノードの処理を行うかどうかの判定
 	virtual bool IsValidToEvaluate(const USkeleton* Skeleton, const FBoneContainer& RequiredBones) override
 	{
 		if (LeftLeg == nullptr || RightLeg == nullptr || PelvisBone == nullptr)
 		{
-#if ENABLE_IK_DEBUG_VERBOSE
-			UE_LOG(LogRTIK, Error, TEXT("An input wrapper object was null : %s"), *FString(__FUNCTION__));
-#endif
 			return false;
 		}	
 		if (!LeftLeg->InitIfInvalid(RequiredBones))
@@ -88,14 +84,10 @@ public:
 		return LeftLeg->InitIfInvalid(RequiredBones) && RightLeg->InitIfInvalid(RequiredBones) && PelvisBone->InitIfInvalid(RequiredBones);
 	}
 
-	// ボーンの参照の初期化
 	virtual void InitializeBoneReferences(const FBoneContainer& RequiredBones) override
 	{
 		if (LeftLeg == nullptr || RightLeg == nullptr || PelvisBone == nullptr)
 		{
-#if ENABLE_IK_DEBUG
-			UE_LOG(LogRTIK, Error, TEXT("An input wrapper object was null : %s"), *FString(__FUNCTION__));
-#endif
 			return;
 		}
 		if (!RightLeg->InitBoneReferences(RequiredBones))

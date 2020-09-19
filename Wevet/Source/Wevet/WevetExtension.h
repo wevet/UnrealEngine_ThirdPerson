@@ -89,12 +89,19 @@ namespace Wevet
 		static FORCEINLINE TArray<T*> GetComponentsArray(const AActor* Owner)
 		{
 			TArray<T*> Array;
-			TArray<UActorComponent*> Components = Owner->GetComponentsByClass(T::StaticClass());
+			if (!Owner)
+			{
+				return Array;
+			}
+
+			TArray<UActorComponent*> Components;
+			Owner->GetComponents(T::StaticClass(), Components, true);
 			for (UActorComponent* Component : Components)
 			{
 				if (T* CustomComp = Cast<T>(Component))
 				{
 					Array.Add(CustomComp);
+					Array.Shrink();
 				}
 			}
 			return Array;
@@ -105,7 +112,12 @@ namespace Wevet
 		template<typename T>
 		static FORCEINLINE T* GetComponentFirstOrDefault(const AActor* Owner)
 		{
-			TArray<UActorComponent*> Components = Owner->GetComponentsByClass(T::StaticClass());
+			if (!Owner)
+			{
+				return nullptr;
+			}
+			TArray<UActorComponent*> Components;
+			Owner->GetComponents(T::StaticClass(), Components, true);
 			for (UActorComponent* Component : Components)
 			{
 				if (T * CustomComp = Cast<T>(Component))

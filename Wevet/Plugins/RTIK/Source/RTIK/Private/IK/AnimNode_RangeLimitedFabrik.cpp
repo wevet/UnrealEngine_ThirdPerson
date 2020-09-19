@@ -89,20 +89,19 @@ void FAnimNode_RangeLimitedFabrik::EvaluateSkeletalControl_AnyThread(
 	int32 TipBoneIndex = NumChainLinks - 1;
 	switch (EffectorRotationSource)
 	{
-	case BRS_KeepLocalSpaceRotation:
+		case BRS_KeepLocalSpaceRotation:
 		if (NumChainLinks > 1)
 		{
-			DestCSTransforms[TipBoneIndex] = Output.Pose.GetLocalSpaceTransform(IKChain->Chain[TipBoneIndex].BoneIndex) *
-				DestCSTransforms[TipBoneIndex - 1];
+			DestCSTransforms[TipBoneIndex] = Output.Pose.GetLocalSpaceTransform(IKChain->Chain[TipBoneIndex].BoneIndex) * DestCSTransforms[TipBoneIndex - 1];
 		}
 		break;
-	case BRS_CopyFromTarget:
+		case BRS_CopyFromTarget:
 		DestCSTransforms[TipBoneIndex].SetRotation(CSEffectorTransform.GetRotation());
 		break;
-	case BRS_KeepComponentSpaceRotation:
+		case BRS_KeepComponentSpaceRotation:
 		// Don't change the orientation at all
 		break;
-	default:
+		default:
 		break;
 	}
 

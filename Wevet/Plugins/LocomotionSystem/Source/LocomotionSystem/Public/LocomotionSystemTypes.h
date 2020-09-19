@@ -1,3 +1,4 @@
+// Copyright 2018 wevet works All Rights Reserved.
 #pragma once
 
 #include "Engine/EngineTypes.h"
@@ -20,6 +21,7 @@ enum class ELSMovementMode : uint8
 	Falling  UMETA(DisplayName = "Falling"),
 	Ragdoll  UMETA(DisplayName = "Ragdoll"),
 	Swimming UMETA(DisplayName = "Swimming"),
+	Mantling UMETA(DisplayName = "Mantling"),
 };
 
 UENUM(BlueprintType)
@@ -90,3 +92,22 @@ enum class ELSMovementDirection : uint8
 	Forwards UMETA(DisplayName = "Forwards"),
 	Backwards  UMETA(DisplayName = "Backwards"),
 };
+
+UENUM(BlueprintType)
+enum class ELSMovementAction : uint8
+{
+	None       UMETA(DisplayName = "None"),
+	LowMantle  UMETA(DisplayName = "LowMantle"),
+	HighMantle UMETA(DisplayName = "HighMantle"),
+	Rolling    UMETA(DisplayName = "Rolling"),
+	GettingUp  UMETA(DisplayName = "GettingUp"),
+};
+
+UENUM(BlueprintType)
+enum class EMantleType : uint8
+{
+	HighMantle   UMETA(DisplayName = "HighMantle"),
+	LowMantle    UMETA(DisplayName = "LowMantle"),
+	FallingCatch UMETA(DisplayName = "FallingCatch"),
+};
+

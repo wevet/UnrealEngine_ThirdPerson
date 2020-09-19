@@ -20,7 +20,7 @@ EBTNodeResult::Type UBTTask_FindPatrolLocation::ExecuteTask(UBehaviorTreeCompone
 			AAICharacterBase* Character = Cast<AAICharacterBase>(Controller->GetPawn());
 			if (Character)
 			{
-				const float SearchRadius = IAIPawnOwner::Execute_GetAttackTraceForwardDistance(Character);
+				const float SearchRadius = IAIPawnOwner::Execute_GetMeleeDistance(Character);
 				const FVector SearchOrigin = WayPoint->GetActorLocation();
 				UNavigationSystemV1* NavSystem = UNavigationSystemV1::GetNavigationSystem(Controller);
 				if (!NavSystem)

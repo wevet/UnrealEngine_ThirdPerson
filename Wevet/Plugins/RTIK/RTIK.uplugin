@@ -18,7 +18,7 @@
     },
     {
       "Name": "RTIKEditor",
-      "Type": "Runtime",
+      "Type": "Editor",
       "LoadingPhase": "PreDefault"
     }
   ]

@@ -15,19 +15,22 @@ public:
 	EWeaponItemType WeaponItemType;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
-	UAnimMontage* FireMontage;
+	class UAnimMontage* FireMontage;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
-	UAnimMontage* ReloadMontage;
+	class UAnimMontage* ReloadMontage;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
-	UAnimMontage* EquipMontage;
+	class UAnimMontage* EquipMontage;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
-	UAnimMontage* UnEquipMontage;
+	class UAnimMontage* UnEquipMontage;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
-	UAnimMontage* HitDamageMontage;	
+	class UAnimMontage* HitDamageMontage;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
+	class UAnimMontage* MeleeAttackMontage;
 
 	FWeaponActionInfo()
 	{
@@ -36,6 +39,7 @@ public:
 		EquipMontage   = nullptr;
 		UnEquipMontage = nullptr;
 		HitDamageMontage = nullptr;
+		MeleeAttackMontage = nullptr;
 		WeaponItemType = EWeaponItemType::None;
 	}
 

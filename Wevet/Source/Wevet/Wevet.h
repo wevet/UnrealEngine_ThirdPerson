@@ -49,12 +49,20 @@ DECLARE_LOG_CATEGORY_EXTERN(LogWevetClient, Verbose, All);
 
 // Sockets
 #define FPS_SOCKET FName(TEXT("FPS_Socket"))
+
 #define HEAD_SOCKET FName(TEXT("Head_Socket"))
 #define CHEST_SOCKET FName(TEXT("Chest_Socket"))
 #define PELVIS_SOCKET FName(TEXT("Pelvis_Socket"))
+
 #define HEAD_BONE FName(TEXT("Head"))
+#define CHEST_BONE FName(TEXT("spine_03"))
 #define PELVIS_BONE FName(TEXT("pelvis"))
 
+#define WATER_TAG FName(TEXT("Water"))
+#define WATER_BODY_TAG FName(TEXT("WaterBody"))
+#define WATER_LOCAL_TAG FName(TEXT("WaterLocal"))
+#define DAMAGE_TAG FName(TEXT("DamageInstigator"))
+#define CHARACTER_TAG FName(TEXT("Character"))
 //#define BOMB_SO FName(TEXT("Bomb_Hand_Socket"))
 //#define WEAPON_SO FName(TEXT("Weapon_Socket"))
 //#define RIFLE_SO FName(TEXT("Rifle_Socket"))

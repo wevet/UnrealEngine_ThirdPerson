@@ -16,6 +16,9 @@ ARifle::ARifle(const FObjectInitializer& ObjectInitializer)
 
 	CollisionComponent->SetBoxExtent(FVector(16.f, 80.f, 32.f));
 
+	MeleeCollisionComponent->SetRelativeLocation(FVector(0.0f, 24.f, 18.f));
+	MeleeCollisionComponent->SetBoxExtent(FVector(3.f, 28.f, 12.f));
+
 	{
 		static ConstructorHelpers::FObjectFinder<USkeletalMesh> FindAsset(TEXT("/Game/Assets/MilitaryWeapon/Weapons/Assault_Rifle_A"));
 		USkeletalMesh* Asset = FindAsset.Object;
@@ -50,8 +53,10 @@ ARifle::ARifle(const FObjectInitializer& ObjectInitializer)
 	// AK47
 	NeededAmmo = 30;
 	WeaponItemInfo.MaxAmmo = 600;
+	WeaponItemInfo.EquipSocketName = FName(TEXT("RifleEquip_Socket"));
 	WeaponItemInfo.UnEquipSocketName = FName(TEXT("Rifle_Socket"));
 	WeaponItemInfo.WeaponItemType = EWeaponItemType::Rifle;
 	WeaponItemInfo.DisplayName = FString(TEXT("FN SCAR"));
+	WeaponItemInfo.MeleeDistance = 2000.f;
 }
 

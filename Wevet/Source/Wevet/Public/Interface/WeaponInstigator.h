@@ -4,7 +4,6 @@
 
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
-#include "Structs/WeaponItemInfo.h"
 #include "WeaponInstigator.generated.h"
 
 
@@ -29,10 +28,13 @@ public:
 	void DoFireRelease();
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "WeaponInstigator")
+	void DoMeleeAttack(const bool InEnableMeleeAttack);
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "WeaponInstigator")
 	void DoReload();
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "WeaponInstigator")
-	void DoReplenishment(const FWeaponItemInfo& RefWeaponItemInfo);
+	void DoReplenishment(const int32 InAddAmmo);
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "WeaponInstigator")
 	bool CanMeleeStrike() const;

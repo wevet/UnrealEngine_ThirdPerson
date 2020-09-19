@@ -8,6 +8,7 @@
 #include "Widget/UMGManager.h"
 #include "MockPlayerController.generated.h"
 
+
 /**
  * 
  */
@@ -23,9 +24,6 @@ protected:
 	virtual void BeginPlay() override;
 	virtual void OnPossess(APawn* InPawn) override;
 	virtual void OnUnPossess() override;
-
-protected:
-	virtual void Initializer();
 	
 public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "PlayerController|Variable")
@@ -43,4 +41,12 @@ private:
 	class AMockCharacter* CharacterOwner;
 	class UUMGManager* UMGManager;
 
+	UFUNCTION()
+	void OnDeath();
+
+	UFUNCTION()
+	void OnAlive();
+
+	UFUNCTION()
+	void OnKill(AActor* InActor);
 };

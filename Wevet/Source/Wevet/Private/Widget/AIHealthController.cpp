@@ -45,26 +45,25 @@ void UAIHealthController::TickRenderer(const float InDeltaTime)
 		return;
 	}
 
-	if (Super::PlayerController == nullptr)
-	{
-		Super::PlayerController = Wevet::ControllerExtension::GetPlayer(AICharacterPtr->GetWorld());
-	}
-
-	// @NOTE
-	// GetHead Position
+	ACharacterBase* Target = Cast<ACharacterBase>(IAIPawnOwner::Execute_GetTarget(AICharacterPtr.Get()));
 	OwnerLocation = AICharacterPtr->GetHeadSocketLocation();
+	const bool bWasDeath = AICharacterPtr->IsDeath_Implementation();
+	const bool bWasRenderer = AICharacterPtr->WasRecentlyRendered(0.2f);
 
 	if (HealthProgressBar)
 	{
-		HealthProgressBar->SetPercent(AICharacterPtr->IsDeath_Implementation() ? ZERO_VALUE : AICharacterPtr->GetHealthToWidget());
+		HealthProgressBar->SetPercent(bWasDeath ? ZERO_VALUE : AICharacterPtr->GetHealthToWidget());
 	}
 
-	// @NOTE
-	// not renering or not found target or death 
-	// equals hidden widget
-	if (AICharacterPtr->IsDeath_Implementation() ||
-		!AICharacterPtr->IsSeeTarget_Implementation() ||
-		!AICharacterPtr->WasRecentlyRendered())
+	if (!bWasRenderer || bWasDeath || !Target)
+	{
+		if (bWasVisible)
+		{
+			Super::Visibility(false);
+		}
+		return;
+	}
+	else if (!AICharacterPtr->IsSeeTarget_Implementation())
 	{
 		if (bWasVisible)
 		{
@@ -73,12 +72,15 @@ void UAIHealthController::TickRenderer(const float InDeltaTime)
 		return;
 	}
 
-	if (Super::PlayerController)
+	if (!Super::PlayerController)
+	{
+		Super::PlayerController = Cast<APlayerController>(Target->GetController());
+	}
+	else
 	{
 		FVector2D ScreenLocation;
-		ESlateVisibility SlateVisibility = Container->GetVisibility();
-		bool bCanRendering = Super::PlayerController->ProjectWorldLocationToScreen(OwnerLocation, ScreenLocation, true);	
-		Super::Visibility(bCanRendering);
+		bool bCanRendering = Super::PlayerController->ProjectWorldLocationToScreen(OwnerLocation, ScreenLocation, true);
+		Super::Visibility(bWasRenderer && bCanRendering);
 		Super::SetPositionInViewport(ScreenLocation);
 	}
 }

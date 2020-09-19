@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
+#include "WevetTypes.h"
 #include "DamageInstigator.generated.h"
 
 
@@ -30,17 +31,17 @@ public:
 
 	// Handle Death
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "DamageInstigator")
-	bool IsDeath();
+	bool IsDeath() const;
 
-	// KillEvent
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "DamageInstigator")
 	void Die();
 
-	// WeaponEquipment
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "DamageInstigator")
+	void Alive();
+
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "DamageInstigator")
 	void Equipment();
 
-	// WeaponUnEquipment
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "DamageInstigator")
 	void UnEquipment();
 
@@ -55,5 +56,5 @@ public:
 	bool CanKillDealDamage(const FName BoneName) const;
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "DamageInstigator")
-	void HitEffectReceive(const FHitResult& HitResult);
+	void HitEffectReceive(const FHitResult& HitResult, const EGiveDamageType InGiveDamageType);
 };

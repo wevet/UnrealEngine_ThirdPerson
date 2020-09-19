@@ -8,6 +8,7 @@ rmdir /q /s ..\\Saved\\Logs
 
 rmdir /q /s ..\\.vs
 rmdir /q /s ..\\Binaries
+rmdir /q /s ..\\DerivedDataCache
 
 rmdir /q /s ..\\Plugins\\ExtraCameraWindow\\Binaries
 rmdir /q /s ..\\Plugins\\ExtraCameraWindow\\Intermediate
@@ -17,6 +18,7 @@ rmdir /q /s ..\\Plugins\\LocomotionSystem\\Binaries
 rmdir /q /s ..\\Plugins\\LocomotionSystem\\Intermediate
 rmdir /q /s ..\\Plugins\\LoadingScreen\\Binaries
 rmdir /q /s ..\\Plugins\\LoadingScreen\\Intermediate
+
 del ..\\Wevet.sln
 
 pause

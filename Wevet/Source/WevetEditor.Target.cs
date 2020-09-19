@@ -8,8 +8,9 @@ public class WevetEditorTarget : TargetRules
 	public WevetEditorTarget(TargetInfo Target) : base(Target)
 	{
         Type = TargetType.Editor;
-        //DefaultBuildSettings = BuildSettingsVersion.V2;
-        ShadowVariableWarningLevel = WarningLevel.Warning;
+		//bLegacyPublicIncludePaths = true;
+		//ShadowVariableWarningLevel = WarningLevel.Error;
+		//DefaultBuildSettings = BuildSettingsVersion.V1;
 
         ExtraModuleNames.AddRange( new string[] { "Wevet", "WevetEditor", } );
 	}

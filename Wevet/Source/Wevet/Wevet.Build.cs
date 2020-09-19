@@ -6,26 +6,26 @@ public class Wevet : ModuleRules
 {
 	public Wevet(ReadOnlyTargetRules Target) : base(Target)
 	{
-        PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
-        PrivatePCHHeaderFile = "Wevet.h";
+		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
+		PrivatePCHHeaderFile = "Wevet.h";
 
-        PublicDependencyModuleNames.AddRange(new string[] 
-            {
-                "Core",
-                "CoreUObject",
-                "Engine"
-            }
-        );
+		PublicDependencyModuleNames.AddRange(new string[]
+			{
+				"Core",
+				"CoreUObject",
+				"Engine"
+			}
+		);
 
-        PrivateDependencyModuleNames.AddRange(new string[]
+		PrivateDependencyModuleNames.AddRange(new string[]
 			{
 				"Core",
 				"CoreUObject",
 				"Engine",
 				"InputCore",
 				"AIModule",
-                "GameplayTags",
-                "GameplayTasks",
+				"GameplayTags",
+				"GameplayTasks",
 				"UMG",
 				"Slate",
 				"SlateCore",
@@ -34,13 +34,13 @@ public class Wevet : ModuleRules
 				//"ShaderCore",
 				"RenderCore",
 				"RHI",
-                "LevelSequence",
-                "MoviePlayer",
-                "GameplayAbilities",
-                "LocomotionSystem",
-                "LoadingScreen",
-                "RTIK",
-            }
+				"LevelSequence",
+				"MoviePlayer",
+				"GameplayAbilities",
+				"LocomotionSystem",
+				"LoadingScreen",
+				"RTIK",
+			}
 		);
 
 		// Uncomment if you are using Slate UI

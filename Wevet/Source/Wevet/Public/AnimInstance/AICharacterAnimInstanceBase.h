@@ -21,8 +21,12 @@ public:
 	virtual void NativeUpdateAnimation(float DeltaTimeX) override;
 
 protected:	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Variable")
-	AAICharacterBase* AICharacterOwner;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AI|Variable")
+	class AAICharacterBase* Character;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "AI|Variable")
+	float LookAtInterpSpeed;
 
 	virtual void SetRotator() override;
+	virtual void SetMovementSpeed() override;
 };

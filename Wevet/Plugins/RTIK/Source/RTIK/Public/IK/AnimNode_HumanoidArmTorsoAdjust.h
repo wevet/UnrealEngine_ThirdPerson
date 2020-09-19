@@ -25,11 +25,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Settings)
 	bool bEnableDebugDraw;
 
-	// FABRIKソルバーの精度 エフェクターがターゲットからこの距離内にある場合、反復は停止する
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Solver)
 	float Precision;
 	
-	// FABRIK反復の最大数 この多くの反復の後、FABRIKは常に停止
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Solver)
 	int32 MaxIterations;
 
@@ -42,7 +40,6 @@ public:
 	// UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Torso)
 	// FName TorsoPivotSocketName;
 
-	// 肩の開始位置までの距離
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Torso, meta = (UIMin = 0.0f))
 	float MaxShoulderDragDistance;
 
@@ -132,30 +129,23 @@ public:
 		DeltaTime = 0.0f;
 	}
 
-	// 更新処理
 	virtual void UpdateInternal(const FAnimationUpdateContext& Context) override
 	{
 		DeltaTime = Context.GetDeltaTime();
 		//Super::UpdateInternal(Context);
 	}
 
-	// 影響を受けるボーンの新しいコンポーネント空間変換を評価
 	virtual void EvaluateSkeletalControl_AnyThread(FComponentSpacePoseContext& Output, TArray<FBoneTransform>& OutBoneTransforms) override;
 
-	// 骨格制御ベースを評価
 	virtual void EvaluateComponentSpaceInternal(FComponentSpacePoseContext& Output) override
 	{
 		Super::EvaluateComponentSpaceInternal(Output);
 	}
 
-	// ノードの処理を行うかどうかの判定
 	virtual bool IsValidToEvaluate(const USkeleton* Skeleton, const FBoneContainer& RequiredBones) override
 	{
 		if (LeftArm == nullptr || RightArm == nullptr)
 		{
-#if ENABLE_IK_DEBUG_VERBOSE
-			UE_LOG(LogRTIK, Error, TEXT("An input wrapper object was null : %s"), *FString(__FUNCTION__));
-#endif
 			return false;
 		}
 		if (!LeftArm->IsValid(RequiredBones))
@@ -182,14 +172,10 @@ public:
 		return true;
 	}
 
-	// ボーンの参照の初期化
 	virtual void InitializeBoneReferences(const FBoneContainer& RequiredBones) override
 	{
 		if (LeftArm == nullptr || RightArm == nullptr)
 		{
-#if ENABLE_IK_DEBUG
-			UE_LOG(LogRTIK, Error, TEXT("An input wrapper object was null : %s"), *FString(__FUNCTION__));
-#endif
 			return;
 		}
 		if (!LeftArm->InitBoneReferences(RequiredBones))

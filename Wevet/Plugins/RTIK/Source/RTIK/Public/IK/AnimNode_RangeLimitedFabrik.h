@@ -4,6 +4,7 @@
 #include "IKTypes.h"
 #include "HumanoidIK.h"
 #include "BoneControllers/AnimNode_SkeletalControlBase.h"
+#include "Engine/SkeletalMeshSocket.h"
 #include "AnimNode_RangeLimitedFabrik.generated.h"
 
 
@@ -60,7 +61,6 @@ public:
 		bEnableDebugDraw(false)
 	{ }
 
-	// GameThreadでdebug処理
 	virtual void GatherDebugData(FNodeDebugData& DebugData) override
 	{
 		FString DebugLine = DebugData.GetNodeName(this);
@@ -68,17 +68,12 @@ public:
 		ComponentPose.GatherDebugData(DebugData);
 	}
 
-	// 影響を受けるボーンの新しいコンポーネント空間変換を評価
 	virtual void EvaluateSkeletalControl_AnyThread(FComponentSpacePoseContext& Output, TArray<FBoneTransform>& OutBoneTransforms) override;
 
-	// ノードの処理を行うかどうかの判定
 	virtual bool IsValidToEvaluate(const USkeleton* Skeleton, const FBoneContainer& RequiredBones) override
 	{
 		if (IKChain == nullptr)
 		{
-#if ENABLE_IK_DEBUG_VERBOSE
-			UE_LOG(LogRTIK, Error, TEXT("An input wrapper object was null : %s"), *FString(__FUNCTION__));
-#endif
 			return false;
 		}
 		if (IKChain->Chain.Num() < 2)
@@ -88,14 +83,10 @@ public:
 		return (Precision > 0 && IKChain->IsValid(RequiredBones));
 	}
 
-	// ボーンの参照の初期化
 	virtual void InitializeBoneReferences(const FBoneContainer& RequiredBones) override
 	{
 		if (IKChain == nullptr)
 		{
-#if ENABLE_IK_DEBUG
-			UE_LOG(LogRTIK, Error, TEXT("An input wrapper object was null : %s"), *FString(__FUNCTION__));
-#endif
 			return;
 		}
 		IKChain->InitIfInvalid(RequiredBones);

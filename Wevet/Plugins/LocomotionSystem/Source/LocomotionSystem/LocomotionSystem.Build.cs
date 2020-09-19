@@ -6,7 +6,7 @@ public class LocomotionSystem : ModuleRules
 {
 	public LocomotionSystem(ReadOnlyTargetRules Target) : base(Target)
 	{
-		PrivatePCHHeaderFile = "Public/LocomotionSystem.h";		
+		PrivatePCHHeaderFile = "Public/LocomotionSystem.h";
 
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 

@@ -12,7 +12,7 @@ public class ExtraCameraWindow : ModuleRules
 
 		PrivateIncludePaths.Add("ExtraCameraWindow/Private");
 
-		
+
 		PublicDependencyModuleNames.AddRange(
 			new string[]
 			{

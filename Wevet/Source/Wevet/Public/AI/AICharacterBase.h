@@ -9,7 +9,6 @@
 #include "Perception/PawnSensingComponent.h"
 #include "AICharacterBase.generated.h"
 
-
 class AAIControllerBase;
 class UAIHealthController;
 
@@ -28,40 +27,33 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
+	virtual void OnMovementModeChanged(EMovementMode PrevMovementMode, uint8 PreviousCustomMode = 0) override;
 
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Components, meta = (AllowPrivateAccess = "true"))
 	class UPawnSensingComponent* PawnSensingComponent;
 
-public:
 #pragma region Interface
+public:
 	virtual void Die_Implementation() override;
 	virtual void Equipment_Implementation() override;
 	virtual void UnEquipment_Implementation() override;	
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AI|AIPawnOwner")
 	bool IsSeeTarget() const;
-	virtual bool IsSeeTarget_Implementation() const override;
+	virtual bool IsSeeTarget_Implementation() const override { return bSeeTarget; }
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AI|AIPawnOwner")
 	bool IsHearTarget() const;
-	virtual bool IsHearTarget_Implementation() const override;
+	virtual bool IsHearTarget_Implementation() const override { return bHearTarget; }
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AI|AIPawnOwner")
-	float GetAttackTraceForwardDistance() const;
-	virtual float GetAttackTraceForwardDistance_Implementation() const override;
-
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AI|AIPawnOwner")
-	float GetAttackTraceLongDistance() const;
-	virtual float GetAttackTraceLongDistance_Implementation() const override;
-
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AI|AIPawnOwner")
-	float GetAttackTraceMiddleDistance() const;
-	virtual float GetAttackTraceMiddleDistance_Implementation() const override;
+	float GetMeleeDistance() const;
+	virtual float GetMeleeDistance_Implementation() const override;
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AI|AIPawnOwner")
 	AActor* GetTarget() const;
-	virtual AActor* GetTarget_Implementation() const override;
+	virtual AActor* GetTarget_Implementation() const override { return TargetCharacter; }
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AI|AIPawnOwner")
 	void StateChange(const EAIActionState NewAIActionState);
@@ -75,43 +67,38 @@ public:
 public:
 	FORCEINLINE class UPawnSensingComponent* GetPawnSensingComponent() const { return PawnSensingComponent;  }
 	FORCEINLINE class UBehaviorTree* GetBehaviorTree() const { return BehaviorTree; }
-	
-	virtual void InitializePosses();
-
-	virtual FVector BulletTraceRelativeLocation() const override
-	{
-		if (CurrentWeapon.IsValid())
-		{
-			return CurrentWeapon.Get()->GetMuzzleTransform().GetLocation();
-		}
-		return Super::BulletTraceRelativeLocation();
-	}
-
-	virtual FVector BulletTraceForwardLocation() const override
-	{
-		if (CurrentWeapon.IsValid())
-		{
-			return CurrentWeapon.Get()->GetMuzzleTransform().GetRotation().GetForwardVector();
-		}
-		return Super::BulletTraceForwardLocation();
-	}
-
-	virtual void SetSeeTargetActor(ACharacterBase* const NewCharacter);	
-	virtual void SetHearTargetActor(AActor* const OtherActor);
-
-	void SetBulletInterval(const float InBulletInterval)
-	{
-		BulletInterval = InBulletInterval;
-	}
-
-	void SetMeleeAttackTimeOut(const float InMeleeAttackTimeOut)
-	{
-		MeleeAttackTimeOut = InMeleeAttackTimeOut;
-	}
-
-	void DoCoverAI();
 
 	FORCEINLINE bool WasMeleeAttacked() const { return (MeleeAttackTimeOut >= ZERO_VALUE); }
+	FORCEINLINE bool WasAttackInitialized() const { return bAttackInitialized; }
+
+public:
+	virtual void InitializePosses();
+	virtual void Sprint() override;
+	virtual void StopSprint() override;
+
+	virtual void AttackInitialize(const float InInterval, const float InTimeOut);
+	virtual void AttackUnInitialize();
+	virtual void FindFollowCharacter();
+	virtual FVector BulletTraceForwardLocation() const override;
+
+protected:
+	virtual void StartRagdollAction() override;
+	virtual void RagdollToWakeUpAction() override;
+	virtual void EquipmentActionMontage() override;
+	virtual void UnEquipmentActionMontage() override;
+
+protected:
+	virtual void MainLoop(float DeltaTime);
+	virtual void CreateHealthController();
+	virtual void DestroyHealthController();
+
+	UFUNCTION()
+	virtual	void OnSeePawnRecieve(APawn* OtherPawn);
+	virtual void SeePawnRecieveCallback(ACharacterBase* const NewCharacter);
+
+	UFUNCTION()
+	virtual	void OnHearNoiseRecieve(APawn* OtherActor, const FVector& Location, float Volume);
+	virtual void HearNoiseRecieveCallback(AActor* const OtherActor, FVector Location = FVector::ZeroVector);
 
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "AI|Variable")
@@ -121,42 +108,24 @@ protected:
 	TSubclassOf<class UAIHealthController> UIHealthControllerTemplate;
 	class UAIHealthController* UIHealthController;
 
-
-protected:
-	virtual void MainLoop(float DeltaTime);
-
-	UFUNCTION()
-	virtual	void OnSeePawnRecieve(APawn* OtherPawn);
-
-	UFUNCTION()
-	virtual	void OnHearNoiseRecieve(APawn* OtherActor, const FVector& Location, float Volume);
-
-	virtual void ForceSprint();
-	virtual void UnForceSprint();
-	virtual void CreateHealthController();
-
-protected:
 	class ACharacterBase* TargetCharacter;
 	class AAIControllerBase* AIController;
-
-	/* Attack Trace ForwardDistance */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "AI|Variable")
-	float AttackTraceForwardDistance;
-
-	/* Attack Trace Middle */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "AI|Variable")
-	float AttackTraceMiddleDistance;
-
-	/* Attack Trace Long */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "AI|Variable")
-	float AttackTraceLongDistance;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "AI|Variable")
 	float BulletDelay;
 
+	/* Time-out value to clear the sensed position of the player. */
+	/* Should be higher than Sense interval in the PawnSense component not never miss sense ticks.  */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "AI|Variable")
+	float SenseTimeOut;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "AI|Variable")
+	float HearTimeOut;
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "AI|Variable")
 	FVector2D WidgetViewPortOffset;
 
+protected:
 	/* Last bullet action after interval */
 	float BulletInterval;
 
@@ -169,19 +138,12 @@ protected:
 	/* Last time we attacked something */
 	float LastMeleeAttackTime;
 
-	/* Time-out value to clear the sensed position of the player. */
-	/* Should be higher than Sense interval in the PawnSense component not never miss sense ticks.  */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "AI|Variable")
-	float SenseTimeOut;
-
 	/* Time-out value to melee attack time. */
 	float MeleeAttackTimeOut;
 
 	/* Resets after sense time-out to avoid unnecessary clearing of target each tick */
 	bool bSeeTarget;
 	bool bHearTarget;
+	bool bAttackInitialized;
 
-protected:
-	/* Cache rendering */
-	bool bWasVisibility;
 };

@@ -27,13 +27,7 @@ public:
 	bool IsHearTarget() const;
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AIPawnOwner")
-	float GetAttackTraceForwardDistance() const;
-
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AIPawnOwner")
-	float GetAttackTraceLongDistance() const;
-
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AIPawnOwner")
-	float GetAttackTraceMiddleDistance() const;
+	float GetMeleeDistance() const;
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AIPawnOwner")
 	AActor* GetTarget() const;

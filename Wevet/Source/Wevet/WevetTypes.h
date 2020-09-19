@@ -19,6 +19,28 @@ namespace ESaveGameVersion
 	};
 }
 
+namespace Wevet
+{
+	enum BattlePhase
+	{
+		Normal,
+		Warning,
+		Alert,
+	};
+
+}
+
+UENUM()
+enum class ECustomDepthType : uint8
+{
+	None = 0,
+	Environment = 1,
+	Weapon = 10,
+	Item = 20,
+	Pawn = 30,
+	//Max = 256,
+};
+
 UENUM(BlueprintType)
 enum class EAIActionState : uint8
 {
@@ -26,6 +48,7 @@ enum class EAIActionState : uint8
 	Observation  UMETA(DisplayName = "Observation"),
 	Attack  UMETA(DisplayName = "Attack"),
 	ConditionCheck UMETA(DisplayName = "ConditionCheck"),
+	Cover UMETA(DisplayName = "Cover"),
 };
 
 UENUM()
@@ -48,9 +71,9 @@ UENUM()
 enum class EUMGLayerType : int32
 {
 	None = -1,
-	Base = 0,
+	WorldScreen = 0,
 	Main = 1,
-	Num,
+	Overlay = 100,
 };
 
 UENUM(BlueprintType)
@@ -68,7 +91,26 @@ UENUM(BlueprintType)
 enum class EItemType : uint8
 {
 	None   UMETA(DisplayName = "None"),
-	Weapon UMETA(DisplayName = "Weapon"),
-	Health UMETA(DisplayName = "Health"),
-	Ammos  UMETA(DisplayName = "Ammos"),
+	Weapon UMETA(DisplayName = "Weapon"), // AAbstractWeapon
+	Health UMETA(DisplayName = "Health"), 
+	Ammos  UMETA(DisplayName = "Ammos"),  // AAbstractItem
 };
+
+UENUM(BlueprintType)
+enum class EGiveDamageType : uint8
+{
+	None   UMETA(DisplayName = "None"),
+	Shoot  UMETA(DisplayName = "Shoot"),
+	Melee  UMETA(DisplayName = "Melee"),
+};
+
+//UENUM(BlueprintType)
+//enum class EWeaponState : uint8
+//{
+//	None    UMETA(DisplayName = "None"),
+//	Empty   UMETA(DisplayName = "Empty"),
+//	Reload  UMETA(DisplayName = "Reload"),
+//	Shoot   UMETA(DisplayName = "Shoot"),
+//	Melee   UMETA(DisplayName = "Melee"),
+//	NoOwner UMETA(DisplayName = "NoOwner"),
+//};

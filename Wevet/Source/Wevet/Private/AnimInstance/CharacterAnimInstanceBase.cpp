@@ -10,10 +10,9 @@ UCharacterAnimInstanceBase::UCharacterAnimInstanceBase(const FObjectInitializer&
 	bWasMoving(false),
 	bWasAiming(false)
 {
-	CombatBlendWeight = 0.8f;
-	ClimbBlendWeight  = 1.f;
-	BlendWeight = 0.f;
+	Super::IKTargetInterpolationSpeed = 60.f;
 	FalloutInterval = 3.f;
+	bWasStanning = false;
 }
 
 void UCharacterAnimInstanceBase::NativeInitializeAnimation()
@@ -33,17 +32,16 @@ void UCharacterAnimInstanceBase::NativeUpdateAnimation(float DeltaTimeX)
 {
 	Super::NativeUpdateAnimation(DeltaTimeX);
 
-	if (OwningPawn == nullptr)
-	{
+	if (!OwningPawn)
 		return;
-	}
 
-	bHasMoving = (OwningPawn->GetVelocity().SizeSquared() > 25);
 
+	SetMoving();
 	if (CharacterMovementComponent)
 	{
 		IsFalling = CharacterMovementComponent->IsFalling();
 	}
+
 	if (IsFalling)
 	{
 		FalloutTickTime += DeltaTimeX;
@@ -58,15 +56,17 @@ void UCharacterAnimInstanceBase::NativeUpdateAnimation(float DeltaTimeX)
 		FalloutTickTime = 0.f;
 	}
 
+	SetStanning();
 	SetMovementSpeed();
 	SetRotator();
 	SetCrouch();
 	SetEquip();
-	SetHanging();
-	SetClimbingLedge();
-	SetClimbingMove();
 	SetWeaponItemType();
-	BlendWeight = (IsEquip) ? FMath::Clamp<float>(CombatBlendWeight, 0.f, 1.f) : 0.f;
+}
+
+void UCharacterAnimInstanceBase::SetMoving()
+{
+	bWasMoving = (OwningPawn->GetVelocity().SizeSquared() > 25);
 }
 
 void UCharacterAnimInstanceBase::SetMovementSpeed()
@@ -86,6 +86,14 @@ void UCharacterAnimInstanceBase::SetRotator()
 	Pitch = ResultRotation.Pitch;
 }
 
+void UCharacterAnimInstanceBase::SetStanning()
+{
+	if (Owner)
+	{
+		bWasStanning = Owner->WasStanning();
+	}
+}
+
 void UCharacterAnimInstanceBase::SetCrouch()
 {
 	if (Owner)
@@ -99,31 +107,6 @@ void UCharacterAnimInstanceBase::SetEquip()
 	if (Owner)
 	{
 		IsEquip = Owner->HasEquipWeapon();
-	}
-}
-
-void UCharacterAnimInstanceBase::SetHanging()
-{
-	if (Owner)
-	{
-		IsHanging = Owner->HasHanging();
-	}
-}
-
-void UCharacterAnimInstanceBase::SetClimbingLedge()
-{
-	if (Owner)
-	{
-		IsClimbingLedge = Owner->HasClimbingLedge();
-	}
-}
-
-void UCharacterAnimInstanceBase::SetClimbingMove()
-{
-	if (Owner)
-	{
-		bCanClimbMoveLeft  = Owner->HasClimbingMoveLeft();
-		bCanClimbMoveRight = Owner->HasClimbingMoveRight();
 	}
 }
 
@@ -151,77 +134,41 @@ bool UCharacterAnimInstanceBase::IsLocallyControlled() const
 	return false;
 }
 
-#pragma region IGrabInstigator
-void UCharacterAnimInstanceBase::CanGrab_Implementation(bool InCanGrab)
+// @NOTE
+// PlayerˆÈŠO‚ÌCharacterBaseClass‚ÅŒÄ‚Î‚ê‚é
+void UCharacterAnimInstanceBase::RagdollToWakeUpAction(const bool InFaceDown)
 {
+	Montage_Play(InFaceDown ? GetUpFromFront : GetUpFromBack, 1.0f, EMontagePlayReturnType::MontageLength, 0.0f, true);
 }
-
-void UCharacterAnimInstanceBase::ClimbLedge_Implementation(bool InClimbLedge)
-{
-}
-
-void UCharacterAnimInstanceBase::ReportClimbEnd_Implementation()
-{
-}
-
-void UCharacterAnimInstanceBase::ClimbMove_Implementation(float Value)
-{
-	IsClimbMoveRight = (Value > 0.f);
-	IsClimbMoveLeft  = (Value < 0.f);
-}
-
-void UCharacterAnimInstanceBase::ClimbJump_Implementation()
-{
-	bClimbJumping = true;
-}
-
-void UCharacterAnimInstanceBase::ReportClimbJumpEnd_Implementation()
-{
-	//if (Owner)
-	//{
-	//	IGrabExecuter::Execute_ReportClimbJumpEnd(Owner);
-	//}
-	bClimbJumping = false;
-}
-
-void UCharacterAnimInstanceBase::TurnConerLeftUpdate_Implementation()
-{
-
-}
-
-void UCharacterAnimInstanceBase::TurnConerRightUpdate_Implementation()
-{
-
-}
-
-void UCharacterAnimInstanceBase::TurnConerResult_Implementation()
-{
-
-}
-#pragma endregion
 
 #pragma region ALSInterface
 void UCharacterAnimInstanceBase::SetWalkingSpeed_Implementation(const float InWalkingSpeed)
 {
 	WalkingSpeed = InWalkingSpeed;
-	UE_LOG(LogWevetClient, Log, TEXT("Walk : %s"), *FString(__FUNCTION__));
+	//UE_LOG(LogWevetClient, Log, TEXT("Walk : %s"), *FString(__FUNCTION__));
 }
 
 void UCharacterAnimInstanceBase::SetRunningSpeed_Implementation(const float InRunningSpeed)
 {
 	RunningSpeed = InRunningSpeed;
-	UE_LOG(LogWevetClient, Log, TEXT("Run : %s"), *FString(__FUNCTION__));
+	//UE_LOG(LogWevetClient, Log, TEXT("Run : %s"), *FString(__FUNCTION__));
 }
 
 void UCharacterAnimInstanceBase::SetSprintingSpeed_Implementation(const float InSprintingSpeed)
 {
 	SprintingSpeed = InSprintingSpeed;
-	UE_LOG(LogWevetClient, Log, TEXT("Sprint : %s"), *FString(__FUNCTION__));
+	//UE_LOG(LogWevetClient, Log, TEXT("Sprint : %s"), *FString(__FUNCTION__));
 }
 
 void UCharacterAnimInstanceBase::SetCrouchingSpeed_Implementation(const float InCrouchingSpeed)
 {
 	CrouchingSpeed = InCrouchingSpeed;
-	UE_LOG(LogWevetClient, Log, TEXT("Crouch : %s"), *FString(__FUNCTION__));
+	//UE_LOG(LogWevetClient, Log, TEXT("Crouch : %s"), *FString(__FUNCTION__));
+}
+
+void UCharacterAnimInstanceBase::SetSwimmingSpeed_Implementation(const float InSwimmingSpeed)
+{
+	SwimmingSpeed = InSwimmingSpeed;
+	//UE_LOG(LogWevetClient, Log, TEXT("Swim : %s"), *FString(__FUNCTION__));
 }
 #pragma endregion

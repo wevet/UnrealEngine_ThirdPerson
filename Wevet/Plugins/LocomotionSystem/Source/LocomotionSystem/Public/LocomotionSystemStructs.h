@@ -1,8 +1,11 @@
+// Copyright 2018 wevet works All Rights Reserved.
 #pragma once
 
 #include "Engine/EngineTypes.h"
 #include "Animation/AnimMontage.h"
 #include "LocomotionSystemTypes.h"
+#include "Components/PrimitiveComponent.h"
+#include "Curves/CurveVector.h"
 #include "LocomotionSystemStructs.generated.h"
 
 
@@ -25,6 +28,28 @@ public:
 	{
 	}
 
+};
+
+
+USTRUCT(BlueprintType)
+struct LOCOMOTIONSYSTEM_API FCombatTurnMontages
+{
+	GENERATED_USTRUCT_BODY()
+
+public:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
+	struct FTurnMontages PistolTurnData;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
+	struct FTurnMontages RifleTurnData;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
+	struct FTurnMontages SniperRifleTurnData;
+
+public:
+	FCombatTurnMontages()
+	{
+	}
 };
 
 
@@ -79,10 +104,11 @@ public:
 
 public:
 	FCameraSettings() : 
-		TargetArmLength(0.0f),
-		CameraLagSpeed(0.0f)
+		TargetArmLength(300.0f),
+		CameraLagSpeed(10.0f),
+		SocketOffset(0.f, 0.f, 45.f)
 	{
-		SocketOffset = FVector::ZeroVector;
+		
 	}
 };
 
@@ -148,4 +174,142 @@ public:
 	FCameraSettingsTarget()
 	{}
 };
+
+
+USTRUCT(BlueprintType)
+struct LOCOMOTIONSYSTEM_API FMantleAsset
+{
+	GENERATED_USTRUCT_BODY()
+
+public:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
+	UAnimMontage* AnimMontage;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
+	UCurveVector* Position;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
+	FVector StartingOffset;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
+	float LowHeight;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
+	float LowPlayRate;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
+	float LowStartPosition;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
+	float HighHeight;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
+	float HighPlayRate;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
+	float HighStartPosition;
+
+public:
+	FMantleAsset()
+	{
+		AnimMontage = nullptr;
+		Position = nullptr;
+		StartingOffset = FVector::ZeroVector;
+		LowHeight = 0.0f;
+		LowPlayRate = 0.0f;
+		LowStartPosition = 0.0f;
+		HighHeight = 0.0f;
+		HighPlayRate = 0.0f;
+		HighStartPosition = 0.0f;
+	}
+};
+
+
+USTRUCT(BlueprintType)
+struct LOCOMOTIONSYSTEM_API FMantleParams
+{
+	GENERATED_USTRUCT_BODY()
+
+public:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
+	UAnimMontage* AnimMontage;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
+	UCurveVector* Position;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
+	float StartingPosition;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
+	float PlayRate;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
+	FVector StartingOffset;
+
+public:
+	FMantleParams()
+	{
+		AnimMontage = nullptr;
+		Position = nullptr;
+		StartingPosition = 0.0f;
+		PlayRate = 1.0f;
+		StartingOffset = FVector::ZeroVector;
+	}
+};
+
+
+USTRUCT(BlueprintType)
+struct LOCOMOTIONSYSTEM_API FMantleTraceSettings
+{
+	GENERATED_USTRUCT_BODY()
+
+public:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
+	float MaxLedgeHeight;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
+	float MinLedgeHeight;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
+	float ReachDistance;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
+	float ForwardTraceRadius;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
+	float DownwardTraceRadius;
+
+public:
+	FMantleTraceSettings()
+	{
+		MaxLedgeHeight = 0.0f;
+		MinLedgeHeight = 0.0f;
+		ReachDistance = 0.0f;
+		ForwardTraceRadius = 0.0f;
+		DownwardTraceRadius = 0.0f;
+	}
+};
+
+
+USTRUCT(BlueprintType)
+struct LOCOMOTIONSYSTEM_API FLSComponentAndTransform
+{
+	GENERATED_USTRUCT_BODY()
+
+public:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
+	FTransform Transform;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
+	UPrimitiveComponent* Component;
+
+
+public:
+	FLSComponentAndTransform()
+	{
+		Component = nullptr;
+		Transform = FTransform::Identity;
+	}
+};
+
 
