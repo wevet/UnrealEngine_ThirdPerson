@@ -1,7 +1,7 @@
 #include "ExtraCameraWindowActor.h"
 #include "ExtraCameraWindow.h"
 #include "GameDelegates.h"
-
+#include "Engine.h"
 
 AExtraCameraWindowActor::AExtraCameraWindowActor()
 {
@@ -18,17 +18,13 @@ void AExtraCameraWindowActor::BeginPlay()
 
 	CameraManager = nullptr;
 
-	UWorld* const World = GetWorld();
 
-	if (World)
+	for (FConstPlayerControllerIterator Iterator = GetWorld()->GetPlayerControllerIterator(); Iterator; ++Iterator)
 	{
-		for (FConstPlayerControllerIterator Iterator = World->GetPlayerControllerIterator(); Iterator; ++Iterator)
+		APlayerController* PlayerController = Cast<APlayerController>(*Iterator);
+		if (PlayerController && PlayerController->PlayerCameraManager)
 		{
-			APlayerController* PlayerController = Cast<APlayerController>(*Iterator);
-			if (PlayerController && PlayerController->PlayerCameraManager)
-			{
-				CameraManager = PlayerController->PlayerCameraManager;
-			}
+			CameraManager = PlayerController->PlayerCameraManager;
 		}
 	}
 
@@ -119,14 +115,7 @@ void AExtraCameraWindowActor::BeginPlay()
 		}
 	}));
 
-	StandaloneGame = false;
-	if (World)
-	{
-		if (World->WorldType == EWorldType::Game)
-		{
-			StandaloneGame = true;
-		}
-	}
+	StandaloneGame = (GetWorld()->WorldType == EWorldType::Game) ? true : false;
 
 	Super::BeginPlay();
 	Super::SetActorTickInterval(TickInterval);

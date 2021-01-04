@@ -64,4 +64,32 @@ public:
 		Out.SetRotation(FQuat(FRotator(Pitch, Yaw, Roll)));
 		return Out;
 	}
+
+	UFUNCTION(BlueprintPure, Category = "LocomotionSystemMacroLibrary")
+	static uint8 DoifDifferentByte(const uint8 A, const uint8 B) 
+	{
+		return DoifDifferent<uint8>(A, B); 
+	}
+
+	UFUNCTION(BlueprintPure, Category = "LocomotionSystemMacroLibrary")
+	static bool DoifDifferentBool(const bool A, const bool B) 
+	{
+		return DoifDifferent<bool>(A, B); 
+	}
+
+	UFUNCTION(BlueprintPure, Category = "LocomotionSystemMacroLibrary")
+	static float DoifDifferentFloat(const float A, const float B)  
+	{
+		return DoifDifferent<float>(A, B); 
+	}
+
+	template<typename T>
+	static T DoifDifferent(const T A, const T B) 
+	{
+		if (A != B)
+		{
+			return A;
+		}
+		return B;
+	}
 };

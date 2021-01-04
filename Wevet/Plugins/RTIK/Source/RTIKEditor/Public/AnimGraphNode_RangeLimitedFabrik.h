@@ -4,7 +4,7 @@
 #include "CoreMinimal.h"
 #include "UObject/ObjectMacros.h"
 #include "AnimGraphNode_SkeletalControlBase.h"
-#include "IK/AnimNode_RangeLimitedFabrik.h"
+#include "AnimNode_RangeLimitedFabrik.h"
 #include "AnimGraphNode_RangeLimitedFabrik.generated.h"
 
 class FPrimitiveDrawInterface;

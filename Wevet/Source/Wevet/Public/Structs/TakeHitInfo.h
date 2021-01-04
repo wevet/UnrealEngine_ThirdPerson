@@ -1,4 +1,5 @@
 #pragma once
+
 #include "Engine/EngineTypes.h"
 #include "GameFramework/DamageType.h"
 #include "TakeHitInfo.generated.h"

@@ -23,6 +23,7 @@ public:
 protected:
 	virtual void BeginPlay() override;
 
+protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Bullet|Variable")
 	float LifeInterval;
 
@@ -34,6 +35,8 @@ public:
 	FHitTriggerDelegate HitTriggerDelegate;
 
 	void SetOwners(const TArray<class AActor*>& InOwners);
+
+	void VisibleEmitter(const bool InVisible);
 
 protected:
 	class UPrimitiveComponent* PrimitiveComponent;

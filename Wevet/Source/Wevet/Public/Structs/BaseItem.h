@@ -1,4 +1,5 @@
 #pragma once
+
 #include "Engine/EngineTypes.h"
 #include "WevetTypes.h"
 #include "BaseItem.generated.h"
@@ -53,6 +54,10 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
 	int32 MaxAmmo;
 
+	// Require Reload bullets count
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
+	int32 NeededAmmo;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
 	float Damage;
 
@@ -71,6 +76,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
 	FName UnEquipSocketName;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
+	float HearingRange;
+
 	FWeaponItemInfo() : FBaseItem()
 	{
 		BaseItemType = EItemType::Weapon;
@@ -79,6 +87,7 @@ public:
 		Damage = 20.f;
 		TraceDistance = 15000.f;
 		MeleeDistance = 1000.f;
+		HearingRange = 500.f;
 	}
 
 public:
@@ -95,6 +104,14 @@ public:
 		Texture = InWeaponItemInfo.Texture;
 		DisplayName = InWeaponItemInfo.DisplayName;
 		MeleeDistance = InWeaponItemInfo.MeleeDistance;
+	}
+
+	void Replenishment()
+	{
+		NeededAmmo = (ClipType - CurrentAmmo);
+		const bool bWasNeededAmmo = (MaxAmmo <= NeededAmmo);
+		MaxAmmo = bWasNeededAmmo ? 0 : (MaxAmmo - NeededAmmo);
+		CurrentAmmo = bWasNeededAmmo ? (CurrentAmmo + MaxAmmo) : ClipType;
 	}
 
 };

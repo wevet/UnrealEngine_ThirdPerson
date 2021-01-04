@@ -1,0 +1,23 @@
+{
+	"FileVersion": 3,
+	"Version": 1,
+	"VersionName": "1.1",
+	"FriendlyName": "Character Creator & iClone Auto Setup",
+	"Description": "Automatic shader and skeletal assignment for CC Characters and iClone Assets, including Blueprint generation for material properties, texture settings and model configurations. ",
+	"Category": "Reallusion",
+	"CreatedBy": "Reallusion",
+	"CreatedByURL": "",
+	"DocsURL": "",
+	"MarketplaceURL": "",
+	"SupportURL": "",
+	"EngineVersion": "4.25.0",
+	"CanContainContent": false,
+	"Installed": true,
+	"Modules": [
+		{
+			"Name": "RLPlugin",
+			"Type": "Editor",
+			"LoadingPhase": "PreDefault"
+		}
+	]
+}

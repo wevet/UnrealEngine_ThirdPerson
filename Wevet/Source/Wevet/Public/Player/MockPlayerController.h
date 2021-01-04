@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerController.h"
 #include "MockCharacter.h"
+#include "MockPlayerCameraManager.h"
 #include "Widget/UMGManager.h"
 #include "MockPlayerController.generated.h"
 
@@ -27,18 +28,13 @@ protected:
 	
 public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "PlayerController|Variable")
-	TSubclassOf<class UUMGManager> UMGManagerClass;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "PlayerController|Variable")
-	float ViewPitchMin;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "PlayerController|Variable")
-	float ViewPitchMax;
+	TSubclassOf<class UUMGManager> UMGManagerTemplate;
 
 	UUMGManager* GetPlayerHUD() const;
 
 private:
-	class AMockCharacter* CharacterOwner;
+	class AMockCharacter* Character;
+	class AMockPlayerCameraManager* Manager;
 	class UUMGManager* UMGManager;
 
 	UFUNCTION()
@@ -49,4 +45,15 @@ private:
 
 	UFUNCTION()
 	void OnKill(AActor* InActor);
+
+public:
+	FVector GetCameraRelativeLocation() const
+	{
+		return Manager ? Manager->GetTransformComponent()->GetComponentLocation() : FVector::ZeroVector;
+	}
+
+	FVector GetCameraForwardVector() const
+	{
+		return Manager ? Manager->GetTransformComponent()->GetForwardVector() : FVector::ZeroVector;
+	}
 };

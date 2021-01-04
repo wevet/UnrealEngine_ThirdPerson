@@ -1,9 +1,40 @@
 #pragma once
+
 #include "Engine/EngineTypes.h"
 #include "WevetTypes.h"
 #include "Animation/AnimMontage.h"
 #include "WeaponActionInfo.generated.h"
 
+USTRUCT(BlueprintType)
+struct WEVET_API FAnimSequenceInfo
+{
+	GENERATED_USTRUCT_BODY();
+
+public:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
+	class UAnimSequence* Animation;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
+	float PlayRate;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
+	float BlendInTime;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
+	float BlendOutTime;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
+	FName SlotNodeName;
+
+	FAnimSequenceInfo()
+	{
+		Animation = nullptr;
+		PlayRate = 1.0f;
+		BlendInTime = 0.2f;
+		BlendOutTime = 0.2f;
+		SlotNodeName = NAME_None;
+	}
+};
 
 USTRUCT(BlueprintType)
 struct WEVET_API FWeaponActionInfo
@@ -27,10 +58,11 @@ public:
 	class UAnimMontage* UnEquipMontage;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
-	class UAnimMontage* HitDamageMontage;
+	class UAnimMontage* MeleeAttackMontage;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
-	class UAnimMontage* MeleeAttackMontage;
+	struct FAnimSequenceInfo HitDamageSequence;
+
 
 	FWeaponActionInfo()
 	{
@@ -38,7 +70,6 @@ public:
 		ReloadMontage  = nullptr;
 		EquipMontage   = nullptr;
 		UnEquipMontage = nullptr;
-		HitDamageMontage = nullptr;
 		MeleeAttackMontage = nullptr;
 		WeaponItemType = EWeaponItemType::None;
 	}

@@ -1,4 +1,5 @@
 #pragma once
+
 #include "Templates/SharedPointer.h"
 #include "Containers/Queue.h"
 #include "CoreMinimal.h"

@@ -2,7 +2,7 @@
 
 #include "Widget/UMGManager.h"
 #include "Widget/MainUIController.h"
-#include "CharacterBase.h"
+#include "Character/CharacterBase.h"
 
 
 UUMGManager::UUMGManager(const FObjectInitializer& ObjectInitializer)

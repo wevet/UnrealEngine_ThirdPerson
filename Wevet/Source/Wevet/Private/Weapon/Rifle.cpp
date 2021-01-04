@@ -1,15 +1,8 @@
 // Copyright 2018 wevet works All Rights Reserved.
 
 #include "Weapon/Rifle.h"
-#include "Weapon/BulletBase.h"
-#include "Engine.h"
-#include "Kismet/GameplayStatics.h"
-#include "Kismet/KismetMathLibrary.h"
-#include "WevetExtension.h"
-#include "Character/CharacterBase.h"
 
-ARifle::ARifle(const FObjectInitializer& ObjectInitializer) 
-	: Super(ObjectInitializer)
+ARifle::ARifle(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {
 	BulletDuration = 0.15f;
 	PrimaryActorTick.bCanEverTick = true;
@@ -51,12 +44,13 @@ ARifle::ARifle(const FObjectInitializer& ObjectInitializer)
 	}
 
 	// AK47
-	NeededAmmo = 30;
+	WeaponItemInfo.NeededAmmo = 30;
 	WeaponItemInfo.MaxAmmo = 600;
 	WeaponItemInfo.EquipSocketName = FName(TEXT("RifleEquip_Socket"));
 	WeaponItemInfo.UnEquipSocketName = FName(TEXT("Rifle_Socket"));
 	WeaponItemInfo.WeaponItemType = EWeaponItemType::Rifle;
 	WeaponItemInfo.DisplayName = FString(TEXT("FN SCAR"));
 	WeaponItemInfo.MeleeDistance = 2000.f;
+	WeaponItemInfo.HearingRange = 1400.f;
 }
 

@@ -1,10 +1,9 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "ModuleInterface.h"
+#include "Modules/ModuleInterface.h"
 #include "Modules/ModuleManager.h"
 
-#include "Engine.h"
 #include "Slate/SGameLayerManager.h"
 #include "Slate/SceneViewport.h"
 

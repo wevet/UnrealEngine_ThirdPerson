@@ -2,7 +2,7 @@
 #pragma once
 
 #include "AnimGraphNode_SkeletalControlBase.h"
-#include "IK/AnimNode_HumanoidPelvisHeightAdjustment.h"
+#include "AnimNode_HumanoidPelvisHeightAdjustment.h"
 #include "AnimGraphNode_HumanoidPelvisHeightAdjustment.generated.h"
 
 UCLASS()

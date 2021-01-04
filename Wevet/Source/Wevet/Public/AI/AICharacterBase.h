@@ -4,12 +4,14 @@
 
 #include "CoreMinimal.h"
 #include "Character/CharacterBase.h"
+#include "AI/AIControllerBase.h"
+#include "AI/SearchNodeGenerator.h"
+#include "AI/BaseInvestigationNode.h"
+
 #include "Interface/AIPawnOwner.h"
-#include "Components/SkeletalMeshComponent.h"
-#include "Perception/PawnSensingComponent.h"
+
 #include "AICharacterBase.generated.h"
 
-class AAIControllerBase;
 class UAIHealthController;
 
 UCLASS(ABSTRACT)
@@ -27,25 +29,12 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
-	virtual void OnMovementModeChanged(EMovementMode PrevMovementMode, uint8 PreviousCustomMode = 0) override;
-
-protected:
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Components, meta = (AllowPrivateAccess = "true"))
-	class UPawnSensingComponent* PawnSensingComponent;
 
 #pragma region Interface
 public:
 	virtual void Die_Implementation() override;
 	virtual void Equipment_Implementation() override;
 	virtual void UnEquipment_Implementation() override;	
-
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AI|AIPawnOwner")
-	bool IsSeeTarget() const;
-	virtual bool IsSeeTarget_Implementation() const override { return bSeeTarget; }
-
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AI|AIPawnOwner")
-	bool IsHearTarget() const;
-	virtual bool IsHearTarget_Implementation() const override { return bHearTarget; }
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AI|AIPawnOwner")
 	float GetMeleeDistance() const;
@@ -56,8 +45,12 @@ public:
 	virtual AActor* GetTarget_Implementation() const override { return TargetCharacter; }
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AI|AIPawnOwner")
-	void StateChange(const EAIActionState NewAIActionState);
-	virtual void StateChange_Implementation(const EAIActionState NewAIActionState) override;
+	void CombatStateChange(const EAICombatState NewAICombatState);
+	virtual void CombatStateChange_Implementation(const EAICombatState NewAICombatState) override;
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AI|AIPawnOwner")
+	void ActionStateChange(const EAIActionState NewAIActionState);
+	virtual void ActionStateChange_Implementation(const EAIActionState NewAIActionState) override;
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AI|AIPawnOwner")
 	bool CanMeleeStrike() const;
@@ -65,21 +58,31 @@ public:
 #pragma endregion
 
 public:
-	FORCEINLINE class UPawnSensingComponent* GetPawnSensingComponent() const { return PawnSensingComponent;  }
-	FORCEINLINE class UBehaviorTree* GetBehaviorTree() const { return BehaviorTree; }
+	FORCEINLINE class UBehaviorTree* GetBehaviorTree() const 
+	{
+		return BehaviorTree; 
+	}
 
-	FORCEINLINE bool WasMeleeAttacked() const { return (MeleeAttackTimeOut >= ZERO_VALUE); }
-	FORCEINLINE bool WasAttackInitialized() const { return bAttackInitialized; }
+	FORCEINLINE bool WasMeleeAttacked() const 
+	{
+		return (MeleeAttackTimeOut >= ZERO_VALUE); 
+	}
+
+	FORCEINLINE bool WasAttackInitialized() const 
+	{
+		return bAttackInitialized; 
+	}
 
 public:
 	virtual void InitializePosses();
 	virtual void Sprint() override;
 	virtual void StopSprint() override;
 
-	virtual void AttackInitialize(const float InInterval, const float InTimeOut);
-	virtual void AttackUnInitialize();
-	virtual void FindFollowCharacter();
 	virtual FVector BulletTraceForwardLocation() const override;
+
+	virtual void OnSightStimulus(AActor* const Actor, const FAIStimulus InStimulus, const bool InWasDeadCrew);
+	virtual void OnHearStimulus(AActor* const Actor, const FAIStimulus InStimulus, const bool InWasDeadCrew);
+	virtual void OnPredictionStimulus(AActor* const Actor, const FAIStimulus InStimulus);
 
 protected:
 	virtual void StartRagdollAction() override;
@@ -88,21 +91,15 @@ protected:
 	virtual void UnEquipmentActionMontage() override;
 
 protected:
-	virtual void MainLoop(float DeltaTime);
 	virtual void CreateHealthController();
 	virtual void DestroyHealthController();
-
-	UFUNCTION()
-	virtual	void OnSeePawnRecieve(APawn* OtherPawn);
-	virtual void SeePawnRecieveCallback(ACharacterBase* const NewCharacter);
-
-	UFUNCTION()
-	virtual	void OnHearNoiseRecieve(APawn* OtherActor, const FVector& Location, float Volume);
-	virtual void HearNoiseRecieveCallback(AActor* const OtherActor, FVector Location = FVector::ZeroVector);
 
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "AI|Variable")
 	class UBehaviorTree* BehaviorTree;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "AI|Variable")
+	TSubclassOf<class ASearchNodeGenerator> NodeHolderTemplate;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "AI|Variable")
 	TSubclassOf<class UAIHealthController> UIHealthControllerTemplate;
@@ -114,14 +111,6 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "AI|Variable")
 	float BulletDelay;
 
-	/* Time-out value to clear the sensed position of the player. */
-	/* Should be higher than Sense interval in the PawnSense component not never miss sense ticks.  */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "AI|Variable")
-	float SenseTimeOut;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "AI|Variable")
-	float HearTimeOut;
-
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "AI|Variable")
 	FVector2D WidgetViewPortOffset;
 
@@ -129,21 +118,16 @@ protected:
 	/* Last bullet action after interval */
 	float BulletInterval;
 
-	/* Last time the player was spotted */
-	float LastSeenTime;
-
-	/* Last time the player was heard */
-	float LastHeardTime;
-
-	/* Last time we attacked something */
-	float LastMeleeAttackTime;
-
-	/* Time-out value to melee attack time. */
-	float MeleeAttackTimeOut;
-
-	/* Resets after sense time-out to avoid unnecessary clearing of target each tick */
-	bool bSeeTarget;
-	bool bHearTarget;
+	/* Already Attack Initialized ? */
 	bool bAttackInitialized;
 
+public:
+	virtual void AttackInitialize(const float InInterval, const float InTimeOut);
+	virtual void AttackUnInitialize();
+
+protected:
+	void UpdateSearchNodeHolder(const FVector SearchOriginLocation);
+
+public:
+	void RemoveSearchNodeGenerator();
 };

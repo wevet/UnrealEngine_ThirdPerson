@@ -6,8 +6,13 @@ public class Wevet : ModuleRules
 {
 	public Wevet(ReadOnlyTargetRules Target) : base(Target)
 	{
+		PrivatePCHHeaderFile = "Public/Wevet.h";
+
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
-		PrivatePCHHeaderFile = "Wevet.h";
+
+		bUseUnity = true;
+
+		PrivateIncludePaths.Add("Wevet/Private");
 
 		PublicDependencyModuleNames.AddRange(new string[]
 			{

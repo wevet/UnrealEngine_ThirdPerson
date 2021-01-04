@@ -10,15 +10,18 @@
   "MarketplaceURL": "",
   "SupportURL": "",
   "CanContainContent": true,
+  "IsBetaVersion": false,
+  "IsExperimentalVersion": false,
+  "Installed": false,
   "Modules": [
     {
       "Name": "RTIK",
       "Type": "Runtime",
-      "LoadingPhase": "Default"
+      "LoadingPhase": "PostConfigInit"
     },
     {
       "Name": "RTIKEditor",
-      "Type": "Editor",
+      "Type": "UncookedOnly",
       "LoadingPhase": "PreDefault"
     }
   ]

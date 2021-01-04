@@ -2,7 +2,7 @@
 
 #include "SlateBasics.h"
 #include "SlateExtras.h"
-#include "SThrobber.h"
+#include "Widgets/Images/SThrobber.h"
 #include "MoviePlayer.h"
 #include "LoadingScreenBrush.h"
 

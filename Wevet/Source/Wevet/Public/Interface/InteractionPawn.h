@@ -26,7 +26,7 @@ public :
 	void Pickup(const EItemType InItemType, AActor* Actor);
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "InteractionPawn")
-	const bool CanPickup();
+	bool CanPickup() const;
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "InteractionPawn")
 	void Release();

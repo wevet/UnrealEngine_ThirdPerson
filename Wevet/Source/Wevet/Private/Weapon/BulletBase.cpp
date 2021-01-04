@@ -1,17 +1,19 @@
+// Copyright 2018 wevet works All Rights Reserved.
+
 #include "Weapon/BulletBase.h"
 #include "Character/CharacterBase.h"
 #include "WevetExtension.h"
 #include "Wevet.h"
 
-ABulletBase::ABulletBase(const FObjectInitializer& ObjectInitializer)
-	: Super(ObjectInitializer),
+ABulletBase::ABulletBase(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer),
 	bWasHitResult(false),
 	bWasOverlapResult(false)
 {
 	PrimaryActorTick.bCanEverTick = true;
 	LifeInterval = 2.0f;
 
-	Tags.Add(FName(TEXT("Water")));
+	Tags.Add(WATER_TAG);
+
 
 	{
 		static ConstructorHelpers::FObjectFinder<UParticleSystem> FindAsset(TEXT("/Game/VFX/Cascade/Gameplay/Water/P_splash_bullet_impact"));
@@ -64,20 +66,22 @@ void ABulletBase::SetOwners(const TArray<class AActor*>& InOwners)
 	IgnoreActors = InOwners;
 }
 
+void ABulletBase::VisibleEmitter(const bool InVisible)
+{
+	ParticleComponent->SetVisibility(InVisible);
+}
+
 void ABulletBase::BeginOverlapRecieve(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
 	if (!OtherActor || OtherActor == this)
+	{
 		return;
+	}
 
 	if (IgnoreActors.Contains(OtherActor))
 	{
 		UE_LOG(LogWevetClient, Warning, TEXT("Ignores Actor : %s"), *OtherActor->GetName());
 		return;
-	}
-	
-	if (OtherActor->IsA(ACharacterBase::StaticClass()))
-	{
-		//UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ImpactBloodEmitterTemplate, GetActorTransform(), true);
 	}
 
 	if (OtherActor->ActorHasTag(WATER_BODY_TAG))
@@ -103,7 +107,9 @@ void ABulletBase::BeginOverlapRecieve(UPrimitiveComponent* OverlappedComponent, 
 void ABulletBase::HitReceive(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
 	if (!OtherActor || OtherActor == this)
+	{
 		return;
+	}
 
 	Super::Destroy();
 }

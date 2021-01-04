@@ -10,6 +10,8 @@
 #include "Kismet/KismetSystemLibrary.h"
 #include "WevetExtension.h"
 #include "Lib/WevetBlueprintFunctionLibrary.h"
+#include "LocomotionSystemMacroLibrary.h"
+
 
 ACharacterBase::ACharacterBase(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer),
 	BaseTurnRate(45.f),
@@ -19,6 +21,8 @@ ACharacterBase::ACharacterBase(const FObjectInitializer& ObjectInitializer) : Su
 	StanTimeOut(30.f)
 {
 	PrimaryActorTick.bCanEverTick = true;
+
+	JumpMaxHoldTime = 0.f;
 
 	HeadBoneName   = HEAD_BONE;
 	ChestBoneName  = CHEST_BONE;
@@ -36,6 +40,10 @@ ACharacterBase::ACharacterBase(const FObjectInitializer& ObjectInitializer) : Su
 	bEnableRagdoll = true;
 	bDebugTrace = false;
 	bWasStanning = false;
+	bAiming = false;
+	bWasMoving = false;
+	bWasMovementInput = false;
+	bRagdollOnGround = false;
 
 	// Noise Emitter
 	PawnNoiseEmitterComponent = ObjectInitializer.CreateDefaultSubobject<UPawnNoiseEmitterComponent>(this, TEXT("PawnNoiseEmitterComponent"));
@@ -63,6 +71,9 @@ ACharacterBase::ACharacterBase(const FObjectInitializer& ObjectInitializer) : Su
 	AudioComponent->bAutoDestroy = 1;
 	AudioComponent->SetupAttachment(GetMesh(), HEAD_BONE);
 
+	// ALS Override
+	GetCharacterMovement()->BrakingFrictionFactor = ZERO_VALUE;
+	GetCharacterMovement()->CrouchedHalfHeight = 60.f;
 	GetCharacterMovement()->SetWalkableFloorAngle(50.f);
 	GetCharacterMovement()->MaxWalkSpeed = 800.f;
 	GetCharacterMovement()->bCanWalkOffLedgesWhenCrouching = 1;
@@ -81,6 +92,7 @@ ACharacterBase::ACharacterBase(const FObjectInitializer& ObjectInitializer) : Su
 	//GetMesh()->SetRenderCustomDepth(true);
 	//GetMesh()->CustomDepthStencilValue = (int32)ECustomDepthType::Character;
 
+	GetCapsuleComponent()->InitCapsuleSize(30.f, 90.0f);
 	GetCapsuleComponent()->SetNotifyRigidBodyCollision(true);
 	GetCapsuleComponent()->SetCollisionProfileName(FName(TEXT("Pawn")));
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
@@ -99,7 +111,7 @@ ACharacterBase::ACharacterBase(const FObjectInitializer& ObjectInitializer) : Su
 	SetCanBeDamaged(true);
 	Tags.Add(CHARACTER_TAG);
 
-	// @NOTE ALS
+	// ALS
 	WalkingSpeed = 200.f;
 	RunningSpeed = 400.f;
 	SprintingSpeed = 800.f;
@@ -132,35 +144,18 @@ ACharacterBase::ACharacterBase(const FObjectInitializer& ObjectInitializer) : Su
 	AutomaticTraceSettings.ReachDistance = 50.f;
 	AutomaticTraceSettings.ForwardTraceRadius = 30.f;
 	AutomaticTraceSettings.DownwardTraceRadius = 30.f;
-
-	static ConstructorHelpers::FObjectFinder<UCurveVector> LowVectorAsset(TEXT("/Game/Player_Assets/Blueprints/ALS/Curves/MantleCurves/Mantle_1m"));
-	static ConstructorHelpers::FObjectFinder<UCurveVector> HighVectorAsset(TEXT("/Game/Player_Assets/Blueprints/ALS/Curves/MantleCurves/Mantle_2m"));
-
-	// DefaultMantleLow
-	DefaultLowMantleAsset.StartingOffset = FVector(0.f, 65.f, 100.f);
-	DefaultLowMantleAsset.LowHeight = 50.f;
-	DefaultLowMantleAsset.LowPlayRate = 1.f;
-	DefaultLowMantleAsset.LowStartPosition = 0.6f;
-	DefaultLowMantleAsset.HighHeight = 100.f;
-	DefaultLowMantleAsset.HighPlayRate = 1.f;
-	DefaultLowMantleAsset.HighStartPosition = 0.0f;
-	DefaultLowMantleAsset.Position = LowVectorAsset.Object;
-
-	// DefaultMantleHigh
-	DefaultHighMantleAsset.StartingOffset = FVector(0.f, 65.f, 200.f);
-	DefaultHighMantleAsset.LowHeight = 125.f;
-	DefaultHighMantleAsset.LowPlayRate = 1.2f;
-	DefaultHighMantleAsset.LowStartPosition = 0.6f;
-	DefaultHighMantleAsset.HighHeight = 200.f;
-	DefaultHighMantleAsset.HighPlayRate = 1.2f;
-	DefaultHighMantleAsset.HighStartPosition = 0.0f;
-	DefaultHighMantleAsset.Position = HighVectorAsset.Object;
-
 }
 
 void ACharacterBase::OnConstruction(const FTransform& Transform)
 {
 	Super::OnConstruction(Transform);
+
+	const FRotator Rotation = GetActorRotation();
+	LastVelocityRotation = Rotation;
+	LookingRotation = Rotation;
+	LastMovementInputRotation = Rotation;
+	TargetRotation = Rotation;
+	CharacterRotation = Rotation;
 }
 
 void ACharacterBase::BeginDestroy()
@@ -180,16 +175,15 @@ void ACharacterBase::EndPlay(const EEndPlayReason::Type EndPlayReason)
 		CurrentWeapon.Reset();
 	}
 
-	FTimerManager& TimerManager = GetWorldTimerManager();
-	if (TimerManager.IsTimerActive(MeleeAttackHundle))
+	if (GetWorldTimerManager().IsTimerActive(MeleeAttackHundle))
 	{
-		TimerManager.ClearTimer(MeleeAttackHundle);
-		TimerManager.ClearAllTimersForObject(this);
+		GetWorldTimerManager().ClearTimer(MeleeAttackHundle);
+		GetWorldTimerManager().ClearAllTimersForObject(this);
 	}
-	if (TimerManager.IsTimerActive(StanHundle))
+	if (GetWorldTimerManager().IsTimerActive(StanHundle))
 	{
-		TimerManager.ClearTimer(StanHundle);
-		TimerManager.ClearAllTimersForObject(this);
+		GetWorldTimerManager().ClearTimer(StanHundle);
+		GetWorldTimerManager().ClearAllTimersForObject(this);
 	}
 
 	ActionInfoPtr = nullptr;
@@ -205,11 +199,16 @@ void ACharacterBase::BeginPlay()
 	IgnoreActors.Add(this);
 	GetMesh()->AddTickPrerequisiteActor(this);
 	GetCapsuleComponent()->OnComponentHit.AddDynamic(this, &ACharacterBase::HitReceive);
+	ILocomotionSystemPawn::Execute_OnALSViewModeChange(this);
+	ILocomotionSystemPawn::Execute_OnALSRotationModeChange(this);
+	ILocomotionSystemPawn::Execute_OnALSStanceChange(this);
+
 }
 
 void ACharacterBase::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+	CalculateEssentialVariables();
 
 	if (WasTakeDamagePlaying())
 	{
@@ -225,16 +224,102 @@ void ACharacterBase::Tick(float DeltaTime)
 	}
 }
 
+void ACharacterBase::OnMovementModeChanged(EMovementMode PrevMovementMode, uint8 PreviousCustomMode)
+{
+	Super::OnMovementModeChanged(PrevMovementMode, PreviousCustomMode);
+	ILocomotionSystemPawn::Execute_SetALSMovementMode(this, GetPawnMovementModeChanged(PrevMovementMode, PreviousCustomMode));
+}
+
+void ACharacterBase::OnStartCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjust)
+{
+	Super::OnStartCrouch(HalfHeightAdjust, ScaledHalfHeightAdjust);
+	ILocomotionSystemPawn::Execute_SetALSStance(this, ELSStance::Crouching);
+}
+
+void ACharacterBase::OnEndCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjust)
+{
+	Super::OnEndCrouch(HalfHeightAdjust, ScaledHalfHeightAdjust);
+	ILocomotionSystemPawn::Execute_SetALSStance(this, ELSStance::Standing);
+}
+
+void ACharacterBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME_CONDITION(ACharacterBase, MovementInput, COND_SkipOwner);
+	DOREPLIFETIME_CONDITION(ACharacterBase, RagdollLocation, COND_SkipOwner);
+	DOREPLIFETIME_CONDITION(ACharacterBase, CharacterRotation, COND_SkipOwner);
+	DOREPLIFETIME_CONDITION(ACharacterBase, LookingRotation, COND_SkipOwner);
+	//DOREPLIFETIME_CONDITION(ACharacterBase, TargetRotation, COND_SkipOwner);
+}
+
+// AI Perception
+FGenericTeamId ACharacterBase::GetGenericTeamId() const
+{
+	return TeamId;
+}
+
+// AI Perception
+// ttps://blog.gamedev.tv/ai-sight-perception-to-custom-points/
+bool ACharacterBase::CanBeSeenFrom(const FVector& ObserverLocation, FVector& OutSeenLocation, int32& NumberOfLoSChecksPerformed, float& OutSightStrength, const AActor* IgnoreActor) const
+{
+	static const FName AILineOfSight = FName(TEXT("TestPawnLineOfSight"));
+
+	FHitResult HitResult;
+
+	TArray<USkeletalMeshSocket*> Sockets = GetMesh()->SkeletalMesh->GetActiveSocketList();
+
+	// Check the line of sight for the acquired Socket
+	for (int i = 0; i < Sockets.Num(); i++)
+	{
+		const FVector SocketLocation = GetMesh()->GetSocketLocation(Sockets[i]->SocketName);
+
+		// Trace each Socket of the target Character from the NPC
+		const bool bHitResult = GetWorld()->LineTraceSingleByObjectType(
+			HitResult, 
+			ObserverLocation, 
+			SocketLocation, 
+			FCollisionObjectQueryParams(ECC_TO_BITFIELD(ECC_WorldStatic) | ECC_TO_BITFIELD(ECC_WorldDynamic)), 
+			FCollisionQueryParams(AILineOfSight, true, IgnoreActor));
+		NumberOfLoSChecksPerformed++;
+
+		// It is assumed that there is a line of sight between the NPC and the socket (unless there is anything blocking it).
+		if (!bHitResult || (HitResult.Actor.IsValid() && HitResult.Actor->IsOwnedBy(this)))
+		{
+			OutSeenLocation = SocketLocation;
+			OutSightStrength = 1;
+			//UE_LOG(LogWevetClient, Warning, TEXT("Socket Name: %s"), *Sockets[i]->SocketName.ToString());
+			return true;
+		}
+	}
+
+	// If all sockets are TRUE (obstructed by something), Trace the position of the target Root Component.
+	const bool bHit = GetWorld()->LineTraceSingleByObjectType(
+		HitResult, 
+		ObserverLocation, 
+		GetActorLocation(), 
+		FCollisionObjectQueryParams(ECC_TO_BITFIELD(ECC_WorldStatic) | ECC_TO_BITFIELD(ECC_WorldDynamic)), 
+		FCollisionQueryParams(AILineOfSight, true, IgnoreActor));
+
+	NumberOfLoSChecksPerformed++;
+
+	if (!bHit || (HitResult.Actor.IsValid() && HitResult.Actor->IsOwnedBy(this)))
+	{
+		OutSeenLocation = GetActorLocation();
+		OutSightStrength = 1;
+		return true;
+	}
+
+	OutSightStrength = 0;
+	return false;
+}
+
 #pragma region InteractionPawn
 void ACharacterBase::Pickup_Implementation(const EItemType InItemType, AActor* Actor)
 {
-	if (Actor)
-	{
-		UE_LOG(LogWevetClient, Log, TEXT("Picking : %s"), *(Actor->GetName()));
-	}
 }
 
-const bool ACharacterBase::CanPickup_Implementation()
+bool ACharacterBase::CanPickup_Implementation() const
 {
 	return false;
 }
@@ -247,8 +332,7 @@ void ACharacterBase::Release_Implementation()
 #pragma region SoundInstigator
 void ACharacterBase::ReportNoise_Implementation(USoundBase* Sound, float Volume)
 {
-	UWorld* const World = GetWorld();
-	if (World == nullptr)
+	if (!GetWorld())
 	{
 		return;
 	}
@@ -257,7 +341,7 @@ void ACharacterBase::ReportNoise_Implementation(USoundBase* Sound, float Volume)
 	{
 		//MakeNoise(Volume, this, GetActorLocation());
 		const float InVolume = FMath::Clamp<float>(Volume, MIN_VOLUME, DEFAULT_VOLUME);
-		UGameplayStatics::PlaySoundAtLocation(World, Sound, GetActorLocation(), InVolume, 1.0f, 0.0f, nullptr, nullptr);
+		UGameplayStatics::PlaySoundAtLocation(GetWorld(), Sound, GetActorLocation(), InVolume, 1.0f, 0.0f, nullptr, nullptr);
 		PawnNoiseEmitterComponent->MakeNoise(this, InVolume, GetActorLocation());
 	}
 }
@@ -298,11 +382,7 @@ float ACharacterBase::TakeDamage(float Damage, struct FDamageEvent const& Damage
 	CharacterModel->TakeDamage((int32)ActualDamage);
 	const bool bDeath = CharacterModel->IsEmptyHealth();
 
-	if (!bDeath)
-	{
-		//TakeDamageActionMontage();
-	}
-	else
+	if (bDeath)
 	{
 		CharacterModel->Die();
 		IDamageInstigator::Execute_Die(this);
@@ -325,15 +405,22 @@ bool ACharacterBase::CanKillDealDamage_Implementation(const FName BoneName) cons
 	return false;
 }
 
-void ACharacterBase::MakeDamage_Implementation(UCharacterModel* DamageModel, const int InWeaponDamage, float& OutDamage)
+float ACharacterBase::MakeDamage_Implementation(UCharacterModel* DamageModel, const int InWeaponDamage) const
 {
-	const int32 BaseAttack = CharacterModel->GetAttack() + InWeaponDamage;
-	const int32 Attack = BaseAttack;
-	const int32 Deffence = DamageModel->GetDefence();
-	const int32 Wisdom = DamageModel->GetWisdom();
-	const int32 TotalDamage = (Attack - (Deffence + Wisdom)) / DEFFENCE_CONST;
+	const int32 TotalAttack = CharacterModel->GetAttack() + InWeaponDamage;
+	const int32 TotalDeffence = DamageModel->GetDefence() + DamageModel->GetWisdom();
+	const int32 TotalDamage = (TotalAttack - TotalDeffence);
 	float Damage = (float)TotalDamage;
-	OutDamage = FMath::Abs(Damage);
+	return FMath::Abs(Damage);
+}
+
+bool ACharacterBase::IsDeath_Implementation() const
+{
+	if (bWasDied || !CharacterModel)
+	{
+		return true;
+	}
+	return CharacterModel->IsDie();
 }
 
 void ACharacterBase::InfrictionDamage_Implementation(AActor* InfrictionActor, const bool bInfrictionDie)
@@ -356,6 +443,7 @@ void ACharacterBase::Die_Implementation()
 
 	bWasDied = true;
 	SetReplicateMovement(false);
+
 	TearOff();
 
 	CurrentWeapon.Reset();
@@ -390,13 +478,18 @@ void ACharacterBase::UnEquipment_Implementation()
 {
 	if (CurrentWeapon.IsValid())
 	{
-		FireReleassed();
+		IAttackInstigator::Execute_DoFireReleassed(this);
 		const FName SocketName(CurrentWeapon.Get()->GetWeaponItemInfo().UnEquipSocketName);
 		FAttachmentTransformRules Rules(EAttachmentRule::SnapToTarget, true);
 		CurrentWeapon.Get()->AttachToComponent(Super::GetMesh(), Rules, SocketName);
 		CurrentWeapon.Get()->SetEquip(false);
 	}
 	ActionInfoPtr = nullptr;
+}
+
+UCharacterModel* ACharacterBase::GetPropertyModel_Implementation() const
+{
+	return CharacterModel;
 }
 
 void ACharacterBase::HitEffectReceive_Implementation(const FHitResult& HitResult, const EGiveDamageType InGiveDamageType)
@@ -412,12 +505,12 @@ void ACharacterBase::HitEffectReceive_Implementation(const FHitResult& HitResult
 			Transform.SetIdentity();
 			Transform.SetLocation(HitResult.ImpactPoint);
 			UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), BloodTemplate, Transform, true);
-			TakeDamageActionMontage(false);
+			TakeDamageMontage(false);
 		}
 		break;
 		case EGiveDamageType::Melee:
 		{
-			TakeDamageActionMontage(true);
+			TakeDamageMontage(true);
 			StartRagdollAction();
 		}
 		break;
@@ -425,41 +518,336 @@ void ACharacterBase::HitEffectReceive_Implementation(const FHitResult& HitResult
 }
 #pragma endregion
 
-#pragma region Model
-float ACharacterBase::GetHealthToWidget() const
+#pragma region AttackInstigator
+void ACharacterBase::DoFirePressed_Implementation()
 {
-	if (CharacterModel)
+	if (CurrentWeapon.IsValid())
 	{
-		return CharacterModel->GetHealthToWidget();
+		IWeaponInstigator::Execute_DoFirePressed(CurrentWeapon.Get());
 	}
-	return ZERO_VALUE;
 }
 
-bool ACharacterBase::IsFullHealth() const
+void ACharacterBase::DoFireReleassed_Implementation()
 {
-	if (CharacterModel)
+	if (CurrentWeapon.IsValid())
 	{
-		return CharacterModel->IsFullHealth();
+		IWeaponInstigator::Execute_DoFireRelease(CurrentWeapon.Get());
 	}
-	return false;
 }
 
-bool ACharacterBase::IsHealthHalf() const
+void ACharacterBase::DoMeleeAttack_Implementation()
 {
-	if (CharacterModel)
+	if (CurrentWeapon.IsValid())
 	{
-		return CharacterModel->IsHealthHalf();
+		MeleeAttackMontage();
 	}
-	return false;
 }
 
-bool ACharacterBase::IsHealthQuarter() const
+void ACharacterBase::DoReload_Implementation()
 {
-	if (CharacterModel)
+	if (CurrentWeapon.IsValid())
 	{
-		return CharacterModel->IsHealthQuarter();
+		IWeaponInstigator::Execute_DoReload(CurrentWeapon.Get());
 	}
-	return false;
+}
+#pragma endregion
+
+#pragma region ALSInterface
+ELSMovementMode ACharacterBase::GetALSMovementMode_Implementation() const
+{
+	return ALSMovementMode;
+}
+
+ELSMovementAction ACharacterBase::GetALSMovementAction_Implementation() const
+{
+	return ALSMovementAction;
+}
+
+ELSGait ACharacterBase::GetALSGait_Implementation() const
+{
+	return ALSGait;
+}
+
+ELSStance ACharacterBase::GetALSStance_Implementation() const
+{
+	return ALSStance;
+}
+
+ELSViewMode ACharacterBase::GetALSViewMode_Implementation() const
+{
+	return ALSViewMode;
+}
+
+ELSRotationMode ACharacterBase::GetALSRotationMode_Implementation() const
+{
+	return ALSRotationMode;
+}
+
+bool ACharacterBase::HasMovementInput_Implementation() const
+{
+	return bWasMovementInput;
+}
+
+bool ACharacterBase::HasAiming_Implementation() const
+{
+	return bAiming;
+}
+
+FTransform ACharacterBase::GetPivotTarget_Implementation() const
+{
+	return GetActorTransform();
+}
+
+FVector ACharacterBase::GetCameraTarget_Implementation() const
+{
+	return GetMesh()->GetSocketLocation(FName(TEXT("FPS_Socket")));
+}
+
+void ACharacterBase::SetALSCharacterRotation_Implementation(const FRotator AddAmount)
+{
+	//UE_LOG(LogWevetClient, Log, TEXT("Rotation : %s"), *FString(__FUNCTION__));
+}
+
+void ACharacterBase::SetALSCameraShake_Implementation(TSubclassOf<class UMatineeCameraShake> InShakeClass, const float InScale)
+{
+}
+
+void ACharacterBase::SetALSMovementMode_Implementation(const ELSMovementMode NewALSMovementMode)
+{
+	if (ALSMovementMode == NewALSMovementMode)
+	{
+		return;
+	}
+	ALSPrevMovementMode = ALSMovementMode;
+	ALSMovementMode = NewALSMovementMode;
+	ILocomotionSystemPawn::Execute_OnALSMovementModeChange(this);
+}
+
+void ACharacterBase::OnALSMovementModeChange_Implementation()
+{
+	ILocomotionSystemPawn::Execute_SetALSMovementMode(GetAnimInstance(), ALSMovementMode);
+	//ILocomotionSystemPawn::Execute_SetALSMovementMode(GetIKAnimInstance(), ALSMovementMode);
+	UpdateCharacterMovementSettings();
+}
+
+void ACharacterBase::SetALSMovementAction_Implementation(const ELSMovementAction NewALSMovementAction)
+{
+	if (ALSMovementAction == NewALSMovementAction)
+	{
+		return;
+	}
+	ALSPrevMovementAction = ALSMovementAction;
+	ALSMovementAction = NewALSMovementAction;
+	ILocomotionSystemPawn::Execute_OnALSMovementActionChange(this);
+}
+
+void ACharacterBase::OnALSMovementActionChange_Implementation()
+{
+	//
+}
+
+void ACharacterBase::SetALSGait_Implementation(const ELSGait NewALSGait)
+{
+	if (ALSGait == NewALSGait)
+	{
+		return;
+	}
+	ALSGait = NewALSGait;
+}
+
+void ACharacterBase::OnALSGaitChange_Implementation()
+{
+	ILocomotionSystemPawn::Execute_SetALSGait(GetAnimInstance(), ALSGait);
+	UpdateCharacterMovementSettings();
+}
+
+void ACharacterBase::SetALSStance_Implementation(const ELSStance NewALSStance)
+{
+	if (ALSStance == NewALSStance)
+	{
+		return;
+	}
+	ALSStance = NewALSStance;
+	ILocomotionSystemPawn::Execute_OnALSStanceChange(this);
+}
+
+void ACharacterBase::OnALSStanceChange_Implementation()
+{
+	ILocomotionSystemPawn::Execute_SetALSStance(GetAnimInstance(), ALSStance);
+	//ILocomotionSystemPawn::Execute_SetALSStance(GetIKAnimInstance(), ALSStance);
+	UpdateCharacterMovementSettings();
+}
+
+void ACharacterBase::SetALSRotationMode_Implementation(const ELSRotationMode NewALSRotationMode)
+{
+	if (ALSRotationMode == NewALSRotationMode)
+	{
+		return;
+	}
+	ALSRotationMode = NewALSRotationMode;
+}
+
+void ACharacterBase::OnALSRotationModeChange_Implementation()
+{
+	ILocomotionSystemPawn::Execute_SetALSRotationMode(GetAnimInstance(), ALSRotationMode);
+
+	if (bWasMoving)
+	{
+		RotationRateMultiplier = 0.0f;
+	}
+
+	switch (ALSRotationMode)
+	{
+		case ELSRotationMode::VelocityDirection:
+		{
+			switch (ALSViewMode)
+			{
+			case ELSViewMode::FirstPerson:
+				ILocomotionSystemPawn::Execute_SetALSViewMode(this, ELSViewMode::ThirdPerson);
+				break;
+			case ELSViewMode::ThirdPerson:
+				break;
+			}
+		}
+		break;
+		case ELSRotationMode::LookingDirection:
+		{
+		}
+		break;
+	}
+
+}
+
+void ACharacterBase::SetALSViewMode_Implementation(const ELSViewMode NewALSViewMode)
+{
+	if (ALSViewMode == NewALSViewMode)
+	{
+		return;
+	}
+	ALSViewMode = NewALSViewMode;
+	ILocomotionSystemPawn::Execute_OnALSViewModeChange(this);
+}
+
+void ACharacterBase::OnALSViewModeChange_Implementation()
+{
+	ILocomotionSystemPawn::Execute_SetALSViewMode(GetAnimInstance(), ALSViewMode);
+	switch (ALSViewMode)
+	{
+		case ELSViewMode::ThirdPerson:
+		{
+			//
+		}
+		break;
+		case ELSViewMode::FirstPerson:
+		{
+			ILocomotionSystemPawn::Execute_SetALSRotationMode(this, ELSRotationMode::LookingDirection);
+		}
+		break;
+	}
+}
+
+void ACharacterBase::SetALSAiming_Implementation(const bool NewALSAiming)
+{
+	if (bAiming == NewALSAiming)
+	{
+		return;
+	}
+	bAiming = NewALSAiming;
+}
+
+void ACharacterBase::OnALSAimingChange_Implementation()
+{
+	ILocomotionSystemPawn::Execute_SetALSAiming(GetAnimInstance(), bAiming);
+	UpdateCharacterMovementSettings();
+}
+
+void ACharacterBase::SetALSIdleState_Implementation(const ELSIdleEntryState InLSIdleEntryState)
+{
+	//
+}
+
+void ACharacterBase::SetWalkingSpeed_Implementation(const float InWalkingSpeed)
+{
+	WalkingSpeed = InWalkingSpeed;
+	ILocomotionSystemPawn::Execute_SetWalkingSpeed(GetAnimInstance(), WalkingSpeed);
+}
+
+void ACharacterBase::SetRunningSpeed_Implementation(const float InRunningSpeed)
+{
+	RunningSpeed = InRunningSpeed;
+	ILocomotionSystemPawn::Execute_SetRunningSpeed(GetAnimInstance(), RunningSpeed);
+}
+
+void ACharacterBase::SetSprintingSpeed_Implementation(const float InSprintingSpeed)
+{
+	SprintingSpeed = InSprintingSpeed;
+	ILocomotionSystemPawn::Execute_SetSprintingSpeed(GetAnimInstance(), SprintingSpeed);
+}
+
+void ACharacterBase::SetCrouchingSpeed_Implementation(const float InCrouchingSpeed)
+{
+	CrouchingSpeed = InCrouchingSpeed;
+	ILocomotionSystemPawn::Execute_SetCrouchingSpeed(GetAnimInstance(), CrouchingSpeed);
+}
+
+void ACharacterBase::SetSwimmingSpeed_Implementation(const float InSwimmingSpeed)
+{
+	SwimmingSpeed = InSwimmingSpeed;
+	ILocomotionSystemPawn::Execute_SetSwimmingSpeed(GetAnimInstance(), SwimmingSpeed);
+}
+
+float ACharacterBase::GetWalkingSpeed_Implementation() const
+{
+	return WalkingSpeed; 
+}
+
+float ACharacterBase::GetRunningSpeed_Implementation() const 
+{
+	return RunningSpeed; 
+}
+
+float ACharacterBase::GetSprintingSpeed_Implementation() const 
+{
+	return SprintingSpeed; 
+}
+
+float ACharacterBase::GetCrouchingSpeed_Implementation() const 
+{
+	return CrouchingSpeed; 
+}
+
+float ACharacterBase::GetSwimmingSpeed_Implementation() const 
+{
+	return SwimmingSpeed; 
+}
+
+void ACharacterBase::SetGetup_Implementation(const bool InFaceDown)
+{
+
+}
+
+void ACharacterBase::SetRF_Implementation(const bool InRF)
+{
+}
+
+void ACharacterBase::PoseSnapShot_Implementation(const FName InPoseName)
+{
+}
+
+FCameraFOVParam ACharacterBase::GetCameraFOVParam_Implementation() const
+{
+	return CameraFOVParam;
+}
+
+FCameraTraceParam ACharacterBase::GetCameraTraceParam_Implementation() const
+{
+	FCameraTraceParam Result;
+	return Result;
+}
+
+bool ACharacterBase::HasDebugTrace_Implementation() const
+{
+	return bDebugTrace;
 }
 #pragma endregion
 
@@ -484,6 +872,17 @@ void ACharacterBase::Sprint()
 	{
 		bSprint = true;
 	}
+
+	switch (ALSGait)
+	{
+		case ELSGait::Walking:
+		ILocomotionSystemPawn::Execute_SetALSGait(this, ELSGait::Running);
+		break;
+		case ELSGait::Running:
+		break;
+		case ELSGait::Sprinting:
+		break;
+	}
 }
 
 void ACharacterBase::StopSprint()
@@ -497,6 +896,20 @@ void ACharacterBase::StopSprint()
 void ACharacterBase::OnCrouch()
 {
 	bCrouch = !bCrouch;
+	OnCrouchUpdate();
+}
+
+void ACharacterBase::CrouchUpdate(const bool InCrouch)
+{
+	if (bCrouch != InCrouch)
+	{
+		bCrouch = InCrouch;
+		OnCrouchUpdate();
+	}
+}
+
+void ACharacterBase::OnCrouchUpdate()
+{
 	Super::bIsCrouched = bCrouch ? 0 : 1;
 	if (bCrouch)
 	{
@@ -545,45 +958,21 @@ void ACharacterBase::MoveRight(float Value)
 
 void ACharacterBase::PickupObjects()
 {
+	AActor* Actor = GetPickupComponent()->GetPickupActor();
+	if (Actor == nullptr)
+	{
+		return;
+	}
+
+	IInteractionItem* Interface = Cast<IInteractionItem>(Actor);
+	if (Interface == nullptr)
+	{
+		return;
+	}
+	Pickup_Implementation(IInteractionItem::Execute_GetItemType(Actor), Actor);
 }
 
 void ACharacterBase::ReleaseObjects()
-{
-}
-
-void ACharacterBase::FirePressed()
-{
-	if (CurrentWeapon.IsValid())
-	{
-		IWeaponInstigator::Execute_DoFirePressed(CurrentWeapon.Get());
-	}
-}
-
-void ACharacterBase::FireReleassed()
-{
-	if (CurrentWeapon.IsValid())
-	{
-		IWeaponInstigator::Execute_DoFireRelease(CurrentWeapon.Get());
-	}
-}
-
-void ACharacterBase::MeleeAttack()
-{
-	if (CurrentWeapon.IsValid())
-	{
-		MeleeAttackMontage();
-	}
-}
-
-void ACharacterBase::Reload()
-{
-	if (CurrentWeapon.IsValid())
-	{
-		IWeaponInstigator::Execute_DoReload(CurrentWeapon.Get());
-	}
-}
-
-void ACharacterBase::ReleaseWeapon()
 {
 }
 #pragma endregion
@@ -591,7 +980,7 @@ void ACharacterBase::ReleaseWeapon()
 #pragma region Weapon
 AAbstractWeapon* ACharacterBase::FindByWeapon(const EWeaponItemType WeaponItemType) const
 {
-	if (InventoryComponent->HasInventoryWeapon())
+	if (InventoryComponent->EmptyWeaponInventory())
 	{
 		return nullptr;
 	}
@@ -637,28 +1026,14 @@ const bool ACharacterBase::WasSameWeaponType(AAbstractWeapon* const Weapon)
 	return false;
 }
 
-AAbstractWeapon* ACharacterBase::GetNotEmptyWeapon() const
-{
-	if (InventoryComponent->HasInventoryWeapon())
-	{
-		return nullptr;
-	}
-	for (AAbstractWeapon* Weapon : InventoryComponent->GetWeaponInventory())
-	{
-		if (!Weapon->WasEmpty())
-		{
-			return Weapon;
-		}
-	}
-	return nullptr;
-}
-
-void ACharacterBase::CreateWeaponInstance(const TSubclassOf<class AAbstractWeapon> InWeaponTemplate, TFunction<void(AAbstractWeapon* Weapon)> Callback)
+void ACharacterBase::CreateWeaponInstance(const TSubclassOf<class AAbstractWeapon> InWeaponTemplate, WeaponFunc Callback)
 {
 	if (!InWeaponTemplate)
 	{
 		if (Callback)
+		{
 			Callback(nullptr);
+		}
 		return;
 	}
 
@@ -666,7 +1041,9 @@ void ACharacterBase::CreateWeaponInstance(const TSubclassOf<class AAbstractWeapo
 	if (!SpawningObject)
 	{
 		if (Callback)
+		{
 			Callback(nullptr);
+		}
 		return;
 	}
 
@@ -674,10 +1051,12 @@ void ACharacterBase::CreateWeaponInstance(const TSubclassOf<class AAbstractWeapo
 	SpawningObject->FinishSpawning(GetActorTransform());
 	SpawningObject->AttachToComponent(Super::GetMesh(), Rules, SpawningObject->GetWeaponItemInfo().UnEquipSocketName);
 	InventoryComponent->AddWeaponInventory(SpawningObject);
-	IInteractionInstigator::Execute_Take(SpawningObject, this);
+	IInteractionItem::Execute_Take(SpawningObject, this);
 
 	if (Callback)
+	{
 		Callback(SpawningObject);
+	}
 }
 
 void ACharacterBase::ReleaseWeaponToWorld(const FTransform& Transform, AAbstractWeapon*& Weapon)
@@ -688,7 +1067,7 @@ void ACharacterBase::ReleaseWeaponToWorld(const FTransform& Transform, AAbstract
 	}
 
 	FWeaponItemInfo WeaponItemInfo = Weapon->GetWeaponItemInfo();
-	IInteractionInstigator::Execute_Release(Weapon, nullptr);
+	IInteractionItem::Execute_Release(Weapon, nullptr);
 
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.Owner = nullptr;
@@ -716,7 +1095,7 @@ void ACharacterBase::MeleeAttack(const bool InEnable)
 
 void ACharacterBase::ReleaseAllWeaponInventory()
 {
-	if (!InventoryComponent || InventoryComponent->HasInventoryWeapon())
+	if (InventoryComponent->EmptyWeaponInventory())
 	{
 		return;
 	}
@@ -742,7 +1121,7 @@ void ACharacterBase::ReleaseAllWeaponInventory()
 #pragma region Montages
 void ACharacterBase::EquipmentActionMontage()
 {
-	if (InventoryComponent->HasInventoryWeapon())
+	if (InventoryComponent->EmptyWeaponInventory())
 	{
 		UE_LOG(LogWevetClient, Error, TEXT("Enpty WeaponInventory : %s"), *FString(__FUNCTION__));
 		return;
@@ -831,7 +1210,7 @@ void ACharacterBase::ReloadActionMontage(float& OutReloadDuration)
 	}
 }
 
-void ACharacterBase::TakeDamageActionMontage(const bool InForcePlaying)
+void ACharacterBase::TakeDamageMontage(const bool InForcePlaying)
 {
 	if (!InForcePlaying)
 	{
@@ -841,11 +1220,9 @@ void ACharacterBase::TakeDamageActionMontage(const bool InForcePlaying)
 		}
 	}
 
-	UAnimMontage* SelectMontage = ActionInfoPtr ? ActionInfoPtr->HitDamageMontage : DefaultHitDamageMontage;
-	if (SelectMontage && !GetAnimInstance()->Montage_IsPlaying(SelectMontage))
-	{
-		TakeDamageTimeOut += PlayAnimMontage(SelectMontage);
-	}
+	check(GetAnimInstance());
+	const FName NodeName = (HasMoving() || HasCrouch()) ? UPPER_BODY : FULL_BODY;
+	GetAnimInstance()->TakeDefaultDamageAnimation(ActionInfoPtr, NodeName);
 }
 
 void ACharacterBase::MeleeAttackMontage()
@@ -867,7 +1244,7 @@ void ACharacterBase::MeleeAttackMontage()
 			return;
 		}
 
-		MeleeAttackTimeOut = PlayAnimMontage(ActionInfoPtr->MeleeAttackMontage, DEFAULT_VALUE);
+		MeleeAttackTimeOut = PlayAnimMontage(ActionInfoPtr->MeleeAttackMontage);
 		GetCharacterMovement()->DisableMovement();
 		//
 		FTimerDelegate TimerCallback;
@@ -886,6 +1263,20 @@ void ACharacterBase::MeleeAttackMontage()
 #pragma endregion
 
 #pragma region Utils
+FVector ACharacterBase::BulletTraceRelativeLocation() const
+{
+	if (CurrentWeapon.IsValid())
+	{
+		return CurrentWeapon.Get()->GetMuzzleTransform().GetLocation();
+	}
+	return GetActorLocation();
+}
+
+FVector ACharacterBase::BulletTraceForwardLocation() const
+{
+	return GetActorForwardVector();
+}
+
 FVector ACharacterBase::GetHeadSocketLocation() const
 {
 	FVector Position = GetActorLocation();
@@ -933,6 +1324,24 @@ FVector ACharacterBase::GetChestSocketLocation() const
 	}
 	return Position;
 }
+
+UCharacterAnimInstanceBase* ACharacterBase::GetAnimInstance() const
+{
+	return Cast<UCharacterAnimInstanceBase>(GetMesh()->GetAnimInstance());
+}
+
+UIKAnimInstance* ACharacterBase::GetIKAnimInstance() const
+{
+	return Cast<UIKAnimInstance>(GetMesh()->GetPostProcessInstance());
+}
+
+void ACharacterBase::SetActionInfo(const EWeaponItemType InWeaponItemType)
+{
+	if (GetAnimInstance())
+	{
+		ActionInfoPtr = GetAnimInstance()->GetActionInfo(InWeaponItemType);
+	}
+}
 #pragma endregion
 
 #pragma region Ragdoll
@@ -943,7 +1352,7 @@ void ACharacterBase::KillRagdollPhysics()
 		return;
 	}
 	USkeletalMeshComponent* const SkelMesh = GetMesh();
-	SkelMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	SkelMesh->SetCollisionEnabled(ECollisionEnabled::PhysicsOnly);
 	SkelMesh->SetCollisionProfileName(TEXT("Ragdoll"));
 	SkelMesh->SetAllBodiesSimulatePhysics(true);
 	SkelMesh->SetAllBodiesBelowSimulatePhysics(PelvisBoneName, true);
@@ -951,7 +1360,7 @@ void ACharacterBase::KillRagdollPhysics()
 	SkelMesh->bBlendPhysics = 1;
 	SkelMesh->bIgnoreRadialForce = 1;
 	SkelMesh->bIgnoreRadialImpulse = 1;
-	//SkelMesh->SetAllMassScale(50000.f);
+	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 }
 
 void ACharacterBase::StartRagdollAction()
@@ -964,10 +1373,9 @@ void ACharacterBase::StartRagdollAction()
 
 	UnEquipment_Implementation();
 	GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_None);
+	ILocomotionSystemPawn::Execute_SetALSMovementMode(this, ELSMovementMode::Ragdoll);
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	USkeletalMeshComponent* const SkelMesh = GetMesh();
-	SkelMesh->SetAllBodiesBelowSimulatePhysics(PelvisBoneName, true);
-	//SkelMesh->SetCollisionProfileName(TEXT("Ragdoll"));
+	GetMesh()->SetAllBodiesBelowSimulatePhysics(PelvisBoneName, true);
 
 	FTimerDelegate TimerCallback;
 	TimerCallback.BindLambda([&]
@@ -979,18 +1387,17 @@ void ACharacterBase::StartRagdollAction()
 
 void ACharacterBase::RagdollToWakeUpAction()
 {
-	GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
-	const FRotator Rotation = GetMesh()->GetSocketRotation(PelvisBoneName);
-	GetAnimInstance()->RagdollToWakeUpAction((Rotation.Roll > 0.0f));
+	GetCharacterMovement()->SetMovementMode(bRagdollOnGround ? EMovementMode::MOVE_Walking : EMovementMode::MOVE_Falling);
+	GetCharacterMovement()->Velocity = RagdollVelocity;
+	ILocomotionSystemPawn::Execute_PoseSnapShot(GetAnimInstance(), RagdollPoseSnapshot);
 
+	if (bRagdollOnGround)
 	{
-		GetAnimInstance()->SavePoseSnapshot(RagdollPoseSnapshot);
+		const FRotator Rotation = GetMesh()->GetSocketRotation(PelvisBoneName);
+		ILocomotionSystemPawn::Execute_SetGetup(GetAnimInstance(), (Rotation.Roll > 0.0f));
 	}
-
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-	USkeletalMeshComponent* const SkelMesh = GetMesh();
-	SkelMesh->SetAllBodiesSimulatePhysics(false);
-	//SkelMesh->SetCollisionProfileName(TEXT("BlockAll"));
+	GetMesh()->SetAllBodiesSimulatePhysics(false);
 }
 #pragma endregion
 
@@ -1007,28 +1414,231 @@ void ACharacterBase::HitReceive(UPrimitiveComponent* HitComp, AActor* OtherActor
 }
 #pragma endregion
 
-UCharacterAnimInstanceBase* ACharacterBase::GetAnimInstance() const
+void ACharacterBase::DoWhileRagdoll(FRotator& OutActorRotation, FVector& OutActorLocation)
 {
-	return Cast<UCharacterAnimInstanceBase>(GetMesh()->GetAnimInstance());
-}
+	// Set the "stiffness" of the ragdoll based on the speed.
+	// The faster the ragdoll moves, the more rigid the joint.
+	const float Length = UKismetMathLibrary::VSize(ChooseVelocity());
+	const float Value = UKismetMathLibrary::MapRangeClamped(Length, 0.0f, 1000.0f, 0.0f, 25000.0f);
+	GetMesh()->SetAllMotorsAngularDriveParams(Value, 0.0f, 0.0f, false);
 
-UIKAnimInstance* ACharacterBase::GetIKAnimInstance() const
-{
-	return Cast<UIKAnimInstance>(GetMesh()->GetPostProcessInstance());
-}
-
-void ACharacterBase::SetActionInfo(const EWeaponItemType InWeaponItemType)
-{
-	if (Wevet::ArrayExtension::NullOrEmpty(ActionInfoArray))
-		return;
-
-	for (FWeaponActionInfo& Info : ActionInfoArray)
+	// Ragdolls that are not locally controlled by the client are pushed towards the duplicated "Ragdoll Location" vector.
+	// These will continue to be simulated individually, but will be co-located.
+	if (!Super::IsLocallyControlled())
 	{
-		if (InWeaponItemType == Info.WeaponItemType)
+		const FVector BoneLocation = GetMesh()->GetSocketLocation(PelvisBoneName);
+		const FVector Position = (RagdollLocation - BoneLocation) * 200.0f;
+		GetMesh()->AddForce(Position, PelvisBoneName, true);
+		return;
+	}
+
+	// If the fall is too fast, disable gravity to prevent the ragdoll from continuing to accelerate.
+	// Stabilize the movement of the Ragdoll and prevent it from falling off the floor.
+	GetMesh()->SetEnableGravity((ChooseVelocity().Z < -4000.f) ? false : true);
+
+	RagdollVelocity = ChooseVelocity();
+	RagdollLocation = GetMesh()->GetSocketLocation(PelvisBoneName);
+	const FRotator BoneRotation = GetMesh()->GetSocketRotation(PelvisBoneName);
+
+	CalculateActorTransformRagdoll(BoneRotation, RagdollLocation, OutActorRotation, OutActorLocation);
+	SetActorLocation(OutActorLocation);
+
+	TargetRotation = OutActorRotation;
+	RotationDifference = UKismetMathLibrary::NormalizedDeltaRotator(TargetRotation, CharacterRotation).Yaw;
+	CharacterRotation = OutActorRotation;
+	SetActorRotation(CharacterRotation);
+}
+
+void ACharacterBase::CalculateActorTransformRagdoll(const FRotator InRagdollRotation, const FVector InRagdollLocation, FRotator& OutActorRotation, FVector& OutActorLocation)
+{
+	const float CapsuleHalfHeight = GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
+	const FVector StartLocation(InRagdollLocation);
+	const FVector EndLocation(InRagdollLocation.X, InRagdollLocation.Y, InRagdollLocation.Z - CapsuleHalfHeight);
+	FHitResult HitResult;
+
+	const bool bResult = UKismetSystemLibrary::LineTraceSingle(
+		GetWorld(),
+		StartLocation,
+		EndLocation,
+		UEngineTypes::ConvertToTraceType(ECC_Visibility),
+		true,
+		IgnoreActors,
+		GetDrawDebugTrace(),
+		HitResult,
+		true);
+
+	bRagdollOnGround = HitResult.bBlockingHit;
+	const float Offset = 2.0f;
+	const float Diff = FMath::Abs(HitResult.ImpactPoint.Z - HitResult.TraceStart.Z);
+	const float Value = bRagdollOnGround ? (CapsuleHalfHeight - Diff) + Offset : 0.0f;
+	OutActorLocation = FVector(InRagdollLocation.X, InRagdollLocation.Y, InRagdollLocation.Z + Value);
+
+	const float Yaw = (OutActorRotation.Roll > 0.0f) ? OutActorRotation.Yaw : OutActorRotation.Yaw - 180.f;
+	OutActorRotation = FRotator(0.0f, Yaw, 0.0f);
+}
+
+void ACharacterBase::CalculateEssentialVariables()
+{
+	// Check if the Character is moving and set (last speed rotation) and (direction) only when it is moving .
+	// so that they do not return to 0 when the speed is 0.
+	{
+		const FVector Velocity(ChooseVelocity().X, ChooseVelocity().Y, 0.0f);
+		bWasMoving = UKismetMathLibrary::NotEqual_VectorVector(Velocity, FVector::ZeroVector, 1.0f);
+
+		if (bWasMoving)
 		{
-			ActionInfoPtr = &Info;
+			LastVelocityRotation = UKismetMathLibrary::Conv_VectorToRotator(ChooseVelocity());
+			const FRotator DeltaRot = UKismetMathLibrary::NormalizedDeltaRotator(LastVelocityRotation, CharacterRotation);
+			Direction = DeltaRot.Yaw;
+		}
+	}
+
+	// Set MovementInput to local, send to server and duplicate (only if Game is NW connected)
+	{
+		if (Super::IsLocallyControlled())
+		{
+			MovementInput = GetCharacterMovement()->GetLastInputVector();
+			bWasMovementInput = UKismetMathLibrary::NotEqual_VectorVector(MovementInput, FVector::ZeroVector, 0.0001f);
+
+			if (bWasMovementInput)
+			{
+				LastMovementInputRotation = UKismetMathLibrary::Conv_VectorToRotator(MovementInput);
+				const FRotator DeltaRot = UKismetMathLibrary::NormalizedDeltaRotator(LastMovementInputRotation, LastVelocityRotation);
+				VelocityDifference = DeltaRot.Yaw;
+			}
+		}
+	}
+
+	// Set LookRotation to local and send to server to duplicate (only if the game is connected to the network)
+	{
+		if (Super::IsLocallyControlled())
+		{
+			const float PrevAimYaw = LookingRotation.Yaw;
+			LookingRotation = GetControlRotation();
+
+			const float DeltaSeconds = GetWorld()->GetDeltaSeconds();
+			AimYawRate = (LookingRotation.Yaw - PrevAimYaw) / DeltaSeconds;
+		}
+
+		const FRotator DeltaRot = UKismetMathLibrary::NormalizedDeltaRotator(LookingRotation, CharacterRotation);
+		AimYawDelta = DeltaRot.Yaw;
+	}
+}
+
+void ACharacterBase::ManageCharacterRotation()
+{
+	if (Super::IsLocallyControlled())
+	{
+		switch (ALSMovementMode)
+		{
+			case ELSMovementMode::Grounded:
+			case ELSMovementMode::Swimming:
+			DoCharacterGrounded();
+			break;
+			case ELSMovementMode::Falling:
+			DoCharacterFalling();
+			break;
+			case ELSMovementMode::Ragdoll:
 			break;
 		}
+	}
+}
+
+void ACharacterBase::DoCharacterFalling()
+{
+	const float InterpSpeed = 10.0f;
+
+	switch (ALSRotationMode)
+	{
+		case ELSRotationMode::VelocityDirection:
+		if (bWasMoving)
+		{
+			ApplyCharacterRotation(FRotator(0.0f, JumpRotation.Yaw, 0.0f), true, InterpSpeed);
+		}
+		break;
+		case ELSRotationMode::LookingDirection:
+		{
+			JumpRotation = LookingRotation;
+			ApplyCharacterRotation(FRotator(0.0f, JumpRotation.Yaw, 0.0f), true, InterpSpeed);
+		}
+		break;
+	}
+}
+
+void ACharacterBase::DoCharacterGrounded()
+{
+	if (!bWasMoving)
+	{
+		if (!Super::IsPlayingRootMotion())
+		{
+			if (ALSRotationMode == ELSRotationMode::LookingDirection)
+			{
+				if (bAiming || ALSViewMode == ELSViewMode::FirstPerson)
+				{
+					LimitRotation(90.f, 15.f);
+				}
+			}
+		}
+		return;
+	}
+
+	// Moving
+	const FRotator Rotation = LookingDirectionWithOffset(5.f, 60.f, -60.f, 120.f, -120.f, 5.f);
+	const float SlowSpeed = 165.f;
+	const float FastSpeed = 375.f;
+	switch (ALSRotationMode)
+	{
+		case ELSRotationMode::VelocityDirection:
+		{
+			// use last speed rotation
+			const float RotationRate = CalculateRotationRate(SlowSpeed, 5.f, FastSpeed, 10.f);
+			ApplyCharacterRotation(FRotator(0.0f, LastVelocityRotation.Yaw, 0.0f), true, RotationRate);
+		}
+		break;
+
+		case ELSRotationMode::LookingDirection:
+		{
+			float RotationRate = 0.0f;
+			if (bAiming)
+			{
+				RotationRate = CalculateRotationRate(SlowSpeed, 15.f, FastSpeed, 15.f);
+			}
+			else
+			{
+				RotationRate = CalculateRotationRate(SlowSpeed, 10.f, FastSpeed, 15.f);
+			}
+
+			ApplyCharacterRotation(Rotation, true, RotationRate);
+		}
+		break;
+	}
+}
+
+void ACharacterBase::DoWhileGrounded()
+{
+	bool bWasStanding = false;
+	switch (ALSStance)
+	{
+		case ELSStance::Standing:
+		bWasStanding = true;
+		break;
+		case ELSStance::Crouching:
+		break;
+	}
+
+	if (!bWasStanding)
+	{
+		return;
+	}
+
+	switch (ALSGait)
+	{
+		case ELSGait::Walking:
+		break;
+		case ELSGait::Running:
+		case ELSGait::Sprinting:
+		CustomAcceleration();
+		break;
 	}
 }
 
@@ -1039,6 +1649,93 @@ void ACharacterBase::SetForwardOrRightVector(FVector& OutForwardVector, FVector&
 	Rotation.Yaw = PawnRotation.Yaw;
 	OutForwardVector = UKismetMathLibrary::GetForwardVector(Rotation);
 	OutRightVector = UKismetMathLibrary::GetRightVector(Rotation);
+}
+
+void ACharacterBase::ConvertALSMovementMode()
+{
+	switch (ALSMovementMode)
+	{
+		case ELSMovementMode::None:
+		case ELSMovementMode::Grounded:
+		GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
+		break;
+		case ELSMovementMode::Swimming:
+		GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Swimming);
+		break;
+		case ELSMovementMode::Falling:
+		GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Falling);
+		break;
+	}
+}
+
+const float ACharacterBase::CalculateRotationRate(const float SlowSpeed, const float SlowSpeedRate, const float FastSpeed, const float FastSpeedRate)
+{
+	const FVector Velocity = ChooseVelocity();
+	FVector Pos(Velocity.X, Velocity.Y, 0.0f);
+	const float Size = UKismetMathLibrary::VSize(Pos);
+	const float FastRange = UKismetMathLibrary::MapRangeClamped(Size, SlowSpeed, FastSpeed, SlowSpeedRate, FastSpeedRate);
+	const float SlowRange = UKismetMathLibrary::MapRangeClamped(Size, 0.0f, SlowSpeed, 0.0f, SlowSpeedRate);
+
+	if (RotationRateMultiplier != 1.0f)
+	{
+		RotationRateMultiplier = FMath::Clamp(RotationRateMultiplier + GetWorld()->GetDeltaSeconds(), 0.0f, 1.0f);
+	}
+	const float Value = (Size > SlowSpeed) ? FastRange : SlowRange;
+	auto Result = Value * RotationRateMultiplier;
+	const float Min = 0.1f;
+	const float Max = 15.0f;
+	return FMath::Clamp(Result, Min, Max);
+}
+
+const FRotator ACharacterBase::LookingDirectionWithOffset(const float OffsetInterpSpeed, const float NEAngle, const float NWAngle, const float SEAngle, const float SWAngle, const float Buffer)
+{
+	const FRotator LastRotation = bWasMovementInput ? LastMovementInputRotation : LastVelocityRotation;
+	const FRotator DeltaRot = UKismetMathLibrary::NormalizedDeltaRotator(LastRotation, LookingRotation);
+
+	if (CardinalDirectionAngles(DeltaRot.Yaw, NWAngle, NEAngle, Buffer, ELSCardinalDirection::North))
+	{
+		CardinalDirection = ELSCardinalDirection::North;
+	}
+	else if (CardinalDirectionAngles(DeltaRot.Yaw, NEAngle, SEAngle, Buffer, ELSCardinalDirection::East))
+	{
+		CardinalDirection = ELSCardinalDirection::East;
+	}
+	else if (CardinalDirectionAngles(DeltaRot.Yaw, SWAngle, NWAngle, Buffer, ELSCardinalDirection::West))
+	{
+		CardinalDirection = ELSCardinalDirection::West;
+	}
+	else
+	{
+		CardinalDirection = ELSCardinalDirection::South;
+	}
+
+	float Result = 0.0f;
+	switch (CardinalDirection)
+	{
+		case ELSCardinalDirection::North:
+		Result = DeltaRot.Yaw;
+		break;
+		case ELSCardinalDirection::East:
+		Result = (DeltaRot.Yaw - 90.f);
+		break;
+		case ELSCardinalDirection::West:
+		Result = (DeltaRot.Yaw + 90.f);
+		break;
+		case ELSCardinalDirection::South:
+		Result = UKismetMathLibrary::SelectFloat((DeltaRot.Yaw - 180.f), (DeltaRot.Yaw + 180.f), (DeltaRot.Yaw > 0.0f));
+		break;
+	}
+
+	if (bAiming)
+	{
+		if (ALSGait == ELSGait::Walking)
+		{
+			Result = 0.0f;
+		}
+	}
+	const float DeltaSeconds = GetWorld()->GetDeltaSeconds();
+	RotationOffset = UKismetMathLibrary::FInterpTo(RotationOffset, Result, DeltaSeconds, OffsetInterpSpeed);
+	return FRotator(0.0f, LookingRotation.Yaw + RotationOffset, 0.0f);
 }
 
 ELSMovementMode ACharacterBase::GetPawnMovementModeChanged(const EMovementMode PrevMovementMode, const uint8 PrevCustomMode) const
@@ -1061,21 +1758,149 @@ ELSMovementMode ACharacterBase::GetPawnMovementModeChanged(const EMovementMode P
 	return ELSMovementMode::None;
 }
 
-void ACharacterBase::ConvertALSMovementMode()
+float ACharacterBase::ChooseMaxWalkSpeed() const
 {
-	switch (ALSMovementMode)
+	float Speed = 0.0f;
+	if (ALSStance == ELSStance::Standing)
 	{
-		case ELSMovementMode::None:
-		case ELSMovementMode::Grounded:
-		GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
-		break;
-		case ELSMovementMode::Swimming:
-		GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Swimming);
-		break;
-		case ELSMovementMode::Falling:
-		GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Falling);
-		break;
+		if (bAiming)
+		{
+			switch (ALSGait)
+			{
+				case ELSGait::Walking:
+				case ELSGait::Running:
+				Speed = WalkingSpeed;
+				break;
+				case ELSGait::Sprinting:
+				Speed = RunningSpeed;
+				break;
+			}
+		}
+		else
+		{
+			switch (ALSGait)
+			{
+				case ELSGait::Walking:
+				Speed = WalkingSpeed;
+				break;
+				case ELSGait::Running:
+				Speed = RunningSpeed;
+				break;
+				case ELSGait::Sprinting:
+				Speed = SprintingSpeed;
+				break;
+			}
+		}
+
 	}
+	else
+	{
+		const float Offset = 50.f;
+		switch (ALSGait)
+		{
+			case ELSGait::Walking:
+			Speed = CrouchingSpeed - Offset;
+			break;
+			case ELSGait::Running:
+			Speed = CrouchingSpeed;
+			break;
+			case ELSGait::Sprinting:
+			Speed = CrouchingSpeed + Offset;
+			break;
+		}
+	}
+	return Speed;
+}
+
+bool ACharacterBase::CanSprint() const
+{
+	if (ALSMovementMode == ELSMovementMode::Ragdoll)
+	{
+		return true;
+	}
+	else
+	{
+		if (ALSRotationMode == ELSRotationMode::VelocityDirection)
+		{
+			return true;
+		}
+		else
+		{
+			if (!bWasMovementInput)
+			{
+				return true;
+			}
+
+			if (bAiming)
+			{
+				return true;
+			}
+		}
+	}
+	const float YawLimit = 50.f;
+	const FRotator Rot = UKismetMathLibrary::NormalizedDeltaRotator(LastMovementInputRotation, LookingRotation);
+	return (FMath::Abs(Rot.Yaw) < YawLimit);
+}
+
+void ACharacterBase::AddCharacterRotation(const FRotator AddAmount)
+{
+	// Node to InvertRotator
+	auto RotateAmount = UKismetMathLibrary::NegateRotator(AddAmount);
+	TargetRotation = UKismetMathLibrary::NormalizedDeltaRotator(TargetRotation, RotateAmount);
+	auto RotateDiff = UKismetMathLibrary::NormalizedDeltaRotator(TargetRotation, CharacterRotation);
+	RotationDifference = RotateDiff.Yaw;
+	CharacterRotation = UKismetMathLibrary::NormalizedDeltaRotator(CharacterRotation, RotateAmount);
+	SetActorRotation(CharacterRotation);
+}
+
+void ACharacterBase::UpdateCharacterMovementSettings()
+{
+	check(GetCharacterMovement());
+	GetCharacterMovement()->MaxWalkSpeed = ChooseMaxWalkSpeed();
+	GetCharacterMovement()->MaxWalkSpeedCrouched = ChooseMaxWalkSpeed();
+	GetCharacterMovement()->MaxAcceleration = ChooseMaxAcceleration();
+	GetCharacterMovement()->BrakingDecelerationWalking = ChooseBrakingDeceleration();
+	GetCharacterMovement()->GroundFriction = ChooseGroundFriction();
+}
+
+void ACharacterBase::ApplyCharacterRotation(const FRotator InTargetRotation, const bool bInterpRotation, const float InterpSpeed)
+{
+	TargetRotation = InTargetRotation;
+	const FRotator RotateDiff = UKismetMathLibrary::NormalizedDeltaRotator(TargetRotation, CharacterRotation);
+	RotationDifference = RotateDiff.Yaw;
+	CharacterRotation = bInterpRotation ? UKismetMathLibrary::RInterpTo(CharacterRotation, TargetRotation, GetWorld()->DeltaTimeSeconds, InterpSpeed) : TargetRotation;
+	SetActorRotation(CharacterRotation);
+}
+
+void ACharacterBase::LimitRotation(const float AimYawLimit, const float InterpSpeed)
+{
+	if (FMath::Abs(AimYawDelta) > AimYawLimit)
+	{
+		const float A = (LookingRotation.Yaw + AimYawLimit);
+		const float B = (LookingRotation.Yaw - AimYawLimit);
+		const float Value = (AimYawLimit > 0.0f) ? B : A;
+		const FRotator Rotation = FRotator(0.f, Value, 0.f);
+		ApplyCharacterRotation(Rotation, true, InterpSpeed);
+	}
+}
+
+bool ACharacterBase::CardinalDirectionAngles(const float Value, const float Min, const float Max, const float Buffer, const ELSCardinalDirection InCardinalDirection) const
+{
+	const bool A = UKismetMathLibrary::InRange_FloatFloat(Value, (Min + Buffer), (Max - Buffer));
+	const bool B = UKismetMathLibrary::InRange_FloatFloat(Value, (Min - Buffer), (Max + Buffer));
+	return (CardinalDirection == InCardinalDirection) ? B : A;
+}
+
+void ACharacterBase::CustomAcceleration()
+{
+	const auto Velocity = FMath::Abs(VelocityDifference);
+	const float RangeA = 45.f;
+	const float RangeB = 130.f;
+
+	auto MaxAccelerationValue = UKismetMathLibrary::MapRangeClamped(Velocity, RangeA, RangeB, 1.0f, 0.2f);
+	GetCharacterMovement()->MaxAcceleration = RunningAcceleration * MaxAccelerationValue;
+	auto GroundFrictionValue = UKismetMathLibrary::MapRangeClamped(Velocity, RangeA, RangeB, 1.0f, 0.4f);
+	GetCharacterMovement()->GroundFriction = RunningGroundFriction * GroundFrictionValue;
 }
 
 #pragma region MantleUtils
@@ -1103,23 +1928,6 @@ void ACharacterBase::SetActorLocationAndRotation(const FVector NewLocation, cons
 {
 	TargetRotation = NewRotation;
 	Super::SetActorLocationAndRotation(NewLocation, NewRotation, bWasSweep /*nullptr, ETeleportType::None*/);
-}
-
-FMantleAsset ACharacterBase::GetMantleAsset(const EMantleType InMantleType) const
-{
-	FMantleAsset Temp;
-	switch (InMantleType)
-	{
-		case EMantleType::LowMantle:
-		Temp = DefaultLowMantleAsset;
-		break;
-
-		case EMantleType::FallingCatch:
-		case EMantleType::HighMantle:
-		Temp = DefaultHighMantleAsset;
-		break;
-	}
-	return Temp;
 }
 
 const FVector ACharacterBase::GetPlayerMovementInput()
@@ -1263,16 +2071,9 @@ void ACharacterBase::TraceForwardToFindWall(const FMantleTraceSettings InTraceSe
 }
 
 // step2 Trace downward from the first trace's Impact Point and determine if the hit location is walkable.
-void ACharacterBase::SphereTraceByMantleCheck(
-	const FMantleTraceSettings TraceSetting,
-	const FVector InitialTraceImpactPoint,
-	const FVector InitialTraceNormal,
-	bool& OutHitResult,
-	FVector& OutDownTraceLocation,
-	UPrimitiveComponent*& OutPrimitiveComponent)
+void ACharacterBase::SphereTraceByMantleCheck(const FMantleTraceSettings TraceSetting, const FVector InitialTraceImpactPoint, const FVector InitialTraceNormal, bool& OutHitResult, FVector& OutDownTraceLocation, UPrimitiveComponent*& OutPrimitiveComponent)
 {
 	const FVector CapsuleLocation = GetCapsuleBaseLocation(2.0f);
-
 	FVector Normal = InitialTraceNormal * -15.f;
 	FVector Value = InitialTraceImpactPoint;
 	Value.Z = CapsuleLocation.Z;
@@ -1354,6 +2155,183 @@ EMantleType ACharacterBase::GetMantleType(const float InMantleHeight) const
 	}
 	return Current;
 }
+#pragma endregion
 
+#pragma region MantleUpdate
+void ACharacterBase::MantleUpdate(const float BlendIn, const float InPlaybackPosition)
+{
+	float PositionAlpha, XYCorrectionAlpha, ZCorrectionAlpha = ZERO_VALUE;
+	SetMantleUpdateAlpha(InPlaybackPosition, PositionAlpha, XYCorrectionAlpha, ZCorrectionAlpha);
+	const FTransform LerpedTarget = MakeMantleLerpedTarget(BlendIn, PositionAlpha, XYCorrectionAlpha, ZCorrectionAlpha);
+
+	SetActorLocationAndRotation(LerpedTarget.GetLocation(), FRotator(FQuat(LerpedTarget.GetRotation())), false, false);
+}
+
+// Step 1: Continually update the mantle target from the stored local transform to follow along with moving objects.
+void ACharacterBase::SetMantleTarget()
+{
+	auto Component = ULocomotionSystemMacroLibrary::ComponentLocalToWorld(MantleLedgeLS);
+	MantleTarget = Component.Transform;
+}
+
+// Step 2: Update the Position and Correction Alphas using the Position/Correction curve set for each Mantle.
+void ACharacterBase::SetMantleUpdateAlpha(const float InPlaybackPosition, float& OutPositionAlpha, float& OutXYCorrectionAlpha, float& OutZCorrectionAlpha)
+{
+	auto CurveVector = MantleParams.Position->GetVectorValue(MantleParams.StartingPosition + InPlaybackPosition);
+	OutPositionAlpha = CurveVector.X;
+	OutXYCorrectionAlpha = CurveVector.Y;
+	OutZCorrectionAlpha = CurveVector.Z;
+}
+
+// Blend into the animated horizontal and rotation offset using the Y value of the Position/Correction Curve.
+FTransform ACharacterBase::MakeXYCollectionAlphaTransform(const float InXYCollectionAlpha) const
+{
+	FTransform Result = FTransform::Identity;
+	auto RotA = MantleAnimatedStartOffset.GetRotation();
+	auto PosA = MantleAnimatedStartOffset.GetLocation();
+	auto PosB = MantleActualStartOffset.GetLocation();
+	PosA.Z = PosB.Z;
+	Result.SetRotation(RotA);
+	Result.SetLocation(PosA);
+	return UKismetMathLibrary::TLerp(MantleActualStartOffset, Result, InXYCollectionAlpha);
+}
+
+// Blend into the animated vertical offset using the Z value of the Position/Correction Curve.
+FTransform ACharacterBase::MakeZCollectionAlphaTransform(const float InZCollectionAlpha) const
+{
+	FTransform Result = FTransform::Identity;
+	auto RotA = MantleActualStartOffset.GetRotation();
+	auto PosA = MantleActualStartOffset.GetLocation();
+	auto PosB = MantleAnimatedStartOffset.GetLocation();
+	PosA.Z = PosB.Z;
+	Result.SetRotation(RotA);
+	Result.SetLocation(PosA);
+	return UKismetMathLibrary::TLerp(MantleActualStartOffset, Result, InZCollectionAlpha);
+}
+
+// Blend from the currently blending transforms into the final mantle target using the X value of the Position/Correction Curve.
+FTransform ACharacterBase::MakeMantleTransform(const float InPositionAlpha, const float InXYCollectionAlpha, const float InZCollectionAlpha) const
+{
+	const FTransform A = MakeXYCollectionAlphaTransform(InXYCollectionAlpha);
+	const FTransform B = MakeZCollectionAlphaTransform(InZCollectionAlpha);
+
+	FTransform BlendTransform = FTransform::Identity;
+	auto RotA = A.GetRotation();
+	auto PosA = A.GetLocation();
+	auto PosB = B.GetLocation();
+	PosA.Z = PosB.Z;
+	BlendTransform.SetRotation(RotA);
+	BlendTransform.SetLocation(PosA);
+
+	FTransform Result = ULocomotionSystemMacroLibrary::TransformPlus(MantleTarget, BlendTransform);
+	return UKismetMathLibrary::TLerp(Result, MantleTarget, InPositionAlpha);
+}
+
+// Step 3: Lerp multiple transforms together for independent control over the horizontal and vertical blend to the animated start position, 
+// as well as the target position.
+FTransform ACharacterBase::MakeMantleLerpedTarget(const float BlendIn, const float InPositionAlpha, const float InXYCollectionAlpha, const float InZCollectionAlpha) const
+{
+	const FTransform Result = ULocomotionSystemMacroLibrary::TransformPlus(MantleTarget, MantleActualStartOffset);
+	const FTransform MantleTransform = MakeMantleTransform(InPositionAlpha, InXYCollectionAlpha, InZCollectionAlpha);
+
+	return UKismetMathLibrary::TLerp(Result, MantleTransform, BlendIn);
+}
+#pragma endregion
+
+#pragma region MantleStart
+void ACharacterBase::MantleStart(const float InMantleHeight, const FLSComponentAndTransform MantleLedgeWorldSpace, const EMantleType InMantleType, UTimelineComponent* const InMantleTimeline)
+{
+	check(GetAnimInstance());
+	const FMantleAsset MantleAsset = GetAnimInstance()->GetMantleAsset(InMantleType);
+	SetMantleParams(MantleAsset, InMantleHeight);
+	SetMantleLedgeLocalSpace(MantleLedgeWorldSpace);
+	CalculateMantleTarget(MantleLedgeWorldSpace);
+	CalculateMantleAnimatedStartOffset();
+	PlayFromStartMantle(InMantleTimeline);
+}
+
+// Step 1: Get the Mantle Asset and use it to set the new Structs
+void ACharacterBase::SetMantleParams(FMantleAsset InMantleAsset, const float InMantleHeight)
+{
+	MantleParams.AnimMontage = InMantleAsset.AnimMontage;
+	MantleParams.Position = InMantleAsset.Position;
+	MantleParams.StartingOffset = InMantleAsset.StartingOffset;
+
+	const float LowHeight = InMantleAsset.LowHeight;
+	const float LowPlayRate = InMantleAsset.LowPlayRate;
+	const float LowStartPosition = InMantleAsset.LowStartPosition;
+	const float HighHeight = InMantleAsset.HighHeight;
+	const float HighPlayRate = InMantleAsset.HighPlayRate;
+	const float HighStartPosition = InMantleAsset.HighStartPosition;
+
+	MantleParams.PlayRate = UKismetMathLibrary::MapRangeClamped(InMantleHeight, LowHeight, HighHeight, LowPlayRate, HighPlayRate);
+	MantleParams.StartingPosition = UKismetMathLibrary::MapRangeClamped(InMantleHeight, LowHeight, HighHeight, LowStartPosition, HighStartPosition);
+}
+
+// Step 2: Convert the world space target to the mantle component's local space for use in moving objects.
+void ACharacterBase::SetMantleLedgeLocalSpace(const FLSComponentAndTransform MantleLedgeWorldSpace)
+{
+	MantleLedgeLS = ULocomotionSystemMacroLibrary::ComponentWorldToLocal(MantleLedgeWorldSpace);
+}
+
+// Step 3: Set the Mantle Target and calculate the Starting Offset (offset amount between the actor and target transform).
+void ACharacterBase::CalculateMantleTarget(const FLSComponentAndTransform MantleLedgeWorldSpace)
+{
+	MantleTarget = MantleLedgeWorldSpace.Transform;
+	MantleActualStartOffset = ULocomotionSystemMacroLibrary::TransformMinus(GetActorTransform(), MantleTarget);
+}
+
+// Step 4: Calculate the Animated Start Offset from the Target Location. 
+// This would be the location the actual animation starts at relative to the Target Transform. 
+void ACharacterBase::CalculateMantleAnimatedStartOffset()
+{
+	const FVector From = MantleTarget.GetLocation();
+	FVector Rotate2Vector = UKismetMathLibrary::Conv_RotatorToVector(FRotator(MantleTarget.GetRotation()));
+	Rotate2Vector *= MantleParams.StartingOffset.Y;
+
+	const FVector To = FVector(Rotate2Vector.X, Rotate2Vector.Y, MantleParams.StartingOffset.Z);
+
+	const FVector Diff = (From - To);
+	FTransform FromTransform = FTransform::Identity;
+	FromTransform.SetRotation(MantleTarget.GetRotation());
+	FromTransform.SetLocation(Diff);
+	MantleAnimatedStartOffset = ULocomotionSystemMacroLibrary::TransformMinus(FromTransform, MantleTarget);
+}
+
+// Step 5: Clear the Character Movement Mode and set the Movement State to Mantling
+// Step 6: Configure the Mantle Timeline so that it is the same length as the Lerp/Correction curve minus the starting position, 
+// Plays at the same speed as the animation. Then start the timeline.
+// Step 7: Play the Anim Montaget if valid.
+void ACharacterBase::PlayFromStartMantle(UTimelineComponent* const InMantleTimeline)
+{
+	if (!MantleParams.AnimMontage)
+	{
+		UE_LOG(LogWevetClient, Error, TEXT("nullptr Mantle AnimMontage  : %s"), *FString(__FUNCTION__));
+		return;
+	}
+
+	check(GetAnimInstance());
+	check(InMantleTimeline);
+
+	check(GetCharacterMovement());
+	GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_None);
+	ILocomotionSystemPawn::Execute_SetALSMovementMode(this, ELSMovementMode::Mantling);
+
+	float OutMinTime, OutMaxTime = ZERO_VALUE;
+	MantleParams.Position->GetTimeRange(OutMinTime, OutMaxTime);
+
+	InMantleTimeline->SetTimelineLength(OutMaxTime - MantleParams.StartingPosition);
+	InMantleTimeline->SetPlayRate(MantleParams.PlayRate);
+	InMantleTimeline->PlayFromStart();
+
+	GetAnimInstance()->StopAllMontages(ZERO_VALUE);
+
+	GetAnimInstance()->Montage_Play(
+		MantleParams.AnimMontage, 
+		MantleParams.PlayRate, 
+		EMontagePlayReturnType::MontageLength, 
+		MantleParams.StartingPosition, 
+		true);
+}
 #pragma endregion
 

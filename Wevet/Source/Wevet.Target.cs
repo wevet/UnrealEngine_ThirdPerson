@@ -9,6 +9,11 @@ public class WevetTarget : TargetRules
 	{
 		Type = TargetType.Game;
 
+		//bCompileChaos = true;
+		bUseChaos = true;
+		//bUseChaosChecked = true;
+		//bUseChaosMemoryTracking = true;
+
 		ExtraModuleNames.AddRange( new string[] { "Wevet" } );
 	}
 }

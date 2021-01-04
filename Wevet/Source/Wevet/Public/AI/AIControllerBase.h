@@ -35,10 +35,12 @@ protected:
 	virtual void BeginPlay() override;
 
 public:
-	FORCEINLINE FGenericTeamId GetGenericTeamId() const override
+	virtual FGenericTeamId GetGenericTeamId() const override
 	{
-		return PTG_TEAM_ID_ENEMY;
+		return TeamId;
 	}
+
+	virtual ETeamAttitude::Type GetTeamAttitudeTowards(const AActor& Other) const override;
 
 	FORCEINLINE class UBehaviorTreeComponent* GetBehaviorTreeComponent()
 	{
@@ -57,22 +59,36 @@ public:
 
 public:
 	class AWayPointBase* GetWayPoint() const;
-	void SetBlackboardTarget(APawn* NewTarget);
-	void SetBlackboardBotType(EBotBehaviorType NewType);
-	void SetBlackboardSeeActor(const bool NewCanSeeActor);
-	void SetBlackboardHearActor(const bool NewCanHearActor);
+	void SetBlackboardTarget(AActor* const NewTarget);
+	void SetBlackboardSearchNodeHolder(AActor* const NewSearchNodeHolder);
+	void SetBlackboardPatrolPointsHolder(AActor* const NewPatrolPointsHolder);
 	void SetBlackboardPatrolLocation(const FVector NewLocation);
+	void SetBlackboardDestinationLocation(const FVector NewDestination);
 	void SetBlackboardActionState(const EAIActionState NewAIActionState);
+	void SetBlackboardCombatState(const EAICombatState NewAICombatState);
 
 	FORCEINLINE AActor* GetBlackboardTarget() const
 	{
 		return Cast<AActor>(BlackboardComponent->GetValueAsObject(TargetKeyName));
 	}
 
+	FORCEINLINE AActor* GetBlackboardSearchNodeHolder() const
+	{
+		return Cast<AActor>(BlackboardComponent->GetValueAsObject(SearchNodeHolderKeyName));
+	}
+
+	FORCEINLINE EAICombatState GetBlackboardCombatState() const
+	{
+		return (EAICombatState)BlackboardComponent->GetValueAsEnum(CombatStateKeyName);
+	}
+
 	FORCEINLINE EAIActionState GetBlackboardActionState() const
 	{
 		return (EAIActionState)BlackboardComponent->GetValueAsEnum(ActionStateKeyName);
 	}
+
+	bool WasBlackboardTargetDeath() const;
+	bool WasSameDeadCrew(AActor* const InActor) const;
 
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Components, meta = (AllowPrivateAccess = "true"))
@@ -93,14 +109,14 @@ protected:
 	class UAISenseConfig_Prediction* PredictionConfig;
 
 protected:
-	class AAICharacterBase* AICharacterOwner;
+	class AAICharacterBase* Character;
 	TArray<class AWayPointBase*> WayPointList;
 
 	UPROPERTY(EditDefaultsOnly, Category = "AIController|Variable")
-	FName CanSeePlayerKeyName;
+	struct FGenericTeamId TeamId;
 
 	UPROPERTY(EditDefaultsOnly, Category = "AIController|Variable")
-	FName CanHearPlayerKeyName;
+	struct FAIStimulus CurrentStimulus;
 
 	UPROPERTY(EditDefaultsOnly, Category = "AIController|Variable")
 	FName TargetKeyName;
@@ -109,10 +125,19 @@ protected:
 	FName PatrolLocationKeyName;
 
 	UPROPERTY(EditDefaultsOnly, Category = "AIController|Variable")
-	FName BotTypeKeyName;
+	FName CombatStateKeyName;
 
 	UPROPERTY(EditDefaultsOnly, Category = "AIController|Variable")
 	FName ActionStateKeyName;
+
+	UPROPERTY(EditDefaultsOnly, Category = "AIController|Variable")
+	FName SearchNodeHolderKeyName;
+
+	UPROPERTY(EditDefaultsOnly, Category = "AIController|Variable")
+	FName DestinationKeyName;
+
+	UPROPERTY(EditDefaultsOnly, Category = "AIController|Variable")
+	FName PatrolPointsHolderKeyName;
 
 	UPROPERTY()
 	TArray<FVector> PointsArray;
@@ -121,11 +146,17 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "AIController|Function")
 	const TArray<FVector>& GetPathPointArray();
 
+	UFUNCTION(BlueprintCallable, Category = "AIController|Function")
+	void RemoveSearchNodeGenerator();
+
+	UFUNCTION(BlueprintCallable, Category = "AIController|Function")
+	void CheckTargetStatus(bool &OutResult);
+
 	void StopTree();
 	void ResumeTree();
 
 
-private:
+protected:
 	UFUNCTION()
 	void OnDeath();
 

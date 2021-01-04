@@ -1,4 +1,5 @@
 #pragma once
+
 #include "Engine/EngineTypes.h"
 #include "Animation/AnimSequence.h"
 #include "CharacterComboInfo.generated.h"

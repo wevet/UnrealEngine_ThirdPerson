@@ -3,9 +3,9 @@
 
 #include "Engine/EngineTypes.h"
 #include "Animation/AnimMontage.h"
-#include "LocomotionSystemTypes.h"
 #include "Components/PrimitiveComponent.h"
 #include "Curves/CurveVector.h"
+#include "LocomotionSystemTypes.h"
 #include "LocomotionSystemStructs.generated.h"
 
 
@@ -313,3 +313,100 @@ public:
 };
 
 
+USTRUCT(BlueprintType)
+struct LOCOMOTIONSYSTEM_API FAnimCurveCreationData
+{
+	GENERATED_USTRUCT_BODY()
+
+public:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
+	int32 FrameNumber;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
+	float CurveValue;
+
+public:
+	FAnimCurveCreationData()
+	{
+		FrameNumber = 0;
+		CurveValue = 0.0f;
+	}
+};
+
+
+USTRUCT(BlueprintType)
+struct LOCOMOTIONSYSTEM_API FAnimCurveCreationParams
+{
+	GENERATED_USTRUCT_BODY()
+
+public:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
+	FName CurveName;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
+	bool KeyEachFrame;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
+	TArray<struct FAnimCurveCreationData> Keys;
+
+public:
+	FAnimCurveCreationParams()
+	{
+		CurveName = NAME_None;
+		KeyEachFrame = false;
+	}
+
+};
+
+
+USTRUCT(BlueprintType)
+struct LOCOMOTIONSYSTEM_API FCameraFOVParam
+{
+	GENERATED_USTRUCT_BODY()
+
+public:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
+	float ThirdPersonFOV;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
+	float FirstPersonFOV;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
+	bool bRightShoulder;
+
+public:
+	FCameraFOVParam()
+	{
+		ThirdPersonFOV = 90.f;
+		FirstPersonFOV = 90.f;
+		bRightShoulder = false;
+	}
+
+};
+
+
+USTRUCT(BlueprintType)
+struct LOCOMOTIONSYSTEM_API FCameraTraceParam
+{
+	GENERATED_USTRUCT_BODY()
+
+public:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
+	FVector TraceOrigin;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
+	float TraceRadius;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
+	TEnumAsByte<ETraceTypeQuery> TraceTypeQuery;
+
+public:
+	FCameraTraceParam()
+	{
+		TraceRadius = 10.f;
+		TraceOrigin = FVector::ZeroVector;
+
+		//auto a = UEngineTypes::ConvertToTraceType(ECC_Visibility);
+	}
+
+};

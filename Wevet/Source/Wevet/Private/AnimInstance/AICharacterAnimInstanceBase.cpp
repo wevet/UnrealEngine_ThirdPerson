@@ -22,7 +22,7 @@ void UAICharacterAnimInstanceBase::NativeUpdateAnimation(float DeltaTimeX)
 
 	if (Character)
 	{
-		ALSMovementMode = ILocomotionSystemPropertyGetter::Execute_GetALSMovementMode(Character);
+		ALSMovementMode = ILocomotionSystemPawn::Execute_GetALSMovementMode(Character);
 	}
 }
 
@@ -55,8 +55,5 @@ void UAICharacterAnimInstanceBase::SetRotator()
 
 void UAICharacterAnimInstanceBase::SetMovementSpeed()
 {
-	if (IAIPawnOwner::Execute_CanMeleeStrike(Character))
-	{
-	}
 	Super::SetMovementSpeed();
 }

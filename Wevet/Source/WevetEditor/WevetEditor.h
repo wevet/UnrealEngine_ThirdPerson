@@ -4,9 +4,9 @@
 
 #include "Engine.h"
 #include "CoreMinimal.h"
-#include "ModuleInterface.h"
+#include "Modules/ModuleInterface.h"
 #include "Modules/ModuleManager.h"
-#include "LogMacros.h"
+#include "Logging/LogMacros.h"
 #include "UnrealEd.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogWevetEditor, All, All)

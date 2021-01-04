@@ -10,8 +10,7 @@
 #include "Wevet.h"
 #include "WevetExtension.h"
 
-UAIHealthController::UAIHealthController(const FObjectInitializer& ObjectInitializer)
-	: Super(ObjectInitializer)
+UAIHealthController::UAIHealthController(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {
 	HealthProgressBarKeyName = (TEXT("HealthProgressBar"));
 }
@@ -56,14 +55,6 @@ void UAIHealthController::TickRenderer(const float InDeltaTime)
 	}
 
 	if (!bWasRenderer || bWasDeath || !Target)
-	{
-		if (bWasVisible)
-		{
-			Super::Visibility(false);
-		}
-		return;
-	}
-	else if (!AICharacterPtr->IsSeeTarget_Implementation())
 	{
 		if (bWasVisible)
 		{

@@ -49,7 +49,7 @@ public:
 	UCharacterModel* GetPropertyModel() const;
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "DamageInstigator")
-	void MakeDamage(UCharacterModel* DamageModel, const int InWeaponDamage, float& OutDamage);
+	float MakeDamage(UCharacterModel* DamageModel, const int InWeaponDamage) const;
 
 	// etc HeadShot Damage onkill
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "DamageInstigator")

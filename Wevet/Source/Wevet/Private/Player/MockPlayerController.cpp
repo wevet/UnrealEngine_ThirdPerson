@@ -7,56 +7,58 @@
 #include "Lib/WevetBlueprintFunctionLibrary.h"
 
 
-AMockPlayerController::AMockPlayerController(const FObjectInitializer& ObjectInitializer)
-	: Super(ObjectInitializer),
+AMockPlayerController::AMockPlayerController(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer),
 	UMGManager(nullptr)
 {
-	ViewPitchMin = -50.f;
-	ViewPitchMax = 50.f;
+
+	static ConstructorHelpers::FObjectFinder<UClass> FindAsset(TEXT("/Game/Game/Blueprints/Widgets/BP_UMGManager.BP_UMGManager_C"));
+	UMGManagerTemplate = FindAsset.Object;
+
 }
 
 void AMockPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
-
-	if (APlayerCameraManager* CameraManager = Wevet::ControllerExtension::GetCameraManager(this))
-	{
-		CameraManager->ViewPitchMin = ViewPitchMin;
-		CameraManager->ViewPitchMax = ViewPitchMax;
-	}
 }
 
 void AMockPlayerController::OnPossess(APawn* InPawn)
 {
 	Super::OnPossess(InPawn);
-	CharacterOwner = Cast<AMockCharacter>(InPawn);
+	Character = Cast<AMockCharacter>(InPawn);
+	UMGManager = CreateWidget<UUMGManager>(this, UMGManagerTemplate);
+	Manager = Cast<AMockPlayerCameraManager>(PlayerCameraManager);
 
-	if (UMGManagerClass)
+	if (UMGManager && Character)
 	{
-		UMGManager = CreateWidget<UUMGManager>(this, UMGManagerClass);
-	}
-
-	if (UMGManager && CharacterOwner)
-	{
-		UMGManager->Initializer(CharacterOwner);
+		UMGManager->Initializer(Character);
 		UMGManager->AddToViewport();
 	}
 
-	if (CharacterOwner)
+	if (Character)
 	{
-		CharacterOwner->DeathDelegate.AddDynamic(this, &AMockPlayerController::OnDeath);
-		CharacterOwner->AliveDelegate.AddDynamic(this, &AMockPlayerController::OnAlive);
-		CharacterOwner->KillDelegate.AddDynamic(this, &AMockPlayerController::OnKill);
+		Character->DeathDelegate.AddDynamic(this, &AMockPlayerController::OnDeath);
+		Character->AliveDelegate.AddDynamic(this, &AMockPlayerController::OnAlive);
+		Character->KillDelegate.AddDynamic(this, &AMockPlayerController::OnKill);
+	}
+
+	if (Manager)
+	{
+		Manager->OnPossess(InPawn);
 	}
 }
 
 void AMockPlayerController::OnUnPossess()
 {
-	if (CharacterOwner)
+	if (Character)
 	{
-		CharacterOwner->DeathDelegate.RemoveDynamic(this, &AMockPlayerController::OnDeath);
-		CharacterOwner->AliveDelegate.RemoveDynamic(this, &AMockPlayerController::OnAlive);
-		CharacterOwner->KillDelegate.RemoveDynamic(this, &AMockPlayerController::OnKill);
+		Character->DeathDelegate.RemoveDynamic(this, &AMockPlayerController::OnDeath);
+		Character->AliveDelegate.RemoveDynamic(this, &AMockPlayerController::OnAlive);
+		Character->KillDelegate.RemoveDynamic(this, &AMockPlayerController::OnKill);
+	}
+
+	if (UMGManager)
+	{
+		UMGManager->RemoveFromParent();
 	}
 
 	Super::OnUnPossess();
@@ -79,6 +81,6 @@ void AMockPlayerController::OnAlive()
 
 void AMockPlayerController::OnKill(AActor* InActor)
 {
-	UE_LOG(LogWevetClient, Log, TEXT("OnKill => %s"), *FString(__FUNCTION__));
+	UE_LOG(LogWevetClient, Log, TEXT("Player Killed.. Actor => %s"), *InActor->GetName());
 }
 

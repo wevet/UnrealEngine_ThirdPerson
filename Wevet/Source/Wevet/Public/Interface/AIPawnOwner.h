@@ -21,19 +21,16 @@ class WEVET_API IAIPawnOwner
 
 public:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AIPawnOwner")
-	bool IsSeeTarget() const;
-
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AIPawnOwner")
-	bool IsHearTarget() const;
-
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AIPawnOwner")
 	float GetMeleeDistance() const;
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AIPawnOwner")
 	AActor* GetTarget() const;
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AIPawnOwner")
-	void StateChange(const EAIActionState NewAIActionState);
+	void CombatStateChange(const EAICombatState NewAICombatState);
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AIPawnOwner")
+	void ActionStateChange(const EAIActionState NewAIActionState);
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AIPawnOwner")
 	bool CanMeleeStrike() const;

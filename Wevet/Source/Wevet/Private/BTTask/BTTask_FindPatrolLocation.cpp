@@ -1,6 +1,6 @@
 // Copyright 2018 wevet works All Rights Reserved.
 
-#include "BTTask_FindPatrolLocation.h"
+#include "BTTask/BTTask_FindPatrolLocation.h"
 #include "BehaviorTree/BehaviorTreeComponent.h"
 #include "BehaviorTree/BlackboardComponent.h"
 #include "BehaviorTree/Blackboard/BlackboardKeyAllTypes.h"
@@ -11,32 +11,34 @@
 #include "NavigationSystem.h"
 #include "Interface/AIPawnOwner.h"
 
+UBTTask_FindPatrolLocation::UBTTask_FindPatrolLocation() : Super()
+{
+	NodeName = TEXT("BTTask_FindPatrolLocation");
+}
+
 EBTNodeResult::Type UBTTask_FindPatrolLocation::ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory)
 {
-	if (AAIControllerBase* Controller = Cast<AAIControllerBase>(OwnerComp.GetAIOwner()))
+	if (AAIControllerBase* AIController = Cast<AAIControllerBase>(OwnerComp.GetAIOwner()))
 	{
-		if (AWayPointBase* WayPoint = Controller->GetWayPoint())
-		{
-			AAICharacterBase* Character = Cast<AAICharacterBase>(Controller->GetPawn());
-			if (Character)
-			{
-				const float SearchRadius = IAIPawnOwner::Execute_GetMeleeDistance(Character);
-				const FVector SearchOrigin = WayPoint->GetActorLocation();
-				UNavigationSystemV1* NavSystem = UNavigationSystemV1::GetNavigationSystem(Controller);
-				if (!NavSystem)
-				{
-					return EBTNodeResult::Failed;
-				}
+		AWayPointBase* WayPoint = AIController->GetWayPoint();
+		APawn* ControlPawn = AIController->GetPawn();
+		IAIPawnOwner* Interface = Cast<IAIPawnOwner>(ControlPawn);
 
-				FNavLocation ResultLocation;
-				const bool bResult = NavSystem->GetRandomPointInNavigableRadius(SearchOrigin, SearchRadius, ResultLocation);
-				if (bResult)
-				{
-					Controller->SetBlackboardPatrolLocation(ResultLocation.Location);
-					return EBTNodeResult::Succeeded;
-				}
-			}
+		if (!ControlPawn || !Interface || !WayPoint)
+		{
+			return EBTNodeResult::Failed;
 		}
+
+		const float SearchRadius = IAIPawnOwner::Execute_GetMeleeDistance(ControlPawn);
+		const FVector SearchOrigin = WayPoint->GetActorLocation();
+		FNavLocation ResultLocation;
+		UNavigationSystemV1* NavSystem = UNavigationSystemV1::GetNavigationSystem(AIController);
+		if (NavSystem && NavSystem->GetRandomPointInNavigableRadius(SearchOrigin, SearchRadius, ResultLocation))
+		{
+			AIController->SetBlackboardPatrolLocation(ResultLocation.Location);
+			AIController->SetBlackboardPatrolPointsHolder(WayPoint);
+		}
+
 	}
-	return EBTNodeResult::Failed;
+	return EBTNodeResult::Succeeded;
 }

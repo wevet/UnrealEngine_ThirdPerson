@@ -15,19 +15,9 @@
 
 
 AAICharacterBase::AAICharacterBase(const FObjectInitializer& ObjectInitializer)	: Super(ObjectInitializer),
-	SenseTimeOut(8.f),
-	HearTimeOut(20.f),
-	MeleeAttackTimeOut(6.f),
-	bSeeTarget(false),
-	bHearTarget(false),
 	bAttackInitialized(false)
 {
 	PrimaryActorTick.bCanEverTick = true;
-	PawnSensingComponent = ObjectInitializer.CreateDefaultSubobject<UPawnSensingComponent>(this, TEXT("PawnSensingComponent"));
-	PawnSensingComponent->SetPeripheralVisionAngle(60.f);
-	PawnSensingComponent->SightRadius = 2000.f;
-	PawnSensingComponent->HearingThreshold = 600.f;
-	PawnSensingComponent->LOSHearingThreshold = 1200.f;
 
 	GetMovementComponent()->NavAgentProps.AgentRadius = 42;
 	GetMovementComponent()->NavAgentProps.AgentRadius = 192;
@@ -39,6 +29,13 @@ AAICharacterBase::AAICharacterBase(const FObjectInitializer& ObjectInitializer)	
 	Tags.Add(WATER_TAG);
 
 	GetMesh()->ComponentTags.Add(WATER_LOCAL_TAG);
+
+	{
+		static ConstructorHelpers::FObjectFinder<UClass> FindAsset(TEXT("/Game/Game/Blueprints/Tool/BP_SearchNodeGenerator.BP_SearchNodeGenerator_C"));
+		NodeHolderTemplate = FindAsset.Object;
+	}
+
+	// TeamID = 1
 }
 
 void AAICharacterBase::OnConstruction(const FTransform & Transform)
@@ -62,42 +59,24 @@ void AAICharacterBase::BeginPlay()
 {
 	Super::BeginPlay();
 
-	if (Wevet::ComponentExtension::HasValid(PawnSensingComponent))
+	TFunction<void(AAbstractWeapon*)> Func = [this](AAbstractWeapon* Weapon)
 	{
-		PawnSensingComponent->OnSeePawn.AddDynamic(this, &AAICharacterBase::OnSeePawnRecieve);
-		PawnSensingComponent->OnHearNoise.AddDynamic(this, &AAICharacterBase::OnHearNoiseRecieve);
-	}
+		CurrentWeapon = MakeWeakObjectPtr<AAbstractWeapon>(Weapon);
+	};
 
-	Super::CreateWeaponInstance(PrimaryWeapon, [&](AAbstractWeapon* Weapon)
-	{
-		if (Weapon)
-		{
-			CurrentWeapon = MakeWeakObjectPtr<AAbstractWeapon>(Weapon);
-		}
-	});
-
+	Super::CreateWeaponInstance(PrimaryWeapon, Func);
 	Super::CreateWeaponInstance(SecondaryWeapon, [&](AAbstractWeapon* Weapon)
 	{
 		//
 	});
 
 	//CreateHealthController();
+	
 }
 
 void AAICharacterBase::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	MainLoop(DeltaTime);
-}
-
-void AAICharacterBase::OnMovementModeChanged(EMovementMode PrevMovementMode, uint8 PreviousCustomMode)
-{
-	Super::OnMovementModeChanged(PrevMovementMode, PreviousCustomMode);
-	ALSMovementMode = GetPawnMovementModeChanged(PrevMovementMode, PreviousCustomMode);
-}
-
-void AAICharacterBase::MainLoop(float DeltaTime)
-{
 }
 
 void AAICharacterBase::InitializePosses()
@@ -111,12 +90,11 @@ void AAICharacterBase::StartRagdollAction()
 	Super::StartRagdollAction();
 	if (AIController)
 	{
+		AIController->SetBlackboardTarget(nullptr);
 		AIController->StopTree();
 	}
 
 	SetStanning(true);
-	SeePawnRecieveCallback(nullptr);
-	HearNoiseRecieveCallback(nullptr);
 	if (HasEquipWeapon())
 	{
 		CurrentWeapon.Get()->SetEquip(false);
@@ -145,7 +123,6 @@ float AAICharacterBase::TakeDamage(float Damage, struct FDamageEvent const& Dama
 	const float ActualDamage = Super::TakeDamage(Damage, DamageEvent, EventInstigator, DamageCauser);
 	if (!IDamageInstigator::Execute_IsDeath(this))
 	{
-		OnSeePawnRecieve(EventInstigator->GetPawn());
 	}
 	else
 	{
@@ -163,26 +140,25 @@ void AAICharacterBase::Die_Implementation()
 
 	Tags.Reset(0);
 	Tags.Add(FName(TEXT("DeadBody")));
+
+	RemoveSearchNodeGenerator();
+
 	UWevetBlueprintFunctionLibrary::DrawDebugString(this, FString(TEXT("DeadBody")), FLinearColor::Red);
 
 	Super::SetActorTickEnabled(false);
-	DetachFromControllerPendingDestroy();
 	DestroyHealthController();
 	TargetCharacter = nullptr;
-
-	if (Wevet::ComponentExtension::HasValid(PawnSensingComponent))
-	{
-		PawnSensingComponent->OnSeePawn.RemoveDynamic(this, &AAICharacterBase::OnSeePawnRecieve);
-		PawnSensingComponent->OnHearNoise.RemoveDynamic(this, &AAICharacterBase::OnHearNoiseRecieve);
-	}
-
-	Super::GetMesh()->SetRenderCustomDepth(false);
-	Super::Die_Implementation();
 
 	if (DeathDelegate.IsBound())
 	{
 		DeathDelegate.Broadcast();
 	}
+
+	Super::GetMesh()->SetRenderCustomDepth(false);
+	Super::Die_Implementation();
+
+	// Remove AIController
+	DetachFromControllerPendingDestroy();
 }
 
 void AAICharacterBase::Equipment_Implementation()
@@ -210,7 +186,15 @@ float AAICharacterBase::GetMeleeDistance_Implementation() const
 	return CurrentWeapon.Get()->GetWeaponItemInfo().MeleeDistance;
 }
 
-void AAICharacterBase::StateChange_Implementation(const EAIActionState NewAIActionState)
+void AAICharacterBase::CombatStateChange_Implementation(const EAICombatState NewAICombatState)
+{
+	if (AIController)
+	{
+		AIController->SetBlackboardCombatState(NewAICombatState);
+	}
+}
+
+void AAICharacterBase::ActionStateChange_Implementation(const EAIActionState NewAIActionState)
 {
 	if (AIController)
 	{
@@ -237,68 +221,34 @@ bool AAICharacterBase::CanMeleeStrike_Implementation() const
 }
 #pragma endregion
 
-void AAICharacterBase::OnSeePawnRecieve(APawn* OtherPawn)
+void AAICharacterBase::OnSightStimulus(AActor* const Actor, const FAIStimulus InStimulus, const bool InWasDeadCrew)
 {
-}
-
-void AAICharacterBase::OnHearNoiseRecieve(APawn* OtherActor, const FVector& Location, float Volume)
-{
-}
-
-void AAICharacterBase::SeePawnRecieveCallback(ACharacterBase* const NewCharacter)
-{
-	if (!AIController)
+	if (AIController == nullptr)
 	{
 		return;
 	}
-
-	TargetCharacter = NewCharacter;
-	bSeeTarget = (TargetCharacter != nullptr);
-	if (TargetCharacter)
-	{
-		FRotator LookAtRotation = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), TargetCharacter->GetActorLocation());
-		SetActorRotation(LookAtRotation);
-	}
-
-	if (TargetCharacter)
-	{
-		EquipmentActionMontage();
-	}
-	else
-	{
-		UnEquipmentActionMontage();
-	}
-	AIController->SetBlackboardTarget(TargetCharacter);
-	AIController->SetBlackboardSeeActor(bSeeTarget);
+	
+	AIController->SetBlackboardTarget(Actor);
+	EquipmentActionMontage();
 }
 
-void AAICharacterBase::HearNoiseRecieveCallback(AActor* const OtherActor, FVector Location)
+void AAICharacterBase::OnHearStimulus(AActor* const Actor, const FAIStimulus InStimulus, const bool InWasDeadCrew)
 {
-	if (!AIController)
+	if (AIController == nullptr)
 	{
 		return;
 	}
+	UpdateSearchNodeHolder(InStimulus.StimulusLocation);
+	EquipmentActionMontage();
+}
 
-	bHearTarget = (OtherActor != nullptr);
-	const FVector HearLocation = (Location != FVector::ZeroVector) ? Location : GetActorLocation();
-	FRotator LookAtRotation = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), HearLocation);
-	SetActorRotation(FRotator(0.0f, LookAtRotation.Yaw, 0.0f));
-
-	if (bHearTarget)
+void AAICharacterBase::OnPredictionStimulus(AActor* const Actor, const FAIStimulus InStimulus)
+{
+	if (AIController == nullptr)
 	{
-		EquipmentActionMontage();
+		return;
 	}
-	else
-	{
-		UnEquipmentActionMontage();
-	}
-	AIController->SetBlackboardPatrolLocation(HearLocation);
-	AIController->SetBlackboardHearActor(bHearTarget);
-
-	if (bDebugTrace)
-	{
-		UKismetSystemLibrary::DrawDebugSphere(GetWorld(), Location, 100.f, 12, FLinearColor::Yellow, 4.f, 2.f);
-	}
+	UE_LOG(LogWevetClient, Log, TEXT("Prediction Sense : %f"), InStimulus.GetAge());
 }
 
 void AAICharacterBase::EquipmentActionMontage()
@@ -345,33 +295,22 @@ void AAICharacterBase::AttackUnInitialize()
 }
 #pragma endregion
 
-#pragma region Cover
-void AAICharacterBase::FindFollowCharacter()
-{
-	TArray<class AAICharacterBase*> Characters;
-
-	// @NOTE
-	// PawnÇÃÇ›ëŒè€Ç∆Ç∑ÇÈ
-	TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes = { EObjectTypeQuery::ObjectTypeQuery3 };
-
-	//const bool bResult = UKismetSystemLibrary::SphereOverlapActors(this, GetActorLocation(), AttackTraceForwardDistance);
-}
-#pragma endregion
-
 FVector AAICharacterBase::BulletTraceForwardLocation() const
 {
 	if (CurrentWeapon.IsValid())
 	{
 		const FTransform MuzzleTransform = CurrentWeapon.Get()->GetMuzzleTransform();
-		FRotator MuzzleRotation = FRotator(MuzzleTransform.GetRotation());
+		const float Distance = CurrentWeapon.Get()->GetTraceDistance();
+		const FRotator MuzzleRotation = FRotator(MuzzleTransform.GetRotation());
+		const FVector MuzzleLocation = MuzzleTransform.GetLocation();
+
 		if (TargetCharacter)
 		{
-			const FRotator LookAtRotation = UKismetMathLibrary::FindLookAtRotation(
-				MuzzleTransform.GetLocation(), 
-				TargetCharacter->GetActorLocation());
-			MuzzleRotation.Yaw = LookAtRotation.Yaw;
+			const FRotator LookAtRotation = UKismetMathLibrary::FindLookAtRotation(MuzzleLocation, TargetCharacter->GetActorLocation());
+			//MuzzleRotation.Yaw = LookAtRotation.Yaw;
 		}
-		return BulletTraceRelativeLocation() + (MuzzleRotation.Vector() * CurrentWeapon.Get()->GetTraceDistance());
+		//UKismetMathLibrary::GetForwardVector(MuzzleRotation)
+		return MuzzleLocation + (MuzzleRotation.Vector() * Distance);
 	}
 	return GetActorForwardVector();
 }
@@ -421,3 +360,44 @@ void AAICharacterBase::DestroyHealthController()
 		UIHealthController = nullptr;
 	}
 }
+
+// Run to EQS
+void AAICharacterBase::UpdateSearchNodeHolder(const FVector SearchOriginLocation)
+{
+	if (NodeHolderTemplate == nullptr || AIController == nullptr)
+	{
+		UE_LOG(LogWevetClient, Error, TEXT("NodeHolderTemplate or AIController nullptr"));
+		return;
+	}
+
+
+	const FTransform Transform = UKismetMathLibrary::MakeTransform(SearchOriginLocation, FRotator::ZeroRotator, FVector::OneVector);
+	ASearchNodeGenerator* const SpawningObject = UWevetBlueprintFunctionLibrary::SpawnActorDeferred<ASearchNodeGenerator>(
+		this,
+		NodeHolderTemplate,
+		Transform,
+		this);
+
+	if (!SpawningObject)
+	{
+		return;
+	}
+
+	RemoveSearchNodeGenerator();
+
+	SpawningObject->FinishSpawning(Transform);
+	AIController->SetBlackboardSearchNodeHolder(SpawningObject);
+	AIController->SetBlackboardDestinationLocation(SearchOriginLocation);
+}
+
+// Refresh to SearchNodeGenerator
+void AAICharacterBase::RemoveSearchNodeGenerator()
+{
+	ASearchNodeGenerator* NodeHolder = Cast<ASearchNodeGenerator>(AIController->GetBlackboardSearchNodeHolder());
+	if (NodeHolder)
+	{
+		NodeHolder->PrepareDestroy();
+		NodeHolder->Destroy();
+	}
+}
+

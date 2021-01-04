@@ -1,6 +1,6 @@
 {
 	"FileVersion": 3,
-	"EngineAssociation": "4.25",
+	"EngineAssociation": "4.26",
 	"Category": "Game",
 	"Description": "ActionGame",
 	"Modules": [
@@ -157,11 +157,35 @@
 			"Enabled": true
 		},
 		{
-			"Name": "ApexDestruction",
+			"Name": "LocomotionSystem",
 			"Enabled": true
 		},
 		{
-			"Name": "LocomotionSystem",
+			"Name": "RLPlugin",
+			"Enabled": false
+		},
+		{
+			"Name": "Water",
+			"Enabled": true
+		},
+		{
+			"Name": "ShallowWater",
+			"Enabled": true
+		},
+		{
+			"Name": "SequencerScripting",
+			"Enabled": true
+		},
+		{
+			"Name": "PythonAutomationTest",
+			"Enabled": true
+		},
+		{
+			"Name": "PythonScriptPlugin",
+			"Enabled": true
+		},
+		{
+			"Name": "RigLogic",
 			"Enabled": true
 		}
 	]

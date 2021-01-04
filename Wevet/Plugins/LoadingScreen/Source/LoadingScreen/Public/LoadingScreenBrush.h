@@ -2,7 +2,7 @@
 
 #include "SlateBasics.h"
 #include "SlateExtras.h"
-#include "SThrobber.h"
+#include "Widgets/Images/SThrobber.h"
 
 struct FLoadingScreenBrush : public FSlateDynamicImageBrush, public FGCObject
 {

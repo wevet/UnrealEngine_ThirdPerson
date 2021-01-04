@@ -1,9 +1,13 @@
+// Copyright 2018 wevet works All Rights Reserved.
+
 using UnrealBuildTool;
 
 public class RTIK : ModuleRules
 {
 	public RTIK(ReadOnlyTargetRules Target) : base(Target)
 	{
+		PrivatePCHHeaderFile = "Public/RTIK.h";
+
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 
 		PrivateIncludePaths.Add("RTIK/Private");

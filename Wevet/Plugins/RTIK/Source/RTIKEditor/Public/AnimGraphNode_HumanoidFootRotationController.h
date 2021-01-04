@@ -2,7 +2,7 @@
 #pragma once
 
 #include "AnimGraphNode_SkeletalControlBase.h"
-#include "IK/AnimNode_HumanoidFootRotationController.h"
+#include "AnimNode_HumanoidFootRotationController.h"
 #include "AnimGraphNode_HumanoidFootRotationController.generated.h"
 
 UCLASS()

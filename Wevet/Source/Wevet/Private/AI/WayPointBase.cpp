@@ -1,6 +1,6 @@
 // Copyright 2018 wevet works All Rights Reserved.
 
-#include "WayPointBase.h"
+#include "AI/WayPointBase.h"
 
 
 AWayPointBase::AWayPointBase(const FObjectInitializer& ObjectInitializer)

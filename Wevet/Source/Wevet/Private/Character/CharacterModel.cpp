@@ -1,6 +1,6 @@
 // Copyright 2018 wevet works All Rights Reserved.
 
-#include "CharacterModel.h"
+#include "Character/CharacterModel.h"
 #include "Wevet.h"
 
 UCharacterModel::UCharacterModel(const FObjectInitializer& ObjectInitializer)
