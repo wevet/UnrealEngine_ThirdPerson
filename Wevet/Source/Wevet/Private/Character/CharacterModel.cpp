@@ -38,3 +38,27 @@ void UCharacterModel::SetWisdom(const int32 NewWisdom)
 {
 	Wisdom = NewWisdom;
 }
+
+void UCharacterModel::TakeDamage(const int32 InDamage)
+{
+	const int32 CurrentHealth = GetHealth();
+	SetHealth(CurrentHealth - InDamage);
+}
+
+void UCharacterModel::Recover(const int32 AddHealth)
+{
+	Health += AddHealth;
+	Health = FMath::Clamp<int32>(Health, INT_ZERO, MaxHealth);
+}
+
+void UCharacterModel::Die()
+{
+	bDie = true;
+}
+
+void UCharacterModel::Alive()
+{
+	float Value = ((float)MaxHealth * QUART_WEIGHT);
+	SetHealth((int)FMath::Abs(Value));
+	bDie = false;
+}

@@ -11,7 +11,7 @@ AMockPlayerController::AMockPlayerController(const FObjectInitializer& ObjectIni
 	UMGManager(nullptr)
 {
 
-	static ConstructorHelpers::FObjectFinder<UClass> FindAsset(TEXT("/Game/Game/Blueprints/Widgets/BP_UMGManager.BP_UMGManager_C"));
+	static ConstructorHelpers::FObjectFinder<UClass> FindAsset(Wevet::ProjectFile::GetUMGPath());
 	UMGManagerTemplate = FindAsset.Object;
 
 }
@@ -34,11 +34,34 @@ void AMockPlayerController::OnPossess(APawn* InPawn)
 		UMGManager->AddToViewport();
 	}
 
-	if (Character)
+	if (ICombatInstigator* Interface = Cast<ICombatInstigator>(Character))
 	{
-		Character->DeathDelegate.AddDynamic(this, &AMockPlayerController::OnDeath);
-		Character->AliveDelegate.AddDynamic(this, &AMockPlayerController::OnAlive);
-		Character->KillDelegate.AddDynamic(this, &AMockPlayerController::OnKill);
+		// DeathEventBind..
+		{
+			FCombatDelegate* Delegate = Interface->GetDeathDelegate();
+			if (Delegate)
+			{
+				(*Delegate).AddDynamic(this, &AMockPlayerController::OnDeath);
+			}
+		}
+
+		// KillEventBind..
+		{
+			FCombatOneDelegate* Delegate = Interface->GetKillDelegate();
+			if (Delegate)
+			{
+				(*Delegate).AddDynamic(this, &AMockPlayerController::OnKill);
+			}
+		}
+
+		// AliveEventBind..
+		{
+			FCombatDelegate* Delegate = Interface->GetAliveDelegate();
+			if (Delegate)
+			{
+				(*Delegate).AddDynamic(this, &AMockPlayerController::OnAlive);
+			}
+		}
 	}
 
 	if (Manager)
@@ -49,11 +72,34 @@ void AMockPlayerController::OnPossess(APawn* InPawn)
 
 void AMockPlayerController::OnUnPossess()
 {
-	if (Character)
+	if (ICombatInstigator* Interface = Cast<ICombatInstigator>(Character))
 	{
-		Character->DeathDelegate.RemoveDynamic(this, &AMockPlayerController::OnDeath);
-		Character->AliveDelegate.RemoveDynamic(this, &AMockPlayerController::OnAlive);
-		Character->KillDelegate.RemoveDynamic(this, &AMockPlayerController::OnKill);
+		// DeathEventUnBind..
+		{
+			FCombatDelegate* Delegate = Interface->GetDeathDelegate();
+			if (Delegate)
+			{
+				(*Delegate).RemoveDynamic(this, &AMockPlayerController::OnDeath);
+			}
+		}
+
+		// KillEventUnBind..
+		{
+			FCombatOneDelegate* Delegate = Interface->GetKillDelegate();
+			if (Delegate)
+			{
+				(*Delegate).RemoveDynamic(this, &AMockPlayerController::OnKill);
+			}
+		}
+
+		// AliveEventUnBind..
+		{
+			FCombatDelegate* Delegate = Interface->GetAliveDelegate();
+			if (Delegate)
+			{
+				(*Delegate).RemoveDynamic(this, &AMockPlayerController::OnAlive);
+			}
+		}
 	}
 
 	if (UMGManager)

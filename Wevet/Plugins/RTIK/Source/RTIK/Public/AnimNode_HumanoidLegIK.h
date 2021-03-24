@@ -12,7 +12,7 @@ struct RTIK_API FAnimNode_HumanoidLegIK : public FAnimNode_SkeletalControlBase
 {
 	GENERATED_USTRUCT_BODY()
 
-public:
+protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Links)
 	FComponentSpacePoseLink BaseComponentPose;
 
@@ -56,20 +56,19 @@ public:
 	float MinimumEffectorDelta;
 	
 public:
-	FAnimNode_HumanoidLegIK()
-		:
-		FootTargetWorld(FVector(0.0f, 0.0f, 0.0f)),
-		Precision(0.001f),
-		MaxIterations(10),
-		bEnable(true),
+	FAnimNode_HumanoidLegIK() : Super(),
 		Mode(EHumanoidLegIKMode::IK_Human_Leg_Locomotion),
 		Solver(EHumanoidLegIKSolver::IK_Human_Leg_Solver_FABRIK),
-		EffectorRotationSource(EBoneRotationSource::BRS_KeepComponentSpaceRotation),
-		EffectorVelocity(300.0f),
-		bEffectorMovesInstantly(false),
-		LastEffectorOffset(0.0f, 0.0f, 0.0f)
+		EffectorRotationSource(EBoneRotationSource::BRS_KeepComponentSpaceRotation)
 	{
+		FootTargetWorld = FTransform::Identity;
+		LastEffectorOffset = FVector::ZeroVector;
+		Precision = 0.001f;
+		MaxIterations = 10;
+		EffectorVelocity = 300.0f;
 		bEnableDebugDraw = false;
+		bEffectorMovesInstantly = false;
+		bEnable = true;
 		DeltaTime = 0.0f;
 	}
 
@@ -92,15 +91,13 @@ public:
 		DeltaTime = Context.GetDeltaTime();
 	}
 
-	virtual void EvaluateSkeletalControl_AnyThread(FComponentSpacePoseContext& Output, TArray<FBoneTransform>& OutBoneTransforms) override;
-
 	virtual bool IsValidToEvaluate(const USkeleton* Skeleton, const FBoneContainer& RequiredBones) override
 	{
 		if (Leg == nullptr || TraceData == nullptr)
 		{
 			return false;
 		}
-		bool bValid = Leg->InitIfInvalid(RequiredBones);
+		const bool bValid = Leg->InitIfInvalid(RequiredBones);
 		return bValid;
 	}
 
@@ -115,6 +112,8 @@ public:
 			//
 		}
 	}
+
+	virtual void EvaluateSkeletalControl_AnyThread(FComponentSpacePoseContext& Output, TArray<FBoneTransform>& OutBoneTransforms) override;
 
 protected:
 	float DeltaTime;

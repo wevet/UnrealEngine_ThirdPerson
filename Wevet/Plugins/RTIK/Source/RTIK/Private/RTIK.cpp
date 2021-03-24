@@ -1,12 +1,12 @@
 #include "RTIK.h"
 
-DEFINE_LOG_CATEGORY(LogRTIK)
+DEFINE_LOG_CATEGORY(LogNIK)
 
 class FRTIKPlugin : public IRTIKPlugin
 {
 	virtual void StartupModule() override
 	{
-		UE_LOG(LogRTIK, Log, TEXT("FRTIKPlugin : StartupModule"));
+		UE_LOG(LogNIK, Log, TEXT("FullBodyIK Plugin : StartupModule"));
 	}
 
 	virtual bool IsGameModule() const override
@@ -16,7 +16,7 @@ class FRTIKPlugin : public IRTIKPlugin
 
 	virtual void ShutdownModule() override
 	{
-		UE_LOG(LogRTIK, Log, TEXT("FRTIKPlugin : ShutdownModule"));
+		UE_LOG(LogNIK, Log, TEXT("FullBodyIK Plugin : ShutdownModule"));
 	}
 };
 

@@ -1,13 +1,16 @@
 #pragma once
 
 #include "Engine/EngineTypes.h"
+#include "WevetTypes.h"
+#include "UObject/WeakObjectPtrTemplates.h"
+#include "UObject/Class.h"
 #include "GameFramework/DamageType.h"
 #include "TakeHitInfo.generated.h"
 
 USTRUCT(BlueprintType)
 struct WEVET_API FTakeHitInfo
 {
-	GENERATED_USTRUCT_BODY()
+	GENERATED_USTRUCT_BODY();
 
 public:
 	UPROPERTY()
@@ -29,7 +32,6 @@ public:
 	bool bKilled;
 
 private:
-
 	UPROPERTY()
 	uint8 EnsureReplicationByte;
 
@@ -57,21 +59,21 @@ public:
 	{
 		switch (DamageEventClassID)
 		{
-		case FPointDamageEvent::ClassID:
+			case FPointDamageEvent::ClassID:
 			if (PointDamageEvent.DamageTypeClass == nullptr)
 			{
 				PointDamageEvent.DamageTypeClass = DamageTypeClass ? DamageTypeClass : UDamageType::StaticClass();
 			}
 			return PointDamageEvent;
 
-		case FRadialDamageEvent::ClassID:
+			case FRadialDamageEvent::ClassID:
 			if (RadialDamageEvent.DamageTypeClass == nullptr)
 			{
 				RadialDamageEvent.DamageTypeClass = DamageTypeClass ? DamageTypeClass : UDamageType::StaticClass();
 			}
 			return RadialDamageEvent;
 
-		default:
+			default:
 			if (GeneralDamageEvent.DamageTypeClass == nullptr)
 			{
 				GeneralDamageEvent.DamageTypeClass = DamageTypeClass ? DamageTypeClass : UDamageType::StaticClass();
@@ -85,14 +87,17 @@ public:
 		DamageEventClassID = DamageEvent.GetTypeID();
 		switch (DamageEventClassID)
 		{
-		case FPointDamageEvent::ClassID:
+			case FPointDamageEvent::ClassID:
 			PointDamageEvent = *((FPointDamageEvent const*)(&DamageEvent));
 			break;
-		case FRadialDamageEvent::ClassID:
+			
+			case FRadialDamageEvent::ClassID:
 			RadialDamageEvent = *((FRadialDamageEvent const*)(&DamageEvent));
 			break;
-		default:
+
+			default:
 			GeneralDamageEvent = DamageEvent;
+			break;
 		}
 	}
 

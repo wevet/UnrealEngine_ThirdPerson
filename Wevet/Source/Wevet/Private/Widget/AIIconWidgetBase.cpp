@@ -14,7 +14,7 @@ UAIIconWidgetBase::UAIIconWidgetBase(const FObjectInitializer& ObjectInitializer
 	: Super(ObjectInitializer),
 	bWasVisible(false)
 {
-	ContainerKeyName = (TEXT("Container"));
+	ContainerKeyName = FName(TEXT("Container"));
 	ViewPortOffset = FVector2D(0.5f, 0.f);
 	Offset = 100.f;
 	Subtract = 10.f;

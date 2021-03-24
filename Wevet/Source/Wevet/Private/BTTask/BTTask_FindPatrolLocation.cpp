@@ -5,11 +5,10 @@
 #include "BehaviorTree/BlackboardComponent.h"
 #include "BehaviorTree/Blackboard/BlackboardKeyAllTypes.h"
 #include "AI/AIControllerBase.h"
-#include "AI/AICharacterBase.h"
+#include "Character/CharacterBase.h"
 #include "AI/WayPointBase.h"
 #include "Engine.h"
 #include "NavigationSystem.h"
-#include "Interface/AIPawnOwner.h"
 
 UBTTask_FindPatrolLocation::UBTTask_FindPatrolLocation() : Super()
 {
@@ -22,14 +21,14 @@ EBTNodeResult::Type UBTTask_FindPatrolLocation::ExecuteTask(UBehaviorTreeCompone
 	{
 		AWayPointBase* WayPoint = AIController->GetWayPoint();
 		APawn* ControlPawn = AIController->GetPawn();
-		IAIPawnOwner* Interface = Cast<IAIPawnOwner>(ControlPawn);
+		ICombatInstigator* Interface = Cast<ICombatInstigator>(ControlPawn);
 
 		if (!ControlPawn || !Interface || !WayPoint)
 		{
 			return EBTNodeResult::Failed;
 		}
 
-		const float SearchRadius = IAIPawnOwner::Execute_GetMeleeDistance(ControlPawn);
+		const float SearchRadius = ICombatInstigator::Execute_GetMeleeDistance(ControlPawn);
 		const FVector SearchOrigin = WayPoint->GetActorLocation();
 		FNavLocation ResultLocation;
 		UNavigationSystemV1* NavSystem = UNavigationSystemV1::GetNavigationSystem(AIController);

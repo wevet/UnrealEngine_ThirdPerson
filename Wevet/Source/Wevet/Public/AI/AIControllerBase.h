@@ -7,6 +7,9 @@
 #include "Perception/AISenseConfig_Sight.h"
 #include "Perception/AISenseConfig_Hearing.h"
 #include "Perception/AISenseConfig_Prediction.h"
+#include "Perception/AISenseConfig_Damage.h"
+#include "Perception/AISenseConfig_Sight.h"
+#include "Perception/AISenseConfig_Team.h"
 #include "Perception/AIPerceptionComponent.h"
 #include "BehaviorTree/BehaviorTree.h"
 #include "BehaviorTree/BlackboardComponent.h"
@@ -65,7 +68,6 @@ public:
 	void SetBlackboardPatrolLocation(const FVector NewLocation);
 	void SetBlackboardDestinationLocation(const FVector NewDestination);
 	void SetBlackboardActionState(const EAIActionState NewAIActionState);
-	void SetBlackboardCombatState(const EAICombatState NewAICombatState);
 
 	FORCEINLINE AActor* GetBlackboardTarget() const
 	{
@@ -77,18 +79,13 @@ public:
 		return Cast<AActor>(BlackboardComponent->GetValueAsObject(SearchNodeHolderKeyName));
 	}
 
-	FORCEINLINE EAICombatState GetBlackboardCombatState() const
-	{
-		return (EAICombatState)BlackboardComponent->GetValueAsEnum(CombatStateKeyName);
-	}
-
 	FORCEINLINE EAIActionState GetBlackboardActionState() const
 	{
 		return (EAIActionState)BlackboardComponent->GetValueAsEnum(ActionStateKeyName);
 	}
 
 	bool WasBlackboardTargetDeath() const;
-	bool WasSameDeadCrew(AActor* const InActor) const;
+	bool WasKilledCrew(AActor* const InActor) const;
 
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Components, meta = (AllowPrivateAccess = "true"))
@@ -107,6 +104,7 @@ protected:
 	class UAISenseConfig_Sight* SightConfig;
 	class UAISenseConfig_Hearing* HearConfig;
 	class UAISenseConfig_Prediction* PredictionConfig;
+	class UAISenseConfig_Damage* DamageConfig;
 
 protected:
 	class AAICharacterBase* Character;
@@ -123,9 +121,6 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = "AIController|Variable")
 	FName PatrolLocationKeyName;
-
-	UPROPERTY(EditDefaultsOnly, Category = "AIController|Variable")
-	FName CombatStateKeyName;
 
 	UPROPERTY(EditDefaultsOnly, Category = "AIController|Variable")
 	FName ActionStateKeyName;

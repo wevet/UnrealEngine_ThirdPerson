@@ -16,7 +16,6 @@ class RTIKEDITOR_API UAnimGraphNode_RangeLimitedFabrik : public UAnimGraphNode_S
 	GENERATED_BODY()
 
 public:
-
 	FText GetNodeTitle(ENodeTitleType::Type TitleType) const override
 	{
 		return FText::FromString(FString("Range Limited FABRIK"));

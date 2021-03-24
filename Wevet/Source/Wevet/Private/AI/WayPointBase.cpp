@@ -3,8 +3,7 @@
 #include "AI/WayPointBase.h"
 
 
-AWayPointBase::AWayPointBase(const FObjectInitializer& ObjectInitializer)
-	: Super(ObjectInitializer)
+AWayPointBase::AWayPointBase(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {
 	PrimaryActorTick.bCanEverTick = false;
 }

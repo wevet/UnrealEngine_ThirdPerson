@@ -10,6 +10,10 @@
 #include "WevetTypes.h"
 #include "CharacterModel.h"
 
+// AIModule
+#include "Perception/AISightTargetInterface.h"
+#include "GenericTeamAgentInterface.h"
+
 // Weapon
 #include "Weapon/AbstractWeapon.h"
 
@@ -17,8 +21,7 @@
 #include "Item/AbstractItem.h"
 
 // Interface
-#include "Interface/DamageInstigator.h"
-#include "Interface/AttackInstigator.h"
+#include "Interface/CombatInstigator.h"
 #include "Interface/SoundInstigator.h"
 #include "Interface/InteractionPawn.h"
 
@@ -34,9 +37,6 @@
 #include "Component/CharacterPickupComponent.h"
 #include "Component/ComboComponent.h"
 
-#include "Perception/AISightTargetInterface.h"
-#include "GenericTeamAgentInterface.h"
-
 // Plugins Locomotion
 #include "LocomotionSystemTypes.h"
 #include "LocomotionSystemStructs.h"
@@ -44,27 +44,20 @@
 #include "CharacterBase.generated.h"
 
 using WeaponFunc = TFunction<void(AAbstractWeapon* Weapon)>;
-
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FDeathDelegate);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FKillDelegate, AActor* const, InActor);
 class UCharacterAnimInstanceBase;
 class UIKAnimInstance;
 
 UCLASS(ABSTRACT)
 class WEVET_API ACharacterBase : public ACharacter, 
-	public IDamageInstigator, 
-	public IAttackInstigator, 
-	public ISoundInstigator, 
-	public IInteractionPawn,
-	public ILocomotionSystemPawn,
-	public IAISightTargetInterface, 
-	public IGenericTeamAgentInterface
+	public ICombatInstigator, public ISoundInstigator, public IInteractionPawn, public ILocomotionSystemPawn, 
+	public IAISightTargetInterface, public IGenericTeamAgentInterface
 {
 	GENERATED_BODY()
 
 public:
 	ACharacterBase(const FObjectInitializer& ObjectInitializer);
 	virtual void OnConstruction(const FTransform& Transform) override;
+	virtual void PostInitializeComponents() override;
 	virtual void BeginDestroy() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	virtual void Tick(float DeltaTime) override;
@@ -76,12 +69,15 @@ protected:
 	virtual void OnStartCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjust) override;
 	virtual void OnEndCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjust) override;
 
-public:
+protected:
 	UPROPERTY(BlueprintAssignable)
-	FDeathDelegate DeathDelegate;
+	FCombatDelegate DeathDelegate;
 
 	UPROPERTY(BlueprintAssignable)
-	FKillDelegate KillDelegate;
+	FCombatDelegate AliveDelegate;
+
+	UPROPERTY(BlueprintAssignable)
+	FCombatOneDelegate KillDelegate;
 
 public:
 	virtual void Jump() override;
@@ -92,6 +88,7 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "CharacterBase|Function")
 	virtual void StopSprint();
+
 
 	/**
 	* Retrieve team identifier in form of FGenericTeamId
@@ -121,10 +118,16 @@ protected:
 	UFUNCTION(BlueprintCallable, Category = "CharacterBase|Function")
 	virtual void CrouchUpdate(const bool InCrouch);
 
-	virtual void OnCrouchUpdate();
+	virtual void PickupObjects();
+	virtual void ReleaseObjects();
+
+	virtual void OnWalkAction();
 
 public:
-#pragma region InteractionPawn
+	virtual void MeleeAttack(const bool InEnable);
+
+public:
+#pragma region BasicInferface
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|InteractionPawn")
 	void Pickup(const EItemType InItemType, AActor* Actor);
 	virtual void Pickup_Implementation(const EItemType InItemType, AActor* Actor) override;
@@ -134,11 +137,13 @@ public:
 	virtual bool CanPickup_Implementation() const override;
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|InteractionPawn")
+	void OverlapActor(AActor* Actor);
+	virtual void OverlapActor_Implementation(AActor* Actor) override;
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|InteractionPawn")
 	void Release();
 	virtual void Release_Implementation() override;
-#pragma endregion
 
-#pragma region SoundInstigator
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|SoundInstigator")
 	void ReportNoise(USoundBase* Sound, float Volume);
 	virtual void ReportNoise_Implementation(USoundBase* Sound, float Volume) override;
@@ -152,126 +157,132 @@ public:
 	virtual void ReportNoiseOther_Implementation(AActor* Actor, USoundBase* Sound, const float Volume, const FVector Location) override;
 #pragma endregion
 
-#pragma region DamageInstigator
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|IDamageInstigator")
-	float MakeDamage(UCharacterModel* DamageModel, const int InWeaponDamage) const;
-	virtual float MakeDamage_Implementation(UCharacterModel* DamageModel, const int InWeaponDamage) const override;
+#pragma region Combat
+	virtual FCombatDelegate* GetDeathDelegate() override;
+	virtual FCombatDelegate* GetAliveDelegate() override;
+	virtual FCombatOneDelegate* GetKillDelegate() override;
 
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|IDamageInstigator")
-	bool IsDeath() const;
-	virtual bool IsDeath_Implementation() const override;
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|CombatInstigator")
+	float GetMeleeDistance() const;
+	virtual float GetMeleeDistance_Implementation() const override;
 
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|IDamageInstigator")
-	void Die();
-	virtual void Die_Implementation() override;
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|CombatInstigator")
+	AActor* GetTarget() const;
+	virtual AActor* GetTarget_Implementation() const override;
 
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|IDamageInstigator")
-	void Alive();
-	virtual void Alive_Implementation() override;
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|CombatInstigator")
+	void SetActionState(const EAIActionState InAIActionState);
+	virtual void SetActionState_Implementation(const EAIActionState InAIActionState) override;
 
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|IDamageInstigator")
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|CombatInstigator")
+	void OnActionStateChange();
+	virtual void OnActionStateChange_Implementation() override;
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|CombatInstigator")
+	EAIActionState GetActionState() const;
+	virtual EAIActionState GetActionState_Implementation() const override;
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|CombatInstigator")
+	bool CanMeleeStrike() const;
+	virtual bool CanMeleeStrike_Implementation() const override;
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|CombatInstigator")
 	void InfrictionDamage(AActor* InfrictionActor, const bool bInfrictionDie);
 	virtual void InfrictionDamage_Implementation(AActor* InfrictionActor, const bool bInfrictionDie) override;
 
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|IDamageInstigator")
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|CombatInstigator")
+	bool IsDeath() const;
+	virtual bool IsDeath_Implementation() const override;
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|CombatInstigator")
+	void Die();
+	virtual void Die_Implementation() override;
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|CombatInstigator")
+	void Alive();
+	virtual void Alive_Implementation() override;
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|CombatInstigator")
 	void Equipment();
 	virtual void Equipment_Implementation() override;
 
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|IDamageInstigator")
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|CombatInstigator")
 	void UnEquipment();
 	virtual void UnEquipment_Implementation() override;
 
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|IDamageInstigator")
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|CombatInstigator")
 	UCharacterModel* GetPropertyModel() const;
 	virtual UCharacterModel* GetPropertyModel_Implementation() const override;
 
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|IDamageInstigator")
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|CombatInstigator")
+	float MakeDamage(UCharacterModel* DamageModel, const int InWeaponDamage) const;
+	virtual float MakeDamage_Implementation(UCharacterModel* DamageModel, const int InWeaponDamage) const override;
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|CombatInstigator")
 	bool CanKillDealDamage(const FName BoneName) const;
 	virtual bool CanKillDealDamage_Implementation(const FName BoneName) const override;
 
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|IDamageInstigator")
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|CombatInstigator")
 	void HitEffectReceive(const FHitResult& HitResult, const EGiveDamageType InGiveDamageType);
 	virtual void HitEffectReceive_Implementation(const FHitResult& HitResult, const EGiveDamageType InGiveDamageType) override;
-#pragma endregion
 
-#pragma region AttackInstigator
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|AttackInstigator")
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|CombatInstigator")
 	void DoFirePressed();
 	virtual void DoFirePressed_Implementation() override;
 
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|AttackInstigator")
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|CombatInstigator")
 	void DoFireReleassed();
 	virtual void DoFireReleassed_Implementation() override;	
 
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|AttackInstigator")
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|CombatInstigator")
 	void DoMeleeAttack();
 	virtual void DoMeleeAttack_Implementation() override;	
 
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|AttackInstigator")
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|CombatInstigator")
 	void DoReload();
 	virtual void DoReload_Implementation() override;
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|CombatInstigator")
+	AAbstractWeapon* GetCurrentWeapon() const;
+	virtual AAbstractWeapon* GetCurrentWeapon_Implementation() const override;
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|CombatInstigator")
+	void DoSightReceive(AActor* Actor, const FAIStimulus InStimulus, const bool InWasKilledCrew);
+	virtual void DoSightReceive_Implementation(AActor* Actor, const FAIStimulus InStimulus, const bool InWasKilledCrew) override;
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|CombatInstigator")
+	void DoHearReceive(AActor* Actor, const FAIStimulus InStimulus, const bool InWasKilledCrew);
+	virtual void DoHearReceive_Implementation(AActor* Actor, const FAIStimulus InStimulus, const bool InWasKilledCrew) override;
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|CombatInstigator")
+	void DoPredictionReceive(AActor* Actor, const FAIStimulus InStimulus);
+	virtual void DoPredictionReceive_Implementation(AActor* Actor, const FAIStimulus InStimulus) override;
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|CombatInstigator")
+	void DoDamageReceive(AActor* Actor, const FAIStimulus InStimulus);
+	virtual void DoDamageReceive_Implementation(AActor* Actor, const FAIStimulus InStimulus) override;
 #pragma endregion
 
 public:
-	FORCEINLINE class UAudioComponent* GetAudioComponent() const
-	{
-		return AudioComponent; 
-	}
-
-	FORCEINLINE class UCharacterPickupComponent* GetPickupComponent() const 
-	{
-		return PickupComponent; 
-	}
-
-	FORCEINLINE class UCharacterInventoryComponent* GetInventoryComponent() const
-	{
-		return InventoryComponent; 
-	}
-
-	FORCEINLINE class UComboComponent* GetComboComponent() const 
-	{
-		return ComboComponent; 
-	}
+	FORCEINLINE class UAudioComponent* GetAudioComponent() const { return AudioComponent; }
+	FORCEINLINE class UCharacterPickupComponent* GetPickupComponent() const { return PickupComponent; }
+	FORCEINLINE class UCharacterInventoryComponent* GetInventoryComponent() const { return InventoryComponent; }
+	FORCEINLINE class UComboComponent* GetComboComponent() const { return ComboComponent; }
 
 public:
 	UFUNCTION(BlueprintCallable, Category = "CharacterBase|Function")
 	class UCharacterAnimInstanceBase* GetAnimInstance() const;
 	class UIKAnimInstance* GetIKAnimInstance() const;
 
-	FORCEINLINE bool HasCrouch() const 
-	{
-		return bCrouch; 
-	}
+	float GetHealthToWidget() const { return CharacterModel->GetHealthToWidget(); }
 
-	FORCEINLINE bool HasSprint() const 
-	{
-		return bSprint; 
-	}
+	bool IsFullHealth() const { return CharacterModel->IsFullHealth(); }
+	bool IsHealthHalf() const { return CharacterModel->IsHealthHalf(); }
+	bool IsHealthQuarter() const { return CharacterModel->IsHealthQuarter(); }
 
-	FORCEINLINE bool WasStanning() const 
-	{
-		return bWasStanning; 
-	}
-
-	float GetHealthToWidget() const 
-	{
-		return CharacterModel->GetHealthToWidget(); 
-	}
-
-	bool IsFullHealth() const 
-	{
-		return CharacterModel->IsFullHealth(); 
-	}
-	
-	bool IsHealthHalf() const 
-	{
-		return CharacterModel->IsHealthHalf(); 
-	}
-	
-	bool IsHealthQuarter() const 
-	{
-		return CharacterModel->IsHealthQuarter(); 
-	}
+	bool WasMeleeAttackPlaying() const { return MeleeAttackTimeOut >= ZERO_VALUE; }
+	bool WasTakeDamagePlaying() const { return TakeDamageTimeOut >= ZERO_VALUE; }
+	bool WasEquipWeaponPlaying() const { return EquipWeaponTimeOut >= ZERO_VALUE; }
 
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Components, meta = (AllowPrivateAccess = "true"))
@@ -290,6 +301,7 @@ protected:
 	class UComboComponent* ComboComponent;
 
 protected:
+#pragma region Uproperty
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "CharacterBase|Combat")
 	TSubclassOf<class AAbstractWeapon> PrimaryWeapon;
 
@@ -305,12 +317,8 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "CharacterBase|Variable")
 	class USoundBase* FootStepSoundAsset;
 
-	bool bCrouch;
+	UPROPERTY()
 	bool bWasDied;
-	bool bWasStanning;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "CharacterBase|Variable")
-	bool bSprint;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "CharacterBase|Variable")
 	float BaseTurnRate;
@@ -323,6 +331,12 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "CharacterBase|Variable")
 	float RightAxisValue;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "CharacterBase|Variable")
+	float RecoverTimer;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "CharacterBase|Variable")
+	int32 RecoverHealthValue;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "CharacterBase|Variable")
 	FName HeadSocketName;
@@ -343,16 +357,24 @@ protected:
 	FName ChestBoneName;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "CharacterBase|Variable")
+	bool bWasSprint;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "CharacterBase|Variable")
 	bool bEnableRagdoll;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "CharacterBase|Variable")
+	bool bEnableRecover;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "CharacterBase|Variable")
 	bool bDebugTrace;
+#pragma endregion
 
 protected:
 	UPROPERTY(EditAnywhere, Instanced, Category = "CharacterBase|CharacterModel")
 	UCharacterModel* CharacterModel;
 
-	FWeaponActionInfo* ActionInfoPtr;
+	UPROPERTY()
+	ACharacterBase* TargetCharacter;
 
 	/* damage motion timeout */
 	float TakeDamageTimeOut;
@@ -363,74 +385,76 @@ protected:
 	/* for ai equip weapon timeout */
 	float EquipWeaponTimeOut;
 
+	/* melee attack received pawn timeout */
 	float StanTimeOut;
+
+	float RecoverInterval;
+	FWeaponActionInfo* ActionInfoPtr;
 	FTimerHandle MeleeAttackHundle;
 	FTimerHandle StanHundle;
 	EGiveDamageType GiveDamageType;
+	EAIActionState ActionState;
 	TArray<class AActor*> IgnoreActors;
 
-public:
-	UFUNCTION(BlueprintCallable, Category = "CharacterBase|Function")
-	bool WasMeleeAttackPlaying() const { return MeleeAttackTimeOut >= ZERO_VALUE; }
-
-	UFUNCTION(BlueprintCallable, Category = "CharacterBase|Function")
-	bool WasTakeDamagePlaying() const { return TakeDamageTimeOut >= ZERO_VALUE; }
-
-	UFUNCTION(BlueprintCallable, Category = "CharacterBase|Function")
-	bool WasEquipWeaponPlaying() const { return EquipWeaponTimeOut >= ZERO_VALUE; }
-
-	void SetStanning(const bool bInStanning)
-	{
-		bWasStanning = bInStanning;
-	}
 
 protected:
-#pragma region WeaponProtected
-	AAbstractWeapon* FindByWeapon(const EWeaponItemType WeaponItemType) const;
+	void UpdateCombatTimer(const float InDeltaTime);
+	void UpdateRecoverTimer(const float InDeltaTime);
 
-	/* pickup before had same weaponList */
-	const bool WasSameWeaponType(AAbstractWeapon* const Weapon);
-
-	/* pickup actor */
-	virtual void PickupObjects();
-
-	/* release actor */
-	virtual void ReleaseObjects();
-	virtual void TakeDamageMontage(const bool InForcePlaying);
-	TWeakObjectPtr<class AAbstractWeapon> CurrentWeapon;
-
-#pragma endregion
-
+#pragma region Weapon
 public:
-#pragma region WeaponPublic
-	bool HasEquipWeapon() const;
-
-	UFUNCTION(BlueprintCallable, Category = "CharacterBase|Combat")
-	class AAbstractWeapon* GetSelectedWeapon() const
+	UFUNCTION(BlueprintCallable, Category = "CharacterBase|Function")
+	bool HasEquipWeapon() const
 	{
 		if (CurrentWeapon.IsValid())
 		{
-			return CurrentWeapon.Get();
+			return CurrentWeapon.Get()->WasEquip();
 		}
-		return nullptr;
+		return false;
 	}
 
-	virtual void EquipmentActionMontage();
-	virtual void UnEquipmentActionMontage();
-	virtual void FireActionMontage();
-	virtual void ReloadActionMontage(float &OutReloadDuration);
-	virtual void MeleeAttackMontage();
+	UFUNCTION(BlueprintCallable, Category = "CharacterBase|Function")
+	bool HasEmptyWeapon() const
+	{
+		if (CurrentWeapon.IsValid())
+		{
+			return CurrentWeapon.Get()->WasEmpty();
+		}
+		return false;
+	}
 
-	virtual void MeleeAttack(const bool InEnable);
-	virtual void ReleaseWeaponToWorld(const FTransform& Transform, AAbstractWeapon*& Weapon);
+	UFUNCTION(BlueprintCallable, Category = "CharacterBase|Function")
+	EWeaponItemType GetCurrentWeaponType() const
+	{
+		if (CurrentWeapon.IsValid())
+		{
+			return CurrentWeapon.Get()->GetWeaponItemType();
+		}
+		return EWeaponItemType::None;
+	}
+
+protected:
+	TWeakObjectPtr<class AAbstractWeapon> CurrentWeapon;
+	AAbstractWeapon* FindByWeapon(const EWeaponItemType WeaponItemType) const;
+	const bool WasSameWeaponType(AAbstractWeapon* const Weapon);
+	void ReleaseWeaponToWorld(const FTransform& Transform, AAbstractWeapon*& Weapon);
+	void ReleaseAllWeaponInventory();
 	virtual void CreateWeaponInstance(const TSubclassOf<class AAbstractWeapon> InWeaponTemplate, WeaponFunc Callback = nullptr);
-	EWeaponItemType GetCurrentWeaponType() const;
-
-	virtual void ReleaseAllWeaponInventory();
 #pragma endregion
 
+protected:
+	virtual void EquipmentActionMontage();
+	virtual void UnEquipmentActionMontage();
+	virtual void TakeDamageMontage(const bool InForcePlaying);
+	virtual void MeleeAttackMontage();
+
 public:
+	virtual void FireActionMontage();
+	virtual void ReloadActionMontage(float& OutReloadDuration);
+
+
 #pragma region Utils
+public:
 	virtual FVector BulletTraceRelativeLocation() const;
 	virtual FVector BulletTraceForwardLocation() const;
 	FVector GetHeadSocketLocation() const;
@@ -443,27 +467,10 @@ public:
 	}
 
 	UFUNCTION(BlueprintCallable, Category = "CharacterBase|Utils")
-	FTransform GetChestTransform() const
-	{
-		if (GetMesh())
-		{
-			return GetMesh()->GetSocketTransform(ChestSocketName);
-		}
-		else
-		{
-			return FTransform::Identity;
-		}
-	}
+	FTransform GetChestTransform() const;
 #pragma endregion
 
-	virtual void OverlapActor(AActor* InActor)
-	{
-		if (PickupComponent)
-		{
-			PickupComponent->SetPickupActor(InActor);
-		}
-	}
-
+public:
 	const TArray<class AActor*>& GetIgnoreActors() 
 	{
 		return IgnoreActors; 
@@ -476,22 +483,20 @@ protected:
 	virtual void HitReceive(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
 	void KillRagdollPhysics();
 
-	UFUNCTION(BlueprintCallable, Category = "CharacterBase|Utils")
 	void SetForwardOrRightVector(FVector& OutForwardVector, FVector& OutRightVector);
 
+	ELSMovementMode GetPawnMovementModeChanged(const EMovementMode PrevMovementMode, const uint8 PrevCustomMode) const;
+	void ConvertALSMovementMode();
+
+public:
 	UFUNCTION(BlueprintCallable, Category = "CharacterBase|Ragdoll")
 	virtual void StartRagdollAction();
 
 	UFUNCTION(BlueprintCallable, Category = "CharacterBase|Ragdoll")
 	virtual void RagdollToWakeUpAction();
-	float RagdollTimer;
-	float RagdollInterval;
-
-	ELSMovementMode GetPawnMovementModeChanged(const EMovementMode PrevMovementMode, const uint8 PrevCustomMode) const;
-	void ConvertALSMovementMode();
 
 #pragma region ALS
-public:
+protected:
 	UPROPERTY(Replicated, BlueprintReadWrite)
 	FVector MovementInput;
 
@@ -503,6 +508,10 @@ public:
 
 	UPROPERTY(Replicated, BlueprintReadWrite)
 	FRotator LookingRotation;
+
+public:
+	FRotator GetCharacterRotation() const { return CharacterRotation; }
+	FRotator GetLookingRotation() const { return LookingRotation; }
 
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "CharacterBase|ALS")
@@ -619,10 +628,38 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "CharacterBase|ALS")
 	FName RagdollPoseSnapshot;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "CharacterBase|ALS")
+	FMantleParams MantleParams;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "CharacterBase|ALS")
+	FLSComponentAndTransform MantleLedgeLS;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "CharacterBase|ALS")
+	FTransform MantleTarget;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "CharacterBase|ALS")
+	FTransform MantleActualStartOffset;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "CharacterBase|ALS")
+	FTransform MantleAnimatedStartOffset;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "CharacterBase|ALS")
+	FMantleTraceSettings FallingTraceSettings;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "CharacterBase|ALS")
+	FMantleTraceSettings GroundedTraceSettings;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "CharacterBase|ALS")
+	FMantleTraceSettings AutomaticTraceSettings;
 #pragma endregion
+
 
 #pragma region ALSInterface
 public:
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|ALS")
+	void Initializer();
+	virtual void Initializer_Implementation() override;
+
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|ALS")
 	ELSMovementMode GetALSMovementMode() const;
 	virtual ELSMovementMode GetALSMovementMode_Implementation() const override;
@@ -650,6 +687,10 @@ public:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|ALS")
 	bool HasMovementInput() const;
 	virtual bool HasMovementInput_Implementation() const override;
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|ALS")
+	bool HasMoving() const;
+	virtual bool HasMoving_Implementation() const override;
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|ALS")
 	bool HasAiming() const;
@@ -796,34 +837,27 @@ public:
 	virtual bool HasDebugTrace_Implementation() const override;
 #pragma endregion
 
+
+#pragma region ALSFunction
 public:
-	virtual FVector ChooseVelocity() const
-	{
-		if (ALSMovementMode == ELSMovementMode::Ragdoll)
-		{
-			return GetMesh()->GetPhysicsLinearVelocity(PelvisBoneName);
-		}
-		return Super::GetVelocity();
-	}
+	virtual FVector ChooseVelocity() const;
 
-	FORCEINLINE bool HasMoving() const
-	{ 
-		return bWasMoving;
-	}
+	float ChooseMaxWalkSpeed() const;
 
+public:
 	FORCEINLINE float ChooseMaxAcceleration() const
 	{
-		return (ALSGait == ELSGait::Walking) ? WalkingAcceleration : RunningAcceleration;
+		return (ALSGait == ELSGait::Walking || ALSMovementMode == ELSMovementMode::Swimming) ? WalkingAcceleration : RunningAcceleration;
 	}
 
 	FORCEINLINE float ChooseBrakingDeceleration() const
 	{
-		return (ALSGait == ELSGait::Walking) ? WalkingDeceleration : RunningDeceleration;
+		return (ALSGait == ELSGait::Walking || ALSMovementMode == ELSMovementMode::Swimming) ? WalkingDeceleration : RunningDeceleration;
 	}
 
 	FORCEINLINE float ChooseGroundFriction() const
 	{
-		return (ALSGait == ELSGait::Walking) ? WalkingGroundFriction : RunningGroundFriction;
+		return (ALSGait == ELSGait::Walking || ALSMovementMode == ELSMovementMode::Swimming) ? WalkingGroundFriction : RunningGroundFriction;
 	}
 
 	FORCEINLINE float GetAimYawDelta() const 
@@ -861,20 +895,15 @@ public:
 		return LastMovementInputRotation; 
 	}
 
-	float ChooseMaxWalkSpeed() const;
-
 protected:
 	UFUNCTION(BlueprintCallable, Category = "CharacterBase|ALS")
 	void ManageCharacterRotation();
 
 	UFUNCTION(BlueprintCallable, Category = "CharacterBase|ALS")
-	void DoCharacterFalling();
-
-	UFUNCTION(BlueprintCallable, Category = "CharacterBase|ALS")
-	void DoCharacterGrounded();
-
-	UFUNCTION(BlueprintCallable, Category = "CharacterBase|ALS")
 	void DoWhileGrounded();
+
+	UFUNCTION(BlueprintCallable, Category = "CharacterBase|ALS")
+	void DoWhileMantling();
 
 	UFUNCTION(BlueprintCallable, Category = "CharacterBase|ALS")
 	bool CanSprint() const;
@@ -883,10 +912,18 @@ protected:
 	void AddCharacterRotation(const FRotator AddAmount);
 
 	UFUNCTION(BlueprintCallable, Category = "CharacterBase|ALS")
-	void UpdateCharacterMovementSettings();
+	void DoWhileRagdoll(FRotator& OutActorRotation, FVector& OutActorLocation);
 
 	UFUNCTION(BlueprintCallable, Category = "CharacterBase|ALS")
-	void DoWhileRagdoll(FRotator& OutActorRotation, FVector& OutActorLocation);
+	void CalcurateRagdollParams(const FVector InRagdollVelocity, const FVector InRagdollLocation, const FRotator InActorRotation, const FVector InActorLocation);
+
+
+	void DoCharacterFalling();
+	void DoCharacterGrounded();
+	void UpdateCharacterMovementSettings();
+	void MovementInputControl(const bool bForwardAxis);
+	void GroundMovementInput(const bool bForwardAxis);
+	void RagdollMovementInput();
 
 	void ApplyCharacterRotation(const FRotator InTargetRotation, const bool bInterpRotation, const float InterpSpeed);
 	void LimitRotation(const float AimYawLimit, const float InterpSpeed);
@@ -897,54 +934,16 @@ protected:
 	void CalculateEssentialVariables();
 	const float CalculateRotationRate(const float SlowSpeed, const float SlowSpeedRate, const float FastSpeed, const float FastSpeedRate);
 	const FRotator LookingDirectionWithOffset(const float OffsetInterpSpeed, const float NEAngle, const float NWAngle, const float SEAngle, const float SWAngle, const float Buffer);
+#pragma endregion
 
 
 #pragma region MantleSystem
 protected:
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "CharacterBase|MantleSystem")
-	FMantleParams MantleParams;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "CharacterBase|MantleSystem")
-	FLSComponentAndTransform MantleLedgeLS;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "CharacterBase|MantleSystem")
-	FTransform MantleTarget;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "CharacterBase|MantleSystem")
-	FTransform MantleActualStartOffset;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "CharacterBase|MantleSystem")
-	FTransform MantleAnimatedStartOffset;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "CharacterBase|MantleSystem")
-	FMantleTraceSettings FallingTraceSettings;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "CharacterBase|MantleSystem")
-	FMantleTraceSettings GroundedTraceSettings;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "CharacterBase|MantleSystem")
-	FMantleTraceSettings AutomaticTraceSettings;
-
-protected:
 	UFUNCTION(BlueprintCallable, Category = "CharacterBase|MantleSystem")
-	FVector GetCapsuleLocationFromBase(const FVector BaseLocation, const float ZOffset) const;
+	void MantleStart(const float InMantleHeight, const FLSComponentAndTransform MantleLedgeWorldSpace, const EMantleType InMantleType, UTimelineComponent* const InMantleTimeline);
 
 	UFUNCTION(BlueprintCallable, Category = "CharacterBase|MantleSystem")
-	FVector GetCapsuleBaseLocation(const float ZOffset) const;
-
-	UFUNCTION(BlueprintCallable, Category = "CharacterBase|MantleSystem")
-	const FVector GetPlayerMovementInput();
-
-	UFUNCTION(BlueprintCallable, Category = "CharacterBase|MantleSystem")
-	bool CapsuleHasRoomCheck(const FVector TargetLocation, const float HeightOffset, const float RadiusOffset) const;
-
-public:
-	FORCEINLINE FMantleTraceSettings GetFallingTraceSettings() const { return FallingTraceSettings; }
-	FORCEINLINE FMantleTraceSettings GetGroundedTraceSettings() const { return GroundedTraceSettings; }
-	FORCEINLINE FMantleTraceSettings GetAutomaticTraceSettings() const { return AutomaticTraceSettings; }
-
-	UFUNCTION(BlueprintCallable, Category = "CharacterBase|MantleSystem")
-	const bool MantleCheck(const FMantleTraceSettings InTraceSetting);
+	void MantleUpdate(const float BlendIn, const float InPlaybackPosition);
 
 	UFUNCTION(BlueprintCallable, Category = "CharacterBase|MantleSystem")
 	void MantleEnd();
@@ -952,40 +951,32 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "CharacterBase|MantleSystem")
 	void SetActorLocationAndRotation(const FVector NewLocation, const FRotator NewRotation, const bool bWasSweep, const bool bWasTeleport);
 
-protected:
-	EMantleType GetMantleType(const float InMantleHeight) const;
+	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "CharacterBase|MantleSystem")
+	void BP_MantleStart(const float MantleHeight, const FLSComponentAndTransform MantleLedgeWS, const EMantleType MantleType);
+
+	const bool MantleCheck(const FMantleTraceSettings InTraceSetting);
+
+	// Mantle Utils
+	FVector GetCapsuleBaseLocation(const float ZOffset) const;
+	FVector GetCapsuleLocationFromBase(const FVector BaseLocation, const float ZOffset) const;
+	const FVector GetPlayerMovementInput();
+	bool CapsuleHasRoomCheck(const FVector TargetLocation, const float HeightOffset, const float RadiusOffset) const;
+
+	// MantleCheck Details
 	void TraceForwardToFindWall(const FMantleTraceSettings InTraceSetting, FVector& OutInitialTraceImpactPoint, FVector& OutInitialTraceNormal, bool& OutHitResult);
 	void SphereTraceByMantleCheck(const FMantleTraceSettings TraceSetting, const FVector InitialTraceImpactPoint, const FVector InitialTraceNormal, bool &OutHitResult, FVector &OutDownTraceLocation, UPrimitiveComponent* &OutPrimitiveComponent);
 	void ConvertMantleHeight(const FVector DownTraceLocation, const FVector InitialTraceNormal, bool &OutRoomCheck, FTransform &OutTargetTransform, float &OutMantleHeight);
+	EMantleType GetMantleType(const float InMantleHeight) const;
 
-	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "CharacterBase|MantleSystem")
-	void BP_MantleStart(const float MantleHeight, const FLSComponentAndTransform MantleLedgeWS, const EMantleType MantleType);
-#pragma endregion
-
-
-#pragma region MantleUpdate
-public:
-	UFUNCTION(BlueprintCallable, Category = "CharacterBase|MantleSystem")
-	void MantleUpdate(const float BlendIn, const float InPlaybackPosition);
-
-	UFUNCTION(BlueprintCallable, Category = "CharacterBase|MantleSystem")
+	// MantleUpdate Details
 	void SetMantleTarget();
-
-protected:
 	void SetMantleUpdateAlpha(const float InPlaybackPosition, float& OutPositionAlpha, float& OutXYCorrectionAlpha, float& OutZCorrectionAlpha);
 	FTransform MakeXYCollectionAlphaTransform(const float InXYCollectionAlpha) const;
 	FTransform MakeZCollectionAlphaTransform(const float InZCollectionAlpha) const;
 	FTransform MakeMantleTransform(const float InPositionAlpha, const float InXYCollectionAlpha, const float InZCollectionAlpha) const;
 	FTransform MakeMantleLerpedTarget(const float BlendIn, const float InPositionAlpha, const float InXYCollectionAlpha, const float InZCollectionAlpha) const;
-#pragma endregion
 
-
-#pragma region MantleStart
-public:
-	UFUNCTION(BlueprintCallable, Category = "CharacterBase|MantleSystem")
-	void MantleStart(const float InMantleHeight, const FLSComponentAndTransform MantleLedgeWorldSpace, const EMantleType InMantleType, UTimelineComponent* const InMantleTimeline);
-
-protected:
+	// MantleStart Details
 	void SetMantleParams(FMantleAsset InMantleAsset, const float InMantleHeight);
 	void SetMantleLedgeLocalSpace(const FLSComponentAndTransform MantleLedgeWorldSpace);
 	void CalculateMantleTarget(const FLSComponentAndTransform MantleLedgeWorldSpace);

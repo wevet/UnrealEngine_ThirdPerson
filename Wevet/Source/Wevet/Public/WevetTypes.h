@@ -42,17 +42,6 @@ enum class ECustomDepthType : uint8
 	//Max = 256,
 };
 
-// Combat Detail Action
-UENUM(BlueprintType)
-enum class EAICombatState : uint8
-{
-	None  UMETA(DisplayName = "None"),
-	Observation  UMETA(DisplayName = "Observation"),
-	Attack  UMETA(DisplayName = "Attack"),
-	ConditionCheck UMETA(DisplayName = "ConditionCheck"),
-	Cover UMETA(DisplayName = "Cover"),
-};
-
 // 
 UENUM(BlueprintType)
 enum class EAIActionState : uint8

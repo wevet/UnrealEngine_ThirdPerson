@@ -1,5 +1,3 @@
-// Copyright 2018 wevet works All Rights Reserved.
-
 using UnrealBuildTool;
 
 public class RTIK : ModuleRules

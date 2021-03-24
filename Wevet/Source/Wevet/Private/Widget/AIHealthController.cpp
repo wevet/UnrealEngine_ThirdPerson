@@ -12,7 +12,7 @@
 
 UAIHealthController::UAIHealthController(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {
-	HealthProgressBarKeyName = (TEXT("HealthProgressBar"));
+	HealthProgressBarKeyName = FName(TEXT("HealthProgressBar"));
 }
 
 void UAIHealthController::NativeConstruct()
@@ -44,7 +44,7 @@ void UAIHealthController::TickRenderer(const float InDeltaTime)
 		return;
 	}
 
-	ACharacterBase* Target = Cast<ACharacterBase>(IAIPawnOwner::Execute_GetTarget(AICharacterPtr.Get()));
+	ACharacterBase* Target = Cast<ACharacterBase>(ICombatInstigator::Execute_GetTarget(AICharacterPtr.Get()));
 	OwnerLocation = AICharacterPtr->GetHeadSocketLocation();
 	const bool bWasDeath = AICharacterPtr->IsDeath_Implementation();
 	const bool bWasRenderer = AICharacterPtr->WasRecentlyRendered(0.2f);

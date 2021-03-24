@@ -13,12 +13,10 @@ struct RTIK_API FAnimNode_HumanoidLegIKKneeCorrection : public FAnimNode_Skeleta
 {
 	GENERATED_USTRUCT_BODY()
 
-public:
-	// Pose before any IK or IK pre-processing (e.g., pelvis adjustment) is applied
+protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Links)
 	FComponentSpacePoseLink BaseComponentPose;
 
-	// The leg on which IK is applied
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Bones, meta = (PinShownByDefault))
 	UHumanoidLegChain_Wrapper* Leg;
 		
@@ -26,7 +24,7 @@ public:
 	bool bEnableDebugDraw;
 
 public:
-	FAnimNode_HumanoidLegIKKneeCorrection()
+	FAnimNode_HumanoidLegIKKneeCorrection() : Super()
 	{
 		bEnableDebugDraw = false;
 		DeltaTime = 0.0f;
@@ -51,8 +49,6 @@ public:
 		DeltaTime = Context.GetDeltaTime();
 	}
 	
-	virtual void EvaluateSkeletalControl_AnyThread(FComponentSpacePoseContext& Output, TArray<FBoneTransform>& OutBoneTransforms) override;
-
 	virtual void EvaluateComponentSpaceInternal(FComponentSpacePoseContext& Output) override
 	{
 		Super::EvaluateComponentSpaceInternal(Output);
@@ -64,12 +60,14 @@ public:
 		{
 			return false;
 		}
-		bool bValid = Leg->InitIfInvalid(RequiredBones);
+		const bool bValid = Leg->InitIfInvalid(RequiredBones);
 		return bValid;
 	}
 	
 	virtual void InitializeBoneReferences(const FBoneContainer& RequiredBones) override
 	{
+		Super::InitializeBoneReferences(RequiredBones);
+
 		if (Leg == nullptr)
 		{
 			return;
@@ -79,6 +77,8 @@ public:
 			//
 		}
 	}
+
+	virtual void EvaluateSkeletalControl_AnyThread(FComponentSpacePoseContext& Output, TArray<FBoneTransform>& OutBoneTransforms) override;
 
 protected:
 	float DeltaTime;

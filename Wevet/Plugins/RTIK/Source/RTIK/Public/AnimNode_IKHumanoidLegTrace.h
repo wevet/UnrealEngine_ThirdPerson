@@ -12,7 +12,7 @@ struct RTIK_API FAnimNode_IKHumanoidLegTrace : public FAnimNode_SkeletalControlB
 {
 	GENERATED_USTRUCT_BODY()
 
-public:	
+protected:	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Bones, meta = (PinShownByDefault))
 	UHumanoidLegChain_Wrapper* Leg;
 
@@ -29,22 +29,19 @@ public:
 	bool bEnableDebugDraw;
 
 public:
-	FAnimNode_IKHumanoidLegTrace()
+	FAnimNode_IKHumanoidLegTrace() : Super()
 	{
-		MaxPelvisAdjustSize = 40.f;
+		MaxPelvisAdjustSize = 40.0f;
 		bEnableDebugDraw = false;
 	}
 
 	virtual void UpdateInternal(const FAnimationUpdateContext& Context) override
 	{
-		// Mark trace data as stale
 		if (TraceData)
 		{
-			TraceData->bUpdatedThisTick = false;
+			TraceData->SetUpdatedThisTick(false);
 		}
 	}
-
-	virtual void EvaluateSkeletalControl_AnyThread(FComponentSpacePoseContext& Output, TArray<FBoneTransform>& OutBoneTransforms) override;
 
 	virtual bool IsValidToEvaluate(const USkeleton* Skeleton, const FBoneContainer& RequiredBones) override
 	{
@@ -56,8 +53,7 @@ public:
 		{
 			return false;
 		}
-		bool bValid = Leg->InitIfInvalid(RequiredBones);
-		return bValid;
+		return Leg->InitIfInvalid(RequiredBones);
 	}
 
 	virtual void InitializeBoneReferences(const FBoneContainer& RequiredBones) override
@@ -66,9 +62,16 @@ public:
 		{
 			return;
 		}
+
 		if (!Leg->InitBoneReferences(RequiredBones))
 		{
-			//
+#if ENABLE_IK_DEBUG_VERBOSE
+			UE_LOG(LogNIK, Warning, TEXT("Could not initialize LeftLeg : %s"), *FString(__FUNCTION__));
+#endif
 		}
+		Super::InitializeBoneReferences(RequiredBones);
 	}
+
+	virtual void EvaluateSkeletalControl_AnyThread(FComponentSpacePoseContext& Output, TArray<FBoneTransform>& OutBoneTransforms) override;
+
 };

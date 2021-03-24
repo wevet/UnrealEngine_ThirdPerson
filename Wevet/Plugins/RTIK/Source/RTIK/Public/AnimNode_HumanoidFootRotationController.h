@@ -12,7 +12,7 @@ struct RTIK_API FAnimNode_HumanoidFootRotationController : public FAnimNode_Skel
 {
 	GENERATED_USTRUCT_BODY()
 
-public:
+protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Bones, meta = (PinShownByDefault))
 	UHumanoidLegChain_Wrapper* Leg;
 
@@ -29,13 +29,13 @@ public:
 	bool bEnableDebugDraw;
    
 public:
-	FAnimNode_HumanoidFootRotationController()
+	FAnimNode_HumanoidFootRotationController() : Super()
 	{
-		RotationSlerpSpeed = 20.f;
+		LastRotationOffset = FQuat::Identity;
+		RotationSlerpSpeed = 20.0f;
 		bEnableDebugDraw = false;
 		bInterpolateRotation = true;
 		DeltaTime = 0.0f;
-		LastRotationOffset = FQuat::Identity;
 	}
 
 	virtual void UpdateInternal(const FAnimationUpdateContext& Context) override
@@ -43,15 +43,13 @@ public:
 		DeltaTime = Context.GetDeltaTime();
 	}
 
-	virtual void EvaluateSkeletalControl_AnyThread(FComponentSpacePoseContext& Output, TArray<FBoneTransform>& OutBoneTransforms) override;
-
 	virtual bool IsValidToEvaluate(const USkeleton* Skeleton, const FBoneContainer& RequiredBones) override
 	{
 		if (Leg == nullptr || TraceData == nullptr)
 		{
 			return false;
 		}
-		bool bValid = Leg->InitIfInvalid(RequiredBones);
+		const bool bValid = Leg->InitIfInvalid(RequiredBones);
 		return bValid;
 	}
 
@@ -66,6 +64,8 @@ public:
 			//
 		}
 	}
+
+	virtual void EvaluateSkeletalControl_AnyThread(FComponentSpacePoseContext& Output, TArray<FBoneTransform>& OutBoneTransforms) override;
 
 protected:
 	float DeltaTime;

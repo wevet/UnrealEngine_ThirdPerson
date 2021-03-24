@@ -96,11 +96,12 @@ enum class ELSMovementDirection : uint8
 UENUM(BlueprintType)
 enum class ELSMovementAction : uint8
 {
-	None       UMETA(DisplayName = "None"),
-	LowMantle  UMETA(DisplayName = "LowMantle"),
-	HighMantle UMETA(DisplayName = "HighMantle"),
-	Rolling    UMETA(DisplayName = "Rolling"),
-	GettingUp  UMETA(DisplayName = "GettingUp"),
+	None         UMETA(DisplayName = "None"),
+	LowMantle    UMETA(DisplayName = "LowMantle"),
+	HighMantle   UMETA(DisplayName = "HighMantle"),
+	Rolling      UMETA(DisplayName = "Rolling"),
+	GettingUp    UMETA(DisplayName = "GettingUp"),
+	MeleeAttack  UMETA(DisplayName = "MeleeAttack"),
 };
 
 UENUM(BlueprintType)

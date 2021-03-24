@@ -25,8 +25,15 @@ public:
 	FORCEINLINE int32 GetWisdom() const { return Wisdom; }
 	FORCEINLINE int32 GetKillDamage() const { return MaxHealth; }
 
-	FORCEINLINE float GetHealthToWidget() const { return (float)Health / (float)MaxHealth; }
-	FORCEINLINE bool IsFullHealth() const { return Health >= MaxHealth; }
+	FORCEINLINE float GetHealthToWidget() const
+	{
+		return (float)Health / (float)MaxHealth; 
+	}
+
+	FORCEINLINE bool IsFullHealth() const 
+	{
+		return Health >= MaxHealth; 
+	}
 
 	FORCEINLINE bool IsHealthHalf() const
 	{
@@ -42,38 +49,25 @@ public:
 		return Health < QuartValue;
 	}
 
-	FORCEINLINE bool IsEmptyHealth() const { return (Health <= INT_ZERO); }
-	FORCEINLINE bool IsDie() const { return (Health <= INT_ZERO) && bDie; }
+	FORCEINLINE bool CanDie() const 
+	{
+		return (Health <= INT_ZERO); 
+	}
+
+	FORCEINLINE bool IsDie() const 
+	{
+		return (Health <= INT_ZERO) && bDie; 
+	}
 
 	void SetHealth(const int32 NewHealth);
 	void SetMaxHealth(const int32 NewMaxHealth);
 	void SetAttack(const int32 NewAttack);
 	void SetDefence(const int32 NewDefence);
 	void SetWisdom(const int32 NewWisdom);
-
-	void TakeDamage(const int32 InDamage)
-	{
-		const int32 CurrentHealth = GetHealth();
-		SetHealth(CurrentHealth - InDamage);
-	}
-
-	void Recover(const int32 AddHealth)
-	{
-		Health += AddHealth;
-		Health = FMath::Clamp<int32>(Health, INT_ZERO, MaxHealth);
-	}
-
-	void Die()
-	{
-		bDie = true;
-	}
-
-	void Alive()
-	{
-		float Value = ((float)MaxHealth * QUART_WEIGHT);
-		SetHealth((int)FMath::Abs(Value));
-		bDie = false;
-	}
+	void TakeDamage(const int32 InDamage);
+	void Recover(const int32 AddHealth);
+	void Die();
+	void Alive();
 	
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Variable")

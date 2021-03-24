@@ -11,7 +11,6 @@ class RTIKEDITOR_API UAnimGraphNode_HumanoidFootRotationController : public UAni
 	GENERATED_BODY()
 	
 public:
-
 	FText GetNodeTitle(ENodeTitleType::Type TitleType) const override
 	{
 		return FText::FromString(FString("Humanoid Foot Rotation Controller"));

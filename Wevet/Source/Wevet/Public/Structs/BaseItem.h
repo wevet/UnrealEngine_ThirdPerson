@@ -106,6 +106,16 @@ public:
 		MeleeDistance = InWeaponItemInfo.MeleeDistance;
 	}
 
+	void DecrementAmmos()
+	{
+		--CurrentAmmo;
+	}
+
+	bool EmptyCurrentAmmo() const
+	{
+		return CurrentAmmo <= 0;
+	}
+
 	void Replenishment()
 	{
 		NeededAmmo = (ClipType - CurrentAmmo);
@@ -128,6 +138,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
 	int32 Ammo;
 
+public:
 	FWeaponAmmoInfo() : FBaseItem()
 	{
 		WeaponItemType = EWeaponItemType::None;

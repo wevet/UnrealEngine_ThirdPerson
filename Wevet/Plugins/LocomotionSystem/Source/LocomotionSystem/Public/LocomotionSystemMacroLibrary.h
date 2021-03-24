@@ -23,8 +23,9 @@ public:
 	{
 		FLSComponentAndTransform LocalSpaceComponent;
 		LocalSpaceComponent.Component = WorldSpaceComponent.Component;
-		FTransform Invert = UKismetMathLibrary::InvertTransform(WorldSpaceComponent.Component->K2_GetComponentToWorld());
-		LocalSpaceComponent.Transform = WorldSpaceComponent.Transform * Invert;
+		// DisplayName GetWorldTransform
+		LocalSpaceComponent.Transform = WorldSpaceComponent.Transform * 
+			UKismetMathLibrary::InvertTransform(WorldSpaceComponent.Component->K2_GetComponentToWorld());
 		return LocalSpaceComponent;
 	}
 

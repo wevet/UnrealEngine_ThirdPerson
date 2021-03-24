@@ -37,7 +37,10 @@ DECLARE_LOG_CATEGORY_EXTERN(LogWevetClient, Verbose, All);
 #define INT_ONE 1
 
 #define DEFAULT_FORWARD_VECTOR 200.f
-#define WALK_SPEED 500.f
+
+// def speeds
+#define WALK_SPEED 200.f
+#define RUN_SPEED 400.f
 #define SPRINT_SPEED 800.f
 
  

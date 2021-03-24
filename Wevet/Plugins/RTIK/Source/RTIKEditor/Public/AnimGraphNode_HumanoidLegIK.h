@@ -11,10 +11,9 @@ class RTIKEDITOR_API UAnimGraphNode_HumanoidLegIK : public UAnimGraphNode_Skelet
 	GENERATED_BODY()
 	
 public:
-
 	FText GetNodeTitle(ENodeTitleType::Type TitleType) const override
 	{
-		return FText::FromString(FString("Humanoid Leg IK Solver"));
+		return FText::FromString(FString("Humanoid Leg IK"));
 	}
 
 	FLinearColor GetNodeTitleColor() const override

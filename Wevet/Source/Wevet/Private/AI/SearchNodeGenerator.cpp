@@ -2,15 +2,14 @@
 
 
 #include "AI/SearchNodeGenerator.h"
+#include "WevetExtension.h"
 
 ASearchNodeGenerator::ASearchNodeGenerator()
 {
 	PrimaryActorTick.bCanEverTick = false;
 
-	{
-		static ConstructorHelpers::FObjectFinder<UClass> FindAsset(TEXT("/Game/Game/Blueprints/Tool/BP_SearchNode.BP_SearchNode_C"));
-		SearchNodeTemplate = FindAsset.Object;
-	}
+	static ConstructorHelpers::FObjectFinder<UClass> FindAsset(Wevet::ProjectFile::GetSearchNodePath());
+	SearchNodeTemplate = FindAsset.Object;
 
 }
 

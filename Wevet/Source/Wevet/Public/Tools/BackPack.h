@@ -28,6 +28,9 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Components, meta = (AllowPrivateAccess = "true"))
 	class USkeletalMeshComponent* SkeletalMeshComponent;
 
+	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "BackPack|NativeEvent")
+	void BP_OnSimulatePhysics(const bool bWasOwnerDeath);
+
 
 public:
 	void SetOwnerNoSeeMesh(const bool NewOwnerNoSee);

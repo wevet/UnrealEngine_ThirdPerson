@@ -4,14 +4,13 @@
 #include "Components/SkeletalMeshComponent.h"
 #include "Animation/AnimInstanceProxy.h"
 #include "AnimationRuntime.h"
-#include "AnimUtil.h"
+#include "IKFunctionLibrary.h"
 
-#if WITH_EDITOR
-#include "DebugDrawUtil.h"
-#endif
 
+// ProfilerÇ…ìoò^Ç∑ÇÈ
 DECLARE_CYCLE_STAT(TEXT("IK Humanoid Foot Rotation Controller  Eval"), STAT_HumanoidFootRotationController_Eval, STATGROUP_Anim);
 
+// Ç¬Ç‹êÊÇÃâÒì]Çêßå‰Ç∑ÇÈIK Class
 void FAnimNode_HumanoidFootRotationController::EvaluateSkeletalControl_AnyThread(FComponentSpacePoseContext& Output, TArray<FBoneTransform>& OutBoneTransforms)
 {
 	SCOPE_CYCLE_COUNTER(STAT_HumanoidFootRotationController_Eval);
@@ -21,19 +20,14 @@ void FAnimNode_HumanoidFootRotationController::EvaluateSkeletalControl_AnyThread
 #endif
 	check(OutBoneTransforms.Num() == 0);
 
-	// Input pin pointers are checked in IsValid -- don't need to check here
 	USkeletalMeshComponent* SkelComp = Output.AnimInstanceProxy->GetSkelMeshComponent();
-
 	float RequiredRad = 0.0f;
 	FQuat TargetOffset = FQuat::Identity;
 
-	const bool bTargetRotationWithinLimit = Leg->Chain.FindWithinFootRotationLimit(*SkelComp, TraceData->GetTraceData(), RequiredRad);
-
+	const bool bTargetRotationWithinLimit = Leg->GetChain().FindWithinFootRotationLimit(*SkelComp, TraceData->GetTraceData(), RequiredRad);
 	if (bTargetRotationWithinLimit)
 	{
-		// Compute required rotation
 		const FMatrix ToCS = SkelComp->GetComponentToWorld().ToMatrixNoScale().Inverse();
-
 		const FVector FootFloor = TraceData->GetTraceData().FootHitResult.ImpactPoint;
 		const FVector ToeFloor = TraceData->GetTraceData().ToeHitResult.ImpactPoint;
 		const FVector FloorSlopeVec = ToCS.TransformVector(ToeFloor - FootFloor);
@@ -41,9 +35,9 @@ void FAnimNode_HumanoidFootRotationController::EvaluateSkeletalControl_AnyThread
 		FVector FloorFlatVec(FloorSlopeVec);
 		FloorFlatVec.Z = 0.0f;
 
-		const FVector KneeCS = FAnimUtil::GetBoneCSLocation(*SkelComp, Output.Pose, Leg->Chain.ThighBone.BoneIndex);
-		const FVector FootCS = FAnimUtil::GetBoneCSLocation(*SkelComp, Output.Pose, Leg->Chain.ShinBone.BoneIndex);
-		const FVector ToeCS = FAnimUtil::GetBoneCSLocation(*SkelComp, Output.Pose, Leg->Chain.FootBone.BoneIndex);
+		const FVector KneeCS = UIKFunctionLibrary::GetBoneCSLocation(Output.Pose, Leg->GetChain().ThighBone.BoneIndex);
+		const FVector FootCS = UIKFunctionLibrary::GetBoneCSLocation(Output.Pose, Leg->GetChain().ShinBone.BoneIndex);
+		const FVector ToeCS = UIKFunctionLibrary::GetBoneCSLocation(Output.Pose, Leg->GetChain().FootBone.BoneIndex);
 		const FVector ShinVec = KneeCS - FootCS;
 		const FVector FootVec = ToeCS - FootCS;
 
@@ -61,14 +55,16 @@ void FAnimNode_HumanoidFootRotationController::EvaluateSkeletalControl_AnyThread
 			TargetOffset = FQuat(RotationAxis, RequiredRad);
 		}
 	}
+	else
+	{
+		//
+	}
 
-	// Interpolate to target rotation and apply 
-	FTransform FootCSTransform = FAnimUtil::GetBoneCSTransform(*SkelComp, Output.Pose, Leg->Chain.ShinBone.BoneIndex);
+	FTransform FootCSTransform = UIKFunctionLibrary::GetBoneCSTransform(Output.Pose, Leg->GetChain().ShinBone.BoneIndex);
 	const FQuat Result = FQuat::Slerp(LastRotationOffset, TargetOffset, FMath::Clamp(RotationSlerpSpeed * DeltaTime, 0.0f, 1.0f));
-
 	LastRotationOffset = bInterpolateRotation ? Result : TargetOffset;
 	FootCSTransform.SetRotation(LastRotationOffset * FootCSTransform.GetRotation());
-	OutBoneTransforms.Add(FBoneTransform(Leg->Chain.ShinBone.BoneIndex, FootCSTransform));
+	OutBoneTransforms.Add(FBoneTransform(Leg->GetChain().ShinBone.BoneIndex, FootCSTransform));
 
 #if WITH_EDITOR
 	if (bEnableDebugDraw)
@@ -78,17 +74,17 @@ void FAnimNode_HumanoidFootRotationController::EvaluateSkeletalControl_AnyThread
 		FMatrix ToWorld = SkelComp->GetComponentToWorld().ToMatrixNoScale();
 		if (bTargetRotationWithinLimit)
 		{
-			FDebugDrawUtil::DrawLine(World, TraceData->GetTraceData().FootHitResult.ImpactPoint, TraceData->GetTraceData().ToeHitResult.ImpactPoint, FColor(0, 255, 0));
+			UIKFunctionLibrary::DrawLine(World, TraceData->GetTraceData().FootHitResult.ImpactPoint, TraceData->GetTraceData().ToeHitResult.ImpactPoint, FColor(0, 255, 0));
 			FVector TextOffset(0.0f, 0.0f, 100.0f);
 			FString AngleStr = FString::Printf(TEXT("Floor angle (deg): %f"), FMath::RadiansToDegrees(RequiredRad));
-			FDebugDrawUtil::DrawString(World, TextOffset, AngleStr, Character, FColor(0, 255, 0));
+			UIKFunctionLibrary::DrawString(World, TextOffset, AngleStr, Character, FColor(0, 255, 0));
 		}
 		else
 		{
-			FDebugDrawUtil::DrawLine(World, TraceData->GetTraceData().FootHitResult.ImpactPoint, TraceData->GetTraceData().ToeHitResult.ImpactPoint, FColor(255, 0, 0));
+			UIKFunctionLibrary::DrawLine(World, TraceData->GetTraceData().FootHitResult.ImpactPoint, TraceData->GetTraceData().ToeHitResult.ImpactPoint, FColor(255, 0, 0));
 			FVector TextOffset(0.0f, 0.0f, 100.0f);
 			FString AngleStr = FString::Printf(TEXT("Floor angle (deg): %f"), FMath::RadiansToDegrees(RequiredRad));
-			FDebugDrawUtil::DrawString(World, TextOffset, AngleStr, Character, FColor(255, 0, 0));
+			UIKFunctionLibrary::DrawString(World, TextOffset, AngleStr, Character, FColor(255, 0, 0));
 		}
 	}
 #endif

@@ -29,5 +29,8 @@ public :
 	bool CanPickup() const;
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "InteractionPawn")
+	void OverlapActor(AActor* Actor);
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "InteractionPawn")
 	void Release();
 };

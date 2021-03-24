@@ -11,10 +11,9 @@ class RTIKEDITOR_API UAnimGraphNode_HumanoidArmTorsoAdjust : public UAnimGraphNo
 	GENERATED_BODY()
 	
 public:
-
 	FText GetNodeTitle(ENodeTitleType::Type TitleType) const override
 	{
-		return FText::FromString(FString("IK Humanoid Arm Torso Adjustment"));
+		return FText::FromString(FString("Humanoid Arm Torso Adjust"));
 	}
 
 	FLinearColor GetNodeTitleColor() const override

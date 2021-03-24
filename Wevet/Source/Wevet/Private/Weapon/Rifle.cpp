@@ -1,6 +1,7 @@
 // Copyright 2018 wevet works All Rights Reserved.
 
 #include "Weapon/Rifle.h"
+#include "WevetExtension.h"
 
 ARifle::ARifle(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {
@@ -39,7 +40,7 @@ ARifle::ARifle(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitia
 	}
 
 	{
-		static ConstructorHelpers::FObjectFinder<UClass> FindAsset(TEXT("/Game/Game/Blueprints/Bullet/BP_Rifle_Bullet.BP_Rifle_Bullet_C"));
+		static ConstructorHelpers::FObjectFinder<UClass> FindAsset(Wevet::ProjectFile::GetRifleBulletPath());
 		BulletsTemplate = FindAsset.Object;
 	}
 

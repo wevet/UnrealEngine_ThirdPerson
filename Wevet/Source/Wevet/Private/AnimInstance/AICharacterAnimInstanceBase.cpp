@@ -19,41 +19,25 @@ void UAICharacterAnimInstanceBase::NativeInitializeAnimation()
 void UAICharacterAnimInstanceBase::NativeUpdateAnimation(float DeltaTimeX)
 {
 	Super::NativeUpdateAnimation(DeltaTimeX);
-
-	if (Character)
-	{
-		ALSMovementMode = ILocomotionSystemPawn::Execute_GetALSMovementMode(Character);
-	}
 }
 
-void UAICharacterAnimInstanceBase::SetRotator()
+void UAICharacterAnimInstanceBase::CalculateAimOffset()
 {
-	if (!Character)
+	if (Character && Character->GetTarget_Implementation())
 	{
-		return;
-	}
-
-	if (Character->GetTarget_Implementation())
-	{
-		const FVector Start  = Character->GetActorLocation();
+		const FVector Start = Character->GetActorLocation();
 		const FVector Target = Character->GetTarget_Implementation()->GetActorLocation();
 		const FRotator CurrentRotation = Character->GetActorRotation();
 		const FRotator LookAtRotation = UKismetMathLibrary::FindLookAtRotation(Start, Target);
-		Pitch = FMath::Clamp(LookAtRotation.Pitch, -90.f, 90.f);
-		//Yaw = FMath::Clamp(FMath::Abs(LookAtRotation.Yaw), -180.f, 180.f);
 		
-		const FRotator ResultRotation = UKismetMathLibrary::RInterpTo(
-			CurrentRotation, FRotator(0.0f, LookAtRotation.Yaw, 0.0f),
-			GetWorld()->GetDeltaSeconds(), LookAtInterpSpeed);
-		Character->SetActorRelativeRotation(FRotator(0.0f, ResultRotation.Yaw, 0.0f));
+		AimOffset.Y = FMath::Clamp(LookAtRotation.Pitch, -90.f, 90.f);
+		//AimOffset.X = FMath::Clamp(FMath::Abs(LookAtRotation.Yaw), -180.f, 180.f);
+
+		const FRotator ResultRotation = UKismetMathLibrary::RInterpTo(CurrentRotation, FRotator(0.0f, LookAtRotation.Yaw, 0.0f), GetWorld()->GetDeltaSeconds(), LookAtInterpSpeed);
+		//Character->SetActorRelativeRotation(FRotator(0.0f, ResultRotation.Yaw, 0.0f));
 	}
 	else
 	{
-		Super::SetRotator();
+		Super::CalculateAimOffset();
 	}
-}
-
-void UAICharacterAnimInstanceBase::SetMovementSpeed()
-{
-	Super::SetMovementSpeed();
 }

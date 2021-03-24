@@ -11,10 +11,9 @@ class RTIKEDITOR_API UAnimGraphNode_HumanoidLegIKKneeCorrection : public UAnimGr
 	GENERATED_BODY()
 	
 public:
-
 	FText GetNodeTitle(ENodeTitleType::Type TitleType) const override
 	{
-		return FText::FromString(FString("Humanoid Leg IK Knee Correction"));
+		return FText::FromString(FString("Humanoid LegIK KneeCorrection"));
 	}
 
 	FLinearColor GetNodeTitleColor() const override

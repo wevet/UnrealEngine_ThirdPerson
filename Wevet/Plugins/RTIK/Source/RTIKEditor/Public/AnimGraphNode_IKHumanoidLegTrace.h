@@ -11,10 +11,9 @@ class RTIKEDITOR_API UAnimGraphNode_IKHumanoidLegTrace : public UAnimGraphNode_S
 	GENERATED_BODY()
 	
 public:
-
 	FText GetNodeTitle(ENodeTitleType::Type TitleType) const override
 	{
-		return FText::FromString(FString("Humanoid IK Leg Trace"));
+		return FText::FromString(FString("Humanoid LegIK Trace"));
 	}
 
 	FLinearColor GetNodeTitleColor() const override

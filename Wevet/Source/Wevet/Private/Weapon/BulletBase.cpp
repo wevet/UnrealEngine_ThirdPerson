@@ -16,12 +16,12 @@ ABulletBase::ABulletBase(const FObjectInitializer& ObjectInitializer) : Super(Ob
 
 
 	{
-		static ConstructorHelpers::FObjectFinder<UParticleSystem> FindAsset(TEXT("/Game/VFX/Cascade/Gameplay/Water/P_splash_bullet_impact"));
+		static ConstructorHelpers::FObjectFinder<UParticleSystem> FindAsset(Wevet::ProjectFile::GetSplashBulletImpactPath());
 		ImpactWaterEmitterTemplate = FindAsset.Object;
 	}
 
 	{
-		static ConstructorHelpers::FObjectFinder<UParticleSystem> FindAsset(TEXT("/Game/VFX/Cascade/Gameplay/Blood/P_body_bullet_impact"));
+		static ConstructorHelpers::FObjectFinder<UParticleSystem> FindAsset(Wevet::ProjectFile::GetBulletImpactPath());
 		ImpactBloodEmitterTemplate = FindAsset.Object;
 	}
 }
@@ -88,10 +88,14 @@ void ABulletBase::BeginOverlapRecieve(UPrimitiveComponent* OverlappedComponent, 
 	{
 		if (!bWasOverlapResult)
 		{
-			bWasOverlapResult = true;
-			UParticleSystemComponent* PS = UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ImpactWaterEmitterTemplate, GetActorTransform(), true);
-			PS->ComponentTags.Add(WATER_TAG);
-			PS->GetOwner()->Tags.Add(WATER_TAG);
+			//bWasOverlapResult = true;
+			//UParticleSystemComponent* PS = UGameplayStatics::SpawnEmitterAtLocation(
+			//	GetWorld(), 
+			//	ImpactWaterEmitterTemplate, 
+			//	GetActorTransform(), 
+			//	true);
+			//PS->ComponentTags.Add(WATER_TAG);
+			//PS->GetOwner()->Tags.Add(WATER_TAG);
 		}
 	} 
 	else

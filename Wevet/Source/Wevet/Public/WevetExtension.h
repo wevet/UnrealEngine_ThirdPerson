@@ -10,6 +10,79 @@
 
 namespace Wevet
 {
+	class WEVET_API ProjectFile
+	{
+	public:
+		static const wchar_t* GetBulletImpactPath()
+		{
+			return TEXT("/Game/VFX/Cascade/Gameplay/Blood/P_body_bullet_impact");
+		};
+
+		static const wchar_t* GetSplashBulletImpactPath()
+		{
+			return TEXT("/Game/VFX/Cascade/Gameplay/Water/P_splash_bullet_impact");
+		};
+
+		static const wchar_t* GetFootStepPath()
+		{
+			return TEXT("/Game/Sound/FootSteps/Footstep_Dry_Cue");
+		};
+
+		static const wchar_t* GetMantleLowPath()
+		{
+			return TEXT("/Game/Player_Assets/Blueprints/ALS/Curves/MantleCurves/Mantle_1m");
+		};
+
+		static const wchar_t* GetMantleHighPath()
+		{
+			return TEXT("/Game/Player_Assets/Blueprints/ALS/Curves/MantleCurves/Mantle_2m");
+		};
+
+#pragma region BlueprintPath
+
+		static const wchar_t* GetPistolBulletPath()
+		{
+			return TEXT("/Game/Game/Blueprints/Bullet/BP_Pistol_Bullet.BP_Pistol_Bullet_C");
+		};
+
+		static const wchar_t* GetRifleBulletPath()
+		{
+			return TEXT("/Game/Game/Blueprints/Bullet/BP_Rifle_Bullet.BP_Rifle_Bullet_C");
+		};
+
+		static const wchar_t* GetSniperBulletPath()
+		{
+			return TEXT("/Game/Game/Blueprints/Bullet/BP_SniperRifle_Bullet.BP_SniperRifle_Bullet_C");
+		};
+
+		static const wchar_t* GetNodeGeneratorPath()
+		{
+			return TEXT("/Game/Game/Blueprints/Tool/BP_SearchNodeGenerator.BP_SearchNodeGenerator_C");
+		};
+
+		static const wchar_t* GetSearchNodePath()
+		{
+			return TEXT("/Game/Game/Blueprints/Tool/BP_SearchNode.BP_SearchNode_C");
+		};
+
+		static const wchar_t* GetBackPackPath()
+		{
+			return TEXT("/Game/Game/Blueprints/Tool/BP_Backpack.BP_Backpack_C");
+		};
+
+		static const wchar_t* GetUMGPath()
+		{
+			return TEXT("/Game/Game/Blueprints/Widgets/BP_UMGManager.BP_UMGManager_C");
+		};
+#pragma endregion
+
+		static const wchar_t* GetPickupSoundPath()
+		{
+			return TEXT("/Engine/VREditor/Sounds/UI/Object_PickUp");
+		};
+	};
+
+
 	class WEVET_API ControllerExtension
 	{
 	public:
@@ -35,6 +108,7 @@ namespace Wevet
 		}
 	};
 
+
 	class WEVET_API AssetExtension
 	{
 	public:
@@ -58,6 +132,7 @@ namespace Wevet
 		}
 	};
 
+
 	class WEVET_API ArrayExtension
 	{
 	public:
@@ -79,6 +154,7 @@ namespace Wevet
 			return (Array.Num() <= 0);
 		}
 	};
+
 
 	class WEVET_API ComponentExtension
 	{

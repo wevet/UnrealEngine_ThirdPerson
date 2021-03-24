@@ -8,7 +8,6 @@
 #include "Components/PostProcessComponent.h"
 #include "MockCharacter.generated.h"
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FAliveDelegate);
 
 class AMockPlayerController;
 class UPlayerAnimInstance;
@@ -29,10 +28,6 @@ protected:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 
-public:
-	UPROPERTY(BlueprintAssignable)
-	FAliveDelegate AliveDelegate;
-
 #pragma region Interface
 public:
 	// DamageInstigator
@@ -42,18 +37,18 @@ public:
 	virtual void UnEquipment_Implementation() override;
 	
 	// InteractionPawn
-	virtual void Pickup_Implementation(const EItemType InItemType, AActor* Actor) override;
 	virtual bool CanPickup_Implementation() const override;
 	virtual void Release_Implementation() override;
+	virtual void OverlapActor_Implementation(AActor* Actor) override;
 
 	// ALS
 	virtual void SetALSCameraShake_Implementation(TSubclassOf<class UMatineeCameraShake> InShakeClass, const float InScale) override;
 #pragma endregion
 
+
 public:
 	virtual FVector BulletTraceRelativeLocation() const override;
 	virtual FVector BulletTraceForwardLocation() const override;
-	virtual void OverlapActor(AActor* InActor) override;
 	virtual void EquipmentActionMontage() override;
 	virtual void CreateWeaponInstance(const TSubclassOf<class AAbstractWeapon> InWeaponTemplate, WeaponFunc Callback = nullptr) override;
 
@@ -78,12 +73,6 @@ protected:
 	TArray<class UMeshComponent*> MeshArray;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Player|Variable")
-	int32 RecoverHealthValue;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Player|Variable")
-	float RecoverTimer;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Player|Variable")
 	TSubclassOf<class ABackPack> BackPackTemplate;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Player|Variable")
@@ -92,7 +81,6 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Player|Variable")
 	FName CameraTraceRSocket;
 
-	float RecoverInterval;
 	int32 WeaponCurrentIndex;
 
 public:
@@ -101,15 +89,11 @@ public:
 
 	virtual void VisibleDeathPostProcess(const bool InEnabled);
 
-protected:
-	void TickableRecover(const float InDeltaTime);
-	void SpawnBackPack();
-
-public:
-	FORCEINLINE int32 GetSelectWeaponIndex() const
+	AAbstractWeapon* FindByIndexWeapon()
 	{
-		return WeaponCurrentIndex; 
+		return GetInventoryComponent()->FindByIndexWeapon(WeaponCurrentIndex);
 	}
+
 
 public:
 	virtual void Jump() override;
@@ -125,22 +109,22 @@ protected:
 	virtual void MoveRight(float Value) override;
 	virtual void ReleaseObjects() override;
 	virtual void PickupObjects() override;
+	virtual void OnWalkAction() override;
+
+public:
+	virtual void StartRagdollAction() override;
+
+protected:
+	void SpawnBackPack();
 
 	void OnFirePressed();
 	void OnFireReleassed();
 	void OnMeleeAttack();
 	void OnReload();
-
-	void PlayerMovementInput(const bool bForwardAxis);
-	void GroundMovementInput(const bool bForwardAxis);
-	void RagdollMovementInput();
+	void OnChangeWeapon();
+	void OnEquipWeapon();
 	void Aiming();
 	void StopAiming();
-	void UpdateWeapon();
-	void ToggleEquip();
-
-	virtual void StartRagdollAction() override;
-	virtual void RagdollToWakeUpAction() override;
 
 	// Apply to OnALSGaitChange_Implementation
 	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "Player|ALS")

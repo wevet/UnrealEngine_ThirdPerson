@@ -13,21 +13,21 @@ struct RTIK_API FAnimNode_RangeLimitedFabrik : public FAnimNode_SkeletalControlB
 {
 	GENERATED_USTRUCT_BODY()
 
-public:
+protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = EndEffector, meta = (PinShownByDefault))
 	FTransform EffectorTransform;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = EndEffector)
 	TEnumAsByte<enum EBoneControlSpace> EffectorTransformSpace;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = EndEffector)
+	TEnumAsByte<enum EBoneRotationSource> EffectorRotationSource;
+
 	UPROPERTY(EditAnywhere, Category = EndEffector)
 	FBoneReference EffectorTransformBone;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Bones, meta = (PinShownByDefault))
-	URangeLimitedIKChainWrapper* IKChain;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = EndEffector)
-	TEnumAsByte<enum EBoneRotationSource> EffectorRotationSource;
+	class URangeLimitedIKChainWrapper* IKChain;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Solver, meta = (PinShownByDefault))
 	ERangeLimitedFABRIKSolverMode SolverMode;
@@ -48,18 +48,18 @@ public:
 	bool bEnableDebugDraw;
 
 public:
-	FAnimNode_RangeLimitedFabrik()
-		:
-		EffectorTransform(FTransform::Identity),
+	FAnimNode_RangeLimitedFabrik() : Super(),
 		EffectorTransformSpace(BCS_ComponentSpace),
 		EffectorRotationSource(BRS_KeepLocalSpaceRotation),
-		SolverMode(ERangeLimitedFABRIKSolverMode::RLF_Normal),
-		Precision(1.f),
-		MaxIterations(10),
-		MaxRootDragDistance(0.0f),
-		RootDragStiffness(1.0f),
-		bEnableDebugDraw(false)
-	{ }
+		SolverMode(ERangeLimitedFABRIKSolverMode::RLF_Normal)
+	{
+		EffectorTransform = FTransform::Identity;
+		MaxIterations = 10;
+		Precision = 1.0f;
+		MaxRootDragDistance = 0.0f;
+		RootDragStiffness = 1.0f;
+		bEnableDebugDraw = false;
+	}
 
 	virtual void GatherDebugData(FNodeDebugData& DebugData) override
 	{
@@ -68,15 +68,13 @@ public:
 		ComponentPose.GatherDebugData(DebugData);
 	}
 
-	virtual void EvaluateSkeletalControl_AnyThread(FComponentSpacePoseContext& Output, TArray<FBoneTransform>& OutBoneTransforms) override;
-
 	virtual bool IsValidToEvaluate(const USkeleton* Skeleton, const FBoneContainer& RequiredBones) override
 	{
 		if (IKChain == nullptr)
 		{
 			return false;
 		}
-		if (IKChain->Chain.Num() < 2)
+		if (IKChain->GetChain().Num() < 2)
 		{
 			return false;
 		}
@@ -90,17 +88,20 @@ public:
 			return;
 		}
 		IKChain->InitIfInvalid(RequiredBones);
-		size_t NumBones = IKChain->Chain.Num();
+
+		const size_t NumBones = IKChain->GetChain().Num();
 		if (NumBones < 2)
 		{
 			return;
 		}
-		EffectorTransformBone = IKChain->Chain[NumBones - 1].BoneRef;
+		const FIKBone Bone = IKChain->GetChain()[NumBones - 1];
+		EffectorTransformBone = Bone.BoneRef;
 		EffectorTransformBone.Initialize(RequiredBones);
 	}
 
+	virtual void EvaluateSkeletalControl_AnyThread(FComponentSpacePoseContext& Output, TArray<FBoneTransform>& OutBoneTransforms) override;
+
 protected:
-	// Update rotation of parent bone to reflect new position of the child. 
 	void UpdateParentRotation(FTransform& ParentTransform, const FIKBone& ParentBone, FTransform& ChildTransform, const FIKBone& ChildBone, FCSPose<FCompactPose>& Pose) const
 	{
 		FTransform OldParentTransform = Pose.GetComponentSpaceTransform(ParentBone.BoneIndex);

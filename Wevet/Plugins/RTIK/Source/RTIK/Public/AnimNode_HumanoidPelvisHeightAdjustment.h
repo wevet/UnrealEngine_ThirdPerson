@@ -12,7 +12,7 @@ struct RTIK_API FAnimNode_HumanoidPelvisHeightAdjustment : public FAnimNode_Skel
 {
 	GENERATED_USTRUCT_BODY()
 
-public:	
+protected:	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Bones, meta = (PinShownByDefault))
 	UHumanoidLegChain_Wrapper* LeftLeg;
 
@@ -38,46 +38,48 @@ public:
 	bool bEnableDebugDraw;
 
 public:
-	FAnimNode_HumanoidPelvisHeightAdjustment()
+	FAnimNode_HumanoidPelvisHeightAdjustment() : Super()
 	{
-		DeltaTime = 0.0f;
-		PelvisAdjustVelocity = 150.f;
-		MaxPelvisAdjustSize = 50.f;
-		bEnableDebugDraw = false;
+		PelvisAdjustVelocity = 150.0f;
+		MaxPelvisAdjustSize = 50.0f;
 		LastPelvisOffset = FVector::ZeroVector;
+		bEnableDebugDraw = false;
+		DeltaTime = 0.0f;
 	}
 
 	virtual void UpdateInternal(const FAnimationUpdateContext& Context) override
 	{
 		DeltaTime = Context.GetDeltaTime();
+		Super::UpdateInternal(Context);
 	}
-	
-	virtual void EvaluateSkeletalControl_AnyThread(FComponentSpacePoseContext& Output, TArray<FBoneTransform>& OutBoneTransforms) override;
-	
+
 	virtual bool IsValidToEvaluate(const USkeleton* Skeleton, const FBoneContainer& RequiredBones) override
 	{
 		if (LeftLeg == nullptr || RightLeg == nullptr || PelvisBone == nullptr)
 		{
 			return false;
 		}	
+
 		if (!LeftLeg->InitIfInvalid(RequiredBones))
 		{
 #if ENABLE_IK_DEBUG_VERBOSE
-			UE_LOG(LogRTIK, Warning, TEXT("Could not initialize LeftLeg : %s"), *FString(__FUNCTION__));
+			UE_LOG(LogNIK, Warning, TEXT("Could not initialize LeftLeg : %s"), *FString(__FUNCTION__));
 #endif
 			return false;
 		}
+
 		if (!RightLeg->InitIfInvalid(RequiredBones))
 		{
 #if ENABLE_IK_DEBUG_VERBOSE
-			UE_LOG(LogRTIK, Warning, TEXT("Could not initialize RightLeg : %s"), *FString(__FUNCTION__));
+			UE_LOG(LogNIK, Warning, TEXT("Could not initialize RightLeg : %s"), *FString(__FUNCTION__));
 #endif
 			return false;
 		}
+
 		if (!PelvisBone->InitIfInvalid(RequiredBones))
 		{
 #if ENABLE_IK_DEBUG_VERBOSE
-			UE_LOG(LogRTIK, Warning, TEXT("Could not initialize PelvisBone : %s"), *FString(__FUNCTION__));
+			UE_LOG(LogNIK, Warning, TEXT("Could not initialize PelvisBone : %s"), *FString(__FUNCTION__));
 #endif
 			return false;
 		}
@@ -90,25 +92,31 @@ public:
 		{
 			return;
 		}
+
 		if (!RightLeg->InitBoneReferences(RequiredBones))
 		{
-#if ENABLE_IK_DEBUG
-			UE_LOG(LogRTIK, Warning, TEXT("Could not initialize RightLeg : %s"), *FString(__FUNCTION__));
+#if ENABLE_IK_DEBUG_VERBOSE
+			UE_LOG(LogNIK, Warning, TEXT("Could not initialize RightLeg : %s"), *FString(__FUNCTION__));
 #endif
 		}
+
 		if (!LeftLeg->InitBoneReferences(RequiredBones))
 		{
-#if ENABLE_IK_DEBUG
-			UE_LOG(LogRTIK, Warning, TEXT("Could not initialize LeftLeg : %s"), *FString(__FUNCTION__));
+#if ENABLE_IK_DEBUG_VERBOSE
+			UE_LOG(LogNIK, Warning, TEXT("Could not initialize LeftLeg : %s"), *FString(__FUNCTION__));
 #endif
 		}
+
 		if (!PelvisBone->Init(RequiredBones))
 		{
-#if ENABLE_IK_DEBUG
-			UE_LOG(LogRTIK, Warning, TEXT("Could not initialize PelvisBone : %s"), *FString(__FUNCTION__));
+#if ENABLE_IK_DEBUG_VERBOSE
+			UE_LOG(LogNIK, Warning, TEXT("Could not initialize PelvisBone : %s"), *FString(__FUNCTION__));
 #endif
 		}
+		Super::InitializeBoneReferences(RequiredBones);
 	}
+
+	virtual void EvaluateSkeletalControl_AnyThread(FComponentSpacePoseContext& Output, TArray<FBoneTransform>& OutBoneTransforms) override;
 
 protected:
 	float DeltaTime;

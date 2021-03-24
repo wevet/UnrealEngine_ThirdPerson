@@ -13,11 +13,10 @@ ABackPack::ABackPack(const FObjectInitializer& ObjectInitializer) : Super(Object
 	RootComponent = SkeletalMeshComponent;
 	SkeletalMeshComponent->PhysicsTransformUpdateMode = EPhysicsTransformUpdateMode::SimulationUpatesComponentTransform;
 	SkeletalMeshComponent->SetCollisionEnabled(ECollisionEnabled::PhysicsOnly);
-	{
-		static ConstructorHelpers::FObjectFinder<USkeletalMesh> FindAsset(TEXT("/Game/Assets/Backpack/Meshs/SM_BackPack"));
-		USkeletalMesh* Asset = FindAsset.Object;
-		SkeletalMeshComponent->SetSkeletalMesh(Asset);
-	}
+
+	static ConstructorHelpers::FObjectFinder<USkeletalMesh> FindAsset(TEXT("/Game/Assets/Backpack/Meshs/SM_BackPack"));
+	USkeletalMesh* Asset = FindAsset.Object;
+	SkeletalMeshComponent->SetSkeletalMesh(Asset);
 }
 
 void ABackPack::BeginPlay()
@@ -40,13 +39,12 @@ void ABackPack::PutWeapon(AAbstractWeapon* InWeapon, bool& OutAttachSuccess)
 {
 	if (InWeapon == nullptr)
 	{
-		// nullptr
 		return;
 	}
 
 	if (InWeapon->GetWeaponItemType() == EWeaponItemType::None || InWeapon->GetWeaponItemType() == EWeaponItemType::Knife)
 	{
-		UE_LOG(LogWevetClient, Warning, TEXT("Ignore Attach : %s"), *InWeapon->GetName());
+		UE_LOG(LogWevetClient, Warning, TEXT("Ignore Weapon : %s"), *InWeapon->GetName());
 		return;
 	}
 
@@ -62,6 +60,8 @@ void ABackPack::StartSimulatePhysics()
 
 	SkeletalMeshComponent->SetSimulatePhysics(true);
 	SkeletalMeshComponent->SetCollisionEnabled(ECollisionEnabled::Type::PhysicsOnly);
+
+	BP_OnSimulatePhysics(false);
 }
 
 void ABackPack::StopSimulatePhysics()
@@ -72,4 +72,6 @@ void ABackPack::StopSimulatePhysics()
 
 	const FTransform Trans = FTransform::Identity;
 	SkeletalMeshComponent->SetRelativeTransform(Trans);
+
+	BP_OnSimulatePhysics(true);
 }

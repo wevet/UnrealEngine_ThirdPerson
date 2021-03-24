@@ -40,13 +40,7 @@ protected:
 	class UCapsuleComponent* CapsuleComponent;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Variable")
-	bool IsFalling;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Variable")
 	bool IsFallout;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Variable")
-	bool IsCrouch;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Variable")
 	bool IsEquip;
@@ -58,7 +52,7 @@ protected:
 	bool bWasAiming;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Variable")
-	bool bWasStanning;
+	bool bWasHealthHalf;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Variable")
 	float FalloutInterval;
@@ -71,21 +65,8 @@ protected:
 	float CalcDirection;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Variable")
-	float Yaw;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Variable")
-	float Pitch;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Variable")
 	EWeaponItemType WeaponItemType;
 
-	virtual FRotator NormalizedDeltaRotator(FRotator A, FRotator B) const;
-
-	virtual void SetStanning();
-	virtual void SetMoving();
-	virtual void SetMovementSpeed();
-	virtual void SetRotator();
-	virtual void SetCrouch();
 	virtual void SetEquip();
 	virtual void SetWeaponItemType();
 
@@ -95,6 +76,10 @@ protected:
 
 public:
 #pragma region ALSInterface
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AnimInstance|ALS_Pawn")
+	void Initializer();
+	virtual void Initializer_Implementation() override;
+
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AnimInstance|ALS_Pawn")
 	ELSMovementMode GetALSMovementMode() const;
 	virtual ELSMovementMode GetALSMovementMode_Implementation() const override;
@@ -122,6 +107,10 @@ public:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AnimInstance|ALS_Pawn")
 	bool HasMovementInput() const;
 	virtual bool HasMovementInput_Implementation() const override;
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AnimInstance|ALS_Pawn")
+	bool HasMoving() const;
+	virtual bool HasMoving_Implementation() const override;
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AnimInstance|ALS_Pawn")
 	bool HasAiming() const;
@@ -277,6 +266,56 @@ public:
 #pragma endregion
 
 protected:
+#pragma region ALS_Blend
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ALS_Layer")
+	float Spine_Add;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ALS_Layer")
+	float Head_Add;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ALS_Layer")
+	float Arm_L_Add;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ALS_Layer")
+	float Arm_R_Add;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ALS_Layer")
+	float Arm_L_MS;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ALS_Layer")
+	float Arm_L_LS;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ALS_Layer")
+	float Arm_R_MS;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ALS_Layer")
+	float Arm_R_LS;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ALS_Layer")
+	float Hand_L;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ALS_Layer")
+	float Hand_R;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ALS_Layer")
+	float BasePose_N;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ALS_Layer")
+	float BasePose_CLF;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ALS_Layer")
+	float Enable_HandIK_L;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ALS_Layer")
+	float Enable_HandIK_R;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ALS_Layer")
+	float Enable_AimOffset;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ALS_Layer")
+	FRotator SpineRotation;
+#pragma endregion
+
 #pragma region ALS
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ALS")
 	class UAnimMontage* GetUpFromBack;
@@ -298,6 +337,9 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ALS")
 	float SwimmingSpeed;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ALS")
+	float AimSweepTime;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ALS")
 	ELSMovementMode ALSMovementMode;
@@ -460,39 +502,9 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ALS")
 	struct FTurnMontages CRF_Turn_90;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ALS")
-	struct FCombatTurnMontages CombatTurnData;
+	FTurnMontages GetCrouchTurnData() const { return bRF ? CRF_Turn_90 : CLF_Turn_90; }
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ALS")
-	struct FCombatTurnMontages CombatCrouchTurnData;
-
-	FTurnMontages GetCrouchTurnData() const
-	{
-		//switch (WeaponItemType)
-		//{
-		//	case EWeaponItemType::Pistol:
-		//	return CombatCrouchTurnData.PistolTurnData;
-		//	case EWeaponItemType::Rifle:
-		//	return CombatCrouchTurnData.RifleTurnData;
-		//	case EWeaponItemType::Sniper:
-		//	return CombatCrouchTurnData.SniperRifleTurnData;
-		//}
-		return bRF ? CRF_Turn_90 : CLF_Turn_90;
-	}
-
-	FTurnMontages GetTurnData() const
-	{
-		//switch (WeaponItemType)
-		//{
-		//	case EWeaponItemType::Pistol:
-		//	return CombatTurnData.PistolTurnData;
-		//	case EWeaponItemType::Rifle:
-		//	return CombatTurnData.RifleTurnData;
-		//	case EWeaponItemType::Sniper:
-		//	return CombatTurnData.SniperRifleTurnData;
-		//}
-		return bRF ? RF_Turn_90 : LF_Turn_90;
-	}
+	FTurnMontages GetTurnData() const { return bRF ? RF_Turn_90 : LF_Turn_90; }
 #pragma endregion
 
 #pragma region ALSNativeEvent
@@ -501,7 +513,10 @@ protected:
 #pragma endregion
 
 #pragma region ALSFunction
+	float GetAnimCurve(const FName InCurveName) const;
+
 	void SetVariableFromOwner();
+	void CalculateLayerValue();
 	void DoWhileGrounded();
 	void DoWhileFalling();
 	void DoWhileRagdoll();
@@ -515,7 +530,8 @@ protected:
 	void CalculatePlayRates(const float WalkAnimSpeed, const float RunAnimSpeed, const float SprintAnimSpeed, const float CrouchAnimSpeed);
 	void CalculateMovementDirection(const float DirectionThresholdMin, const float DirectionThresholdMax, const float Buffer);
 	void CalculateInAirLeaningValues();
-	void CalculateAimOffset();
+	
+	virtual void CalculateAimOffset();
 	void CalculateStartPosition();
 	void CalcuratePivotState();
 	void CalculateGroundedLeaningValues();
@@ -536,6 +552,8 @@ protected:
 	void UpdateMovementSpeed(const bool bWasGround);
 	void UpdateFlailBlendAlpha();
 
+	UFUNCTION(BlueprintCallable, Category = "ALS")
+	void SetActiveLocomotionState(const ELSLocomotionState NewActiveLocomotionState);
 
 	UFUNCTION(BlueprintCallable, Category = "ALS")
 	void IdleTransition(UAnimSequenceBase* Animation, const float InPlayRate, const float InTimeToStartMontageAt);
@@ -563,8 +581,7 @@ public:
 
 	FMantleAsset GetMantleAsset(const EMantleType InMantleType) const;
 
-	const float TakeDefaultDamageAnimation(FWeaponActionInfo* const InActionInfoPtr, const FName InSlotNodeName);
-
+	const float TakeDamageAnimation(FWeaponActionInfo* const InActionInfoPtr, const FName InSlotNodeName);
 	const float PlayAnimationSequence(const FAnimSequenceInfo InAnimSequenceInfo, const FName InSlotNodeName);
 
 protected:

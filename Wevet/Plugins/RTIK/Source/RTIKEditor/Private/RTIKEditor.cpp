@@ -1,17 +1,17 @@
  #include "RTIKEditor.h"
  
-DEFINE_LOG_CATEGORY(LogRTIKEditor)
+DEFINE_LOG_CATEGORY(LogNIKEditor)
  
 class FRTIKEditorPlugin : public IRTIKEditorPlugin
 {
 	virtual void StartupModule() override
 	{
-		UE_LOG(LogRTIKEditor, Log, TEXT("FRTIKEditorPlugin : StartupModule"));
+		UE_LOG(LogNIKEditor, Log, TEXT("FRTIKEditorPlugin : StartupModule"));
 	}
 
 	virtual void ShutdownModule() override
 	{
-		UE_LOG(LogRTIKEditor, Log, TEXT("FRTIKEditorPlugin : StartupModule"));
+		UE_LOG(LogNIKEditor, Log, TEXT("FRTIKEditorPlugin : StartupModule"));
 	}
 };
 

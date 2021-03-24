@@ -5,11 +5,8 @@
 #include "Modules/ModuleManager.h"
 #include "Logging/LogMacros.h"
 
-DECLARE_LOG_CATEGORY_EXTERN(LogRTIK, All, All)
+DECLARE_LOG_CATEGORY_EXTERN(LogNIK, All, All)
  
-/**
- * The public interface to this module
- */
 class IRTIKPlugin : public IModuleInterface
 {
 

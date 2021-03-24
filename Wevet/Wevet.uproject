@@ -129,6 +129,15 @@
 			]
 		},
 		{
+			"Name": "AppleARKitFaceSupport",
+			"Enabled": true,
+			"SupportedTargetPlatforms": [
+				"IOS",
+				"Win64",
+				"Mac"
+			]
+		},
+		{
 			"Name": "ProceduralMeshComponent",
 			"Enabled": true
 		},
@@ -147,7 +156,7 @@
 		{
 			"Name": "RTIK",
 			"Enabled": true
-		},
+		},		
 		{
 			"Name": "Niagara",
 			"Enabled": true
@@ -162,6 +171,10 @@
 		},
 		{
 			"Name": "RLPlugin",
+			"Enabled": false
+		},
+		{
+			"Name": "ExtraCameraWindow",
 			"Enabled": false
 		},
 		{
@@ -186,6 +199,15 @@
 		},
 		{
 			"Name": "RigLogic",
+			"Enabled": true
+		},
+		{
+			"Name": "RLLiveLink",
+			"Enabled": true,
+			"MarketplaceURL": "com.epicgames.launcher://ue/marketplace/content/f6a79afa7d0e4d429be8b993f7b6f5ad"
+		},
+		{
+			"Name": "ApexDestruction",
 			"Enabled": true
 		}
 	]

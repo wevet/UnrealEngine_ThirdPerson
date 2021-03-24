@@ -11,10 +11,9 @@ class RTIKEDITOR_API UAnimGraphNode_HumanoidPelvisHeightAdjustment : public UAni
 	GENERATED_BODY()
 	
 public:
-
 	FText GetNodeTitle(ENodeTitleType::Type TitleType) const override
 	{
-		return FText::FromString(FString("IK Biped Hip Adjustment"));
+		return FText::FromString(FString("Humanoid Pelvis Height Adjustment"));
 	}
 	
 	FLinearColor GetNodeTitleColor() const override

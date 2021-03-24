@@ -16,11 +16,11 @@ public:
     RLMaterialData() {}
     ~RLMaterialData() {}
 
-    void SetShaderData(TSharedPtr< RLShaderData > spShaderData) { m_spShaderData = spShaderData; }
+    void SetShaderData( TSharedPtr< RLShaderData > spShaderData ) { m_spShaderData = spShaderData; }
     const RLShaderData* GetShaderData() const { return m_spShaderData ? m_spShaderData.Get() : nullptr; }
     RLShaderData* GetShaderData() { return m_spShaderData ? m_spShaderData.Get() : nullptr; }
 
-    void SetScatter(TSharedPtr< RLScatter > spScatter) { m_spScatter = spScatter; }
+    void SetScatter( TSharedPtr< RLScatter > spScatter ) { m_spScatter = spScatter; }
     RLScatter* GetScatter() { return m_spScatter ? m_spScatter.Get() : nullptr; }
 
     bool m_bIsPbr = false;
