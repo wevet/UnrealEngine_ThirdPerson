@@ -201,17 +201,28 @@ void ACharacterBase::EndPlay(const EEndPlayReason::Type EndPlayReason)
 		CurrentWeapon.Reset();
 	}
 
+	// Clear MeleeTimer
 	{
-		if (GetWorldTimerManager().IsTimerActive(MeleeAttackHundle))
+		FTimerManager& TimerManager = GetWorldTimerManager();
+		if (TimerManager.IsTimerActive(MeleeAttackHundle))
 		{
-			GetWorldTimerManager().ClearTimer(MeleeAttackHundle);
+			TimerManager.ClearTimer(MeleeAttackHundle);
+			TimerManager.ClearAllTimersForObject(this);
 		}
-		if (GetWorldTimerManager().IsTimerActive(StanHundle))
-		{
-			GetWorldTimerManager().ClearTimer(StanHundle);
-		}
-		GetWorldTimerManager().ClearAllTimersForObject(this);
 	}
+
+	// Clear StanTimer
+	{
+		FTimerManager& TimerManager = GetWorldTimerManager();
+		if (TimerManager.IsTimerActive(StanHundle))
+		{
+			TimerManager.ClearTimer(StanHundle);
+			TimerManager.ClearAllTimersForObject(this);
+		}
+	}
+
+	// RemoveBind
+	RemoveBindAll();
 
 	ActionInfoPtr = nullptr;
 	IgnoreActors.Reset(0);
@@ -380,18 +391,20 @@ void ACharacterBase::UpdateRecoverTimer(const float InDeltaTime)
 	}
 }
 
+// 
 float ACharacterBase::TakeDamage(float Damage, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
 	const float ActualDamage = Super::TakeDamage(Damage, DamageEvent, EventInstigator, DamageCauser);
 
+	if (DamageEvent.DamageTypeClass->GetClass())
+	{
+		auto Class = DamageEvent.DamageTypeClass->GetClass();
+		UE_LOG(LogWevetClient, Log, TEXT("DamageClass => %s, funcName => %s"), *Class->GetName(), *FString(__FUNCTION__));
+	}
+
 	if (ICombatInstigator::Execute_IsDeath(this))
 	{
 		return ActualDamage;
-	}
-
-	if (DamageEvent.DamageTypeClass->GetClass())
-	{
-		//UE_LOG(LogWevetClient, Log, TEXT("DamageClass => %s, funcName => %s"), *Class->GetName(), *FString(__FUNCTION__));
 	}
 
 	CharacterModel->TakeDamage((int32)ActualDamage);
@@ -411,6 +424,7 @@ float ACharacterBase::TakeDamage(float Damage, struct FDamageEvent const& Damage
 	}
 	return ActualDamage;
 }
+
 
 #pragma region BasicInterface
 void ACharacterBase::Pickup_Implementation(const EItemType InItemType, AActor* Actor)
@@ -531,6 +545,7 @@ void ACharacterBase::ReportNoiseOther_Implementation(AActor* Actor, USoundBase* 
 	}
 }
 #pragma endregion
+
 
 #pragma region Combat
 FCombatDelegate* ACharacterBase::GetDeathDelegate()
@@ -803,6 +818,7 @@ void ACharacterBase::DoDamageReceive_Implementation(AActor* Actor, const FAIStim
 {
 }
 #pragma endregion
+
 
 #pragma region ALSInterface
 void ACharacterBase::Initializer_Implementation()
@@ -1159,6 +1175,7 @@ bool ACharacterBase::HasDebugTrace_Implementation() const
 }
 #pragma endregion
 
+
 #pragma region Input
 void ACharacterBase::Jump()
 {
@@ -1374,7 +1391,35 @@ void ACharacterBase::ReleaseObjects()
 }
 #pragma endregion
 
+
 #pragma region Weapon
+bool ACharacterBase::HasEquipWeapon() const
+{
+	if (CurrentWeapon.IsValid())
+	{
+		return CurrentWeapon.Get()->WasEquip();
+	}
+	return false;
+}
+
+bool ACharacterBase::HasEmptyWeapon() const
+{
+	if (CurrentWeapon.IsValid())
+	{
+		return CurrentWeapon.Get()->WasEmpty();
+	}
+	return false;
+}
+
+EWeaponItemType ACharacterBase::GetCurrentWeaponType() const
+{
+	if (CurrentWeapon.IsValid())
+	{
+		return CurrentWeapon.Get()->GetWeaponItemType();
+	}
+	return EWeaponItemType::None;
+}
+
 AAbstractWeapon* ACharacterBase::FindByWeapon(const EWeaponItemType WeaponItemType) const
 {
 	if (InventoryComponent->EmptyWeaponInventory())
@@ -1926,11 +1971,7 @@ void ACharacterBase::CalcurateRagdollParams(const FVector InRagdollVelocity, con
 }
 
 
-void ACharacterBase::CalculateActorTransformRagdoll(
-	const FRotator InRagdollRotation, 
-	const FVector InRagdollLocation, 
-	FRotator& OutActorRotation, 
-	FVector& OutActorLocation)
+void ACharacterBase::CalculateActorTransformRagdoll(const FRotator InRagdollRotation, const FVector InRagdollLocation, FRotator& OutActorRotation, FVector& OutActorLocation)
 {
 	const float CapsuleHalfHeight = GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
 	const FVector StartLocation(InRagdollLocation);
@@ -2151,11 +2192,7 @@ void ACharacterBase::ConvertALSMovementMode()
 }
 
 
-const float ACharacterBase::CalculateRotationRate(
-	const float SlowSpeed, 
-	const float SlowSpeedRate, 
-	const float FastSpeed, 
-	const float FastSpeedRate)
+const float ACharacterBase::CalculateRotationRate(const float SlowSpeed, const float SlowSpeedRate, const float FastSpeed, const float FastSpeedRate)
 {
 	const FVector Velocity = ChooseVelocity();
 	const FVector Pos(Velocity.X, Velocity.Y, 0.0f);
@@ -2402,12 +2439,7 @@ void ACharacterBase::LimitRotation(const float AimYawLimit, const float InterpSp
 }
 
 
-bool ACharacterBase::CardinalDirectionAngles(
-	const float Value, 
-	const float Min, 
-	const float Max, 
-	const float Buffer, 
-	const ELSCardinalDirection InCardinalDirection) const
+bool ACharacterBase::CardinalDirectionAngles(const float Value, const float Min, const float Max, const float Buffer, const ELSCardinalDirection InCardinalDirection) const
 {
 	const bool A = UKismetMathLibrary::InRange_FloatFloat(Value, (Min + Buffer), (Max - Buffer));
 	const bool B = UKismetMathLibrary::InRange_FloatFloat(Value, (Min - Buffer), (Max + Buffer));
@@ -2426,6 +2458,29 @@ void ACharacterBase::CustomAcceleration()
 	GetCharacterMovement()->MaxAcceleration = RunningAcceleration * MaxAccelerationValue;
 	GetCharacterMovement()->GroundFriction = RunningGroundFriction * GroundFrictionValue;
 }
+
+
+void ACharacterBase::RemoveBindAll()
+{
+	if (DeathDelegate.IsBound())
+	{
+		DeathDelegate.RemoveAll(this);
+		DeathDelegate.Clear();
+	}
+
+	if (KillDelegate.IsBound())
+	{
+		KillDelegate.RemoveAll(this);
+		KillDelegate.Clear();
+	}
+
+	if (AliveDelegate.IsBound())
+	{
+		AliveDelegate.RemoveAll(this);
+		AliveDelegate.Clear();
+	}
+}
+
 
 #pragma region MantleCore
 void ACharacterBase::MantleStart(
@@ -2528,7 +2583,6 @@ FVector ACharacterBase::GetCapsuleLocationFromBase(const FVector BaseLocation, c
 	FVector Position = FVector::ZeroVector;
 	Position.Z = Value;
 	Position += BaseLocation;
-
 	return Position;
 }
 

@@ -378,8 +378,8 @@ public:
 	FCameraFOVParam()
 	{
 		ThirdPersonFOV = 90.f;
-		FirstPersonFOV = 90.f;
-		bRightShoulder = false;
+		FirstPersonFOV = 100.f;
+		bRightShoulder = true;
 	}
 
 };

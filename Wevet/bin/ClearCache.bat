@@ -18,8 +18,8 @@ rmdir /q /s ..\\Plugins\\LocomotionSystem\\Binaries
 rmdir /q /s ..\\Plugins\\LocomotionSystem\\Intermediate
 rmdir /q /s ..\\Plugins\\LoadingScreen\\Binaries
 rmdir /q /s ..\\Plugins\\LoadingScreen\\Intermediate
-rmdir /q /s ..\\Plugins\\Auto_Setup_1.11\\Binaries
-rmdir /q /s ..\\Plugins\\Auto_Setup_1.11\\Intermediate
+rmdir /q /s ..\\Plugins\\Auto_Setup_1.2\\Binaries
+rmdir /q /s ..\\Plugins\\Auto_Setup_1.2\\Intermediate
 
 del ..\\Wevet.sln
 

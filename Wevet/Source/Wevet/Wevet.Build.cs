@@ -45,6 +45,7 @@ public class Wevet : ModuleRules
 				"LocomotionSystem",
 				"LoadingScreen",
 				"RTIK",
+				//"RLPlugin",
 			}
 		);
 

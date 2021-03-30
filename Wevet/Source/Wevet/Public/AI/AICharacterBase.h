@@ -53,9 +53,13 @@ public:
 	virtual void StartRagdollAction() override;
 	virtual void RagdollToWakeUpAction() override;
 
+public:
+	void RemoveSearchNodeGenerator();
+
 protected:
 	void CreateHealthController();
 	void DestroyHealthController();
+	void CreateSearchNodeGenerator(const FVector SearchOriginLocation);
 
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "AI|Variable")
@@ -67,15 +71,9 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "AI|Variable")
 	TSubclassOf<class UAIHealthController> UIHealthControllerTemplate;
 
-	class AAIControllerBase* AIController;
-	class UAIHealthController* UIHealthController;
-
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "AI|Variable")
 	FVector2D WidgetViewPortOffset;
 
-protected:
-	void CreateSearchNodeGenerator(const FVector SearchOriginLocation);
-
-public:
-	void RemoveSearchNodeGenerator();
+	class AAIControllerBase* AIController;
+	class UAIHealthController* UIHealthController;
 };

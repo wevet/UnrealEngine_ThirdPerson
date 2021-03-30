@@ -783,6 +783,7 @@ void UCharacterAnimInstanceBase::CalculateGaitValue()
 	GaitValue = CurrentSpeed;
 }
 
+
 void UCharacterAnimInstanceBase::CalculatePlayRates(
 	const float WalkAnimSpeed, 
 	const float RunAnimSpeed, 
@@ -803,6 +804,7 @@ void UCharacterAnimInstanceBase::CalculatePlayRates(
 	C_PlayRate = (CrouchValue / CapsuleComponent->GetComponentScale().Z);
 }
 
+
 void UCharacterAnimInstanceBase::CalculateMovementDirection(
 	const float DirectionThresholdMin, 
 	const float DirectionThresholdMax, 
@@ -813,6 +815,7 @@ void UCharacterAnimInstanceBase::CalculateMovementDirection(
 	const bool bResult = (MovementDirection == ELSMovementDirection::Forwards) ? A : B;
 	MovementDirection = bResult ? ELSMovementDirection::Forwards : ELSMovementDirection::Backwards;
 }
+
 
 // Locomotion State NotMoving
 void UCharacterAnimInstanceBase::CalculateStartPosition()

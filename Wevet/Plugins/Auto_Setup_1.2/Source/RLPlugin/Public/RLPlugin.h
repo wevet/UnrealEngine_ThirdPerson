@@ -115,7 +115,7 @@ private:
     FString GetTexturePath( RLMaterialData *pMaterialData, const FString& strKey, const FString& strTexturesFolderPath, const FString& strMaterialName );
     void SetTextureParameter( RLMaterialData *pMaterialData, const FString& strKey, UMaterialInstanceConstant* pMaterialInstance );
 
-    void UpdateStaticParameter( UMaterialInstanceConstant* pMaterialInstance, const char* strParameter, bool bEnable, bool bMarkChanged );
+    void UpdateStaticParameter( UMaterialInstanceConstant* pMaterialInstance, const FString& strParameter, bool bEnable, bool bMarkChanged );
     void SetMultiUvIndex( RLMaterialData *pMaterialData, UMaterialInstanceConstant* pMaterialInstance );
     void SetBaseColor( RLMaterialData *pMaterialData, UMaterialInstanceConstant* pMaterialInstance, TArray<FString> kTexturesPathList, FString strTexturesFilesGamePathsFbm[2], FString strMaterialName );
     void SetNormal( RLMaterialData *pMaterialData, UMaterialInstanceConstant* pMaterialInstance, TArray<FString> kTexturesPathList, FString strTexturesFilesGamePathsFbm[2], FString strMaterialName );
@@ -123,6 +123,7 @@ private:
     void SetOpacity( RLMaterialData *pMaterialData, UMaterialInstanceConstant* pMaterialInstance, TArray<FString> kTexturesPathList, FString strTexturesFilesGamePathsFbm[2], FString strMaterialName );
     void SetGlow( RLMaterialData *pMaterialData, UMaterialInstanceConstant* pMaterialInstance, TArray<FString> kTexturesPathList, FString strTexturesFilesGamePaths[2], FString strMaterialName );
     void SetBlend( RLMaterialData *pMaterialData, UMaterialInstanceConstant* pMaterialInstance, TArray<FString> kTexturesPathList, FString kTexturesFilesGamePaths[2], FString strMaterialName );
+    void SetBlendToHairDepthMap( RLMaterialData *pMaterialData, UMaterialInstanceConstant* pMaterialInstance, TArray<FString> kTexturesPathList, FString kTexturesFilesGamePaths[2], FString strMaterialName );
     void SetDisplacement( RLMaterialData* pMaterialData, UMaterialInstanceConstant* pMaterialInstance, TArray<FString> kTexturesPathList, FString strTexturesFilesGamePaths[2], FString strMaterialName );
     void SetAO( RLMaterialData *pMaterialData, UMaterialInstanceConstant* pMaterialInstance, TArray<FString> kTexturesPathList, FString strTexturesFilesGamePaths[2], FString strMaterialName );
     void SetRoughness( RLMaterialData *kMaterialData, UMaterialInstanceConstant* kMaterialInstance, TArray<FString> texturesPathList, FString texturesFilesGamePaths[2], FString materialName, bool isPBR );

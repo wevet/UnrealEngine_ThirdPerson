@@ -25,8 +25,11 @@ DECLARE_LOG_CATEGORY_EXTERN(LogWevetClient, Verbose, All);
 #define DEFAULT_VOLUME 1.f
 
 #define MAX_PERCENT 100.f
+
+// Health
 #define HALF_WEIGHT 0.5f
 #define QUART_WEIGHT 0.25f
+
 #define DEFFENCE_CONST 2
 
 #define MONTAGE_DELAY 1.6f
@@ -36,6 +39,7 @@ DECLARE_LOG_CATEGORY_EXTERN(LogWevetClient, Verbose, All);
 #define INT_ZERO 0
 #define INT_ONE 1
 
+// WeaponDrop OffsetPosition
 #define DEFAULT_FORWARD_VECTOR 200.f
 
 // def speeds
@@ -49,14 +53,10 @@ DECLARE_LOG_CATEGORY_EXTERN(LogWevetClient, Verbose, All);
 
 // Sockets
 #define FPS_SOCKET FName(TEXT("FPS_Socket"))
-
 #define HEAD_SOCKET FName(TEXT("Head_Socket"))
 #define CHEST_SOCKET FName(TEXT("Chest_Socket"))
 #define PELVIS_SOCKET FName(TEXT("Pelvis_Socket"))
 #define BACKPACK_SOCKET FName(TEXT("Backpack_Socket"))
-
-#define CAMERA_TRACE_L FName(TEXT("TP_CameraTrace_L"))
-#define CAMERA_TRACE_R FName(TEXT("TP_CameraTrace_R"))
 
 #define HEAD_BONE FName(TEXT("Head"))
 #define CHEST_BONE FName(TEXT("spine_03"))
@@ -65,15 +65,11 @@ DECLARE_LOG_CATEGORY_EXTERN(LogWevetClient, Verbose, All);
 #define WATER_TAG FName(TEXT("Water"))
 #define WATER_BODY_TAG FName(TEXT("WaterBody"))
 #define WATER_LOCAL_TAG FName(TEXT("WaterLocal"))
+
 #define DAMAGE_TAG FName(TEXT("DamageInstigator"))
 #define CHARACTER_TAG FName(TEXT("Character"))
 #define PLAYER_TAG FName(TEXT("Player"))
-//#define BOMB_SO FName(TEXT("Bomb_Hand_Socket"))
-//#define WEAPON_SO FName(TEXT("Weapon_Socket"))
-//#define RIFLE_SO FName(TEXT("Rifle_Socket"))
-//#define SRIFLE_SO FName(TEXT("Sniper_Rifle_Socket"))
-//#define HOLSTER_SO FName(TEXT("Holster_Socket"))
-//#define PISTOL_SO FName(TEXT("Pistol_Socket"))
+
 #define FULL_BODY FName(TEXT("FullBody"))
 #define UPPER_BODY FName(TEXT("UpperBody"))
 

@@ -187,14 +187,59 @@ TMap< FString, FString > g_kEyeMap =
     { "Sclera UV Radius", "Sclera UV Radius" },
 };
 
+#define FLIP_TANGENT_Y  "Flip Tangent Y"
+#define ACTIVATE_HAIR_COLOR "Activate Hair Color"
+
 TMap< FString, FString > g_kHairMap =
 {
-    { "Hair Tangent Map", "Tangent Map" },
+    { "Hair Tangent Map"      , "Tangent Map" },
+    { "Hair Flow Map"         , "Flow Map" },
     { "Hair Specular Mask Map", "Specular Map" },
+    { "Hair Root Map"         , "Root Map" },
+    { "Hair ID Map"           , "ID Map" },
+
+    { "TangentMapFlipGreen", FLIP_TANGENT_Y },
+    { "AO Map Occlude All Lighting", "AO Map Occlude All Lighting" },
 
     { "Diffuse Strength", "Scatter" },
     { "Hair Roughness Map Strength", "Roughness Multiplier" },
-    { "Hair Specular Map Strength", "Specular Multiplier" }
+    { "Hair Specular Map Strength", "Specular Multiplier" },
+
+    { "VertexGrayToColor"     , "Vertex Color" },
+    { "VertexColorStrength"   , "Vertex Color Strength" },
+    { "ActiveChangeHairColor" , ACTIVATE_HAIR_COLOR },
+    { "BaseColorMapStrength"  , "Base Color Map Strength" },
+    // Strand Color
+    { "RootColor"             , "Root Color" },
+    { "TipColor"              , "End Color" },
+    { "RootTipBlendMode"      , "Root End Blend Mode" },
+    { "UseRootTipColor"       , "Global Strength" },
+    { "RootColorStrength"     , "Root Color Strength" },
+    { "TipColorStrength"      , "End Color Strength" },
+    { "InvertRootTip"         , "Invert Root and End Color" },
+    // highlight A
+    { "_1st Dye Color"                      , "Highlight A Color" },
+    { "_1st Dye Strength"                   , "Highlight A Strength" },
+    { "_1st Dye Distribution from Grayscale", "Highlight A Affected Range" },
+    { "_1st BlendMode"                      , "Highlight A Blend Mode" },
+    { "Mask 1st Dye by RootMap"             , "Highlight A Overlap End Color" },
+    { "Invert 1st Dye RootMap Mask"         , "Highlight A Invert End to Root Color" },
+    { "_1st Dye add Specular"               , "Highlight A Specular Strength" },
+    // hightlight B
+    { "_2nd Dye Color"                      , "Highlight B Color" },
+    { "_2nd Dye Strength"                   , "Highlight B Strength" },
+    { "_2nd Dye Distribution from Grayscale", "Highlight B Affected Range" },
+    { "_2nd BlendMode"                      , "Highlight B Blend Mode" },
+    { "Mask 2nd Dye by RootMap"             , "Highlight B Overlap End Color" },
+    { "Invert 2nd Dye RootMap Mask"         , "Highlight B Invert End to Root Color" },
+    { "_2nd Dye add Specular"               , "Highlight B Specular Strength" },
+    // 
+    { "BlackColor Reflection Offset X", "Rotate Vertical by Black ID" },
+    { "BlackColor Reflection Offset Y", "Rotate Horizontal by Black ID" },
+    { "BlackColor Reflection Offset Z", "Shift by Black ID" },
+    { "WhiteColor Reflection Offset X", "Rotate Vertical by White ID" },
+    { "WhiteColor Reflection Offset Y", "Rotate Horizontal by White ID" },
+    { "WhiteColor Reflection Offset Z", "Shift by White ID" },
 };
 
 TMap< FString, FString > g_kEyeOccusionMap =
@@ -262,9 +307,9 @@ TMap< FString, FString > g_kGeneralMap =
 
     { "_BaseColorMap Brightness", "BaseColorMap_Brightness" },
     { "_BaseColorMap Saturation", "BaseColorMap_Saturation" },
-    { "AO Map Affect All Lights", "Occlude All Lighting" },
+    { "AO Map Affect All Lights", AO_MAP_OCCLUDE_ALL_LIGHTS },
     // Micro_Normal
-    { "Flip MicroNormal Y", "Flip Micro Normal Y" },
+    { "Flip MicroNormal Y", FLIP_MICRO_NORMAL_Y },
     { "MicroNormal Tiling", "MicroNormal Tiling Value" },
     { "MicroNormal Strength", "MicroNormal Strength" },
     // _Specular_Roughness

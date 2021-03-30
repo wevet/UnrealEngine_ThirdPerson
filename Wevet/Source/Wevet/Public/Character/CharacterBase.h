@@ -404,34 +404,13 @@ protected:
 #pragma region Weapon
 public:
 	UFUNCTION(BlueprintCallable, Category = "CharacterBase|Function")
-	bool HasEquipWeapon() const
-	{
-		if (CurrentWeapon.IsValid())
-		{
-			return CurrentWeapon.Get()->WasEquip();
-		}
-		return false;
-	}
+	bool HasEquipWeapon() const;
 
 	UFUNCTION(BlueprintCallable, Category = "CharacterBase|Function")
-	bool HasEmptyWeapon() const
-	{
-		if (CurrentWeapon.IsValid())
-		{
-			return CurrentWeapon.Get()->WasEmpty();
-		}
-		return false;
-	}
+	bool HasEmptyWeapon() const;
 
 	UFUNCTION(BlueprintCallable, Category = "CharacterBase|Function")
-	EWeaponItemType GetCurrentWeaponType() const
-	{
-		if (CurrentWeapon.IsValid())
-		{
-			return CurrentWeapon.Get()->GetWeaponItemType();
-		}
-		return EWeaponItemType::None;
-	}
+	EWeaponItemType GetCurrentWeaponType() const;
 
 protected:
 	TWeakObjectPtr<class AAbstractWeapon> CurrentWeapon;
@@ -487,6 +466,8 @@ protected:
 
 	ELSMovementMode GetPawnMovementModeChanged(const EMovementMode PrevMovementMode, const uint8 PrevCustomMode) const;
 	void ConvertALSMovementMode();
+
+	void RemoveBindAll();
 
 public:
 	UFUNCTION(BlueprintCallable, Category = "CharacterBase|Ragdoll")
@@ -860,40 +841,13 @@ public:
 		return (ALSGait == ELSGait::Walking || ALSMovementMode == ELSMovementMode::Swimming) ? WalkingGroundFriction : RunningGroundFriction;
 	}
 
-	FORCEINLINE float GetAimYawDelta() const 
-	{
-		return AimYawDelta; 
-	}
-
-	FORCEINLINE float GetAimYawRate() const 
-	{
-		return AimYawRate; 
-	}
-
-	FORCEINLINE float GetVelocityDifference() const 
-	{
-		return VelocityDifference; 
-	}
-
-	FORCEINLINE float GetRotationDifference() const 
-	{ 
-		return RotationDifference;
-	}
-
-	FORCEINLINE float GetDirection() const 
-	{ 
-		return Direction; 
-	}
-
-	FORCEINLINE FRotator GetLastVelocityRotation() const 
-	{ 
-		return LastVelocityRotation; 
-	}
-
-	FORCEINLINE FRotator GetLastMovementInputRotation() const 
-	{ 
-		return LastMovementInputRotation; 
-	}
+	FORCEINLINE float GetAimYawDelta() const { return AimYawDelta; }
+	FORCEINLINE float GetAimYawRate() const { return AimYawRate; }
+	FORCEINLINE float GetVelocityDifference() const { return VelocityDifference; }
+	FORCEINLINE float GetRotationDifference() const { return RotationDifference; }
+	FORCEINLINE float GetDirection() const { return Direction; }
+	FORCEINLINE FRotator GetLastVelocityRotation() const { return LastVelocityRotation; }
+	FORCEINLINE FRotator GetLastMovementInputRotation() const { return LastMovementInputRotation; }
 
 protected:
 	UFUNCTION(BlueprintCallable, Category = "CharacterBase|ALS")

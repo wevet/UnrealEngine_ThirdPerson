@@ -16,6 +16,10 @@
 #include "Net/UnrealNetwork.h"
 #include "Lib/WevetBlueprintFunctionLibrary.h"
 
+#define CAMERA_TRACE_L FName(TEXT("TP_CameraTrace_L"))
+#define CAMERA_TRACE_R FName(TEXT("TP_CameraTrace_R"))
+
+using namespace Wevet;
 
 AMockCharacter::AMockCharacter(const FObjectInitializer& ObjectInitializer)	: Super(ObjectInitializer)
 {
@@ -53,7 +57,7 @@ AMockCharacter::AMockCharacter(const FObjectInitializer& ObjectInitializer)	: Su
 	DeathPostProcessComponent->SetupAttachment(GetCapsuleComponent());
 
 	// BackPack
-	static ConstructorHelpers::FObjectFinder<UClass> FindAsset(Wevet::ProjectFile::GetBackPackPath());
+	static ConstructorHelpers::FObjectFinder<UClass> FindAsset(ProjectFile::GetBackPackPath());
 	BackPackTemplate = FindAsset.Object;
 
 	// TeamID = 0
@@ -140,6 +144,7 @@ void AMockCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInpu
 	PlayerInputComponent->BindAxis("MoveForward", this, &AMockCharacter::MoveForward);
 	PlayerInputComponent->BindAxis("MoveRight", this, &AMockCharacter::MoveRight);
 }
+
 
 #pragma region Input
 void AMockCharacter::OnFirePressed()
@@ -298,6 +303,7 @@ void AMockCharacter::StopSprint()
 }
 #pragma endregion
 
+
 #pragma region Interface
 void AMockCharacter::Die_Implementation()
 {
@@ -330,8 +336,6 @@ void AMockCharacter::Die_Implementation()
 
 	StopAiming();
 	StartRagdollAction();
-	//VisibleDeathPostProcess(true);
-	//Super::DisableInput(PlayerController);
 }
 
 void AMockCharacter::Alive_Implementation()
@@ -345,18 +349,14 @@ void AMockCharacter::Alive_Implementation()
 
 	VisibleDeathPostProcess(false);
 	RagdollToWakeUpAction();
-	//Super::EnableInput(PlayerController);
 }
 
 void AMockCharacter::Equipment_Implementation()
 {
-	//AAbstractWeapon* const WeaponPtr = InventoryComponent->FindByIndexWeapon(WeaponCurrentIndex);
-	//CurrentWeapon = MakeWeakObjectPtr<AAbstractWeapon>(WeaponPtr);
 	if (!CurrentWeapon.IsValid())
 	{
 		return;
 	}
-	//CurrentWeapon.Get()->SetActorHiddenInGame(false);
 	Super::Equipment_Implementation();
 }
 
@@ -424,6 +424,7 @@ void AMockCharacter::SetALSCameraShake_Implementation(TSubclassOf<class UMatinee
 	}
 }
 #pragma endregion
+
 
 #pragma region Montages
 void AMockCharacter::EquipmentActionMontage()
