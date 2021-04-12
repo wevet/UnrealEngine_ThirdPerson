@@ -7,13 +7,14 @@
 #include "GameFramework/PawnMovementComponent.h"
 #include "WevetExtension.h"
 
-UCharacterAnimInstanceBase::UCharacterAnimInstanceBase(const FObjectInitializer& ObjectInitializer)
-	: Super(ObjectInitializer),
-	bWasMoving(false),
-	bWasAiming(false),
-	bDebugTrace(false)
+
+UCharacterAnimInstanceBase::UCharacterAnimInstanceBase(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {
-	Super::IKTargetInterpolationSpeed = 60.f;
+	bWasMoving = false;
+	bWasAiming = false;
+	bDebugTrace = false;
+
+	IKTargetInterpolationSpeed = 60.f;
 	FalloutInterval = 3.f;
 	ActiveLocomotionState = ELSLocomotionState::NotMoving;
 
@@ -59,6 +60,11 @@ void UCharacterAnimInstanceBase::NativeInitializeAnimation()
 
 	CharacterMovementComponent = Owner->GetCharacterMovement();
 	CapsuleComponent = Owner->GetCapsuleComponent();
+
+	//if (Owner->GetClass()->ImplementsInterface(ULocomotionSystemPawn::StaticClass())) 
+	//{
+	//}
+
 	ILocomotionSystemPawn::Execute_SetALSMovementMode(this, ILocomotionSystemPawn::Execute_GetALSMovementMode(Owner));
 	ILocomotionSystemPawn::Execute_SetALSRotationMode(this, ILocomotionSystemPawn::Execute_GetALSRotationMode(Owner));
 	ILocomotionSystemPawn::Execute_SetALSGait(this, ILocomotionSystemPawn::Execute_GetALSGait(Owner));
@@ -107,10 +113,14 @@ void UCharacterAnimInstanceBase::NativeUpdateAnimation(float DeltaTimeX)
 
 	// Update LocomotionSystem
 	SetVariableFromOwner();
+
+
+
 	CalculateAimOffset();
 	CalculateMovementState();
 	CalculateLayerValue();
 }
+
 
 #pragma region Weapon
 void UCharacterAnimInstanceBase::SetEquip()
@@ -134,6 +144,7 @@ void UCharacterAnimInstanceBase::SetWeaponItemType()
 	}
 }
 #pragma endregion
+
 
 #pragma region Utils
 bool UCharacterAnimInstanceBase::IsLocallyControlled() const
@@ -208,50 +219,9 @@ float UCharacterAnimInstanceBase::GetAnimCurve(const FName InCurveName) const
 }
 #pragma endregion
 
-#pragma region ALSInterface
-ELSMovementMode UCharacterAnimInstanceBase::GetALSMovementMode_Implementation() const
-{
-	return ALSMovementMode;
-}
 
-ELSMovementAction UCharacterAnimInstanceBase::GetALSMovementAction_Implementation() const
-{
-	return ALSMovementAction;
-}
-
-ELSGait UCharacterAnimInstanceBase::GetALSGait_Implementation() const
-{
-	return ALSGait;
-}
-
-ELSStance UCharacterAnimInstanceBase::GetALSStance_Implementation() const
-{ 
-	return ALSStance;
-}
-
-ELSViewMode UCharacterAnimInstanceBase::GetALSViewMode_Implementation() const
-{
-	return ALSViewMode;
-}
-
-ELSRotationMode UCharacterAnimInstanceBase::GetALSRotationMode_Implementation() const
-{
-	return ALSRotationMode;
-}
-
-bool UCharacterAnimInstanceBase::HasAiming_Implementation() const
-{
-	return bWasAiming;
-}
-
-void UCharacterAnimInstanceBase::SetALSCharacterRotation_Implementation(const FRotator AddAmount)
-{
-}
-
-void UCharacterAnimInstanceBase::SetALSCameraShake_Implementation(TSubclassOf<class UMatineeCameraShake> InShakeClass, const float InScale)
-{
-}
-
+#pragma region ALS_Core
+// MovementMode
 void UCharacterAnimInstanceBase::SetALSMovementMode_Implementation(const ELSMovementMode InLSMovementMode)
 {
 	ALSPrevMovementMode = ALSMovementMode;
@@ -279,6 +249,7 @@ void UCharacterAnimInstanceBase::OnALSMovementModeChange_Implementation()
 	}
 }
 
+// MovementAction
 void UCharacterAnimInstanceBase::SetALSMovementAction_Implementation(const ELSMovementAction NewALSMovementAction)
 {
 	ALSMovementAction = NewALSMovementAction;
@@ -288,6 +259,7 @@ void UCharacterAnimInstanceBase::OnALSMovementActionChange_Implementation()
 {
 }
 
+// Gait
 void UCharacterAnimInstanceBase::SetALSGait_Implementation(const ELSGait InLSGait)
 {
 	ALSGait = InLSGait;
@@ -297,6 +269,7 @@ void UCharacterAnimInstanceBase::OnALSGaitChange_Implementation()
 {
 }
 
+// Stance
 void UCharacterAnimInstanceBase::SetALSStance_Implementation(const ELSStance InLSStance)
 {
 	ALSStance = InLSStance;
@@ -311,6 +284,7 @@ void UCharacterAnimInstanceBase::OnALSStanceChange_Implementation()
 	}
 }
 
+// RotationMode
 void UCharacterAnimInstanceBase::SetALSRotationMode_Implementation(const ELSRotationMode InLSRotationMode)
 {
 	ALSRotationMode = InLSRotationMode;
@@ -320,6 +294,7 @@ void UCharacterAnimInstanceBase::OnALSRotationModeChange_Implementation()
 {
 }
 
+// ViewMode
 void UCharacterAnimInstanceBase::SetALSViewMode_Implementation(const ELSViewMode InLSViewMode)
 {
 	ALSViewMode = InLSViewMode;
@@ -329,6 +304,7 @@ void UCharacterAnimInstanceBase::OnALSViewModeChange_Implementation()
 {
 }
 
+// Aiming
 void UCharacterAnimInstanceBase::SetALSAiming_Implementation(const bool InAiming)
 {
 	bWasAiming = InAiming;
@@ -338,11 +314,7 @@ void UCharacterAnimInstanceBase::OnALSAimingChange_Implementation()
 {
 }
 
-void UCharacterAnimInstanceBase::SetALSIdleState_Implementation(const ELSIdleEntryState InLSIdleEntryState)
-{
-	ALSIdleEntryState = InLSIdleEntryState;
-}
-
+// Speeds
 void UCharacterAnimInstanceBase::SetWalkingSpeed_Implementation(const float InWalkingSpeed)
 {
 	WalkingSpeed = InWalkingSpeed;
@@ -371,6 +343,14 @@ void UCharacterAnimInstanceBase::SetSwimmingSpeed_Implementation(const float InS
 {
 	SwimmingSpeed = InSwimmingSpeed;
 	//UE_LOG(LogWevetClient, Log, TEXT("Swim : %s"), *FString(__FUNCTION__));
+}
+#pragma endregion
+
+
+#pragma region ALS_Other
+void UCharacterAnimInstanceBase::SetALSIdleState_Implementation(const ELSIdleEntryState InLSIdleEntryState)
+{
+	ALSIdleEntryState = InLSIdleEntryState;
 }
 
 void UCharacterAnimInstanceBase::SetGetup_Implementation(const bool InFaceDown)
@@ -419,22 +399,64 @@ void UCharacterAnimInstanceBase::SetALSAnimNotifyPivotData_Implementation(const 
 }
 #pragma endregion
 
+
 #pragma region ALS_NotUseAPI
-void UCharacterAnimInstanceBase::Initializer_Implementation()
+ELSMovementMode UCharacterAnimInstanceBase::GetALSMovementMode_Implementation() const
 {
-	// Not Use
+	return ALSMovementMode;
+}
+
+ELSMovementAction UCharacterAnimInstanceBase::GetALSMovementAction_Implementation() const
+{
+	return ALSMovementAction;
+}
+
+ELSGait UCharacterAnimInstanceBase::GetALSGait_Implementation() const
+{
+	return ALSGait;
+}
+
+ELSStance UCharacterAnimInstanceBase::GetALSStance_Implementation() const
+{
+	return ALSStance;
+}
+
+ELSViewMode UCharacterAnimInstanceBase::GetALSViewMode_Implementation() const
+{
+	return ALSViewMode;
+}
+
+ELSRotationMode UCharacterAnimInstanceBase::GetALSRotationMode_Implementation() const
+{
+	return ALSRotationMode;
+}
+
+void UCharacterAnimInstanceBase::SetALSCharacterRotation_Implementation(const FRotator AddAmount)
+{
+}
+
+void UCharacterAnimInstanceBase::SetALSCameraShake_Implementation(TSubclassOf<class UMatineeCameraShake> InShakeClass, const float InScale)
+{
 }
 
 bool UCharacterAnimInstanceBase::HasMovementInput_Implementation() const
 {
-	// Not Use
-	return ILocomotionSystemPawn::Execute_HasMovementInput(Owner);
+	return bWasMovementInput;
 }
 
 bool UCharacterAnimInstanceBase::HasMoving_Implementation() const
 {
-	// Not Use
-	return ILocomotionSystemPawn::Execute_HasMoving(Owner);
+	return bWasMoving;
+}
+
+bool UCharacterAnimInstanceBase::HasDebugTrace_Implementation() const
+{
+	return bDebugTrace;
+}
+
+bool UCharacterAnimInstanceBase::HasAiming_Implementation() const
+{
+	return bWasAiming;
 }
 
 FTransform UCharacterAnimInstanceBase::GetPivotTarget_Implementation() const
@@ -490,13 +512,8 @@ FCameraTraceParam UCharacterAnimInstanceBase::GetCameraTraceParam_Implementation
 	// Not Use
 	return ILocomotionSystemPawn::Execute_GetCameraTraceParam(Owner);
 }
-
-bool UCharacterAnimInstanceBase::HasDebugTrace_Implementation() const
-{
-	// Not Use
-	return ILocomotionSystemPawn::Execute_HasDebugTrace(Owner);
-}
 #pragma endregion
+
 
 // InterfacePawn Have Copy to Variables
 void UCharacterAnimInstanceBase::SetVariableFromOwner()
@@ -504,16 +521,18 @@ void UCharacterAnimInstanceBase::SetVariableFromOwner()
 	bWasMovementInput = ILocomotionSystemPawn::Execute_HasMovementInput(Owner);
 	bDebugTrace = ILocomotionSystemPawn::Execute_HasDebugTrace(Owner);
 	bWasMoving = ILocomotionSystemPawn::Execute_HasMoving(Owner);
+
 	LastVelocityRotation = Owner->GetLastVelocityRotation();
 	LastMovementInputRotation = Owner->GetLastMovementInputRotation();
-	Direction = Owner->GetDirection();
 	RotationDifference = Owner->GetRotationDifference();
 	VelocityDifference = Owner->GetVelocityDifference();
+	CharacterRotation = Owner->GetCharacterRotation();
+	LookingRotation = Owner->GetLookingRotation();
+	Direction = Owner->GetDirection();
 	AimYawDelta = Owner->GetAimYawDelta();
 	AimYawRate = Owner->GetAimYawRate();
 	Velocity = Owner->ChooseVelocity();
-	CharacterRotation = Owner->GetCharacterRotation();
-	LookingRotation = Owner->GetLookingRotation();
+
 	bWasHealthHalf = Owner->IsHealthHalf();
 }
 
@@ -784,18 +803,14 @@ void UCharacterAnimInstanceBase::CalculateGaitValue()
 }
 
 
-void UCharacterAnimInstanceBase::CalculatePlayRates(
-	const float WalkAnimSpeed, 
-	const float RunAnimSpeed, 
-	const float SprintAnimSpeed, 
-	const float CrouchAnimSpeed)
+void UCharacterAnimInstanceBase::CalculatePlayRates(const float Walk, const float Run, const float Sprint, const float Crouch)
 {
 	const float MinRate = 0.0f;
 	const float MaxRate = 1.0f;
-	const float WalkValue = UKismetMathLibrary::MapRangeUnclamped(MovementSpeed, 0.0f, WalkAnimSpeed, MinRate, MaxRate);
-	const float RunValue = UKismetMathLibrary::MapRangeUnclamped(MovementSpeed, 0.0f, RunAnimSpeed, MinRate, MaxRate);
-	const float SprintValue = UKismetMathLibrary::MapRangeUnclamped(MovementSpeed, 0.0f, SprintAnimSpeed, MinRate, MaxRate);
-	const float CrouchValue = UKismetMathLibrary::MapRangeUnclamped(MovementSpeed, 0.0f, CrouchAnimSpeed, MinRate, MaxRate);
+	const float WalkValue = UKismetMathLibrary::MapRangeUnclamped(MovementSpeed, 0.0f, Walk, MinRate, MaxRate);
+	const float RunValue = UKismetMathLibrary::MapRangeUnclamped(MovementSpeed, 0.0f, Run, MinRate, MaxRate);
+	const float SprintValue = UKismetMathLibrary::MapRangeUnclamped(MovementSpeed, 0.0f, Sprint, MinRate, MaxRate);
+	const float CrouchValue = UKismetMathLibrary::MapRangeUnclamped(MovementSpeed, 0.0f, Crouch, MinRate, MaxRate);
 
 	const float GaitWalk = UKismetMathLibrary::MapRangeClamped(GaitValue, 1.0f, 2.0f, WalkValue, RunValue);
 	const float GaitRun = UKismetMathLibrary::MapRangeClamped(GaitValue, 2.0f, 3.0f, RunValue, SprintValue);
@@ -805,13 +820,10 @@ void UCharacterAnimInstanceBase::CalculatePlayRates(
 }
 
 
-void UCharacterAnimInstanceBase::CalculateMovementDirection(
-	const float DirectionThresholdMin, 
-	const float DirectionThresholdMax, 
-	const float Buffer)
+void UCharacterAnimInstanceBase::CalculateMovementDirection(const float Min, const float Max, const float Buffer)
 {
-	const bool A = UKismetMathLibrary::InRange_FloatFloat(Direction, (DirectionThresholdMin - Buffer), (DirectionThresholdMax + Buffer));
-	const bool B = UKismetMathLibrary::InRange_FloatFloat(Direction, (DirectionThresholdMin + Buffer), (DirectionThresholdMax - Buffer));
+	const bool A = UKismetMathLibrary::InRange_FloatFloat(Direction, (Min - Buffer), (Max + Buffer));
+	const bool B = UKismetMathLibrary::InRange_FloatFloat(Direction, (Min + Buffer), (Max - Buffer));
 	const bool bResult = (MovementDirection == ELSMovementDirection::Forwards) ? A : B;
 	MovementDirection = bResult ? ELSMovementDirection::Forwards : ELSMovementDirection::Backwards;
 }
@@ -949,8 +961,8 @@ void UCharacterAnimInstanceBase::CalculateLandPredictionAlpha()
 		FLinearColor::Green, 
 		DrawTime);
 
-
-	if (HitData.bBlockingHit && (HitData.ImpactNormal.Z >= CharacterMovementComponent->GetWalkableFloorZ()))
+	const float FloorZ = CharacterMovementComponent->GetWalkableFloorZ();
+	if (HitData.bBlockingHit && (HitData.ImpactNormal.Z >= FloorZ))
 	{
 		const float HitSpeed = 20.f;
 		const float Value = UKismetMathLibrary::MapRangeClamped(HitData.Time, 0.0f, 1.0f, 1.0f, 0.0f);
@@ -973,10 +985,7 @@ void UCharacterAnimInstanceBase::UpdateFlailBlendAlpha()
 }
 
 
-void UCharacterAnimInstanceBase::OnTurnInPlaceRespons(
-	const float AimYawLimit, 
-	const FTurnMontages TurnAnims, 
-	const float PlayRate)
+void UCharacterAnimInstanceBase::OnTurnInPlaceRespons(const float AimYawLimit, const FTurnMontages TurnAnims, const float PlayRate)
 {
 	bShouldTurnInPlace = (FMath::Abs(AimYawDelta) > AimYawLimit);
 	UAnimMontage* SelectMontage = (AimYawDelta > 0.0f) ? TurnAnims.TurnRAnim : TurnAnims.TurnLAnim;
@@ -1067,12 +1076,14 @@ void UCharacterAnimInstanceBase::OnTurnInPlaceDelay(
 	}
 }
 
+
 // if Falling UpdateParams Set 'MovementSpeed' to only use 'X' and 'Y' Velocity values.
 void UCharacterAnimInstanceBase::UpdateMovementSpeed(const bool bWasGround)
 {
 	const FVector Value = FVector(Velocity.X, Velocity.Y, bWasGround ? Velocity.Z : 0.0f);
 	MovementSpeed = UKismetMathLibrary::VSize(Value);
 }
+
 
 // Apply to AnimNotify
 void UCharacterAnimInstanceBase::SetActiveLocomotionState(const ELSLocomotionState NewActiveLocomotionState)
@@ -1095,4 +1106,3 @@ void UCharacterAnimInstanceBase::IdleTransition(UAnimSequenceBase* Animation, co
 	const int32 LoopCount = 1;
 	PlaySlotAnimationAsDynamicMontage(Animation, SlotName, BlendInTime, BlendOutTime, InPlayRate, LoopCount, BlendOutTriggerTime, InTimeToStartMontageAt);
 }
-

@@ -75,63 +75,7 @@ protected:
 	bool IsLocallyControlled() const;
 
 public:
-#pragma region ALSInterface
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AnimInstance|ALS_Pawn")
-	void Initializer();
-	virtual void Initializer_Implementation() override;
-
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AnimInstance|ALS_Pawn")
-	ELSMovementMode GetALSMovementMode() const;
-	virtual ELSMovementMode GetALSMovementMode_Implementation() const override;
-
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AnimInstance|ALS_Pawn")
-	ELSMovementAction GetALSMovementAction() const;
-	virtual ELSMovementAction GetALSMovementAction_Implementation() const override;
-
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AnimInstance|ALS_Pawn")
-	ELSGait GetALSGait() const;
-	virtual ELSGait GetALSGait_Implementation() const override;
-
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AnimInstance|ALS_Pawn")
-	ELSStance GetALSStance() const;
-	virtual ELSStance GetALSStance_Implementation() const override;
-
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AnimInstance|ALS_Pawn")
-	ELSViewMode GetALSViewMode() const;
-	virtual ELSViewMode GetALSViewMode_Implementation() const override;
-
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AnimInstance|ALS_Pawn")
-	ELSRotationMode GetALSRotationMode() const;
-	virtual ELSRotationMode GetALSRotationMode_Implementation() const override;
-
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AnimInstance|ALS_Pawn")
-	bool HasMovementInput() const;
-	virtual bool HasMovementInput_Implementation() const override;
-
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AnimInstance|ALS_Pawn")
-	bool HasMoving() const;
-	virtual bool HasMoving_Implementation() const override;
-
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AnimInstance|ALS_Pawn")
-	bool HasAiming() const;
-	virtual bool HasAiming_Implementation() const override;
-
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AnimInstance|ALS_Pawn")
-	FTransform GetPivotTarget() const;
-	virtual FTransform GetPivotTarget_Implementation() const override;
-
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AnimInstance|ALS_Pawn")
-	FVector GetCameraTarget() const;
-	virtual FVector GetCameraTarget_Implementation() const override;
-
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AnimInstance|ALS_Pawn")
-	void SetALSCharacterRotation(const FRotator AddAmount);
-	virtual void SetALSCharacterRotation_Implementation(const FRotator AddAmount) override;
-
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AnimInstance|ALS_Pawn")
-	void SetALSCameraShake(TSubclassOf<class UMatineeCameraShake> InShakeClass, const float InScale);
-	virtual void SetALSCameraShake_Implementation(TSubclassOf<class UMatineeCameraShake> InShakeClass, const float InScale) override;
-
+#pragma region ALS_Core
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AnimInstance|ALS_Pawn")
 	void SetALSMovementMode(const ELSMovementMode NewALSMovementMode);
 	virtual void SetALSMovementMode_Implementation(const ELSMovementMode NewALSMovementMode) override;
@@ -189,10 +133,6 @@ public:
 	virtual void OnALSAimingChange_Implementation() override;
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AnimInstance|ALS_Pawn")
-	void SetALSIdleState(const ELSIdleEntryState InLSIdleEntryState);
-	virtual void SetALSIdleState_Implementation(const ELSIdleEntryState InLSIdleEntryState) override;
-
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AnimInstance|ALS_Pawn")
 	void SetWalkingSpeed(const float InWalkingSpeed);
 	virtual void SetWalkingSpeed_Implementation(const float InWalkingSpeed) override;
 
@@ -211,6 +151,92 @@ public:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AnimInstance|ALS_Pawn")
 	void SetSwimmingSpeed(const float InSwimmingSpeed);
 	virtual void SetSwimmingSpeed_Implementation(const float InSwimmingSpeed) override;
+#pragma endregion
+
+
+#pragma region ALS_Others
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AnimInstance|ALS_Pawn")
+	void SetALSIdleState(const ELSIdleEntryState InLSIdleEntryState);
+	virtual void SetALSIdleState_Implementation(const ELSIdleEntryState InLSIdleEntryState) override;
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AnimInstance|ALS_Pawn")
+	void SetGetup(const bool InFaceDown);
+	virtual void SetGetup_Implementation(const bool InFaceDown) override;
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AnimInstance|ALS_Pawn")
+	void SetRF(const bool InRF);
+	virtual void SetRF_Implementation(const bool InRF) override;
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AnimInstance|ALS_Pawn")
+	void PoseSnapShot(const FName InPoseName);
+	virtual void PoseSnapShot_Implementation(const FName InPoseName) override;
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AnimInstance|ALS_AnimNotify")
+	void SetALSAnimNotifyTurnInPlace(UAnimMontage* InTurnInPlaceMontage, const bool InShouldTurnInPlace, const bool InTurningInPlace, const bool InTurningRight);
+	virtual void SetALSAnimNotifyTurnInPlace_Implementation(UAnimMontage* InTurnInPlaceMontage, const bool InShouldTurnInPlace, const bool InTurningInPlace, const bool InTurningRight) override;
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AnimInstance|ALS_AnimNotify")
+	void SetALSAnimNotifyPivotData(const FPivotData InPivotData);
+	virtual void SetALSAnimNotifyPivotData_Implementation(const FPivotData InPivotData) override;
+#pragma endregion
+
+
+#pragma region ALS_NotUseAPI
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AnimInstance|ALS_Pawn")
+	ELSMovementMode GetALSMovementMode() const;
+	virtual ELSMovementMode GetALSMovementMode_Implementation() const override;
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AnimInstance|ALS_Pawn")
+	ELSMovementAction GetALSMovementAction() const;
+	virtual ELSMovementAction GetALSMovementAction_Implementation() const override;
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AnimInstance|ALS_Pawn")
+	ELSGait GetALSGait() const;
+	virtual ELSGait GetALSGait_Implementation() const override;
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AnimInstance|ALS_Pawn")
+	ELSStance GetALSStance() const;
+	virtual ELSStance GetALSStance_Implementation() const override;
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AnimInstance|ALS_Pawn")
+	ELSViewMode GetALSViewMode() const;
+	virtual ELSViewMode GetALSViewMode_Implementation() const override;
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AnimInstance|ALS_Pawn")
+	ELSRotationMode GetALSRotationMode() const;
+	virtual ELSRotationMode GetALSRotationMode_Implementation() const override;
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AnimInstance|ALS_Pawn")
+	void SetALSCharacterRotation(const FRotator AddAmount);
+	virtual void SetALSCharacterRotation_Implementation(const FRotator AddAmount) override;
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AnimInstance|ALS_Pawn")
+	void SetALSCameraShake(TSubclassOf<class UMatineeCameraShake> InShakeClass, const float InScale);
+	virtual void SetALSCameraShake_Implementation(TSubclassOf<class UMatineeCameraShake> InShakeClass, const float InScale) override;
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AnimInstance|ALS_Pawn")
+	bool HasMovementInput() const;
+	virtual bool HasMovementInput_Implementation() const override;
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AnimInstance|ALS_Pawn")
+	bool HasMoving() const;
+	virtual bool HasMoving_Implementation() const override;
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|ALS_Pawn")
+	bool HasDebugTrace() const;
+	virtual bool HasDebugTrace_Implementation() const override;
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AnimInstance|ALS_Pawn")
+	bool HasAiming() const;
+	virtual bool HasAiming_Implementation() const override;
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AnimInstance|ALS_Pawn")
+	FTransform GetPivotTarget() const;
+	virtual FTransform GetPivotTarget_Implementation() const override;
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AnimInstance|ALS_Pawn")
+	FVector GetCameraTarget() const;
+	virtual FVector GetCameraTarget_Implementation() const override;
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AnimInstance|ALS_Pawn")
 	float GetWalkingSpeed() const;
@@ -233,37 +259,14 @@ public:
 	virtual float GetSwimmingSpeed_Implementation() const override;
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AnimInstance|ALS_Pawn")
-	void SetGetup(const bool InFaceDown);
-	virtual void SetGetup_Implementation(const bool InFaceDown) override;
-
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AnimInstance|ALS_Pawn")
-	void SetRF(const bool InRF);
-	virtual void SetRF_Implementation(const bool InRF) override;
-
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AnimInstance|ALS_Pawn")
-	void PoseSnapShot(const FName InPoseName);
-	virtual void PoseSnapShot_Implementation(const FName InPoseName) override;
-
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AnimInstance|ALS_Pawn")
 	FCameraFOVParam GetCameraFOVParam() const;
 	FCameraFOVParam GetCameraFOVParam_Implementation() const override;
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AnimInstance|ALS_Pawn")
 	FCameraTraceParam GetCameraTraceParam() const;
 	FCameraTraceParam GetCameraTraceParam_Implementation() const override;
-
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|ALS_Pawn")
-	bool HasDebugTrace() const;
-	virtual bool HasDebugTrace_Implementation() const override;
-
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AnimInstance|ALS_AnimNotify")
-	void SetALSAnimNotifyTurnInPlace(UAnimMontage* InTurnInPlaceMontage, const bool InShouldTurnInPlace, const bool InTurningInPlace, const bool InTurningRight);
-	virtual void SetALSAnimNotifyTurnInPlace_Implementation(UAnimMontage* InTurnInPlaceMontage, const bool InShouldTurnInPlace, const bool InTurningInPlace, const bool InTurningRight) override;
-
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AnimInstance|ALS_AnimNotify")
-	void SetALSAnimNotifyPivotData(const FPivotData InPivotData);
-	virtual void SetALSAnimNotifyPivotData_Implementation(const FPivotData InPivotData) override;
 #pragma endregion
+
 
 protected:
 #pragma region ALS_Blend
@@ -512,6 +515,8 @@ protected:
 	void BP_ReplicatePlayMontage(UAnimMontage* MontageToPlay, const float InPlayRate, const float InTimeToStartMontageAt, const bool bStopAllMontages);
 #pragma endregion
 
+
+protected:
 #pragma region ALSFunction
 	float GetAnimCurve(const FName InCurveName) const;
 
@@ -527,8 +532,8 @@ protected:
 
 	void CalculateGaitValue();
 	void CalculateMovementState();
-	void CalculatePlayRates(const float WalkAnimSpeed, const float RunAnimSpeed, const float SprintAnimSpeed, const float CrouchAnimSpeed);
-	void CalculateMovementDirection(const float DirectionThresholdMin, const float DirectionThresholdMax, const float Buffer);
+	void CalculatePlayRates(const float Walk, const float Run, const float Sprint, const float Crouch);
+	void CalculateMovementDirection(const float Min, const float Max, const float Buffer);
 	void CalculateInAirLeaningValues();
 	
 	virtual void CalculateAimOffset();

@@ -81,7 +81,6 @@ void AAIControllerBase::OnPossess(APawn* InPawn)
 	UWevetBlueprintFunctionLibrary::GetWorldWayPointsArray(InPawn, FLT_MAX, WayPointList);
 	BehaviorTreeComponent->StartTree(*Character->GetBehaviorTree());
 
-	ILocomotionSystemPawn::Execute_Initializer(Character);
 	if (ICombatInstigator* Interface = Cast<ICombatInstigator>(Character))
 	{
 		// AddDelegate Death

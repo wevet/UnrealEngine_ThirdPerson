@@ -69,6 +69,12 @@ float AAICharacterBase::TakeDamage(float Damage, struct FDamageEvent const& Dama
 	return ActualDamage;
 }
 
+void AAICharacterBase::PossessedBy(AController* NewController)
+{
+	Super::PossessedBy(NewController);
+	AIController = Cast<AAIControllerBase>(NewController);
+}
+
 #pragma region Ragdoll
 void AAICharacterBase::StartRagdollAction()
 {
@@ -106,11 +112,6 @@ void AAICharacterBase::RagdollToWakeUpAction()
 #pragma endregion
 
 #pragma region Interface
-void AAICharacterBase::Initializer_Implementation()
-{
-	AIController = Cast<AAIControllerBase>(GetController());
-}
-
 void AAICharacterBase::Die_Implementation()
 {
 	if (Super::bWasDied)

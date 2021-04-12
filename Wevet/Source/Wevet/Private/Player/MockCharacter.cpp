@@ -106,72 +106,130 @@ void AMockCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInpu
 {
 	check(PlayerInputComponent);
 
-	PlayerInputComponent->BindAction("ReleaseObjects", IE_Pressed, this, &AMockCharacter::ReleaseObjects);
-	PlayerInputComponent->BindAction("PickupObjects", IE_Pressed, this, &AMockCharacter::PickupObjects);
-
-	PlayerInputComponent->BindAction("Equip", IE_Pressed, this, &AMockCharacter::OnEquipWeapon);
-	PlayerInputComponent->BindAction("Swap", IE_Pressed, this, &AMockCharacter::OnChangeWeapon);
-	PlayerInputComponent->BindAction("Reload", IE_Pressed, this, &AMockCharacter::OnReload);
-
-	// Crouch
-	PlayerInputComponent->BindAction("CrouchAction", IE_Pressed, this, &AMockCharacter::OnCrouch);
-
-	// FirePress
-	PlayerInputComponent->BindAction("Fire", IE_Pressed, this, &AMockCharacter::OnFirePressed);
-	PlayerInputComponent->BindAction("Fire", IE_Released, this, &AMockCharacter::OnFireReleassed);
-
-	// MeleeAttack
-	PlayerInputComponent->BindAction("MeleeAttack", IE_Pressed, this, &AMockCharacter::OnMeleeAttack);
-
-	// Jump
-	PlayerInputComponent->BindAction("JumpAction", IE_Pressed, this, &AMockCharacter::Jump);
-	PlayerInputComponent->BindAction("JumpAction", IE_Released, this, &AMockCharacter::StopJumping);
-
-	// Sprint
-	PlayerInputComponent->BindAction("SprintAction", IE_Pressed, this, &AMockCharacter::Sprint);
-	PlayerInputComponent->BindAction("SprintAction", IE_Released, this, &AMockCharacter::StopSprint);
-
-	// Toggle Walk Running
-	PlayerInputComponent->BindAction("WalkAction", IE_Pressed, this, &AMockCharacter::OnWalkAction);
-
-	// Aiming
-	PlayerInputComponent->BindAction("AimAction", IE_Pressed, this, &AMockCharacter::Aiming);
-	PlayerInputComponent->BindAction("AimAction", IE_Released, this, &AMockCharacter::StopAiming);
-
 	// joystick Input
 	PlayerInputComponent->BindAxis("LookRight", this, &AMockCharacter::TurnAtRate);
 	PlayerInputComponent->BindAxis("LookUp", this, &AMockCharacter::LookUpAtRate);
 	PlayerInputComponent->BindAxis("MoveForward", this, &AMockCharacter::MoveForward);
 	PlayerInputComponent->BindAxis("MoveRight", this, &AMockCharacter::MoveRight);
+
+	// Weapon Events
+	PlayerInputComponent->BindAction("Swap", IE_Pressed, this, &AMockCharacter::OnChangeWeapon);
+	PlayerInputComponent->BindAction("Equip", IE_Pressed, this, &AMockCharacter::OnEquipWeapon);
+
+
+	// Aiming
+	FInputActionBinding AimPressed("AimAction", IE_Pressed);
+	AimPressed.ActionDelegate.GetDelegateForManualSet().BindLambda([this]()
+	{
+		ILocomotionSystemPawn::Execute_SetALSAiming(this, true);
+	});
+	FInputActionBinding AimReleased("AimAction", IE_Released);
+	AimReleased.ActionDelegate.GetDelegateForManualSet().BindLambda([this]()
+	{
+		ILocomotionSystemPawn::Execute_SetALSAiming(this, false);
+	});
+	PlayerInputComponent->AddActionBinding(AimPressed);
+	PlayerInputComponent->AddActionBinding(AimReleased);
+
+
+	// Pickup / Release
+	FInputActionBinding ReleasePressed("ReleaseObjects", IE_Pressed);
+	ReleasePressed.ActionDelegate.GetDelegateForManualSet().BindLambda([this]()
+	{
+		Super::ReleaseObjects();
+	});
+	FInputActionBinding PickupPressed("PickupObjects", IE_Pressed);
+	PickupPressed.ActionDelegate.GetDelegateForManualSet().BindLambda([this]()
+	{
+		Super::PickupObjects();
+	});
+	PlayerInputComponent->AddActionBinding(ReleasePressed);
+	PlayerInputComponent->AddActionBinding(PickupPressed);
+
+	
+	// Reload
+	FInputActionBinding ReloadPressed("Reload", IE_Pressed);
+	ReloadPressed.ActionDelegate.GetDelegateForManualSet().BindLambda([this]()
+	{
+		Super::DoReload_Implementation();
+	});
+	PlayerInputComponent->AddActionBinding(ReloadPressed);
+
+
+	// Crouch
+	FInputActionBinding CrouchPressed("CrouchAction", IE_Pressed);
+	CrouchPressed.ActionDelegate.GetDelegateForManualSet().BindLambda([this]()
+	{
+		Super::OnCrouch();
+	});
+	PlayerInputComponent->AddActionBinding(CrouchPressed);
+
+
+	// Fire Press/Released
+	FInputActionBinding FirePressed("Fire", IE_Pressed);
+	FirePressed.ActionDelegate.GetDelegateForManualSet().BindLambda([this]()
+	{
+		Super::DoFirePressed_Implementation();
+	});
+	FInputActionBinding FireReleased("Fire", IE_Released);
+	FireReleased.ActionDelegate.GetDelegateForManualSet().BindLambda([this]()
+	{
+		Super::DoFireReleassed_Implementation();
+	});
+	PlayerInputComponent->AddActionBinding(FirePressed);
+	PlayerInputComponent->AddActionBinding(FireReleased);
+
+
+	// MeleeAttack
+	FInputActionBinding MeleePressed("MeleeAttack", IE_Pressed);
+	MeleePressed.ActionDelegate.GetDelegateForManualSet().BindLambda([this]()
+	{
+		Super::DoMeleeAttack_Implementation();
+	});
+	PlayerInputComponent->AddActionBinding(MeleePressed);
+
+
+	// Jump
+	FInputActionBinding JumpPressed("JumpAction", IE_Pressed);
+	JumpPressed.ActionDelegate.GetDelegateForManualSet().BindLambda([this]()
+	{
+		Super::Jump();
+	});
+	FInputActionBinding JumpReleased("JumpAction", IE_Released);
+	JumpReleased.ActionDelegate.GetDelegateForManualSet().BindLambda([this]()
+	{
+		Super::StopJumping();
+	});
+	PlayerInputComponent->AddActionBinding(JumpPressed);
+	PlayerInputComponent->AddActionBinding(JumpReleased);
+
+
+	// Sprint
+	FInputActionBinding SprintPressed("SprintAction", IE_Pressed);
+	SprintPressed.ActionDelegate.GetDelegateForManualSet().BindLambda([this]()
+	{
+		Super::Sprint();
+	});
+	FInputActionBinding SprintReleased("SprintAction", IE_Released);
+	SprintReleased.ActionDelegate.GetDelegateForManualSet().BindLambda([this]()
+	{
+		Super::StopSprint();
+	});
+	PlayerInputComponent->AddActionBinding(SprintPressed);
+	PlayerInputComponent->AddActionBinding(SprintReleased);
+
+
+	// Walk Running
+	FInputActionBinding WalkAction("WalkAction", IE_Pressed);
+	WalkAction.ActionDelegate.GetDelegateForManualSet().BindLambda([this]()
+	{
+		Super::OnWalkAction();
+	});
+	PlayerInputComponent->AddActionBinding(WalkAction);
 }
 
 
 #pragma region Input
-void AMockCharacter::OnFirePressed()
-{
-	Super::DoFirePressed_Implementation();
-}
-
-void AMockCharacter::OnFireReleassed()
-{
-	Super::DoFireReleassed_Implementation();
-}
-
-void AMockCharacter::OnMeleeAttack()
-{
-	Super::DoMeleeAttack_Implementation();
-}
-
-void AMockCharacter::OnReload()
-{
-	Super::DoReload_Implementation();
-}
-
-void AMockCharacter::OnCrouch()
-{
-	Super::OnCrouch();
-}
-
 void AMockCharacter::OnChangeWeapon()
 {
 	if (CurrentWeapon.IsValid())
@@ -211,11 +269,6 @@ void AMockCharacter::OnEquipWeapon()
 	}
 }
 
-void AMockCharacter::OnWalkAction()
-{
-	Super::OnWalkAction();
-}
-
 void AMockCharacter::TurnAtRate(float Rate)
 {
 	Super::TurnAtRate(Rate);
@@ -234,72 +287,6 @@ void AMockCharacter::MoveForward(float Value)
 void AMockCharacter::MoveRight(float Value)
 {
 	Super::MoveRight(Value);
-}
-
-void AMockCharacter::Aiming()
-{
-	switch (ALSRotationMode)
-	{
-		case ELSRotationMode::VelocityDirection:
-		{
-			//ILocomotionSystemPawn::Execute_SetALSRotationMode(this, ELSRotationMode::LookingDirection);
-		}
-		break;
-		case ELSRotationMode::LookingDirection:
-		{
-			//
-		}
-		break;
-	}
-	ILocomotionSystemPawn::Execute_SetALSAiming(this, true);
-}
-
-void AMockCharacter::StopAiming()
-{
-	switch (ALSRotationMode)
-	{
-		case ELSRotationMode::VelocityDirection:
-		{
-			//
-		}
-		break;
-		case ELSRotationMode::LookingDirection:
-		{
-			//ILocomotionSystemPawn::Execute_SetALSRotationMode(this, ELSRotationMode::VelocityDirection);
-		}
-		break;
-	}
-	ILocomotionSystemPawn::Execute_SetALSAiming(this, false);
-}
-
-void AMockCharacter::ReleaseObjects()
-{
-	Release_Implementation();
-}
-
-void AMockCharacter::PickupObjects()
-{
-	Super::PickupObjects();
-}
-
-void AMockCharacter::Jump()
-{
-	Super::Jump();
-}
-
-void AMockCharacter::StopJumping()
-{
-	Super::StopJumping();
-}
-
-void AMockCharacter::Sprint()
-{
-	Super::Sprint();
-}
-
-void AMockCharacter::StopSprint()
-{
-	Super::StopSprint();
 }
 #pragma endregion
 
@@ -334,7 +321,7 @@ void AMockCharacter::Die_Implementation()
 		BackPack->StopSimulatePhysics();
 	}
 
-	StopAiming();
+	ILocomotionSystemPawn::Execute_SetALSAiming(this, false);
 	StartRagdollAction();
 }
 
@@ -450,6 +437,12 @@ void AMockCharacter::EquipmentActionMontage()
 	}
 }
 #pragma endregion
+
+
+AAbstractWeapon* AMockCharacter::FindByIndexWeapon()
+{
+	return GetInventoryComponent()->FindByIndexWeapon(WeaponCurrentIndex);
+}
 
 FVector AMockCharacter::BulletTraceRelativeLocation() const
 {

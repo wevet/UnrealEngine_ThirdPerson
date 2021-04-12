@@ -270,10 +270,6 @@ public:
 	FORCEINLINE class UComboComponent* GetComboComponent() const { return ComboComponent; }
 
 public:
-	UFUNCTION(BlueprintCallable, Category = "CharacterBase|Function")
-	class UCharacterAnimInstanceBase* GetAnimInstance() const;
-	class UIKAnimInstance* GetIKAnimInstance() const;
-
 	float GetHealthToWidget() const { return CharacterModel->GetHealthToWidget(); }
 
 	bool IsFullHealth() const { return CharacterModel->IsFullHealth(); }
@@ -432,39 +428,37 @@ public:
 	virtual void ReloadActionMontage(float& OutReloadDuration);
 
 
-#pragma region Utils
 public:
+#pragma region Utils
+	UFUNCTION(BlueprintCallable, Category = "CharacterBase|Function")
+	class UCharacterAnimInstanceBase* GetAnimInstance() const;
+	class UIKAnimInstance* GetIKAnimInstance() const;
+
 	virtual FVector BulletTraceRelativeLocation() const;
 	virtual FVector BulletTraceForwardLocation() const;
 	FVector GetHeadSocketLocation() const;
 	FVector GetChestSocketLocation() const;
+	const TArray<class AActor*>& GetIgnoreActors();
 
 	UFUNCTION(BlueprintCallable, Category = "CharacterBase|Utils")
-	FORCEINLINE EDrawDebugTrace::Type GetDrawDebugTrace() const
-	{
-		return bDebugTrace ? EDrawDebugTrace::Type::ForOneFrame : EDrawDebugTrace::Type::None;
-	}
+	EDrawDebugTrace::Type GetDrawDebugTrace() const;
 
 	UFUNCTION(BlueprintCallable, Category = "CharacterBase|Utils")
 	FTransform GetChestTransform() const;
+
+	void SetActionInfo(const EWeaponItemType InWeaponItemType);
 #pragma endregion
 
-public:
-	const TArray<class AActor*>& GetIgnoreActors() 
-	{
-		return IgnoreActors; 
-	}
-
 protected:
-	void SetActionInfo(const EWeaponItemType InWeaponItemType);
-
 	UFUNCTION()
 	virtual void HitReceive(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
+
 	void KillRagdollPhysics();
 
 	void SetForwardOrRightVector(FVector& OutForwardVector, FVector& OutRightVector);
 
 	ELSMovementMode GetPawnMovementModeChanged(const EMovementMode PrevMovementMode, const uint8 PrevCustomMode) const;
+
 	void ConvertALSMovementMode();
 
 	void RemoveBindAll();
@@ -476,8 +470,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "CharacterBase|Ragdoll")
 	virtual void RagdollToWakeUpAction();
 
-#pragma region ALS
+
 protected:
+#pragma region ALS_Property
 	UPROPERTY(Replicated, BlueprintReadWrite)
 	FVector MovementInput;
 
@@ -490,11 +485,6 @@ protected:
 	UPROPERTY(Replicated, BlueprintReadWrite)
 	FRotator LookingRotation;
 
-public:
-	FRotator GetCharacterRotation() const { return CharacterRotation; }
-	FRotator GetLookingRotation() const { return LookingRotation; }
-
-protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "CharacterBase|ALS")
 	struct FCameraFOVParam CameraFOVParam;
 
@@ -635,56 +625,87 @@ protected:
 #pragma endregion
 
 
-#pragma region ALSInterface
 public:
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|ALS")
-	void Initializer();
-	virtual void Initializer_Implementation() override;
-
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|ALS")
+#pragma region ALS_Getter
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|ALS_Pawn")
 	ELSMovementMode GetALSMovementMode() const;
 	virtual ELSMovementMode GetALSMovementMode_Implementation() const override;
 
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|ALS")
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|ALS_Pawn")
 	ELSMovementAction GetALSMovementAction() const;
 	virtual ELSMovementAction GetALSMovementAction_Implementation() const override;
 
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|ALS")
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|ALS_Pawn")
 	ELSGait GetALSGait() const;
 	virtual ELSGait GetALSGait_Implementation() const override;
 
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|ALS")
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|ALS_Pawn")
 	ELSStance GetALSStance() const;
 	virtual ELSStance GetALSStance_Implementation() const override;
 
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|ALS")
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|ALS_Pawn")
 	ELSViewMode GetALSViewMode() const;
 	virtual ELSViewMode GetALSViewMode_Implementation() const override;
 
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|ALS")
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|ALS_Pawn")
 	ELSRotationMode GetALSRotationMode() const;
 	virtual ELSRotationMode GetALSRotationMode_Implementation() const override;
 
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|ALS")
-	bool HasMovementInput() const;
-	virtual bool HasMovementInput_Implementation() const override;
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|ALS_Pawn")
+	FCameraFOVParam GetCameraFOVParam() const;
+	FCameraFOVParam GetCameraFOVParam_Implementation() const override;
 
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|ALS")
-	bool HasMoving() const;
-	virtual bool HasMoving_Implementation() const override;
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|ALS_Pawn")
+	FCameraTraceParam GetCameraTraceParam() const;
+	FCameraTraceParam GetCameraTraceParam_Implementation() const override;
 
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|ALS")
-	bool HasAiming() const;
-	virtual bool HasAiming_Implementation() const override;
-
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|ALS")
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|ALS_Pawn")
 	FTransform GetPivotTarget() const;
 	virtual FTransform GetPivotTarget_Implementation() const override;
 
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|ALS")
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|ALS_Pawn")
 	FVector GetCameraTarget() const;
 	virtual FVector GetCameraTarget_Implementation() const override;
 
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|ALS_Pawn")
+	bool HasMovementInput() const;
+	virtual bool HasMovementInput_Implementation() const override;
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|ALS_Pawn")
+	bool HasMoving() const;
+	virtual bool HasMoving_Implementation() const override;
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|ALS_Pawn")
+	bool HasAiming() const;
+	virtual bool HasAiming_Implementation() const override;
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|ALS_Pawn")
+	bool HasDebugTrace() const;
+	virtual bool HasDebugTrace_Implementation() const override;
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|ALS_Pawn")
+	float GetWalkingSpeed() const;
+	virtual float GetWalkingSpeed_Implementation() const override;
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|ALS_Pawn")
+	float GetRunningSpeed() const;
+	virtual float GetRunningSpeed_Implementation() const override;
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|ALS_Pawn")
+	float GetSprintingSpeed() const;
+	virtual float GetSprintingSpeed_Implementation() const override;
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|ALS_Pawn")
+	float GetCrouchingSpeed() const;
+	virtual float GetCrouchingSpeed_Implementation() const override;
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|ALS_Pawn")
+	float GetSwimmingSpeed() const;
+	virtual float GetSwimmingSpeed_Implementation() const override;
+#pragma endregion
+
+
+#pragma region ALS_Setter
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|ALS_Pawn")
 	void SetALSCharacterRotation(const FRotator AddAmount);
 	virtual void SetALSCharacterRotation_Implementation(const FRotator AddAmount) override;
@@ -750,10 +771,6 @@ public:
 	virtual void OnALSAimingChange_Implementation() override;
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|ALS_Pawn")
-	void SetALSIdleState(const ELSIdleEntryState InLSIdleEntryState);
-	virtual void SetALSIdleState_Implementation(const ELSIdleEntryState InLSIdleEntryState) override;
-
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|ALS_Pawn")
 	void SetWalkingSpeed(const float InWalkingSpeed);
 	virtual void SetWalkingSpeed_Implementation(const float InWalkingSpeed) override;
 
@@ -772,26 +789,13 @@ public:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|ALS_Pawn")
 	void SetSwimmingSpeed(const float InSwimmingSpeed);
 	virtual void SetSwimmingSpeed_Implementation(const float InSwimmingSpeed) override;
+#pragma endregion
 
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|ALS_Pawn")
-	float GetWalkingSpeed() const;
-	virtual float GetWalkingSpeed_Implementation() const override;
 
+#pragma region ALS_NotUseAPI
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|ALS_Pawn")
-	float GetRunningSpeed() const;
-	virtual float GetRunningSpeed_Implementation() const override;
-
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|ALS_Pawn")
-	float GetSprintingSpeed() const;
-	virtual float GetSprintingSpeed_Implementation() const override;
-
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|ALS_Pawn")
-	float GetCrouchingSpeed() const;
-	virtual float GetCrouchingSpeed_Implementation() const override;
-
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|ALS_Pawn")
-	float GetSwimmingSpeed() const;
-	virtual float GetSwimmingSpeed_Implementation() const override;
+	void SetALSIdleState(const ELSIdleEntryState InLSIdleEntryState);
+	virtual void SetALSIdleState_Implementation(const ELSIdleEntryState InLSIdleEntryState) override;
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|ALS_Pawn")
 	void SetGetup(const bool InFaceDown);
@@ -804,18 +808,6 @@ public:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|ALS_Pawn")
 	void PoseSnapShot(const FName InPoseName);
 	virtual void PoseSnapShot_Implementation(const FName InPoseName) override;
-
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|ALS_Pawn")
-	FCameraFOVParam GetCameraFOVParam() const;
-	FCameraFOVParam GetCameraFOVParam_Implementation() const override;
-
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|ALS_Pawn")
-	FCameraTraceParam GetCameraTraceParam() const;
-	FCameraTraceParam GetCameraTraceParam_Implementation() const override;
-
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|ALS_Pawn")
-	bool HasDebugTrace() const;
-	virtual bool HasDebugTrace_Implementation() const override;
 #pragma endregion
 
 
@@ -825,7 +817,6 @@ public:
 
 	float ChooseMaxWalkSpeed() const;
 
-public:
 	FORCEINLINE float ChooseMaxAcceleration() const
 	{
 		return (ALSGait == ELSGait::Walking || ALSMovementMode == ELSMovementMode::Swimming) ? WalkingAcceleration : RunningAcceleration;
@@ -848,6 +839,8 @@ public:
 	FORCEINLINE float GetDirection() const { return Direction; }
 	FORCEINLINE FRotator GetLastVelocityRotation() const { return LastVelocityRotation; }
 	FORCEINLINE FRotator GetLastMovementInputRotation() const { return LastMovementInputRotation; }
+	FORCEINLINE FRotator GetCharacterRotation() const { return CharacterRotation; }
+	FORCEINLINE FRotator GetLookingRotation() const { return LookingRotation; }
 
 protected:
 	UFUNCTION(BlueprintCallable, Category = "CharacterBase|ALS")
@@ -924,11 +917,11 @@ protected:
 
 	// MantleUpdate Details
 	void SetMantleTarget();
-	void SetMantleUpdateAlpha(const float InPlaybackPosition, float& OutPositionAlpha, float& OutXYCorrectionAlpha, float& OutZCorrectionAlpha);
+	void SetMantleUpdateAlpha(const float PlaybackPoint, float& OutPositionAlpha, float& OutXY, float& OutZ);
 	FTransform MakeXYCollectionAlphaTransform(const float InXYCollectionAlpha) const;
 	FTransform MakeZCollectionAlphaTransform(const float InZCollectionAlpha) const;
-	FTransform MakeMantleTransform(const float InPositionAlpha, const float InXYCollectionAlpha, const float InZCollectionAlpha) const;
-	FTransform MakeMantleLerpedTarget(const float BlendIn, const float InPositionAlpha, const float InXYCollectionAlpha, const float InZCollectionAlpha) const;
+	FTransform MakeMantleTransform(const float Position, const float XY, const float Z) const;
+	FTransform MakeMantleLerpedTarget(const float Blend, const float Position, const float XY, const float Z) const;
 
 	// MantleStart Details
 	void SetMantleParams(FMantleAsset InMantleAsset, const float InMantleHeight);

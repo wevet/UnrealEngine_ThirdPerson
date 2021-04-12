@@ -21,12 +21,14 @@ public:
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	virtual void Tick(float DeltaTime) override;
 	virtual float TakeDamage(float Damage, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
+	virtual void PossessedBy(AController* NewController) override;
 
 protected:
 	virtual void BeginPlay() override;
 
-#pragma region Interface
+
 public:
+#pragma region Interface
 	virtual void Die_Implementation() override;
 	virtual void Equipment_Implementation() override;
 	virtual void UnEquipment_Implementation() override;	
@@ -35,10 +37,8 @@ public:
 	virtual void DoHearReceive_Implementation(AActor* Actor, const FAIStimulus InStimulus, const bool InWasKilledCrew) override;
 	virtual void DoPredictionReceive_Implementation(AActor* Actor, const FAIStimulus InStimulus) override;
 	virtual void DoDamageReceive_Implementation(AActor* Actor, const FAIStimulus InStimulus) override;
-
-	// ALS
-	virtual void Initializer_Implementation() override;
 #pragma endregion
+
 
 public:
 	FORCEINLINE class UBehaviorTree* GetBehaviorTree() const 

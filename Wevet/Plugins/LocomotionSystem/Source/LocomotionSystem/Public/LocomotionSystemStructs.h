@@ -22,10 +22,10 @@ public:
 	class UAnimMontage* TurnRAnim;
 
 public:
-	FTurnMontages() : 
-		TurnLAnim(nullptr),
-		TurnRAnim(nullptr)
+	FTurnMontages()
 	{
+		TurnLAnim = nullptr;
+		TurnRAnim = nullptr;
 	}
 
 };
@@ -75,15 +75,20 @@ public:
 	float InterruptedStartTime;
 
 public:
-	FPivotData() : 
-		CompletedMovementDirection(ELSMovementDirection::Forwards),
-		InterruptedMovementDirection(ELSMovementDirection::Forwards)
+	FPivotData()
 	{
 		PivotDirection = 0.0f;
 		CompletedStartTime = 0.0f;
 		InterruptedStartTime = 0.0f;
+		CompletedMovementDirection = ELSMovementDirection::Forwards;
+		InterruptedMovementDirection = ELSMovementDirection::Forwards;
 	}
 
+	FORCEINLINE bool operator==(const FPivotData& Other) const
+	{
+		return CompletedMovementDirection == Other.CompletedMovementDirection &&
+			InterruptedMovementDirection == Other.InterruptedMovementDirection;
+	}
 };
 
 

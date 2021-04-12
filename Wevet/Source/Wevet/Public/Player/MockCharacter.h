@@ -86,45 +86,24 @@ protected:
 public:
 	UFUNCTION(BlueprintCallable, Category = "Player|Function")
 	void SetOwnerNoSeeMesh(const bool NewOwnerNoSee);
-
 	virtual void VisibleDeathPostProcess(const bool InEnabled);
+	AAbstractWeapon* FindByIndexWeapon();
 
-	AAbstractWeapon* FindByIndexWeapon()
-	{
-		return GetInventoryComponent()->FindByIndexWeapon(WeaponCurrentIndex);
-	}
-
-
-public:
-	virtual void Jump() override;
-	virtual void StopJumping() override;
-	virtual void Sprint() override;
-	virtual void StopSprint() override;
-	virtual void OnCrouch() override;
 
 protected:
 	virtual void TurnAtRate(float Rate) override;
 	virtual void LookUpAtRate(float Rate) override;
 	virtual void MoveForward(float Value) override;
 	virtual void MoveRight(float Value) override;
-	virtual void ReleaseObjects() override;
-	virtual void PickupObjects() override;
-	virtual void OnWalkAction() override;
+	void OnChangeWeapon();
+	void OnEquipWeapon();
+
 
 public:
 	virtual void StartRagdollAction() override;
 
 protected:
 	void SpawnBackPack();
-
-	void OnFirePressed();
-	void OnFireReleassed();
-	void OnMeleeAttack();
-	void OnReload();
-	void OnChangeWeapon();
-	void OnEquipWeapon();
-	void Aiming();
-	void StopAiming();
 
 	// Apply to OnALSGaitChange_Implementation
 	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "Player|ALS")
