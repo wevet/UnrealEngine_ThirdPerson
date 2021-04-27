@@ -74,7 +74,9 @@ Plugins/*/Intermediate/*
 DerivedDataCache/*
 
 # Only MyProject Content
-Content/
+Content/*
+
+# Added Content
 !Plugins/RTIK/Content/
-!Content/Python/
+!Python
 
