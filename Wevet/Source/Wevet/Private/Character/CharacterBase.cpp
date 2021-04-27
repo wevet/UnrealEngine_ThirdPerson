@@ -163,6 +163,7 @@ ACharacterBase::ACharacterBase(const FObjectInitializer& ObjectInitializer) : Su
 
 }
 
+
 void ACharacterBase::OnConstruction(const FTransform& Transform)
 {
 	Super::OnConstruction(Transform);
@@ -175,10 +176,12 @@ void ACharacterBase::OnConstruction(const FTransform& Transform)
 	CharacterRotation = Rotation;
 }
 
+
 void ACharacterBase::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();
 }
+
 
 void ACharacterBase::BeginDestroy()
 {
@@ -189,6 +192,7 @@ void ACharacterBase::BeginDestroy()
 	}
 	Super::BeginDestroy();
 }
+
 
 void ACharacterBase::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
@@ -228,6 +232,7 @@ void ACharacterBase::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	Super::EndPlay(EndPlayReason);
 }
 
+
 void ACharacterBase::BeginPlay()
 {
 	Super::BeginPlay();
@@ -244,6 +249,7 @@ void ACharacterBase::BeginPlay()
 
 }
 
+
 void ACharacterBase::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
@@ -259,11 +265,13 @@ void ACharacterBase::Tick(float DeltaTime)
 	}
 }
 
+
 void ACharacterBase::OnMovementModeChanged(EMovementMode PrevMovementMode, uint8 PreviousCustomMode)
 {
 	Super::OnMovementModeChanged(PrevMovementMode, PreviousCustomMode);
 	ILocomotionSystemPawn::Execute_SetALSMovementMode(this, GetPawnMovementModeChanged(PrevMovementMode, PreviousCustomMode));
 }
+
 
 void ACharacterBase::OnStartCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjust)
 {
@@ -271,11 +279,13 @@ void ACharacterBase::OnStartCrouch(float HalfHeightAdjust, float ScaledHalfHeigh
 	ILocomotionSystemPawn::Execute_SetALSStance(this, ELSStance::Crouching);
 }
 
+
 void ACharacterBase::OnEndCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjust)
 {
 	Super::OnEndCrouch(HalfHeightAdjust, ScaledHalfHeightAdjust);
 	ILocomotionSystemPawn::Execute_SetALSStance(this, ELSStance::Standing);
 }
+
 
 void ACharacterBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
@@ -293,6 +303,7 @@ FGenericTeamId ACharacterBase::GetGenericTeamId() const
 {
 	return TeamId;
 }
+
 
 // AI Perception
 // ttps://blog.gamedev.tv/ai-sight-perception-to-custom-points/
@@ -349,6 +360,7 @@ bool ACharacterBase::CanBeSeenFrom(const FVector& ObserverLocation, FVector& Out
 	return false;
 }
 
+
 // Any CombatTimerUpdate
 void ACharacterBase::UpdateCombatTimer(const float InDeltaTime)
 {
@@ -366,6 +378,7 @@ void ACharacterBase::UpdateCombatTimer(const float InDeltaTime)
 	}
 
 }
+
 
 void ACharacterBase::UpdateRecoverTimer(const float InDeltaTime)
 {
@@ -533,7 +546,7 @@ void ACharacterBase::FootStep_Implementation(USoundBase* Sound, float Volume)
 }
 
 // @NOTE
-// UAISense_Hearing::ReportNoiseEvent‚ÍWeaponClass‚ÅŒÄ‚Î‚ê‚é
+// WeapnBaseClass called UAISense_Hearing::ReportNoiseEvent
 void ACharacterBase::ReportNoiseOther_Implementation(AActor* Actor, USoundBase* Sound, const float Volume, const FVector Location)
 {
 	if (Sound)

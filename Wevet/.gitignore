@@ -80,3 +80,6 @@ Content/*
 !Plugins/RTIK/Content/
 !Python
 
+# ignore PyCharm Directory
+.idea/
+venv/
