@@ -75,3 +75,6 @@ DerivedDataCache/*
 
 # Only MyProject Content
 Content/
+!Plugins/RTIK/Content/
+!Content/Python/
+
