@@ -83,3 +83,5 @@ Content/*
 # ignore PyCharm Directory
 .idea/
 venv/
+__pycache__/
+

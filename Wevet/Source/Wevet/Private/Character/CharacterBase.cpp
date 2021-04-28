@@ -14,10 +14,7 @@
 #include "Perception/AISense_Hearing.h"
 
 
-ACharacterBase::ACharacterBase(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer),
-	TakeDamageTimeOut(0.f),
-	MeleeAttackTimeOut(0.f),
-	StanTimeOut(30.f)
+ACharacterBase::ACharacterBase(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {
 	PrimaryActorTick.bCanEverTick = true;
 	bUseControllerRotationPitch = false;
@@ -28,6 +25,9 @@ ACharacterBase::ACharacterBase(const FObjectInitializer& ObjectInitializer) : Su
 	BaseLookUpRate = 150.f;
 	RecoverHealthValue = 100;
 	RecoverTimer = 2.0f;
+	StanTimeOut = 30.f;
+	MeleeAttackTimeOut = ZERO_VALUE;
+	TakeDamageTimeOut = ZERO_VALUE;
 
 	HeadBoneName   = HEAD_BONE;
 	ChestBoneName  = CHEST_BONE;
@@ -39,14 +39,14 @@ ACharacterBase::ACharacterBase(const FObjectInitializer& ObjectInitializer) : Su
 	GiveDamageType = EGiveDamageType::None;
 	RagdollPoseSnapshot = FName(TEXT("RagdollPose"));
 
-	bWasDied = false;
 	bAiming = false;
+	bWasDied = false;
 	bWasMoving = false;
 	bDebugTrace = false;
-	bWasMovementInput = false;
-	bRagdollOnGround = false;
-	bEnableRagdoll = true;
 	bEnableRecover = false;
+	bEnableRagdoll = true;
+	bRagdollOnGround = false;
+	bWasMovementInput = false;
 
 	// Noise Emitter
 	PawnNoiseEmitterComponent = ObjectInitializer.CreateDefaultSubobject<UPawnNoiseEmitterComponent>(this, TEXT("PawnNoiseEmitterComponent"));
@@ -1402,6 +1402,7 @@ void ACharacterBase::ReleaseObjects()
 }
 #pragma endregion
 
+
 #pragma region Weapon
 bool ACharacterBase::HasEquipWeapon() const
 {
@@ -1543,6 +1544,7 @@ void ACharacterBase::ReleaseAllWeaponInventory()
 	InventoryComponent->ClearWeaponInventory();
 }
 #pragma endregion
+
 
 #pragma region Montages
 void ACharacterBase::EquipmentActionMontage()
@@ -1691,6 +1693,7 @@ void ACharacterBase::MeleeAttackMontage()
 }
 #pragma endregion
 
+
 #pragma region Utils
 UCharacterAnimInstanceBase* ACharacterBase::GetAnimInstance() const
 {
@@ -1803,6 +1806,7 @@ void ACharacterBase::SetActionInfo(const EWeaponItemType InWeaponItemType)
 }
 #pragma endregion
 
+
 #pragma region Ragdoll
 void ACharacterBase::KillRagdollPhysics()
 {
@@ -1868,6 +1872,7 @@ void ACharacterBase::RagdollToWakeUpAction()
 	GetMesh()->SetAllBodiesSimulatePhysics(false);
 }
 #pragma endregion
+
 
 #pragma region HitEvent
 void ACharacterBase::HitReceive(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
