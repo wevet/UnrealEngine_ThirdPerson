@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "Interface/DamageTypeInstigator.h"
 #include "Components/PrimitiveComponent.h"
 #include "Particles/ParticleSystemComponent.h"
 #include "BulletBase.generated.h"
@@ -11,7 +12,7 @@
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FHitTriggerDelegate, AActor* const, OtherActor, FHitResult const, SweepResult);
 
 UCLASS()
-class WEVET_API ABulletBase : public AActor
+class WEVET_API ABulletBase : public AActor, public IDamageTypeInstigator
 {
 	GENERATED_BODY()
 	
@@ -22,6 +23,11 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
+
+public:
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Bullet|DamageTypeInstigator")
+	EGiveDamageType GetGiveDamageType() const;
+	virtual EGiveDamageType GetGiveDamageType_Implementation() const override;
 
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Bullet|Variable")

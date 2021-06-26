@@ -2,9 +2,7 @@
 
 #include "Interface/InteractionPawn.h"
 
-UInteractionPawn::UInteractionPawn(const class FObjectInitializer& ObjectInitializer)
-	: Super(ObjectInitializer)
+UInteractionPawn::UInteractionPawn(const class FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {
-	//
 }
 

@@ -2,6 +2,7 @@
 
 #include "Engine/EngineTypes.h"
 #include "WevetTypes.h"
+#include "Wevet.h"
 #include "BaseItem.generated.h"
 
 
@@ -18,10 +19,7 @@ public:
 	EItemType BaseItemType;
 
 public:
-	EItemType GetItemType() const
-	{
-		return BaseItemType; 
-	}
+	EItemType GetItemType() const { return BaseItemType; }
 
 	FORCEINLINE bool operator==(const FBaseItem& Other) const
 	{
@@ -33,6 +31,7 @@ public:
 		//
 	}
 };
+
 
 USTRUCT(BlueprintType)
 struct WEVET_API FWeaponItemInfo : public FBaseItem
@@ -106,15 +105,16 @@ public:
 		MeleeDistance = InWeaponItemInfo.MeleeDistance;
 	}
 
+
+	bool EmptyCurrentAmmo() const {	return CurrentAmmo <= 0; }
+
+
 	void DecrementAmmos()
 	{
-		--CurrentAmmo;
+		auto Value = --CurrentAmmo;
+		CurrentAmmo = FMath::Clamp<int32>(CurrentAmmo, INT_ZERO, MaxAmmo);
 	}
 
-	bool EmptyCurrentAmmo() const
-	{
-		return CurrentAmmo <= 0;
-	}
 
 	void Replenishment()
 	{
@@ -124,7 +124,15 @@ public:
 		CurrentAmmo = bWasNeededAmmo ? (CurrentAmmo + MaxAmmo) : ClipType;
 	}
 
+
+	float ConvertMeleeDamage(const float InTotalDamage) const
+	{
+		const float MeleeWeight = 5.0f;
+		const float CurrentDamage = (InTotalDamage / MeleeWeight);
+		return CurrentDamage;
+	}
 };
+
 
 USTRUCT(BlueprintType)
 struct WEVET_API FWeaponAmmoInfo : public FBaseItem

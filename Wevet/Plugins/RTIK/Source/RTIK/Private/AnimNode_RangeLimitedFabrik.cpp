@@ -41,7 +41,7 @@ void FAnimNode_RangeLimitedFabrik::EvaluateSkeletalControl_AnyThread(FComponentS
 	}
 
 	// Maximum length of skeleton segment at full extension
-	float MaximumReach = 0;
+	// float MaximumReach = 0;
 
 	// Gather bone transforms and constraints
 	TArray<FTransform> SourceCSTransforms;

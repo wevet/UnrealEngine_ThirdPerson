@@ -38,7 +38,15 @@ namespace Wevet
 			return TEXT("/Game/Player_Assets/Blueprints/ALS/Curves/MantleCurves/Mantle_2m");
 		};
 
-#pragma region BlueprintPath
+		static const wchar_t* GetLandAlphaCurve()
+		{
+			return TEXT("/Game/Player_Assets/Blueprints/ALS/Curves/AnimBlendCurves/LandPredictionAlphaCurve");
+		};
+
+		static const wchar_t* GetFlailAlphaCurve()
+		{
+			return TEXT("/Game/Player_Assets/Blueprints/ALS/Curves/AnimBlendCurves/FlailAlphaCurve");
+		};
 
 		static const wchar_t* GetPistolBulletPath()
 		{
@@ -74,7 +82,11 @@ namespace Wevet
 		{
 			return TEXT("/Game/Game/Blueprints/Widgets/BP_UMGManager.BP_UMGManager_C");
 		};
-#pragma endregion
+
+		static const wchar_t* GetSoliderPath()
+		{
+			return TEXT("/Game/Game/Blueprints/Enemy/Soldier/BP_Soldier.BP_Soldier_C");
+		};
 
 		static const wchar_t* GetPickupSoundPath()
 		{

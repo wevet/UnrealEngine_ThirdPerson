@@ -13,7 +13,7 @@ class WEVET_API ASearchNodeGenerator : public AActor
 	GENERATED_BODY()
 	
 public:	
-	ASearchNodeGenerator();
+	ASearchNodeGenerator(const FObjectInitializer& ObjectInitializer);
 	virtual void BeginDestroy() override;
 	virtual void Tick(float DeltaTime) override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;

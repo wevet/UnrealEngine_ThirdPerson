@@ -75,3 +75,7 @@ DECLARE_LOG_CATEGORY_EXTERN(LogWevetPython, Verbose, All);
 #define FULL_BODY FName(TEXT("FullBody"))
 #define UPPER_BODY FName(TEXT("UpperBody"))
 
+
+// Enemy Lifespan
+#define DEFAULT_LIFESPAN 20.f
+

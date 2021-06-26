@@ -4,6 +4,5 @@
 
 UInteractionItem::UInteractionItem(const class FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {
-	//
 }
 

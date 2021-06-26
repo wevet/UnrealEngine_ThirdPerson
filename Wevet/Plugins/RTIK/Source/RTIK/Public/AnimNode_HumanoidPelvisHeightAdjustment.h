@@ -47,11 +47,13 @@ public:
 		DeltaTime = 0.0f;
 	}
 
+
 	virtual void UpdateInternal(const FAnimationUpdateContext& Context) override
 	{
 		DeltaTime = Context.GetDeltaTime();
 		Super::UpdateInternal(Context);
 	}
+
 
 	virtual bool IsValidToEvaluate(const USkeleton* Skeleton, const FBoneContainer& RequiredBones) override
 	{
@@ -86,8 +88,10 @@ public:
 		return LeftLeg->InitIfInvalid(RequiredBones) && RightLeg->InitIfInvalid(RequiredBones) && PelvisBone->InitIfInvalid(RequiredBones);
 	}
 
+
 	virtual void InitializeBoneReferences(const FBoneContainer& RequiredBones) override
 	{
+		//Super::InitializeBoneReferences(RequiredBones);
 		if (LeftLeg == nullptr || RightLeg == nullptr || PelvisBone == nullptr)
 		{
 			return;
@@ -113,8 +117,8 @@ public:
 			UE_LOG(LogNIK, Warning, TEXT("Could not initialize PelvisBone : %s"), *FString(__FUNCTION__));
 #endif
 		}
-		Super::InitializeBoneReferences(RequiredBones);
 	}
+
 
 	virtual void EvaluateSkeletalControl_AnyThread(FComponentSpacePoseContext& Output, TArray<FBoneTransform>& OutBoneTransforms) override;
 

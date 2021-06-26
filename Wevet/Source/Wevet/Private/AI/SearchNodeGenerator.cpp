@@ -4,19 +4,19 @@
 #include "AI/SearchNodeGenerator.h"
 #include "WevetExtension.h"
 
-ASearchNodeGenerator::ASearchNodeGenerator()
+ASearchNodeGenerator::ASearchNodeGenerator(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {
 	PrimaryActorTick.bCanEverTick = false;
-
 	static ConstructorHelpers::FObjectFinder<UClass> FindAsset(Wevet::ProjectFile::GetSearchNodePath());
 	SearchNodeTemplate = FindAsset.Object;
-
 }
+
 
 void ASearchNodeGenerator::BeginPlay()
 {
 	Super::BeginPlay();
 }
+
 
 void ASearchNodeGenerator::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
@@ -25,10 +25,12 @@ void ASearchNodeGenerator::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	Super::EndPlay(EndPlayReason);
 }
 
+
 void ASearchNodeGenerator::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 }
+
 
 void ASearchNodeGenerator::BeginDestroy()
 {
@@ -36,14 +38,14 @@ void ASearchNodeGenerator::BeginDestroy()
 	Super::BeginDestroy();
 }
 
+
 void ASearchNodeGenerator::PrepareDestroy()
 {
 	for (AActor* Actor : GridNodes)
 	{
-		if (Actor == nullptr)
+		if (Actor)
 		{
-			continue;
+			Actor->Destroy();
 		}
-		Actor->Destroy();
 	}
 }

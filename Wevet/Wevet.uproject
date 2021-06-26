@@ -156,7 +156,7 @@
 		{
 			"Name": "RTIK",
 			"Enabled": true
-		},		
+		},
 		{
 			"Name": "Niagara",
 			"Enabled": true
@@ -208,6 +208,10 @@
 		},
 		{
 			"Name": "ApexDestruction",
+			"Enabled": true
+		},
+		{
+			"Name": "FullBodyIK",
 			"Enabled": true
 		}
 	]

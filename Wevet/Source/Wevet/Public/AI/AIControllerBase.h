@@ -101,15 +101,20 @@ protected:
 	UFUNCTION()
 	virtual void OnTargetPerceptionUpdatedRecieve(AActor* Actor, FAIStimulus Stimulus);
 
+	UPROPERTY()
+	TArray<class AWayPointBase*> WayPointList;
+
+	UPROPERTY()
+	TArray<FVector> PointsArray;
+
 	class UAISenseConfig_Sight* SightConfig;
 	class UAISenseConfig_Hearing* HearConfig;
 	class UAISenseConfig_Prediction* PredictionConfig;
 	class UAISenseConfig_Damage* DamageConfig;
 
-protected:
-	class AAICharacterBase* Character;
-	TArray<class AWayPointBase*> WayPointList;
 
+#pragma region Uproperty
+protected:
 	UPROPERTY(EditDefaultsOnly, Category = "AIController|Variable")
 	struct FGenericTeamId TeamId;
 
@@ -133,9 +138,8 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = "AIController|Variable")
 	FName PatrolPointsHolderKeyName;
+#pragma endregion
 
-	UPROPERTY()
-	TArray<FVector> PointsArray;
 
 public:
 	UFUNCTION(BlueprintCallable, Category = "AIController|Function")

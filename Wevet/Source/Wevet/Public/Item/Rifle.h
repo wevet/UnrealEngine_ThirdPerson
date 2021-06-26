@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Weapon/AbstractWeapon.h"
+#include "AbstractWeapon.h"
 #include "Rifle.generated.h"
 
 

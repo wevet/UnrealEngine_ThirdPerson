@@ -13,16 +13,13 @@ class WEVET_API ABaseInvestigationNode : public AActor, public IGameplayTagAsset
 	GENERATED_BODY()
 	
 public:	
-	ABaseInvestigationNode();
+	ABaseInvestigationNode(const FObjectInitializer& ObjectInitializer);
 
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "GameplayTags")
 	FGameplayTagContainer GameplayTagContainer;
 
 public:
-	virtual void GetOwnedGameplayTags(FGameplayTagContainer& TagContainer) const override
-	{
-		TagContainer = GameplayTagContainer;
-	}
+	virtual void GetOwnedGameplayTags(FGameplayTagContainer& TagContainer) const override;
 
 };

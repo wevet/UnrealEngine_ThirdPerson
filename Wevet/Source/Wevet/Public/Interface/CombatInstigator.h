@@ -5,7 +5,6 @@
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
 #include "WevetTypes.h"
-#include "Perception/AIPerceptionTypes.h"
 #include "CombatInstigator.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FCombatDelegate);
@@ -54,6 +53,9 @@ public:
 	bool IsDeath() const;
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CombatInstigator")
+	bool IsStan() const;
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CombatInstigator")
 	void Die();
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CombatInstigator")
@@ -91,16 +93,4 @@ public:
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CombatInstigator")
 	AAbstractWeapon* GetCurrentWeapon() const;
-
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CombatInstigator")
-	void DoSightReceive(AActor* Actor, const FAIStimulus InStimulus, const bool InWasKilledCrew);
-
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CombatInstigator")
-	void DoHearReceive(AActor* Actor, const FAIStimulus InStimulus, const bool InWasKilledCrew);
-
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CombatInstigator")
-	void DoPredictionReceive(AActor* Actor, const FAIStimulus InStimulus);
-
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CombatInstigator")
-	void DoDamageReceive(AActor* Actor, const FAIStimulus InStimulus);
 };

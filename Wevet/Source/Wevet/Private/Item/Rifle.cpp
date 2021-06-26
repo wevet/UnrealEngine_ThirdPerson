@@ -1,15 +1,12 @@
 // Copyright 2018 wevet works All Rights Reserved.
 
-#include "Weapon/Rifle.h"
+#include "Item/Rifle.h"
 #include "WevetExtension.h"
 
 ARifle::ARifle(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {
 	BulletDuration = 0.15f;
-	PrimaryActorTick.bCanEverTick = true;
-
 	CollisionComponent->SetBoxExtent(FVector(16.f, 80.f, 32.f));
-
 	MeleeCollisionComponent->SetRelativeLocation(FVector(0.0f, 24.f, 18.f));
 	MeleeCollisionComponent->SetBoxExtent(FVector(3.f, 28.f, 12.f));
 

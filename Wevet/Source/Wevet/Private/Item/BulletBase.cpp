@@ -1,9 +1,10 @@
 // Copyright 2018 wevet works All Rights Reserved.
 
-#include "Weapon/BulletBase.h"
+#include "Item/BulletBase.h"
 #include "Character/CharacterBase.h"
 #include "WevetExtension.h"
 #include "Wevet.h"
+
 
 ABulletBase::ABulletBase(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer),
 	bWasHitResult(false),
@@ -26,6 +27,7 @@ ABulletBase::ABulletBase(const FObjectInitializer& ObjectInitializer) : Super(Ob
 	}
 }
 
+
 void ABulletBase::BeginPlay()
 {
 	Super::BeginPlay();
@@ -41,9 +43,10 @@ void ABulletBase::BeginPlay()
 		PrimitiveComponent->SetNotifyRigidBodyCollision(true);
 		PrimitiveComponent->OnComponentBeginOverlap.AddDynamic(this, &ABulletBase::BeginOverlapRecieve);
 		PrimitiveComponent->OnComponentHit.AddDynamic(this, &ABulletBase::HitReceive);
-		PrimitiveComponent->ComponentTags.Add(FName(TEXT("WaterLocal")));
+		PrimitiveComponent->ComponentTags.Add(WATER_LOCAL_TAG);
 	}
 }
+
 
 void ABulletBase::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
@@ -56,20 +59,30 @@ void ABulletBase::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	Super::EndPlay(EndPlayReason);
 }
 
+
 void ABulletBase::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 }
+
+
+EGiveDamageType ABulletBase::GetGiveDamageType_Implementation() const
+{
+	return EGiveDamageType::Shoot;
+}
+
 
 void ABulletBase::SetOwners(const TArray<class AActor*>& InOwners)
 {
 	IgnoreActors = InOwners;
 }
 
+
 void ABulletBase::VisibleEmitter(const bool InVisible)
 {
 	ParticleComponent->SetVisibility(InVisible);
 }
+
 
 void ABulletBase::BeginOverlapRecieve(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
@@ -86,17 +99,21 @@ void ABulletBase::BeginOverlapRecieve(UPrimitiveComponent* OverlappedComponent, 
 
 	if (OtherActor->ActorHasTag(WATER_BODY_TAG))
 	{
+
+#if false
 		if (!bWasOverlapResult)
 		{
-			//bWasOverlapResult = true;
-			//UParticleSystemComponent* PS = UGameplayStatics::SpawnEmitterAtLocation(
-			//	GetWorld(), 
-			//	ImpactWaterEmitterTemplate, 
-			//	GetActorTransform(), 
-			//	true);
-			//PS->ComponentTags.Add(WATER_TAG);
-			//PS->GetOwner()->Tags.Add(WATER_TAG);
+			bWasOverlapResult = true;
+			UParticleSystemComponent* PS = UGameplayStatics::SpawnEmitterAtLocation(
+				GetWorld(), 
+				ImpactWaterEmitterTemplate, 
+				GetActorTransform(), 
+				true);
+			PS->ComponentTags.Add(WATER_TAG);
+			PS->GetOwner()->Tags.Add(WATER_TAG);
 		}
+#endif
+
 	} 
 	else
 	{
@@ -108,6 +125,7 @@ void ABulletBase::BeginOverlapRecieve(UPrimitiveComponent* OverlappedComponent, 
 	Super::Destroy();
 }
 
+
 void ABulletBase::HitReceive(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
 	if (!OtherActor || OtherActor == this)
@@ -117,3 +135,4 @@ void ABulletBase::HitReceive(UPrimitiveComponent* HitComp, AActor* OtherActor, U
 
 	Super::Destroy();
 }
+

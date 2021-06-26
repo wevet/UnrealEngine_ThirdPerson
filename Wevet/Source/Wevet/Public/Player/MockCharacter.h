@@ -22,6 +22,7 @@ public:
 	virtual void OnConstruction(const FTransform& Transform) override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	virtual void Tick(float DeltaTime) override;
+	virtual void PossessedBy(AController* NewController) override;
 
 protected:
 	virtual void BeginPlay() override;
@@ -52,6 +53,10 @@ public:
 	virtual void EquipmentActionMontage() override;
 	virtual void CreateWeaponInstance(const TSubclassOf<class AAbstractWeapon> InWeaponTemplate, WeaponFunc Callback = nullptr) override;
 
+public:
+	FORCEINLINE class UPostProcessComponent* GetOutlinePostProcessComponent() const { return OutlinePostProcessComponent; }
+	FORCEINLINE class UPostProcessComponent* GetDeathPostProcessComponent() const { return DeathPostProcessComponent; }
+
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Components, meta = (AllowPrivateAccess = "true"))
 	class UPostProcessComponent* OutlinePostProcessComponent;
@@ -69,9 +74,6 @@ protected:
 	UPROPERTY()
 	class ABackPack* BackPack;
 
-	UPROPERTY()
-	TArray<class UMeshComponent*> MeshArray;
-
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Player|Variable")
 	TSubclassOf<class ABackPack> BackPackTemplate;
 
@@ -84,9 +86,13 @@ protected:
 	int32 WeaponCurrentIndex;
 
 public:
+	virtual void StartRagdollAction() override;
+
 	UFUNCTION(BlueprintCallable, Category = "Player|Function")
 	void SetOwnerNoSeeMesh(const bool NewOwnerNoSee);
+
 	virtual void VisibleDeathPostProcess(const bool InEnabled);
+	
 	AAbstractWeapon* FindByIndexWeapon();
 
 
@@ -97,14 +103,9 @@ protected:
 	virtual void MoveRight(float Value) override;
 	void OnChangeWeapon();
 	void OnEquipWeapon();
-
-
-public:
-	virtual void StartRagdollAction() override;
+	void CreateBackPack();
 
 protected:
-	void SpawnBackPack();
-
 	// Apply to OnALSGaitChange_Implementation
 	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "Player|ALS")
 	void BP_UpdateCameraAction(class UCurveFloat* LerpCurve);

@@ -3,8 +3,8 @@
 #include "Character/CharacterModel.h"
 #include "Wevet.h"
 
-UCharacterModel::UCharacterModel(const FObjectInitializer& ObjectInitializer)
-	: Super(ObjectInitializer),
+
+UCharacterModel::UCharacterModel(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer),
 	Health(100), 
 	MaxHealth(100), 
 	Attack(100), 
@@ -12,53 +12,64 @@ UCharacterModel::UCharacterModel(const FObjectInitializer& ObjectInitializer)
 	Wisdom(100), 
 	bDie(false)
 {
+	//
 }
+
 
 void UCharacterModel::SetHealth(const int32 NewHealth)
 {
 	Health = FMath::Clamp<int32>(NewHealth, INT_ZERO, MaxHealth);
 }
 
+
 void UCharacterModel::SetMaxHealth(const int32 NewMaxHealth)
 {
 	MaxHealth = NewMaxHealth;
 }
+
 
 void UCharacterModel::SetAttack(const int32 NewAttack)
 {
 	Attack = NewAttack;
 }
 
+
 void UCharacterModel::SetDefence(const int32 NewDefence)
 {
 	Defence = NewDefence;
 }
+
 
 void UCharacterModel::SetWisdom(const int32 NewWisdom)
 {
 	Wisdom = NewWisdom;
 }
 
-void UCharacterModel::TakeDamage(const int32 InDamage)
+
+void UCharacterModel::DoTakeDamage(const int32 InDamage)
 {
-	const int32 CurrentHealth = GetHealth();
-	SetHealth(CurrentHealth - InDamage);
+	const int32 Value = GetHealth();
+	SetHealth(Value - InDamage);
 }
 
-void UCharacterModel::Recover(const int32 AddHealth)
+
+void UCharacterModel::DoRecover(const int32 AddHealth)
 {
 	Health += AddHealth;
 	Health = FMath::Clamp<int32>(Health, INT_ZERO, MaxHealth);
 }
 
-void UCharacterModel::Die()
+
+void UCharacterModel::DoDie()
 {
 	bDie = true;
 }
 
-void UCharacterModel::Alive()
+
+void UCharacterModel::DoAlive()
 {
-	float Value = ((float)MaxHealth * QUART_WEIGHT);
+	const float Value = ((float)MaxHealth * QUART_WEIGHT);
 	SetHealth((int)FMath::Abs(Value));
 	bDie = false;
 }
+

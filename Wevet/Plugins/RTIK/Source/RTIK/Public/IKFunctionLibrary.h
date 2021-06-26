@@ -48,7 +48,9 @@ public:
 		TraceParams.bReturnPhysicalMaterial = ReturnPhysMat;
 		TraceParams.AddIgnoredActor(ActorToIgnore);
 		HitOut = FHitResult(ForceInit);
+
 		World->LineTraceSingleByChannel(HitOut, Start, End, CollisionChannel, TraceParams);
+
 		const bool bWasHitActor = (HitOut.GetActor() != nullptr);
 
 #if WITH_EDITOR

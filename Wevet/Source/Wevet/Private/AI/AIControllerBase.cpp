@@ -58,6 +58,7 @@ AAIControllerBase::AAIControllerBase(const FObjectInitializer& ObjectInitializer
 	SetGenericTeamId(TeamId);
 }
 
+
 void AAIControllerBase::BeginPlay()
 {
 	Super::BeginPlay();
@@ -67,21 +68,25 @@ void AAIControllerBase::BeginPlay()
 	}
 }
 
+
 void AAIControllerBase::OnPossess(APawn* InPawn)
 {
 	Super::OnPossess(InPawn);
-	Character = Cast<AAICharacterBase>(InPawn);
 
-	if (Character == nullptr)
+
+	if (IBrainInstigator* Interface = Cast<IBrainInstigator>(InPawn))
 	{
-		return;
+		UBehaviorTree* BehaviorTree = IBrainInstigator::Execute_GetBehaviorTree(Interface->_getUObject());
+		if (BehaviorTree)
+		{
+			UWevetBlueprintFunctionLibrary::GetWorldWayPointsArray(InPawn, FLT_MAX, WayPointList);
+			BlackboardComponent->InitializeBlackboard(*BehaviorTree->BlackboardAsset);
+			BehaviorTreeComponent->StartTree(*BehaviorTree);
+		}
 	}
 
-	BlackboardComponent->InitializeBlackboard(*Character->GetBehaviorTree()->BlackboardAsset);
-	UWevetBlueprintFunctionLibrary::GetWorldWayPointsArray(InPawn, FLT_MAX, WayPointList);
-	BehaviorTreeComponent->StartTree(*Character->GetBehaviorTree());
 
-	if (ICombatInstigator* Interface = Cast<ICombatInstigator>(Character))
+	if (ICombatInstigator* Interface = Cast<ICombatInstigator>(InPawn))
 	{
 		// AddDelegate Death
 		{
@@ -102,6 +107,7 @@ void AAIControllerBase::OnPossess(APawn* InPawn)
 	}
 }
 
+
 void AAIControllerBase::OnUnPossess()
 {
 	if (Wevet::ComponentExtension::HasValid(AIPerceptionComponent))
@@ -111,7 +117,7 @@ void AAIControllerBase::OnUnPossess()
 
 	StopTree();
 
-	if (ICombatInstigator* Interface = Cast<ICombatInstigator>(Character))
+	if (ICombatInstigator* Interface = Cast<ICombatInstigator>(GetPawn()))
 	{
 		// RemoveDelegate Death
 		{
@@ -131,9 +137,9 @@ void AAIControllerBase::OnUnPossess()
 		}
 	}
 
-	Character = nullptr;
 	Super::OnUnPossess();
 }
+
 
 void AAIControllerBase::StopTree()
 {
@@ -143,6 +149,7 @@ void AAIControllerBase::StopTree()
 	}
 }
 
+
 void AAIControllerBase::ResumeTree()
 {
 	if (BehaviorTreeComponent)
@@ -150,6 +157,7 @@ void AAIControllerBase::ResumeTree()
 		BehaviorTreeComponent->RestartTree();
 	}
 }
+
 
 ETeamAttitude::Type AAIControllerBase::GetTeamAttitudeTowards(const AActor& Other) const
 {
@@ -169,6 +177,7 @@ ETeamAttitude::Type AAIControllerBase::GetTeamAttitudeTowards(const AActor& Othe
 	return ETeamAttitude::Neutral;
 }
 
+
 AWayPointBase* AAIControllerBase::GetWayPoint() const
 {
 	if (Wevet::ArrayExtension::NullOrEmpty(WayPointList))
@@ -179,6 +188,7 @@ AWayPointBase* AAIControllerBase::GetWayPoint() const
 	const int32 RandomIndex = FMath::RandRange(0, LastIndex);
 	return WayPointList[RandomIndex];
 }
+
 
 #pragma region Blackboard
 void AAIControllerBase::SetBlackboardTarget(AActor* const NewTarget)
@@ -230,6 +240,7 @@ void AAIControllerBase::SetBlackboardActionState(const EAIActionState NewAIActio
 }
 #pragma endregion
 
+
 bool AAIControllerBase::WasBlackboardTargetDeath() const
 {
 	if (ICombatInstigator* Interface = Cast<ICombatInstigator>(GetBlackboardTarget()))
@@ -239,14 +250,15 @@ bool AAIControllerBase::WasBlackboardTargetDeath() const
 	return false;
 }
 
+
 bool AAIControllerBase::WasKilledCrew(AActor* const InActor) const
 {
-	if (Character == nullptr || InActor == nullptr)
+	if (GetPawn() == nullptr || InActor == nullptr)
 	{
 		return false;
 	}
 
-	if ((InActor->GetClass() == Character->GetClass()))
+	if ((InActor->GetClass() == GetPawn()->GetClass()))
 	{
 		ICombatInstigator* Interface = Cast<ICombatInstigator>(InActor);
 		if (Interface && Interface->IsDeath_Implementation())
@@ -257,74 +269,62 @@ bool AAIControllerBase::WasKilledCrew(AActor* const InActor) const
 	return false;
 }
 
+
 void AAIControllerBase::OnTargetPerceptionUpdatedRecieve(AActor* Actor, FAIStimulus Stimulus)
 {
-	if (Character == nullptr || ICombatInstigator::Execute_IsDeath(Character) || Actor == nullptr)
-	{
-		return;
-	}
-
-	// same perception Actor
-	if (Character == Actor)
-	{
-		return;
-	}
-
-	// not safety data
 	if (!Stimulus.IsValid())
 	{
 		return;
 	}
 
-	if (ILocomotionSystemPawn::Execute_GetALSMovementMode(Character) == ELSMovementMode::Ragdoll)
+	if (GetPawn() == nullptr || Actor == nullptr || GetPawn() == Actor)
 	{
 		return;
 	}
 
+	IBrainInstigator* BrainInstigator = Cast<IBrainInstigator>(GetPawn());
+	if (BrainInstigator == nullptr)
+	{
+		return;
+	}
+
+	// if death pendingkill...
+	if (ICombatInstigator* Interface = Cast<ICombatInstigator>(GetPawn()))
+	{
+		if (Interface->IsDeath_Implementation() || Interface->IsStan_Implementation())
+		{
+			return;
+		}
+	}
+
 	CurrentStimulus = Stimulus;
 	const FAISenseID CurrentSenseID = CurrentStimulus.Type;
-
 	// Is the Actor dead with a companion?
-	const bool bWasSameClass = (Character->GetClass() == Actor->GetClass());
-	bool bWasKilledCrew = false;
-	bool bWasTargetLive = false;
+	const bool bWasSameClass = (GetPawn()->GetClass() == Actor->GetClass());
+	const bool bWasKilledCrew = WasKilledCrew(Actor);
+
 	if (bWasSameClass)
 	{
-		bWasKilledCrew = WasKilledCrew(Actor);
 		if (bWasKilledCrew)
 		{
-			UE_LOG(LogWevetClient, Warning, TEXT("Found Same Class AI"));
+			// Kill Same Crew Angly Player
 		}
 		else
 		{
-			// Comminucate AI
+			// Comminucate Crew
 		}
 	}
-	else
-	{
-		if (WasBlackboardTargetDeath())
-		{
-			if (GetBlackboardTarget())
-			{
-				SetBlackboardTarget(nullptr);
-				UE_LOG(LogWevetClient, Log, TEXT("Target Death"));
-				return;
-			}
-		}
-		else
-		{
-			if (!GetBlackboardTarget())
-			{
-				bWasTargetLive = true;
-			}
-		}
-	}
+	bool bWasTargetLive = !WasBlackboardTargetDeath();
+	bWasTargetLive &= !bWasSameClass;
+	bWasTargetLive &= !GetBlackboardTarget();
 
+
+	// SenseID 
 	if (CurrentSenseID == UAISense::GetSenseID(SightConfig->GetSenseImplementation()))
 	{
 		if (bWasTargetLive)
 		{
-			ICombatInstigator::Execute_DoSightReceive(Character, Actor, CurrentStimulus, bWasKilledCrew);
+			IBrainInstigator::Execute_DoSightReceive(BrainInstigator->_getUObject(), Actor, CurrentStimulus, bWasKilledCrew);
 		}
 	}
 	else if (CurrentSenseID == UAISense::GetSenseID(HearConfig->GetSenseImplementation()))
@@ -332,35 +332,29 @@ void AAIControllerBase::OnTargetPerceptionUpdatedRecieve(AActor* Actor, FAIStimu
 		// I haven't found a Player, but I've detected a sound, so I'm on alert.
 		if (!bWasSameClass)
 		{
-			ICombatInstigator::Execute_DoHearReceive(Character, Actor, CurrentStimulus, bWasKilledCrew);
+			IBrainInstigator::Execute_DoHearReceive(BrainInstigator->_getUObject(), Actor, CurrentStimulus, bWasKilledCrew);
 		}
 	}
 	else if (CurrentSenseID == UAISense::GetSenseID(PredictionConfig->GetSenseImplementation()))
 	{
-		// @TODO
 		// Predict the position of the other party.
-		ICombatInstigator::Execute_DoPredictionReceive(Character, Actor, CurrentStimulus);
+		IBrainInstigator::Execute_DoPredictionReceive(BrainInstigator->_getUObject(), Actor, CurrentStimulus);
 	}
 	else if (CurrentSenseID == UAISense::GetSenseID(DamageConfig->GetSenseImplementation()))
 	{
-		// SendDamage
-		ICombatInstigator::Execute_DoDamageReceive(Character, Actor, CurrentStimulus);
+		IBrainInstigator::Execute_DoDamageReceive(BrainInstigator->_getUObject(), Actor, CurrentStimulus);
 	}
 
 }
 
+
 const TArray<FVector>& AAIControllerBase::GetPathPointArray()
 {
 	PointsArray.Reset(0);
-	if (BlackboardComponent == nullptr || Character == nullptr)
-	{
-		return PointsArray;
-	}
-
-	const FVector ActorLocation = Character->GetActorLocation();
+	const FVector ActorLocation = GetPawn()->GetActorLocation();
 	UNavigationPath* NavPath = nullptr;
-
 	AActor* TargetActor = GetBlackboardTarget();
+
 	if (TargetActor)
 	{
 		NavPath = UNavigationSystemV1::FindPathToActorSynchronously(GetWorld(), ActorLocation, TargetActor);
@@ -371,23 +365,23 @@ const TArray<FVector>& AAIControllerBase::GetPathPointArray()
 		NavPath = UNavigationSystemV1::FindPathToLocationSynchronously(GetWorld(), ActorLocation, TargetLocation);
 	}
 
-	if (NavPath)
+	check(NavPath);
+	for (FVector P : NavPath->PathPoints)
 	{
-		for (FVector P : NavPath->PathPoints)
-		{
-			PointsArray.Add(P);
-		}
+		PointsArray.Add(P);
 	}
 	return PointsArray;
 }
 
+
 void AAIControllerBase::RemoveSearchNodeGenerator()
 {
-	if (Character)
+	if (AAICharacterBase* AICharacter = Cast<AAICharacterBase>(GetPawn()))
 	{
-		Character->RemoveSearchNodeGenerator();
+		AICharacter->RemoveSearchNodeGenerator();
 	}
 }
+
 
 void AAIControllerBase::CheckTargetStatus(bool& OutResult)
 {
@@ -397,10 +391,11 @@ void AAIControllerBase::CheckTargetStatus(bool& OutResult)
 		if (WasBlackboardTargetDeath())
 		{
 			SetBlackboardTarget(nullptr);
-			UE_LOG(LogWevetClient, Warning, TEXT("Did you die during Combat? => Owner : %s"), *Character->GetName());
+			UE_LOG(LogWevetClient, Warning, TEXT("Did you die during Combat? => Owner : %s"), *GetPawn()->GetName());
 		}
 	}
 }
+
 
 void AAIControllerBase::OnDeath()
 {
@@ -408,11 +403,13 @@ void AAIControllerBase::OnDeath()
 	SetBlackboardTarget(nullptr);
 }
 
+
 void AAIControllerBase::OnKill(AActor* InActor)
 {
 	UE_LOG(LogWevetClient, Log, TEXT("Kill : %s"), *FString(__FUNCTION__));
 	SetBlackboardTarget(nullptr);
 }
+
 
 void AAIControllerBase::BattlePhaseUpdate()
 {

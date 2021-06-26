@@ -2,8 +2,6 @@
 
 #include "Interface/WeaponInstigator.h"
 
-UWeaponInstigator::UWeaponInstigator(const class FObjectInitializer& ObjectInitializer)
-	: Super(ObjectInitializer)
+UWeaponInstigator::UWeaponInstigator(const class FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {
-
 }

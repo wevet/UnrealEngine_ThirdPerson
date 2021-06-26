@@ -53,6 +53,7 @@ void FAnimNode_HumanoidArmTorsoAdjust::EvaluateSkeletalControl_AnyThread(FCompon
 
 
 #pragma region ConstraintsBones
+	// CSTransformsLeft
 	TArray<FTransform> CSTransformsLeft;
 	CSTransformsLeft.Reserve(NumBonesLeft);
 	for (FIKBone& Bone : LeftArm->GetChain().BonesRootToEffector)
@@ -61,6 +62,7 @@ void FAnimNode_HumanoidArmTorsoAdjust::EvaluateSkeletalControl_AnyThread(FCompon
 	}
 	CSTransformsLeft.Shrink();
 
+	// CSTransformsRight
 	TArray<FTransform> CSTransformsRight;
 	CSTransformsLeft.Reserve(NumBonesRight);
 	for (FIKBone& Bone : RightArm->GetChain().BonesRootToEffector)
@@ -69,6 +71,7 @@ void FAnimNode_HumanoidArmTorsoAdjust::EvaluateSkeletalControl_AnyThread(FCompon
 	}
 	CSTransformsRight.Shrink();
 
+	// ConstraintsLeft
 	TArray<FIKBoneConstraint*> ConstraintsLeft;
 	ConstraintsLeft.Reserve(NumBonesLeft);
 	for (FIKBone& Bone : LeftArm->GetChain().BonesRootToEffector)
@@ -77,6 +80,7 @@ void FAnimNode_HumanoidArmTorsoAdjust::EvaluateSkeletalControl_AnyThread(FCompon
 	}
 	ConstraintsLeft.Shrink();
 
+	// ConstraintsRight
 	TArray<FIKBoneConstraint*> ConstraintsRight;
 	ConstraintsRight.Reserve(NumBonesLeft);
 	for (FIKBone& Bone : RightArm->GetChain().BonesRootToEffector)

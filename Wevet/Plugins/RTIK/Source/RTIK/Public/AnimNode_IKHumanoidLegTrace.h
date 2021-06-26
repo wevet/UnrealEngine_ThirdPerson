@@ -35,6 +35,7 @@ public:
 		bEnableDebugDraw = false;
 	}
 
+
 	virtual void UpdateInternal(const FAnimationUpdateContext& Context) override
 	{
 		if (TraceData)
@@ -42,6 +43,7 @@ public:
 			TraceData->SetUpdatedThisTick(false);
 		}
 	}
+
 
 	virtual bool IsValidToEvaluate(const USkeleton* Skeleton, const FBoneContainer& RequiredBones) override
 	{
@@ -56,6 +58,7 @@ public:
 		return Leg->InitIfInvalid(RequiredBones);
 	}
 
+
 	virtual void InitializeBoneReferences(const FBoneContainer& RequiredBones) override
 	{
 		if (Leg == nullptr)
@@ -69,8 +72,9 @@ public:
 			UE_LOG(LogNIK, Warning, TEXT("Could not initialize LeftLeg : %s"), *FString(__FUNCTION__));
 #endif
 		}
-		Super::InitializeBoneReferences(RequiredBones);
+		//Super::InitializeBoneReferences(RequiredBones);
 	}
+
 
 	virtual void EvaluateSkeletalControl_AnyThread(FComponentSpacePoseContext& Output, TArray<FBoneTransform>& OutBoneTransforms) override;
 

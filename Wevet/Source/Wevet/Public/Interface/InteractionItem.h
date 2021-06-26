@@ -31,4 +31,7 @@ public :
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "InteractionItem")
 	EItemType GetItemType() const;
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "InteractionItem")
+	void SpawnToWorld();
 };

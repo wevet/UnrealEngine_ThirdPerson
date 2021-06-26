@@ -35,7 +35,7 @@ protected:
 public:
 	void SetOwnerNoSeeMesh(const bool NewOwnerNoSee);
 
-	void PutWeapon(AAbstractWeapon* InWeapon, bool &OutAttachSuccess);
+	void StoreWeapon(AAbstractWeapon* InWeapon, bool &OutAttachSuccess);
 
 	void StartSimulatePhysics();
 	void StopSimulatePhysics();

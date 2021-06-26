@@ -17,8 +17,12 @@ struct RTIK_API FNoisyThreePointClosedLoop
 public:
 
 	FNoisyThreePointClosedLoop(
-		const FTransform InEffectorATransform, const FTransform InEffectorBTransform, const FTransform InRootTransform,
-		float InTargetRootADistance, float InTargetRootBDistance, float InTargetABDistance)
+		const FTransform InEffectorATransform, 
+		const FTransform InEffectorBTransform, 
+		const FTransform InRootTransform,
+		float InTargetRootADistance, 
+		float InTargetRootBDistance, 
+		float InTargetABDistance)
 	{
 		RootTransform = InRootTransform;
 		EffectorATransform = InEffectorATransform;
@@ -102,6 +106,7 @@ public:
 		}
 
 		OutTransforms.Empty();
+
 		// Number of points in the chain. Number of bones = NumPoints - 1
 		const int32 NumPoints = InTransforms.Num();
 		const int32 EffectorIndex = (NumPoints - 1);
@@ -113,7 +118,6 @@ public:
 			OutTransforms.Add(Transform);
 		}
 
-		// IKを実行するには少なくとも1つのボーンが必要
 		if (NumPoints < 2)
 		{
 			return false;
@@ -207,7 +211,6 @@ public:
 			OutTransforms.Add(Transform);
 		}
 
-		// IKを実行するには少なくとも1つのボーンが必要
 		if (NumPoints < 2)
 		{
 			return false;

@@ -55,6 +55,9 @@ protected:
 	bool bWasHealthHalf;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Variable")
+	bool bWasGrounded;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Variable")
 	float FalloutInterval;
 	float FalloutTickTime;
 
@@ -544,15 +547,9 @@ protected:
 
 	void OnTurnInPlaceRespons(const float AimYawLimit, const FTurnMontages TurnAnims, const float PlayRate);
 	void OnTurnInPlaceDelay(
-		const float MaxCameraSpeed,
-		const float AimYawLimitFirst,
-		const float DelayTimeFirst,
-		const float PlayRateFirst,
-		const FTurnMontages TurnAnimsFirst,
-		const float AimYawLimitSecond,
-		const float DelayTimeSecond,
-		const float PlayRateSecond,
-		const FTurnMontages TurnAnimsSecond);
+		const float CameraSpeed,
+		const float AimLimitFirst, const float TimeFirst, const float RateFirst, const FTurnMontages TurnAnimsFirst,
+		const float AimLimitSecond, const float TimeSecond, const float RateSecond, const FTurnMontages TurnAnimsSecond);
 
 	void UpdateMovementSpeed(const bool bWasGround);
 	void UpdateFlailBlendAlpha();

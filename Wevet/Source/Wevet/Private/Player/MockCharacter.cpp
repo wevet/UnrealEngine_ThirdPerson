@@ -4,7 +4,6 @@
 #include "Player/MockPlayerController.h"
 
 #include "AnimInstance/PlayerAnimInstance.h"
-#include "AnimInstance/IKAnimInstance.h"
 
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
@@ -19,7 +18,6 @@
 #define CAMERA_TRACE_L FName(TEXT("TP_CameraTrace_L"))
 #define CAMERA_TRACE_R FName(TEXT("TP_CameraTrace_R"))
 
-using namespace Wevet;
 
 AMockCharacter::AMockCharacter(const FObjectInitializer& ObjectInitializer)	: Super(ObjectInitializer)
 {
@@ -33,7 +31,7 @@ AMockCharacter::AMockCharacter(const FObjectInitializer& ObjectInitializer)	: Su
 	GetMesh()->ComponentTags.Add(WATER_TAG);
 
 	bEnableRagdoll = false;
-	bEnableRecover = true;
+	SetEnableRecover(true);
 	WeaponCurrentIndex = 0;
 
 	Tags.Add(PLAYER_TAG);
@@ -56,51 +54,62 @@ AMockCharacter::AMockCharacter(const FObjectInitializer& ObjectInitializer)	: Su
 	DeathPostProcessComponent->SetVisibility(false);
 	DeathPostProcessComponent->SetupAttachment(GetCapsuleComponent());
 
-	// BackPack
-	static ConstructorHelpers::FObjectFinder<UClass> FindAsset(ProjectFile::GetBackPackPath());
-	BackPackTemplate = FindAsset.Object;
+	{
+		static ConstructorHelpers::FObjectFinder<UClass> FindAsset(Wevet::ProjectFile::GetBackPackPath());
+		BackPackTemplate = FindAsset.Object;
+	}
 
 	// TeamID = 0
-
 	// LookingDirection Initialize
 	ALSRotationMode = ELSRotationMode::LookingDirection;
 }
+
 
 void AMockCharacter::OnConstruction(const FTransform& Transform)
 {
 	Super::OnConstruction(Transform);
 }
 
+
 void AMockCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
-	MeshArray.Reset(0);
 	Super::EndPlay(EndPlayReason);
 }
+
 
 void AMockCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-	PlayerController = Cast<AMockPlayerController>(GetController());
-	PlayerAnimInstance = Cast<UPlayerAnimInstance>(GetAnimInstance());
-	MeshArray = Wevet::ComponentExtension::GetComponentsArray<UMeshComponent>(this);
 
-	{
-		SpawnBackPack();
-	}
+	PlayerAnimInstance = Cast<UPlayerAnimInstance>(GetAnimInstance());
+	GetOutlinePostProcessComponent()->AddTickPrerequisiteActor(this);
+	GetDeathPostProcessComponent()->AddTickPrerequisiteActor(this);
+	CreateBackPack();
 
 	CreateWeaponInstance(PrimaryWeapon, [&](AAbstractWeapon* Weapon)
 	{
+		//
 	});
 
 	CreateWeaponInstance(SecondaryWeapon, [&](AAbstractWeapon* Weapon) 
 	{
+		//
 	});
 }
+
+
+void AMockCharacter::PossessedBy(AController* NewController)
+{
+	Super::PossessedBy(NewController);
+	PlayerController = Cast<AMockPlayerController>(NewController);
+}
+
 
 void AMockCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 }
+
 
 void AMockCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent)
 {
@@ -147,15 +156,6 @@ void AMockCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInpu
 	PlayerInputComponent->AddActionBinding(PickupPressed);
 
 	
-	// Reload
-	FInputActionBinding ReloadPressed("Reload", IE_Pressed);
-	ReloadPressed.ActionDelegate.GetDelegateForManualSet().BindLambda([this]()
-	{
-		Super::DoReload_Implementation();
-	});
-	PlayerInputComponent->AddActionBinding(ReloadPressed);
-
-
 	// Crouch
 	FInputActionBinding CrouchPressed("CrouchAction", IE_Pressed);
 	CrouchPressed.ActionDelegate.GetDelegateForManualSet().BindLambda([this]()
@@ -165,7 +165,7 @@ void AMockCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInpu
 	PlayerInputComponent->AddActionBinding(CrouchPressed);
 
 
-	// Fire Press/Released
+	// Fire Press/Released/Reload
 	FInputActionBinding FirePressed("Fire", IE_Pressed);
 	FirePressed.ActionDelegate.GetDelegateForManualSet().BindLambda([this]()
 	{
@@ -176,8 +176,14 @@ void AMockCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInpu
 	{
 		Super::DoFireReleassed_Implementation();
 	});
+	FInputActionBinding ReloadPressed("Reload", IE_Pressed);
+	ReloadPressed.ActionDelegate.GetDelegateForManualSet().BindLambda([this]()
+	{
+		Super::DoReload_Implementation();
+	});
 	PlayerInputComponent->AddActionBinding(FirePressed);
 	PlayerInputComponent->AddActionBinding(FireReleased);
+	PlayerInputComponent->AddActionBinding(ReloadPressed);
 
 
 	// MeleeAttack
@@ -296,8 +302,8 @@ void AMockCharacter::Die_Implementation()
 {
 	if (!ICombatInstigator::Execute_IsDeath(this))
 	{
-		CharacterModel->TakeDamage(CharacterModel->GetMaxHealth());
-		CharacterModel->Die();
+		CharacterModel->DoTakeDamage(CharacterModel->GetMaxHealth());
+		CharacterModel->DoDie();
 	}
 
 	if (Super::bWasDied)
@@ -325,6 +331,7 @@ void AMockCharacter::Die_Implementation()
 	StartRagdollAction();
 }
 
+
 void AMockCharacter::Alive_Implementation()
 {
 	Super::Alive_Implementation();
@@ -338,6 +345,7 @@ void AMockCharacter::Alive_Implementation()
 	RagdollToWakeUpAction();
 }
 
+
 void AMockCharacter::Equipment_Implementation()
 {
 	if (!CurrentWeapon.IsValid())
@@ -346,6 +354,7 @@ void AMockCharacter::Equipment_Implementation()
 	}
 	Super::Equipment_Implementation();
 }
+
 
 void AMockCharacter::UnEquipment_Implementation()
 {
@@ -357,22 +366,21 @@ void AMockCharacter::UnEquipment_Implementation()
 	ICombatInstigator::Execute_DoFireReleassed(this);
 
 	bool bPutWeaponSuccess = false;
-	BackPack->PutWeapon(CurrentWeapon.Get(), bPutWeaponSuccess);
+	BackPack->StoreWeapon(CurrentWeapon.Get(), bPutWeaponSuccess);
 	if (!bPutWeaponSuccess)
 	{
-		const FName SocketName(CurrentWeapon.Get()->GetWeaponItemInfo().UnEquipSocketName);
-		FAttachmentTransformRules Rules(EAttachmentRule::SnapToTarget, true);
-		CurrentWeapon.Get()->AttachToComponent(Super::GetMesh(), Rules, SocketName);
-		CurrentWeapon.Get()->SetEquip(false);
+		UE_LOG(LogWevetClient, Error, TEXT("PutError : %s"), *CurrentWeapon.Get()->GetName());
 	}
 	CurrentWeapon.Reset();
 	ActionInfoPtr = nullptr;
 }
 
+
 bool AMockCharacter::CanPickup_Implementation() const
 {
 	return !ICombatInstigator::Execute_IsDeath(this);
 }
+
 
 void AMockCharacter::Release_Implementation()
 {
@@ -390,6 +398,7 @@ void AMockCharacter::Release_Implementation()
 	}
 }
 
+
 void AMockCharacter::OverlapActor_Implementation(AActor* Actor)
 {
 	if (OutlinePostProcessComponent)
@@ -401,6 +410,7 @@ void AMockCharacter::OverlapActor_Implementation(AActor* Actor)
 	}
 	Super::OverlapActor_Implementation(Actor);
 }
+
 
 void AMockCharacter::SetALSCameraShake_Implementation(TSubclassOf<class UMatineeCameraShake> InShakeClass, const float InScale)
 {
@@ -422,15 +432,15 @@ void AMockCharacter::EquipmentActionMontage()
 	}
 
 	check(InventoryComponent);
-	AAbstractWeapon* const WeaponPtr = InventoryComponent->FindByIndexWeapon(WeaponCurrentIndex);
+	AAbstractWeapon* const WeaponPtr = FindByIndexWeapon();
 	if (WeaponPtr == nullptr)
 	{
 		return;
 	}
 
-	// SetSmartPointer
 	CurrentWeapon = MakeWeakObjectPtr<AAbstractWeapon>(WeaponPtr);
 	SetActionInfo(WeaponPtr->GetWeaponItemType());
+
 	if (ActionInfoPtr && ActionInfoPtr->EquipMontage)
 	{
 		EquipWeaponTimeOut += PlayAnimMontage(ActionInfoPtr->EquipMontage, MONTAGE_DELAY);
@@ -444,11 +454,13 @@ AAbstractWeapon* AMockCharacter::FindByIndexWeapon()
 	return GetInventoryComponent()->FindByIndexWeapon(WeaponCurrentIndex);
 }
 
+
 FVector AMockCharacter::BulletTraceRelativeLocation() const
 {
 	const FVector Position = (PlayerController ? PlayerController->GetCameraRelativeLocation() : Super::BulletTraceRelativeLocation());
 	return bAiming ? Position : Super::BulletTraceRelativeLocation();
 }
+
 
 FVector AMockCharacter::BulletTraceForwardLocation() const
 {
@@ -460,6 +472,7 @@ FVector AMockCharacter::BulletTraceForwardLocation() const
 	const FVector ForwardLocation = bAiming ? Position : MuzzleRotation.Vector();
 	return BulletTraceRelativeLocation() + (ForwardLocation * TraceDistance);
 }
+
 
 void AMockCharacter::CreateWeaponInstance(const TSubclassOf<class AAbstractWeapon> InWeaponTemplate, WeaponFunc Callback)
 {
@@ -483,7 +496,7 @@ void AMockCharacter::CreateWeaponInstance(const TSubclassOf<class AAbstractWeapo
 	}
 
 	bool bPutWeaponSuccess = false;
-	BackPack->PutWeapon(SpawningObject, bPutWeaponSuccess);
+	BackPack->StoreWeapon(SpawningObject, bPutWeaponSuccess);
 	if (!bPutWeaponSuccess)
 	{
 		UE_LOG(LogWevetClient, Error, TEXT("PutError : %s"), *SpawningObject->GetName());
@@ -497,7 +510,8 @@ void AMockCharacter::CreateWeaponInstance(const TSubclassOf<class AAbstractWeapo
 	}
 }
 
-void AMockCharacter::SpawnBackPack()
+
+void AMockCharacter::CreateBackPack()
 {
 	if (!BackPackTemplate)
 	{
@@ -511,9 +525,10 @@ void AMockCharacter::SpawnBackPack()
 	BackPack->AttachToComponent(Super::GetMesh(), Rules, BACKPACK_SOCKET);
 }
 
+
 void AMockCharacter::SetOwnerNoSeeMesh(const bool NewOwnerNoSee)
 {
-	for (UMeshComponent* Component : MeshArray)
+	for (UMeshComponent* Component : MeshComponents)
 	{
 		if (Component)
 		{
@@ -532,6 +547,7 @@ void AMockCharacter::SetOwnerNoSeeMesh(const bool NewOwnerNoSee)
 	}
 }
 
+
 void AMockCharacter::VisibleDeathPostProcess(const bool InEnabled)
 {
 	if (DeathPostProcessComponent)
@@ -542,6 +558,7 @@ void AMockCharacter::VisibleDeathPostProcess(const bool InEnabled)
 		DeathPostProcessComponent->SetVisibility(InEnabled);
 	}
 }
+
 
 void AMockCharacter::StartRagdollAction()
 {

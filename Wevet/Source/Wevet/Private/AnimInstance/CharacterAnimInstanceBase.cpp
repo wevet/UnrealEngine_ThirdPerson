@@ -13,6 +13,7 @@ UCharacterAnimInstanceBase::UCharacterAnimInstanceBase(const FObjectInitializer&
 	bWasMoving = false;
 	bWasAiming = false;
 	bDebugTrace = false;
+	bWasGrounded = false;
 
 	IKTargetInterpolationSpeed = 60.f;
 	FalloutInterval = 3.f;
@@ -45,6 +46,16 @@ UCharacterAnimInstanceBase::UCharacterAnimInstanceBase(const FObjectInitializer&
 	// ALS_Layer
 	BasePose_N = 1.0f;
 	Enable_AimOffset = 1.0f;
+
+	{
+		static ConstructorHelpers::FObjectFinder<UCurveFloat> FindAsset(Wevet::ProjectFile::GetLandAlphaCurve());
+		LandAlphaCurve = FindAsset.Object;
+	}
+
+	{
+		static ConstructorHelpers::FObjectFinder<UCurveFloat> FindAsset(Wevet::ProjectFile::GetFlailAlphaCurve());
+		FlailAlphaCurve = FindAsset.Object;
+	}
 }
 
 void UCharacterAnimInstanceBase::NativeInitializeAnimation()
@@ -60,10 +71,6 @@ void UCharacterAnimInstanceBase::NativeInitializeAnimation()
 
 	CharacterMovementComponent = Owner->GetCharacterMovement();
 	CapsuleComponent = Owner->GetCapsuleComponent();
-
-	//if (Owner->GetClass()->ImplementsInterface(ULocomotionSystemPawn::StaticClass())) 
-	//{
-	//}
 
 	ILocomotionSystemPawn::Execute_SetALSMovementMode(this, ILocomotionSystemPawn::Execute_GetALSMovementMode(Owner));
 	ILocomotionSystemPawn::Execute_SetALSRotationMode(this, ILocomotionSystemPawn::Execute_GetALSRotationMode(Owner));
@@ -192,19 +199,16 @@ const float UCharacterAnimInstanceBase::PlayAnimationSequence(const FAnimSequenc
 		InAnimSequenceInfo.BlendInTime,
 		InAnimSequenceInfo.BlendOutTime,
 		InAnimSequenceInfo.PlayRate);
-
 	return InAnimSequenceInfo.Animation->GetPlayLength();
 }
 
 const float UCharacterAnimInstanceBase::TakeDamageAnimation(FWeaponActionInfo* const InActionInfoPtr, const FName InSlotNodeName)
 {
-	// No Equipped
 	if (InActionInfoPtr == nullptr)
 	{
 		return TakeDefaultDamage();
 	}
 
-	// Yes Any Weapon Equipped
 	if (InActionInfoPtr->HitDamageSequence.Animation == nullptr)
 	{
 		return TakeDefaultDamage();
@@ -534,6 +538,7 @@ void UCharacterAnimInstanceBase::SetVariableFromOwner()
 	Velocity = Owner->ChooseVelocity();
 
 	bWasHealthHalf = Owner->IsHealthHalf();
+	bWasGrounded = (ALSMovementMode != ELSMovementMode::Falling);
 }
 
 
@@ -570,6 +575,7 @@ void UCharacterAnimInstanceBase::CalculateAimOffset()
 	}
 }
 
+
 void UCharacterAnimInstanceBase::CalculateMovementState()
 {
 	switch (ALSMovementMode)
@@ -590,6 +596,7 @@ void UCharacterAnimInstanceBase::CalculateMovementState()
 	}
 
 }
+
 
 void UCharacterAnimInstanceBase::CalculateLayerValue()
 {
@@ -628,6 +635,7 @@ void UCharacterAnimInstanceBase::CalculateLayerValue()
 	}
 }
 
+
 void UCharacterAnimInstanceBase::DoWhileGrounded()
 {
 	UpdateMovementSpeed(true);
@@ -640,6 +648,7 @@ void UCharacterAnimInstanceBase::DoWhileGrounded()
 		WhileTurnInPlace();
 	}
 }
+
 
 void UCharacterAnimInstanceBase::DoWhileLocomotionState()
 {
@@ -662,6 +671,7 @@ void UCharacterAnimInstanceBase::DoWhileLocomotionState()
 	}
 }
 
+
 void UCharacterAnimInstanceBase::DoWhileFalling()
 {
 	UpdateMovementSpeed(false);
@@ -670,10 +680,12 @@ void UCharacterAnimInstanceBase::DoWhileFalling()
 	CalculateLandPredictionAlpha();
 }
 
+
 void UCharacterAnimInstanceBase::DoWhileRagdoll()
 {
 	FlailRate = UKismetMathLibrary::MapRangeClamped(UKismetMathLibrary::VSize(Velocity), 0.0f, 1000.f, 0.0f, 1.25f);
 }
+
 
 void UCharacterAnimInstanceBase::WhileMoving()
 {
@@ -753,15 +765,17 @@ void UCharacterAnimInstanceBase::WhileTurnInPlace()
 				const float MaxCameraSpeed = 100.f;
 				const float YawFirst = 60.f;
 				const float YawSecond = 130.f;
-				const float PlayRate = 1.5f;
+				const float PlayRateStand  = 1.5f;
+				const float PlayRateCrouch = 1.25f;
 				const float Delay = 0.5f;
 				switch (ALSStance)
 				{
 					case ELSStance::Standing:
-					OnTurnInPlaceDelay(MaxCameraSpeed, YawFirst, Delay, PlayRate, N_Turn_90, YawSecond, 0.0f, 1.25f, N_Turn_180);
+					OnTurnInPlaceDelay(MaxCameraSpeed, YawFirst, Delay, PlayRateStand, N_Turn_90, YawSecond, 0.0f, PlayRateCrouch, N_Turn_180);
 					break;
 					case ELSStance::Crouching:
-					OnTurnInPlaceDelay(MaxCameraSpeed, YawFirst, Delay, 1.25f, GetCrouchTurnData(), YawSecond, 0.0f, 1.5f, GetCrouchTurnData());
+					const FTurnMontages Montage = GetCrouchTurnData();
+					OnTurnInPlaceDelay(MaxCameraSpeed, YawFirst, Delay, PlayRateCrouch, Montage, YawSecond, 0.0f, PlayRateStand, Montage);
 					break;
 				}
 			}
@@ -925,7 +939,7 @@ void UCharacterAnimInstanceBase::CalculateLandPredictionAlpha()
 		return;
 	}
 
-	if (!Owner || !LandAlphaCurve)
+	if (!Owner)
 	{
 		return;
 	}
@@ -978,10 +992,7 @@ void UCharacterAnimInstanceBase::CalculateLandPredictionAlpha()
 // Falling Update
 void UCharacterAnimInstanceBase::UpdateFlailBlendAlpha()
 {
-	if (FlailAlphaCurve)
-	{
-		FlailBlendAlpha = FlailAlphaCurve->GetFloatValue(Velocity.Z * -1.f);
-	}
+	FlailBlendAlpha = FlailAlphaCurve->GetFloatValue(Velocity.Z * -1.f);
 }
 
 
@@ -1036,26 +1047,26 @@ void UCharacterAnimInstanceBase::OnTurnInPlaceRespons(const float AimYawLimit, c
 
 
 void UCharacterAnimInstanceBase::OnTurnInPlaceDelay(
-	const float MaxCameraSpeed, 
-	const float AimYawLimitFirst, 
-	const float DelayTimeFirst, 
-	const float PlayRateFirst, 
+	const float CameraSpeed,
+	const float AimLimitFirst, 
+	const float TimeFirst, 
+	const float RateFirst, 
 	const FTurnMontages TurnAnimsFirst, 
-	const float AimYawLimitSecond, 
-	const float DelayTimeSecond, 
-	const float PlayRateSecond, 
+	const float AimLimitSecond, 
+	const float TimeSecond, 
+	const float RateSecond, 
 	const FTurnMontages TurnAnimsSecond)
 {
 	UAnimMontage* FirstMontage = (AimYawDelta > 0.0f) ? TurnAnimsFirst.TurnRAnim : TurnAnimsFirst.TurnLAnim;
 	UAnimMontage* SecondMontage = (AimYawDelta > 0.0f) ? TurnAnimsSecond.TurnRAnim : TurnAnimsSecond.TurnLAnim;
-	UAnimMontage* SelectMontage = (FMath::Abs(AimYawDelta) >= AimYawLimitSecond) ? SecondMontage : FirstMontage;
+	UAnimMontage* SelectMontage = (FMath::Abs(AimYawDelta) >= AimLimitSecond) ? SecondMontage : FirstMontage;
 
-	const float PlayRate = (FMath::Abs(AimYawDelta) >= AimYawLimitSecond) ? PlayRateSecond : PlayRateFirst;
-	const float AimClamp = UKismetMathLibrary::MapRangeClamped(FMath::Abs(AimYawDelta), 
-		AimYawLimitFirst, AimYawLimitSecond, 
-		DelayTimeFirst, DelayTimeSecond);
+	const float PlayRate = (FMath::Abs(AimYawDelta) >= AimLimitSecond) ? RateSecond : RateFirst;
+	const float AimClamp = UKismetMathLibrary::MapRangeClamped(FMath::Abs(AimYawDelta), AimLimitFirst, AimLimitSecond, TimeFirst, TimeSecond);
+	const bool bGreaterAimYawDelta = (FMath::Abs(AimYawDelta) > AimLimitFirst);
+	const bool bGreaterCameraSpeed = (FMath::Abs(AimYawRate) < CameraSpeed);
 
-	if (FMath::Abs(AimYawRate) < MaxCameraSpeed && FMath::Abs(AimYawDelta) > AimYawLimitFirst)
+	if (bGreaterCameraSpeed && bGreaterAimYawDelta)
 	{
 		const float DeltaSeconds = GetWorld()->GetDeltaSeconds();
 		TurnInPlaceDelayCount += DeltaSeconds;
@@ -1106,3 +1117,5 @@ void UCharacterAnimInstanceBase::IdleTransition(UAnimSequenceBase* Animation, co
 	const int32 LoopCount = 1;
 	PlaySlotAnimationAsDynamicMontage(Animation, SlotName, BlendInTime, BlendOutTime, InPlayRate, LoopCount, BlendOutTriggerTime, InTimeToStartMontageAt);
 }
+
+

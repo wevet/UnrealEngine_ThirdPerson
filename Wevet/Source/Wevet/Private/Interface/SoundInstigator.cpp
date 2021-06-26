@@ -2,8 +2,6 @@
 
 #include "Interface/SoundInstigator.h"
 
-USoundInstigator::USoundInstigator(const class FObjectInitializer& ObjectInitializer)
-	: Super(ObjectInitializer)
+USoundInstigator::USoundInstigator(const class FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {
-	//
 }

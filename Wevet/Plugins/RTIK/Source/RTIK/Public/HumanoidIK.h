@@ -13,7 +13,11 @@
 #include "GameFramework/Character.h"
 #include "HumanoidIK.generated.h"
 
-using EffectorCallback = TFunction<void(int32 Index, const TArray<FTransform>& ReferenceCSTransforms, const TArray<FIKBoneConstraint*>& Constraints, TArray<FTransform>& CSTransforms)>;
+using EffectorCallback = TFunction<void(
+	int32 Index, 
+	const TArray<FTransform>& ReferenceCSTransforms, 
+	const TArray<FIKBoneConstraint*>& Constraints, 
+	TArray<FTransform>& CSTransforms)>;
 
 #pragma region IKBoneConstraint
 USTRUCT(BlueprintType)
@@ -422,6 +426,9 @@ public:
 	{
 	}
 
+
+#pragma region UProperties
+public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings")
 	float FootRadius;
 
@@ -442,7 +449,10 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Bones")
 	FIKBone FootBone;
+#pragma endregion
 
+
+public:
 	float GetTotalChainLength() const
 	{
 		return TotalChainLength;
@@ -475,6 +485,7 @@ public:
 		}
 		return true;
 	}
+
 
 	bool GetIKFloorPointCS(const USkeletalMeshComponent& SkelComp, const FHumanoidIKTraceData& TraceData, FVector& OutFloorLocationCS) const
 	{
@@ -514,6 +525,7 @@ public:
 		}
 		return bWithinRotationLimit;
 	}
+
 
 	virtual const bool InitBoneReferences(const FBoneContainer& RequiredBones) override
 	{
@@ -569,6 +581,7 @@ public:
 		}
 		return bIsInitialized;
 	}
+
 
 	virtual const bool IsValid(const FBoneContainer& RequiredBones) override
 	{

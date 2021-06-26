@@ -61,12 +61,14 @@ public:
 		bEnableDebugDraw = false;
 	}
 
+
 	virtual void GatherDebugData(FNodeDebugData& DebugData) override
 	{
 		FString DebugLine = DebugData.GetNodeName(this);
 		DebugData.AddDebugItem(DebugLine);
 		ComponentPose.GatherDebugData(DebugData);
 	}
+
 
 	virtual bool IsValidToEvaluate(const USkeleton* Skeleton, const FBoneContainer& RequiredBones) override
 	{
@@ -80,6 +82,7 @@ public:
 		}
 		return (Precision > 0 && IKChain->IsValid(RequiredBones));
 	}
+
 
 	virtual void InitializeBoneReferences(const FBoneContainer& RequiredBones) override
 	{
@@ -98,6 +101,7 @@ public:
 		EffectorTransformBone = Bone.BoneRef;
 		EffectorTransformBone.Initialize(RequiredBones);
 	}
+
 
 	virtual void EvaluateSkeletalControl_AnyThread(FComponentSpacePoseContext& Output, TArray<FBoneTransform>& OutBoneTransforms) override;
 

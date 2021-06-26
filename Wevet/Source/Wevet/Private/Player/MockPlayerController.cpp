@@ -16,10 +16,20 @@ AMockPlayerController::AMockPlayerController(const FObjectInitializer& ObjectIni
 
 }
 
+
+void AMockPlayerController::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	Character = nullptr;
+	Manager = nullptr;
+	Super::EndPlay(EndPlayReason);
+}
+
+
 void AMockPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
 }
+
 
 void AMockPlayerController::OnPossess(APawn* InPawn)
 {
@@ -45,6 +55,7 @@ void AMockPlayerController::OnPossess(APawn* InPawn)
 			}
 		}
 
+
 		// KillEventBind..
 		{
 			FCombatOneDelegate* Delegate = Interface->GetKillDelegate();
@@ -69,6 +80,7 @@ void AMockPlayerController::OnPossess(APawn* InPawn)
 		Manager->OnPossess(InPawn);
 	}
 }
+
 
 void AMockPlayerController::OnUnPossess()
 {
@@ -110,20 +122,24 @@ void AMockPlayerController::OnUnPossess()
 	Super::OnUnPossess();
 }
 
+
 UUMGManager* AMockPlayerController::GetPlayerHUD() const
 {
 	return UMGManager;
 }
+
 
 void AMockPlayerController::OnDeath()
 {
 	UE_LOG(LogWevetClient, Log, TEXT("OnDeath => %s"), *FString(__FUNCTION__));
 }
 
+
 void AMockPlayerController::OnAlive()
 {
 	UE_LOG(LogWevetClient, Log, TEXT("OnAlive => %s"), *FString(__FUNCTION__));
 }
+
 
 void AMockPlayerController::OnKill(AActor* InActor)
 {

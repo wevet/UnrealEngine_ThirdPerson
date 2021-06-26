@@ -21,19 +21,19 @@ AAICharacterBase::AAICharacterBase(const FObjectInitializer& ObjectInitializer)	
 	Tags.Add(WATER_TAG);
 	GetMesh()->ComponentTags.Add(WATER_LOCAL_TAG);
 
-	{
-		static ConstructorHelpers::FObjectFinder<UClass> FindAsset(Wevet::ProjectFile::GetNodeGeneratorPath());
-		NodeHolderTemplate = FindAsset.Object;
-	}
+	static ConstructorHelpers::FObjectFinder<UClass> FindAsset(Wevet::ProjectFile::GetNodeGeneratorPath());
+	NodeHolderTemplate = FindAsset.Object;
 
 	// TeamID = 1
 }
+
 
 void AAICharacterBase::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	DestroyHealthController();
 	Super::EndPlay(EndPlayReason);
 }
+
 
 void AAICharacterBase::BeginPlay()
 {
@@ -54,10 +54,12 @@ void AAICharacterBase::BeginPlay()
 	
 }
 
+
 void AAICharacterBase::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 }
+
 
 float AAICharacterBase::TakeDamage(float Damage, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
@@ -69,11 +71,78 @@ float AAICharacterBase::TakeDamage(float Damage, struct FDamageEvent const& Dama
 	return ActualDamage;
 }
 
+
 void AAICharacterBase::PossessedBy(AController* NewController)
 {
 	Super::PossessedBy(NewController);
 	AIController = Cast<AAIControllerBase>(NewController);
 }
+
+
+void AAICharacterBase::DoWhileALSMovementMode()
+{
+	switch (ALSMovementMode)
+	{
+		case ELSMovementMode::None:
+		break;
+		case ELSMovementMode::Grounded:
+		case ELSMovementMode::Swimming:
+		DoWhileGrounded();
+		break;
+		case ELSMovementMode::Falling:
+		DoWhileMantling();
+		break;
+		case ELSMovementMode::Ragdoll:
+		//DoWhileRagdolling();
+		break;
+		case ELSMovementMode::Mantling:
+		break;
+	}
+	//Super::DoWhileALSMovementMode();
+}
+
+
+void AAICharacterBase::EquipmentActionMontage()
+{
+	if (ALSMovementMode != ELSMovementMode::Grounded)
+	{
+		return;
+	}
+
+	if (!HasEquipWeapon())
+	{
+		Super::EquipmentActionMontage();
+	}
+}
+
+
+void AAICharacterBase::ReleaseAllWeaponInventory()
+{
+	if (UWevetBlueprintFunctionLibrary::Probability())
+	{
+		Super::ReleaseAllWeaponInventory();
+	}
+	else
+	{
+		check(InventoryComponent);
+		InventoryComponent->ReleaseAllWeaponInventory();
+	}
+}
+
+
+void AAICharacterBase::ReleaseAllItemInventory()
+{
+	if (UWevetBlueprintFunctionLibrary::Probability())
+	{
+		Super::ReleaseAllItemInventory();
+	}
+	else
+	{
+		check(InventoryComponent);
+		InventoryComponent->ReleaseAllItemInventory();
+	}
+}
+
 
 #pragma region Ragdoll
 void AAICharacterBase::StartRagdollAction()
@@ -111,6 +180,7 @@ void AAICharacterBase::RagdollToWakeUpAction()
 }
 #pragma endregion
 
+
 #pragma region Interface
 void AAICharacterBase::Die_Implementation()
 {
@@ -122,28 +192,24 @@ void AAICharacterBase::Die_Implementation()
 	Tags.Reset(0);
 	Tags.Add(FName(TEXT("DeadBody")));
 
-	//UWevetBlueprintFunctionLibrary::DrawDebugString(this, FString(TEXT("DeadBody")), FLinearColor::Red);
-
 	if (AIController)
 	{
 		AIController->SetBlackboardTarget(nullptr);
 	}
-
-	Super::SetActorTickEnabled(false);
-	RemoveSearchNodeGenerator();
-	DestroyHealthController();
 
 	if (DeathDelegate.IsBound())
 	{
 		DeathDelegate.Broadcast();
 	}
 
-	Super::GetMesh()->SetRenderCustomDepth(false);
-	Super::Die_Implementation();
-
-	// Remove AIController
+	RemoveSearchNodeGenerator();
+	DestroyHealthController();
 	DetachFromControllerPendingDestroy();
+	Super::SetActorTickEnabled(false);
+	Super::Die_Implementation();
+	Super::SetLifeSpan(DEFAULT_LIFESPAN);
 }
+
 
 void AAICharacterBase::Equipment_Implementation()
 {
@@ -153,6 +219,7 @@ void AAICharacterBase::Equipment_Implementation()
 	}
 }
 
+
 void AAICharacterBase::UnEquipment_Implementation()
 {
 	if (Super::HasEquipWeapon())
@@ -161,11 +228,13 @@ void AAICharacterBase::UnEquipment_Implementation()
 	}
 }
 
+
 void AAICharacterBase::OnActionStateChange_Implementation()
 {
 	check(AIController);
 	AIController->SetBlackboardActionState(ActionState);
 }
+
 
 void AAICharacterBase::DoSightReceive_Implementation(AActor* Actor, const FAIStimulus InStimulus, const bool InWasKilledCrew)
 {
@@ -184,6 +253,7 @@ void AAICharacterBase::DoSightReceive_Implementation(AActor* Actor, const FAISti
 	}
 }
 
+
 void AAICharacterBase::DoHearReceive_Implementation(AActor* Actor, const FAIStimulus InStimulus, const bool InWasKilledCrew)
 {
 	check(AIController);
@@ -196,6 +266,7 @@ void AAICharacterBase::DoHearReceive_Implementation(AActor* Actor, const FAIStim
 	}
 
 }
+
 
 void AAICharacterBase::DoPredictionReceive_Implementation(AActor* Actor, const FAIStimulus InStimulus)
 {
@@ -217,11 +288,43 @@ void AAICharacterBase::DoPredictionReceive_Implementation(AActor* Actor, const F
 	}
 }
 
+
 void AAICharacterBase::DoDamageReceive_Implementation(AActor* Actor, const FAIStimulus InStimulus)
 {
 	UE_LOG(LogWevetClient, Log, TEXT("Damage Sense : %f"), InStimulus.GetAge());
 }
+
+
+bool AAICharacterBase::CanMeleeStrike_Implementation() const
+{
+	if (ALSMovementMode != ELSMovementMode::Grounded)
+	{
+		return false;
+	}
+
+	return Super::CanMeleeStrike_Implementation();
+}
+
+
+void AAICharacterBase::DoFirePressed_Implementation()
+{
+	if (WasTakeDamagePlaying())
+	{
+		return;
+	}
+
+	const bool bCanAttackWeapon = (!Super::HasEmptyWeapon() && Super::HasEquipWeapon());
+	if (bCanAttackWeapon)
+	{
+		Super::DoFirePressed_Implementation();
+	}
+	else
+	{
+		UE_LOG(LogWevetClient, Warning, TEXT("Can't Fire Weapon : %s"), *FString(__FUNCTION__));
+	}
+}
 #pragma endregion
+
 
 #pragma region Widget
 void AAICharacterBase::CreateHealthController()
@@ -253,20 +356,8 @@ void AAICharacterBase::DestroyHealthController()
 }
 #pragma endregion
 
-void AAICharacterBase::EquipmentActionMontage()
-{
-	if (ALSMovementMode != ELSMovementMode::Grounded)
-	{
-		return;
-	}
 
-	if (!HasEquipWeapon())
-	{
-		Super::EquipmentActionMontage();
-	}
-}
-
-// Run to EQS
+#pragma region EQS
 void AAICharacterBase::CreateSearchNodeGenerator(const FVector SearchOriginLocation)
 {
 	if (NodeHolderTemplate == nullptr || AIController == nullptr)
@@ -295,7 +386,6 @@ void AAICharacterBase::CreateSearchNodeGenerator(const FVector SearchOriginLocat
 	AIController->SetBlackboardDestinationLocation(SearchOriginLocation);
 }
 
-// Refresh to SearchNodeGenerator
 void AAICharacterBase::RemoveSearchNodeGenerator()
 {
 	ASearchNodeGenerator* NodeHolder = Cast<ASearchNodeGenerator>(AIController->GetBlackboardSearchNodeHolder());
@@ -305,4 +395,5 @@ void AAICharacterBase::RemoveSearchNodeGenerator()
 		NodeHolder->Destroy();
 	}
 }
+#pragma endregion
 

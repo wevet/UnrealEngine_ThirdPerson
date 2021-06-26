@@ -2,10 +2,8 @@
 
 #include "Interface/CombatInstigator.h"
 
-UCombatInstigator::UCombatInstigator(const class FObjectInitializer& ObjectInitializer)
-	: Super(ObjectInitializer)
+UCombatInstigator::UCombatInstigator(const class FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {
-
 }
 
 

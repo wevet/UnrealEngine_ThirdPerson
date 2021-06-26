@@ -37,17 +37,16 @@ public:
 	virtual void DoHearReceive_Implementation(AActor* Actor, const FAIStimulus InStimulus, const bool InWasKilledCrew) override;
 	virtual void DoPredictionReceive_Implementation(AActor* Actor, const FAIStimulus InStimulus) override;
 	virtual void DoDamageReceive_Implementation(AActor* Actor, const FAIStimulus InStimulus) override;
+	virtual bool CanMeleeStrike_Implementation() const override;
+	virtual void DoFirePressed_Implementation() override;
 #pragma endregion
 
 
-public:
-	FORCEINLINE class UBehaviorTree* GetBehaviorTree() const 
-	{
-		return BehaviorTree; 
-	}
-
 protected:
+	virtual void DoWhileALSMovementMode() override;
 	virtual void EquipmentActionMontage() override;
+	virtual void ReleaseAllWeaponInventory() override;
+	virtual void ReleaseAllItemInventory() override;
 
 public:
 	virtual void StartRagdollAction() override;
@@ -62,9 +61,6 @@ protected:
 	void CreateSearchNodeGenerator(const FVector SearchOriginLocation);
 
 protected:
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "AI|Variable")
-	class UBehaviorTree* BehaviorTree;
-
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "AI|Variable")
 	TSubclassOf<class ASearchNodeGenerator> NodeHolderTemplate;
 

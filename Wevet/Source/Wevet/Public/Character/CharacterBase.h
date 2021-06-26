@@ -14,16 +14,14 @@
 #include "Perception/AISightTargetInterface.h"
 #include "GenericTeamAgentInterface.h"
 
-// Weapon
-#include "Weapon/AbstractWeapon.h"
-
-// Item
+#include "Item/AbstractWeapon.h"
 #include "Item/AbstractItem.h"
 
 // Interface
 #include "Interface/CombatInstigator.h"
 #include "Interface/SoundInstigator.h"
 #include "Interface/InteractionPawn.h"
+#include "Interface/BrainInstigator.h"
 
 // ActionInfo
 #include "Structs/WeaponActionInfo.h"
@@ -48,9 +46,7 @@ class UCharacterAnimInstanceBase;
 class UIKAnimInstance;
 
 UCLASS(ABSTRACT)
-class WEVET_API ACharacterBase : public ACharacter, 
-	public ICombatInstigator, public ISoundInstigator, public IInteractionPawn, public ILocomotionSystemPawn, 
-	public IAISightTargetInterface, public IGenericTeamAgentInterface
+class WEVET_API ACharacterBase : public ACharacter, public IBrainInstigator, public ICombatInstigator, public ISoundInstigator, public IInteractionPawn, public ILocomotionSystemPawn, public IAISightTargetInterface, public IGenericTeamAgentInterface
 {
 	GENERATED_BODY()
 
@@ -89,7 +85,6 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "CharacterBase|Function")
 	virtual void StopSprint();
 
-
 	/**
 	* Retrieve team identifier in form of FGenericTeamId
 	* Returns the FGenericTeamID that represents "which team this character belongs to".
@@ -106,6 +101,7 @@ public:
 	*/
 	virtual bool CanBeSeenFrom(const FVector& ObserverLocation, FVector& OutSeenLocation, int32& NumberOfLoSChecksPerformed, float& OutSightStrength, const AActor* IgnoreActor = nullptr) const override;
 
+
 protected:
 	virtual void TurnAtRate(float Rate);
 	virtual void LookUpAtRate(float Rate);
@@ -120,14 +116,14 @@ protected:
 
 	virtual void PickupObjects();
 	virtual void ReleaseObjects();
-
 	virtual void OnWalkAction();
 
 public:
 	virtual void MeleeAttack(const bool InEnable);
 
+
 public:
-#pragma region BasicInferface
+#pragma region Interaction
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|InteractionPawn")
 	void Pickup(const EItemType InItemType, AActor* Actor);
 	virtual void Pickup_Implementation(const EItemType InItemType, AActor* Actor) override;
@@ -143,7 +139,10 @@ public:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|InteractionPawn")
 	void Release();
 	virtual void Release_Implementation() override;
+#pragma endregion
 
+
+#pragma region Sound
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|SoundInstigator")
 	void ReportNoise(USoundBase* Sound, float Volume);
 	virtual void ReportNoise_Implementation(USoundBase* Sound, float Volume) override;
@@ -156,6 +155,7 @@ public:
 	void ReportNoiseOther(AActor* Actor, USoundBase* Sound, const float Volume, const FVector Location);
 	virtual void ReportNoiseOther_Implementation(AActor* Actor, USoundBase* Sound, const float Volume, const FVector Location) override;
 #pragma endregion
+
 
 #pragma region Combat
 	virtual FCombatDelegate* GetDeathDelegate() override;
@@ -193,6 +193,10 @@ public:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|CombatInstigator")
 	bool IsDeath() const;
 	virtual bool IsDeath_Implementation() const override;
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|CombatInstigator")
+	bool IsStan() const;
+	virtual bool IsStan_Implementation() const override;
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|CombatInstigator")
 	void Die();
@@ -245,37 +249,44 @@ public:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|CombatInstigator")
 	AAbstractWeapon* GetCurrentWeapon() const;
 	virtual AAbstractWeapon* GetCurrentWeapon_Implementation() const override;
+#pragma endregion
 
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|CombatInstigator")
+
+#pragma region Brain
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|BrainInstigator")
+	class UBehaviorTree* GetBehaviorTree() const;
+	virtual class UBehaviorTree* GetBehaviorTree_Implementation() const override;
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|BrainInstigator")
 	void DoSightReceive(AActor* Actor, const FAIStimulus InStimulus, const bool InWasKilledCrew);
 	virtual void DoSightReceive_Implementation(AActor* Actor, const FAIStimulus InStimulus, const bool InWasKilledCrew) override;
 
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|CombatInstigator")
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|BrainInstigator")
 	void DoHearReceive(AActor* Actor, const FAIStimulus InStimulus, const bool InWasKilledCrew);
 	virtual void DoHearReceive_Implementation(AActor* Actor, const FAIStimulus InStimulus, const bool InWasKilledCrew) override;
 
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|CombatInstigator")
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|BrainInstigator")
 	void DoPredictionReceive(AActor* Actor, const FAIStimulus InStimulus);
 	virtual void DoPredictionReceive_Implementation(AActor* Actor, const FAIStimulus InStimulus) override;
 
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|CombatInstigator")
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|BrainInstigator")
 	void DoDamageReceive(AActor* Actor, const FAIStimulus InStimulus);
 	virtual void DoDamageReceive_Implementation(AActor* Actor, const FAIStimulus InStimulus) override;
 #pragma endregion
+
 
 public:
 	FORCEINLINE class UAudioComponent* GetAudioComponent() const { return AudioComponent; }
 	FORCEINLINE class UCharacterPickupComponent* GetPickupComponent() const { return PickupComponent; }
 	FORCEINLINE class UCharacterInventoryComponent* GetInventoryComponent() const { return InventoryComponent; }
 	FORCEINLINE class UComboComponent* GetComboComponent() const { return ComboComponent; }
+	FORCEINLINE class UPawnNoiseEmitterComponent* GetPawnNoiseEmitterComponent() const { return PawnNoiseEmitterComponent; }
 
 public:
 	float GetHealthToWidget() const { return CharacterModel->GetHealthToWidget(); }
-
 	bool IsFullHealth() const { return CharacterModel->IsFullHealth(); }
 	bool IsHealthHalf() const { return CharacterModel->IsHealthHalf(); }
 	bool IsHealthQuarter() const { return CharacterModel->IsHealthQuarter(); }
-
 	bool WasMeleeAttackPlaying() const { return MeleeAttackTimeOut >= ZERO_VALUE; }
 	bool WasTakeDamagePlaying() const { return TakeDamageTimeOut >= ZERO_VALUE; }
 	bool WasEquipWeaponPlaying() const { return EquipWeaponTimeOut >= ZERO_VALUE; }
@@ -303,6 +314,9 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "CharacterBase|Combat")
 	TSubclassOf<class AAbstractWeapon> SecondaryWeapon;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "CharacterBase|Combat")
+	class UBehaviorTree* BehaviorTree;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "CharacterBase|Combat")
 	class UParticleSystem* BloodTemplate;
@@ -370,6 +384,9 @@ protected:
 	UCharacterModel* CharacterModel;
 
 	UPROPERTY()
+	TArray<class UMeshComponent*> MeshComponents;
+
+	UPROPERTY()
 	ACharacterBase* TargetCharacter;
 
 	/* damage motion timeout */
@@ -397,6 +414,7 @@ protected:
 	void UpdateCombatTimer(const float InDeltaTime);
 	void UpdateRecoverTimer(const float InDeltaTime);
 
+
 #pragma region Weapon
 public:
 	UFUNCTION(BlueprintCallable, Category = "CharacterBase|Function")
@@ -408,14 +426,22 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "CharacterBase|Function")
 	EWeaponItemType GetCurrentWeaponType() const;
 
+	UFUNCTION(BlueprintCallable, Category = "CharacterBase|Function")
+	void SwapWeaponAction(bool &OutSwapSuccess);
+
 protected:
-	TWeakObjectPtr<class AAbstractWeapon> CurrentWeapon;
 	AAbstractWeapon* FindByWeapon(const EWeaponItemType WeaponItemType) const;
 	const bool WasSameWeaponType(AAbstractWeapon* const Weapon);
-	void ReleaseWeaponToWorld(const FTransform& Transform, AAbstractWeapon*& Weapon);
-	void ReleaseAllWeaponInventory();
 	virtual void CreateWeaponInstance(const TSubclassOf<class AAbstractWeapon> InWeaponTemplate, WeaponFunc Callback = nullptr);
+	virtual void ReleaseAllWeaponInventory();
+	virtual void ReleaseAllItemInventory();
+	void ReleaseWeaponToWorld(const FTransform& Transform, AAbstractWeapon*& Weapon);
+	void ReleaseItemToWorld(const FTransform& Transform, AAbstractItem*& Item);
+
+protected:
+	TWeakObjectPtr<class AAbstractWeapon> CurrentWeapon;
 #pragma endregion
+
 
 protected:
 	virtual void EquipmentActionMontage();
@@ -447,20 +473,14 @@ public:
 	FTransform GetChestTransform() const;
 
 	void SetActionInfo(const EWeaponItemType InWeaponItemType);
+
+	void SetEnableRecover(const bool InEnableRecover);
 #pragma endregion
 
 protected:
 	UFUNCTION()
 	virtual void HitReceive(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
-
 	void KillRagdollPhysics();
-
-	void SetForwardOrRightVector(FVector& OutForwardVector, FVector& OutRightVector);
-
-	ELSMovementMode GetPawnMovementModeChanged(const EMovementMode PrevMovementMode, const uint8 PrevCustomMode) const;
-
-	void ConvertALSMovementMode();
-
 	void RemoveBindAll();
 
 public:
@@ -814,7 +834,6 @@ public:
 #pragma region ALSFunction
 public:
 	virtual FVector ChooseVelocity() const;
-
 	float ChooseMaxWalkSpeed() const;
 
 	FORCEINLINE float ChooseMaxAcceleration() const
@@ -847,10 +866,7 @@ protected:
 	void ManageCharacterRotation();
 
 	UFUNCTION(BlueprintCallable, Category = "CharacterBase|ALS")
-	void DoWhileGrounded();
-
-	UFUNCTION(BlueprintCallable, Category = "CharacterBase|ALS")
-	void DoWhileMantling();
+	virtual void DoWhileALSMovementMode();
 
 	UFUNCTION(BlueprintCallable, Category = "CharacterBase|ALS")
 	bool CanSprint() const;
@@ -858,13 +874,12 @@ protected:
 	UFUNCTION(BlueprintCallable, Category = "CharacterBase|ALS")
 	void AddCharacterRotation(const FRotator AddAmount);
 
-	UFUNCTION(BlueprintCallable, Category = "CharacterBase|ALS")
-	void DoWhileRagdoll(FRotator& OutActorRotation, FVector& OutActorLocation);
+	void DoWhileGrounded();
+	void DoWhileMantling();
+	void DoWhileRagdolling();
 
-	UFUNCTION(BlueprintCallable, Category = "CharacterBase|ALS")
+	void UpdateRagdollTransform(FRotator& OutActorRotation, FVector& OutActorLocation);
 	void CalcurateRagdollParams(const FVector InRagdollVelocity, const FVector InRagdollLocation, const FRotator InActorRotation, const FVector InActorLocation);
-
-
 	void DoCharacterFalling();
 	void DoCharacterGrounded();
 	void UpdateCharacterMovementSettings();
@@ -872,15 +887,18 @@ protected:
 	void GroundMovementInput(const bool bForwardAxis);
 	void RagdollMovementInput();
 
+	void CalculateActorTransformRagdoll(const FRotator InRagdollRotation, const FVector InRagdollLocation, FRotator& OutActorRotation, FVector& OutActorLocation);
+	void CalculateEssentialVariables();
+	void SetForwardOrRightVector(FVector& OutForwardVector, FVector& OutRightVector);
+	void ConvertALSMovementMode();
+	const float CalculateRotationRate(const float SlowSpeed, const float SlowSpeedRate, const float FastSpeed, const float FastSpeedRate);
+	const FRotator LookingDirectionWithOffset(const float OffsetInterpSpeed, const float NEAngle, const float NWAngle, const float SEAngle, const float SWAngle, const float Buffer);
+	ELSMovementMode GetPawnMovementModeChanged(const EMovementMode PrevMovementMode, const uint8 PrevCustomMode) const;
+
 	void ApplyCharacterRotation(const FRotator InTargetRotation, const bool bInterpRotation, const float InterpSpeed);
 	void LimitRotation(const float AimYawLimit, const float InterpSpeed);
 	bool CardinalDirectionAngles(const float Value, const float Min, const float Max, const float Buffer, const ELSCardinalDirection InCardinalDirection) const;
 	void CustomAcceleration();
-
-	void CalculateActorTransformRagdoll(const FRotator InRagdollRotation, const FVector InRagdollLocation, FRotator& OutActorRotation, FVector& OutActorLocation);
-	void CalculateEssentialVariables();
-	const float CalculateRotationRate(const float SlowSpeed, const float SlowSpeedRate, const float FastSpeed, const float FastSpeedRate);
-	const FRotator LookingDirectionWithOffset(const float OffsetInterpSpeed, const float NEAngle, const float NWAngle, const float SEAngle, const float SWAngle, const float Buffer);
 #pragma endregion
 
 
@@ -933,3 +951,4 @@ protected:
 
 
 };
+
