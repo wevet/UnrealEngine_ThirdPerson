@@ -13,9 +13,8 @@
 #include "AnimationRuntime.h"
 #include "Async/Async.h"
 #include "Engine/World.h"
-//#include "Engine.h"
-
 #include "IKFunctionLibrary.generated.h"
+
 
 UCLASS()
 class RTIK_API UIKFunctionLibrary : public UBlueprintFunctionLibrary
@@ -68,7 +67,7 @@ public:
 		return bWasHitActor;
 	}
 
-	// BoneのWorld座標を返す
+
 	static const FVector GetBoneWorldLocation(USkeletalMeshComponent& SkelComp, FCSPose<FCompactPose>& MeshBases, FCompactPoseBoneIndex BoneIndex)
 	{
 		FTransform BoneTransform = MeshBases.GetComponentSpaceTransform(BoneIndex);
@@ -76,7 +75,7 @@ public:
 		return BoneTransform.GetLocation();
 	}
 
-	// BoneのWorld座標、回転、Scaleを返す
+
 	static const FTransform GetBoneWorldTransform(USkeletalMeshComponent& SkelComp, FCSPose<FCompactPose>& MeshBases, FCompactPoseBoneIndex BoneIndex)
 	{
 		FTransform BoneTransform = MeshBases.GetComponentSpaceTransform(BoneIndex);
@@ -84,19 +83,31 @@ public:
 		return BoneTransform;
 	}
 
-	// ComponentSpaceの座標を返す
+
+	/// <summary>
+	/// Get Component Space Location
+	/// </summary>
+	/// <param name="MeshBases"></param>
+	/// <param name="BoneIndex"></param>
+	/// <returns></returns>
 	static const FVector GetBoneCSLocation(FCSPose<FCompactPose>& MeshBases, FCompactPoseBoneIndex BoneIndex)
 	{
 		return MeshBases.GetComponentSpaceTransform(BoneIndex).GetLocation();
 	}
 
-	// ComponentSpaceの座標、回転、Scaleを返す
+
+	/// <summary>
+	/// Get Component Space Transform
+	/// </summary>
+	/// <param name="MeshBases"></param>
+	/// <param name="BoneIndex"></param>
+	/// <returns></returns>
 	static const FTransform GetBoneCSTransform(FCSPose<FCompactPose>& MeshBases, FCompactPoseBoneIndex BoneIndex)
 	{
 		return MeshBases.GetComponentSpaceTransform(BoneIndex);
 	}
 
-	// Boneの向きに応じてVectorを返す
+
 	static const FVector IKBoneAxisToVector(EIKBoneAxis InBoneAxis)
 	{
 		switch (InBoneAxis)
@@ -111,7 +122,7 @@ public:
 		return FVector(0.0f, 0.0f, 0.0f);
 	}
 
-	// Meshの軸のVectorを返す
+
 	static const FVector GetSkeletalMeshWorldAxis(const USkeletalMeshComponent& SkelComp, EIKBoneAxis InBoneAxis)
 	{
 		const FTransform ComponentTransform = SkelComp.GetComponentToWorld();
@@ -127,6 +138,7 @@ public:
 		return FVector::ZeroVector;
 	}
 
+
 	static void DrawLine(
 		UWorld* World,
 		const FVector& Start,
@@ -140,6 +152,7 @@ public:
 			UKismetSystemLibrary::DrawDebugLine(Cast<UObject>(World), Start, Finish, Color, Duration, Thickness);
 		});
 	}
+
 
 	static void DrawSphere(
 		UWorld* World,
@@ -156,6 +169,7 @@ public:
 		});
 	}
 
+
 	static void DrawString(
 		UWorld* World,
 		const FVector& Location,
@@ -169,6 +183,7 @@ public:
 			UKismetSystemLibrary::DrawDebugString(Cast<UObject>(World), Location, Text, BaseActor, Color, Duration);
 		});
 	}
+
 
 	static void DrawVector(
 		UWorld* World,
@@ -186,6 +201,7 @@ public:
 		Direction *= Length;
 		DrawLine(World, Base, Base + Direction, Color, Duration, Thickness);
 	}
+
 
 	static void DrawBone(
 		UWorld* World,
@@ -210,6 +226,7 @@ public:
 		const FVector ParentLocation = GetBoneWorldLocation(SkelComp, Pose, ParentBone);
 		DrawLine(World, ParentLocation, ChildLocation, Color, Duration, Thickness);
 	}
+
 
 	static void DrawBoneChain(
 		UWorld* World,

@@ -8,8 +8,8 @@
 #include "HumanoidIK.h"
 
 
-// Profiler‚É“o˜^‚·‚é
 DECLARE_CYCLE_STAT(TEXT("IK Humanoid Pelvis Height Adjust Eval"), STAT_HumanoidPelvisHeightAdjust_Eval, STATGROUP_Anim);
+
 
 void FAnimNode_HumanoidPelvisHeightAdjustment::EvaluateSkeletalControl_AnyThread(FComponentSpacePoseContext& Output, TArray<FBoneTransform>& OutBoneTransforms)
 {
@@ -20,16 +20,10 @@ void FAnimNode_HumanoidPelvisHeightAdjustment::EvaluateSkeletalControl_AnyThread
 #endif
 	check(OutBoneTransforms.Num() == 0);
 
-	if (LeftLeg == nullptr || RightLeg == nullptr || PelvisBone == nullptr)
+	if (LeftLeg == nullptr || RightLeg == nullptr || PelvisBone == nullptr || LeftLegTraceData == nullptr || RightLegTraceData == nullptr)
 	{
 		return;
 	}
-
-	if (LeftLegTraceData == nullptr || RightLegTraceData == nullptr)
-	{
-		return;
-	}
-
 
 	USkeletalMeshComponent* Component = Output.AnimInstanceProxy->GetSkelMeshComponent();
 	ACharacter* Character = Cast<ACharacter>(Component->GetOwner());
@@ -41,8 +35,8 @@ void FAnimNode_HumanoidPelvisHeightAdjustment::EvaluateSkeletalControl_AnyThread
 	UWorld* World = Character->GetWorld();
 	bool bReturnToCenter = false;
 	float TargetPelvisDelta = 0.0f;
-	if (LeftLegTraceData->GetTraceData().FootHitResult.GetActor() == nullptr && 
-		RightLegTraceData->GetTraceData().FootHitResult.GetActor() == nullptr)
+
+	if (LeftLegTraceData->GetTraceData().FootHitResult.GetActor() == nullptr &&  RightLegTraceData->GetTraceData().FootHitResult.GetActor() == nullptr)
 	{
 		bReturnToCenter = true;
 	}
@@ -58,12 +52,13 @@ void FAnimNode_HumanoidPelvisHeightAdjustment::EvaluateSkeletalControl_AnyThread
 		RightLeg->GetChain().GetIKFloorPointCS(*Component, RightLegTraceData->GetTraceData(), RightFootFloorCS);
 		TargetPelvisDelta = (LeftFootFloorCS.Z < RightFootFloorCS.Z) ? LeftFootFloorCS.Z - RootCS.Z : RightFootFloorCS.Z - RootCS.Z;
 
-		//
 		if (FMath::Abs(TargetPelvisDelta) > MaxPelvisAdjustSize)
 		{
 			bReturnToCenter = true;
 			TargetPelvisDelta = 0.0f;
 		}
+		//UE_LOG(LogNIK, Log, TEXT("TargetPelvisDelta : %f"), TargetPelvisDelta);
+
 	}
 
 	FTransform PelvisTransformCS = UIKFunctionLibrary::GetBoneCSTransform(Output.Pose, PelvisBone->Bone.BoneIndex);

@@ -8,7 +8,6 @@
 #include "IKFunctionLibrary.h"
 
 
-// Profiler‚É“o˜^‚·‚é
 DECLARE_CYCLE_STAT(TEXT("IK Humanoid Arm Torso Adjust"), STAT_HumanoidArmTorsoAdjust_Eval, STATGROUP_Anim);
 
 
@@ -35,7 +34,6 @@ void FAnimNode_HumanoidArmTorsoAdjust::EvaluateSkeletalControl_AnyThread(FCompon
 		return;
 	}
 
-	// Get skeleton axes
 	const FVector ForwardAxis = UIKFunctionLibrary::IKBoneAxisToVector(SkeletonForwardAxis);
 	const FVector UpAxis = UIKFunctionLibrary::IKBoneAxisToVector(SkeletonUpAxis);
 	const FVector LeftAxis = FVector::CrossProduct(ForwardAxis, UpAxis);
@@ -52,7 +50,6 @@ void FAnimNode_HumanoidArmTorsoAdjust::EvaluateSkeletalControl_AnyThread(FCompon
 #endif
 
 
-#pragma region ConstraintsBones
 	// CSTransformsLeft
 	TArray<FTransform> CSTransformsLeft;
 	CSTransformsLeft.Reserve(NumBonesLeft);
@@ -88,7 +85,6 @@ void FAnimNode_HumanoidArmTorsoAdjust::EvaluateSkeletalControl_AnyThread(FCompon
 		ConstraintsRight.Add(Bone.GetConstraint());
 	}
 	ConstraintsRight.Shrink();
-#pragma endregion
 
 
 	TArray<FTransform> PostIKTransformsLeft;
@@ -113,6 +109,8 @@ void FAnimNode_HumanoidArmTorsoAdjust::EvaluateSkeletalControl_AnyThread(FCompon
 			PostIKTransformsLeft.Add(Transform);
 		}
 	}
+	PostIKTransformsLeft.Shrink();
+
 
 	TArray<FTransform> PostIKTransformsRight;
 	if (Mode == EHumanoidArmTorsoIKMode::IK_Human_ArmTorso_BothArms || Mode == EHumanoidArmTorsoIKMode::IK_Human_ArmTorso_RightArmOnly)
@@ -136,6 +134,7 @@ void FAnimNode_HumanoidArmTorsoAdjust::EvaluateSkeletalControl_AnyThread(FCompon
 			PostIKTransformsRight.Add(Transform);
 		}
 	}
+	PostIKTransformsRight.Shrink();
 
 
 	const FTransform WaistCSPostIK = WaistCS;

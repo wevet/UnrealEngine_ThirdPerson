@@ -7,11 +7,9 @@
 #include "RangeLimitedFABRIK.h"
 
 
-// Profiler‚É“o˜^‚·‚é
 DECLARE_CYCLE_STAT(TEXT("IK Range Limited FABRIK"), STAT_RangeLimitedFabrik_Eval, STATGROUP_Anim);
 
-// FABRIK IK(Forward And Backward Reaching inverse kinematics)‚ÍA
-// ªŒ³‚Ææ’[‚ğŒğŒİ‚ÉŠî€‚Æ‚µ‚ÄŒJ‚è•Ô‚µ‚È‚ª‚çŠÖßŠp“x‚ğ’²®
+
 void FAnimNode_RangeLimitedFabrik::EvaluateSkeletalControl_AnyThread(FComponentSpacePoseContext& Output, TArray<FBoneTransform>& OutBoneTransforms)
 {
 	SCOPE_CYCLE_COUNTER(STAT_RangeLimitedFabrik_Eval);
@@ -58,6 +56,7 @@ void FAnimNode_RangeLimitedFabrik::EvaluateSkeletalControl_AnyThread(FComponentS
 	TArray<FTransform> DestCSTransforms;
 	ACharacter* Character = Cast<ACharacter>(Output.AnimInstanceProxy->GetSkelMeshComponent()->GetOwner());
 	bool bBoneLocationUpdated = false;
+
 	if (SolverMode == ERangeLimitedFABRIKSolverMode::RLF_Normal)
 	{
 		bBoneLocationUpdated = FRangeLimitedFABRIK::SolveRangeLimitedFABRIK(

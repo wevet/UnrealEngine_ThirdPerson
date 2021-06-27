@@ -7,10 +7,9 @@
 #include "IKFunctionLibrary.h"
 
 
-// ProfilerÇ…ìoò^Ç∑ÇÈ
 DECLARE_CYCLE_STAT(TEXT("IK Humanoid Foot Rotation Controller  Eval"), STAT_HumanoidFootRotationController_Eval, STATGROUP_Anim);
 
-// Ç¬Ç‹êÊÇÃâÒì]Çêßå‰Ç∑ÇÈIK Class
+
 void FAnimNode_HumanoidFootRotationController::EvaluateSkeletalControl_AnyThread(FComponentSpacePoseContext& Output, TArray<FBoneTransform>& OutBoneTransforms)
 {
 	SCOPE_CYCLE_COUNTER(STAT_HumanoidFootRotationController_Eval);
@@ -41,13 +40,10 @@ void FAnimNode_HumanoidFootRotationController::EvaluateSkeletalControl_AnyThread
 		const FVector ShinVec = KneeCS - FootCS;
 		const FVector FootVec = ToeCS - FootCS;
 
-		// Ç¬Ç‹êÊÇÃäOêœ
 		FVector RotationAxis = FVector::CrossProduct(FootVec, ShinVec);
 		const FVector CrossUnsafeNormal = FVector::CrossProduct(FloorFlatVec, FloorSlopeVec).GetUnsafeNormal();
-
 		if (RotationAxis.Normalize())
 		{
-			// Ç¬Ç‹êÊÇÃì‡êœ
 			if (FVector::DotProduct(RotationAxis, CrossUnsafeNormal) < 0.0f)
 			{
 				RotationAxis *= -1.0f;
@@ -62,7 +58,7 @@ void FAnimNode_HumanoidFootRotationController::EvaluateSkeletalControl_AnyThread
 
 	FTransform FootCSTransform = UIKFunctionLibrary::GetBoneCSTransform(Output.Pose, Leg->GetChain().ShinBone.BoneIndex);
 	const FQuat Result = FQuat::Slerp(LastRotationOffset, TargetOffset, FMath::Clamp(RotationSlerpSpeed * DeltaTime, 0.0f, 1.0f));
-	LastRotationOffset = bInterpolateRotation ? Result : TargetOffset;
+	LastRotationOffset = Result;
 	FootCSTransform.SetRotation(LastRotationOffset * FootCSTransform.GetRotation());
 	OutBoneTransforms.Add(FBoneTransform(Leg->GetChain().ShinBone.BoneIndex, FootCSTransform));
 

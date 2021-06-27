@@ -4,8 +4,8 @@
 #include "IKTypes.h"
 #include "HumanoidIK.h"
 #include "BoneControllers/AnimNode_SkeletalControlBase.h"
-#include "Engine/SkeletalMeshSocket.h"
 #include "AnimNode_HumanoidLegIK.generated.h"
+
 
 USTRUCT()
 struct RTIK_API FAnimNode_HumanoidLegIK : public FAnimNode_SkeletalControlBase
@@ -34,41 +34,30 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Solver)
 	int32 MaxIterations;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Settings, meta = (PinHiddenByDefault))
-	bool bEnable;	
-
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Solver, meta = (PinHiddenByDefault))
 	EHumanoidLegIKMode Mode;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Solver)
 	EHumanoidLegIKSolver Solver;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Solver, meta = (PinHiddenByDefault))
-	TEnumAsByte<EBoneRotationSource> EffectorRotationSource;
-
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Settings)
 	float EffectorVelocity;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Settings)
 	bool bEffectorMovesInstantly;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Settings)
-	float MinimumEffectorDelta;
 	
 public:
-	FAnimNode_HumanoidLegIK() : Super(),
-		Mode(EHumanoidLegIKMode::IK_Human_Leg_Locomotion),
-		Solver(EHumanoidLegIKSolver::IK_Human_Leg_Solver_FABRIK),
-		EffectorRotationSource(EBoneRotationSource::BRS_KeepComponentSpaceRotation)
+	FAnimNode_HumanoidLegIK() : Super()
 	{
+		Mode = EHumanoidLegIKMode::IK_Human_Leg_Locomotion;
+		Solver = EHumanoidLegIKSolver::IK_Human_Leg_Solver_FABRIK;
 		FootTargetWorld = FTransform::Identity;
 		LastEffectorOffset = FVector::ZeroVector;
 		Precision = 0.001f;
 		MaxIterations = 10;
-		EffectorVelocity = 300.0f;
+		EffectorVelocity = 250.0f;
 		bEnableDebugDraw = false;
 		bEffectorMovesInstantly = false;
-		bEnable = true;
 		DeltaTime = 0.0f;
 	}
 
@@ -97,8 +86,7 @@ public:
 		{
 			return false;
 		}
-		const bool bValid = Leg->InitIfInvalid(RequiredBones);
-		return bValid;
+		return Leg->InitIfInvalid(RequiredBones);
 	}
 
 	virtual void InitializeBoneReferences(const FBoneContainer& RequiredBones) override

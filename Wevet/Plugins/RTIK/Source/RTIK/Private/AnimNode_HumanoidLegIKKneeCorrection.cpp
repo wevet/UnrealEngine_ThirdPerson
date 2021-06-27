@@ -7,10 +7,9 @@
 #include "IKFunctionLibrary.h"
 
 
-// ProfilerÇ…ìoò^Ç∑ÇÈ
 DECLARE_CYCLE_STAT(TEXT("IK Humanoid Knee Correction Eval"), STAT_HumanoidLegIKKneeCorrection_Eval, STATGROUP_Anim);
 
-// ïGÇÃäpìxÇä«óùÇ∑ÇÈIK Class
+
 void FAnimNode_HumanoidLegIKKneeCorrection::EvaluateSkeletalControl_AnyThread(FComponentSpacePoseContext& Output, TArray<FBoneTransform>& OutBoneTransforms)
 {
 	SCOPE_CYCLE_COUNTER(STAT_HumanoidLegIKKneeCorrection_Eval);
@@ -35,18 +34,25 @@ void FAnimNode_HumanoidLegIKKneeCorrection::EvaluateSkeletalControl_AnyThread(FC
 	const FVector OldThighVec = (KneeCSPost - HipCSPost).GetUnsafeNormal();
 	const FVector OldShinVec = (FootCSPost - KneeCSPost).GetUnsafeNormal();
 
-
-	if (FMath::IsNearlyEqual(FMath::Abs(FVector::DotProduct(OldThighVec, OldShinVec)), 1.0f))
+	// If the leg is fully extended or fully folded, early out (correction is never needed)
+	const float DotTS = FVector::DotProduct(OldThighVec, OldShinVec);
+	if (FMath::IsNearlyEqual(FMath::Abs(DotTS), 1.0f))
 	{
 		return;
 	}
 
+	// To correct the knee :
+	// - Project everything onto the plane normal to the vector from thigh to foot
+	// - Find the angle, in the base pose, between the direction of the foot and the direction of the knee. If the leg is fully extended, assume this angle is 0.	
+	// - Rotate the IKed knee angle so that it maintains the same angle with the IKed foot	
+	// Project everything onto the plane defined by the axis between the hip and the foot. The knee can be rotated
+	// around this axis without changing the position of the effector (the foot).	
+	// Define each plane
 	FVector HipFootAxisPre = FootCSPre - HipCSPre;
 	if (!HipFootAxisPre.Normalize())
 	{
 		HipFootAxisPre = FVector(0.0f, 0.0f, 1.0f);
 	}
-
 
 	const FVector CenterPre = HipCSPre + (KneeCSPre - HipCSPre).ProjectOnToNormal(HipFootAxisPre);
 	const FVector KneeDirectionPre = (KneeCSPre - CenterPre).GetUnsafeNormal();
@@ -56,7 +62,6 @@ void FAnimNode_HumanoidLegIKKneeCorrection::EvaluateSkeletalControl_AnyThread(FC
 		HipFootAxisPost = FVector(0.0f, 0.0f, 1.0f);
 	}
 
-
 	const FVector CenterPost = HipCSPost + (KneeCSPost - HipCSPost).ProjectOnToNormal(HipFootAxisPost);
 	const FVector KneeDirectionPost = (KneeCSPost - CenterPost).GetUnsafeNormal();
 	FVector FootToePre = FVector::VectorPlaneProject((ToeCSPre - FootCSPre), HipFootAxisPre);
@@ -65,7 +70,8 @@ void FAnimNode_HumanoidLegIKKneeCorrection::EvaluateSkeletalControl_AnyThread(FC
 		FootToePre = KneeDirectionPre;
 	}
 
-
+	// Rotate the foot according to how the hip-foot axis is changed. Without this, the foot direction
+	// may be reversed when projected onto the rotation plane
 	const float HipAxisRad = FMath::Acos(FVector::DotProduct(HipFootAxisPre, HipFootAxisPost));
 	FVector FootToeRotationAxis = FVector::CrossProduct(HipFootAxisPre, HipFootAxisPost);
 	FVector FootCSPostRotated = FootCSPost;
@@ -79,14 +85,14 @@ void FAnimNode_HumanoidLegIKKneeCorrection::EvaluateSkeletalControl_AnyThread(FC
 		ToeCSPostRotated = HipCSPost + FootToeRotation.RotateVector(ToeDirection);
 	}
 
-
 	FVector FootToePost = FVector::VectorPlaneProject((ToeCSPostRotated - FootCSPostRotated), HipFootAxisPost);
 	if (!FootToePost.Normalize())
 	{
 		FootToePost = KneeDirectionPost;
 	}
 
-
+	// No need to failsafe -- we've already checked that the leg isn't completely straight
+	// Rotate the post-IK foot to find the corrected knee direction (on the hip-foot plane)
 	const FVector KneePre = (KneeCSPre - CenterPre).GetUnsafeNormal();
 	float FootKneeRad = FMath::Acos(FVector::DotProduct(FootToePre, KneePre));
 	FVector RotationAxis = FVector::CrossProduct(FootToePre, KneePre);

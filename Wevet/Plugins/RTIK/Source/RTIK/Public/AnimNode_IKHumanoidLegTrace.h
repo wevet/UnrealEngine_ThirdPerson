@@ -4,8 +4,8 @@
 #include "IKTypes.h"
 #include "HumanoidIK.h"
 #include "BoneControllers/AnimNode_SkeletalControlBase.h"
-#include "Engine/SkeletalMeshSocket.h"
 #include "AnimNode_IKHumanoidLegTrace.generated.h"
+
 
 USTRUCT()
 struct RTIK_API FAnimNode_IKHumanoidLegTrace : public FAnimNode_SkeletalControlBase

@@ -3,18 +3,18 @@
 #include "RTIK.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "TwoBoneIK.h"
-#include "RangeLimitedFABRIK.h"
-#include "Animation/AnimNodeBase.h"
 #include "Animation/AnimInstanceProxy.h"
+#include "Animation/AnimNodeBase.h"
+#include "RangeLimitedFABRIK.h"
 #include "IKFunctionLibrary.h"
 
 #define ZERO 0.0f
 #define ONE 1.0f
 
-// ProfilerÇ…ìoò^Ç∑ÇÈ
+
 DECLARE_CYCLE_STAT(TEXT("IK Humanoid Leg IK Eval"), STAT_HumanoidLegIK_Eval, STATGROUP_Anim);
 
-// ë´ÇÃê›íuîªíËÇä«óùÇ∑ÇÈIK Class
+
 void FAnimNode_HumanoidLegIK::EvaluateSkeletalControl_AnyThread(FComponentSpacePoseContext& Output, TArray<FBoneTransform>& OutBoneTransforms)
 {
 	SCOPE_CYCLE_COUNTER(STAT_HumanoidLegIK_Eval);

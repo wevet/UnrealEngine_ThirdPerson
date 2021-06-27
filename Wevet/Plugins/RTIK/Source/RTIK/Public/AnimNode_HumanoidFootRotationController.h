@@ -4,8 +4,8 @@
 #include "IKTypes.h"
 #include "HumanoidIK.h"
 #include "BoneControllers/AnimNode_SkeletalControlBase.h"
-#include "Engine/SkeletalMeshSocket.h"
 #include "AnimNode_HumanoidFootRotationController.generated.h"
+
 
 USTRUCT()
 struct RTIK_API FAnimNode_HumanoidFootRotationController : public FAnimNode_SkeletalControlBase
@@ -23,25 +23,23 @@ protected:
 	float RotationSlerpSpeed;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Settings)
-	bool bInterpolateRotation;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Settings)
 	bool bEnableDebugDraw;
    
 public:
 	FAnimNode_HumanoidFootRotationController() : Super()
 	{
 		LastRotationOffset = FQuat::Identity;
-		RotationSlerpSpeed = 20.0f;
+		RotationSlerpSpeed = 2.0f;
 		bEnableDebugDraw = false;
-		bInterpolateRotation = true;
 		DeltaTime = 0.0f;
 	}
+
 
 	virtual void UpdateInternal(const FAnimationUpdateContext& Context) override
 	{
 		DeltaTime = Context.GetDeltaTime();
 	}
+
 
 	virtual bool IsValidToEvaluate(const USkeleton* Skeleton, const FBoneContainer& RequiredBones) override
 	{
@@ -49,9 +47,9 @@ public:
 		{
 			return false;
 		}
-		const bool bValid = Leg->InitIfInvalid(RequiredBones);
-		return bValid;
+		return Leg->InitIfInvalid(RequiredBones);
 	}
+
 
 	virtual void InitializeBoneReferences(const FBoneContainer& RequiredBones) override
 	{
@@ -64,6 +62,7 @@ public:
 			//
 		}
 	}
+
 
 	virtual void EvaluateSkeletalControl_AnyThread(FComponentSpacePoseContext& Output, TArray<FBoneTransform>& OutBoneTransforms) override;
 

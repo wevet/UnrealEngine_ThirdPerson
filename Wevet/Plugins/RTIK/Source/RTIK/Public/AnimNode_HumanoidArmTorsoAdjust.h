@@ -4,8 +4,8 @@
 #include "IKTypes.h"
 #include "HumanoidIK.h"
 #include "BoneControllers/AnimNode_SkeletalControlBase.h"
-#include "Engine/SkeletalMeshSocket.h"
 #include "AnimNode_HumanoidArmTorsoAdjust.generated.h"
+
 
 USTRUCT()
 struct RTIK_API FAnimNode_HumanoidArmTorsoAdjust : public FAnimNode_SkeletalControlBase
@@ -30,9 +30,6 @@ protected:
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Solver)
 	int32 MaxIterations;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Settings, meta = (PinHiddenByDefault))
-	bool bEnable;	
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Torso, meta = (UIMin = 0.0f))
 	float MaxShoulderDragDistance;
@@ -73,16 +70,16 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Settings, meta = (PinShownByDefault))
 	FTransform RightArmWorldTarget;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Effector, meta = (PinHiddenByDefault))
-	TEnumAsByte<EBoneRotationSource> EffectorRotationSource;
-
 public:
-	FAnimNode_HumanoidArmTorsoAdjust() : Super(),
-		Mode(EHumanoidArmTorsoIKMode::IK_Human_ArmTorso_Disabled),
-		SkeletonForwardAxis(EIKBoneAxis::IKBA_X),
-		SkeletonUpAxis(EIKBoneAxis::IKBA_Z),
-		EffectorRotationSource(EBoneRotationSource::BRS_KeepComponentSpaceRotation)
+	FAnimNode_HumanoidArmTorsoAdjust() : Super()
 	{
+		Mode = EHumanoidArmTorsoIKMode::IK_Human_ArmTorso_Disabled;
+		SkeletonForwardAxis = EIKBoneAxis::IKBA_X;
+		SkeletonUpAxis = EIKBoneAxis::IKBA_Z;
+		LastEffectorOffset = FVector::ZeroVector;
+		LeftArmWorldTarget = FTransform::Identity;
+		RightArmWorldTarget = FTransform::Identity;
+		LastRotationOffset = FQuat::Identity;
 		MaxIterations = 10;
 		MaxTwistDegreesLeft = 30.0f;
 		MaxTwistDegreesRight = 30.0f;
@@ -93,12 +90,7 @@ public:
 		Precision = 0.001f;
 		ArmTwistRatio = 0.5f;
 		TorsoRotationSlerpSpeed = 10.0f;
-		LastEffectorOffset = FVector::ZeroVector;
-		LeftArmWorldTarget = FTransform::Identity;
-		RightArmWorldTarget = FTransform::Identity;
-		LastRotationOffset = FQuat::Identity;
 		bEnableDebugDraw = false;
-		bEnable = true;
 		DeltaTime = 0.0f;
 	}
 

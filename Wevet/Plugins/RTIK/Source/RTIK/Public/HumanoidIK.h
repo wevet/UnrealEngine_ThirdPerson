@@ -9,15 +9,14 @@
 #include "BonePose.h"
 #include "Animation/AnimNodeBase.h"
 #include "BoneControllers/AnimNode_SkeletalControlBase.h"
+#include "Engine/SkeletalMeshSocket.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "GameFramework/Character.h"
 #include "HumanoidIK.generated.h"
 
-using EffectorCallback = TFunction<void(
-	int32 Index, 
-	const TArray<FTransform>& ReferenceCSTransforms, 
-	const TArray<FIKBoneConstraint*>& Constraints, 
-	TArray<FTransform>& CSTransforms)>;
+
+using EffectorCallback = TFunction<void(int32 Index, const TArray<FTransform>& ReferenceCSTransforms, const TArray<FIKBoneConstraint*>& Constraints, TArray<FTransform>& CSTransforms)>;
+
 
 #pragma region IKBoneConstraint
 USTRUCT(BlueprintType)
@@ -46,10 +45,7 @@ public:
 		return true;
 	}
 
-	FORCEINLINE bool WasEnabled() const 
-	{
-		return bEnabled; 
-	}
+	FORCEINLINE bool WasEnabled() const { return bEnabled; }
 
 	// override FABRIK
 	virtual void EnforceConstraint(int32 Index, const TArray<FTransform>& ReferenceCSTransforms, const TArray<FIKBoneConstraint*>& Constraints, TArray<FTransform>& CSTransforms, ACharacter* Character = nullptr)
@@ -154,9 +150,8 @@ public:
 #if ENABLE_IK_DEBUG_VERBOSE
 			UE_LOG(LogNIK, Warning, TEXT("Planar Rotation Constraint was set up incorrectly. Forward direction direction and rotation axis must not be colinear."));
 #endif
-			return false;
 		}
-		return true;
+		return bAxesOK;
 	}
 
 	virtual void EnforceConstraint(int32 Index, const TArray<FTransform>& ReferenceCSTransforms, const TArray<FIKBoneConstraint*>& Constraints, TArray<FTransform>& CSTransforms, ACharacter* Character = nullptr) override
@@ -194,7 +189,6 @@ public:
 		{
 			BoneDirection = FailsafeDirection;
 		}
-
 		const float CurrentAngle = FMath::Acos(FVector::DotProduct(BoneDirection, ForwardDirection));
 		const float UpAngle = FVector::DotProduct(BoneDirection, UpDirection);
 		float AngleRad = (UpAngle > 0.0f) ? CurrentAngle : -1 * CurrentAngle;
@@ -208,7 +202,6 @@ public:
 		{
 			UWorld* World = Character->GetWorld();
 			FMatrix ToWorld = Character->GetMesh()->GetComponentToWorld().ToMatrixNoScale();
-
 			UIKFunctionLibrary::DrawVector(World, ToWorld.TransformPosition(ParentLoc), ToWorld.TransformVector(BoneDirection), FColor(255, 255, 0));
 			UIKFunctionLibrary::DrawVector(World, ToWorld.TransformPosition(ParentLoc), ToWorld.TransformVector(ForwardDirection), FColor(255, 0, 0));
 			UIKFunctionLibrary::DrawVector(World, ToWorld.TransformPosition(ParentLoc), ToWorld.TransformVector(RotationAxis), FColor(0, 255, 0));
@@ -217,7 +210,6 @@ public:
 			// Draw a debug 'cone'
 			FVector MaxRotation = ForwardDirection.RotateAngleAxis(MaxDegrees, RotationAxis);
 			FVector MinRotation = ForwardDirection.RotateAngleAxis(MinDegrees, RotationAxis);
-
 			UIKFunctionLibrary::DrawVector(World, ToWorld.TransformPosition(ParentLoc), ToWorld.TransformVector(MaxRotation), FColor(0, 255, 255));
 			UIKFunctionLibrary::DrawVector(World, ToWorld.TransformPosition(ParentLoc), ToWorld.TransformVector(MinRotation), FColor(0, 255, 255));
 			FString AngleStr = FString::Printf(TEXT("%f / %f"), FMath::RadiansToDegrees(AngleRad), TargetDeg);
@@ -305,7 +297,7 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Settings")
 	FBoneReference BoneRef;
 
-	FIKBoneConstraint* GetConstraint()
+	FIKBoneConstraint* GetConstraint() const
 	{
 		if (Constraint == nullptr)
 		{
@@ -486,7 +478,6 @@ public:
 		return true;
 	}
 
-
 	bool GetIKFloorPointCS(const USkeletalMeshComponent& SkelComp, const FHumanoidIKTraceData& TraceData, FVector& OutFloorLocationCS) const
 	{
 		const FVector ToCS = -1 * SkelComp.GetComponentLocation();
@@ -525,7 +516,6 @@ public:
 		}
 		return bWithinRotationLimit;
 	}
-
 
 	virtual const bool InitBoneReferences(const FBoneContainer& RequiredBones) override
 	{
@@ -581,7 +571,6 @@ public:
 		}
 		return bIsInitialized;
 	}
-
 
 	virtual const bool IsValid(const FBoneContainer& RequiredBones) override
 	{
@@ -913,9 +902,9 @@ public:
 		bUpdatedThisTick = false;
 	}
 
-	FHumanoidIKTraceData& GetTraceData()
+	FHumanoidIKTraceData& GetTraceData() 
 	{
-		return TraceData;
+		return TraceData; 
 	}
 
 	friend struct FAnimNode_IKHumanoidLegTrace;

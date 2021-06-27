@@ -7,7 +7,6 @@
 #include "IKFunctionLibrary.h" 
 
 
-// Profiler‚É“o˜^‚·‚é
 DECLARE_CYCLE_STAT(TEXT("IK Humanoid Leg IK Trace"), STAT_IKHumanoidLegTrace_Eval, STATGROUP_Anim);
 
 
@@ -15,7 +14,7 @@ void FAnimNode_IKHumanoidLegTrace::EvaluateSkeletalControl_AnyThread(FComponentS
 {
 	SCOPE_CYCLE_COUNTER(STAT_IKHumanoidLegTrace_Eval);
 
-	if (Leg == nullptr || PelvisBone == nullptr)
+	if (Leg == nullptr || PelvisBone == nullptr || TraceData == nullptr)
 	{
 #if ENABLE_IK_DEBUG_VERBOSE
 		UE_LOG(LogNIK, Error, TEXT("An input wrapper object was null : %s"), *FString(__FUNCTION__));
@@ -25,7 +24,6 @@ void FAnimNode_IKHumanoidLegTrace::EvaluateSkeletalControl_AnyThread(FComponentS
 
 	USkeletalMeshComponent* Component = Output.AnimInstanceProxy->GetSkelMeshComponent();
 	ACharacter* Character = Cast<ACharacter>(Component->GetOwner());
-
 	const FBoneContainer& RequiredBones = Output.AnimInstanceProxy->GetRequiredBones();
 
 	FHumanoidIK::HumanoidIKLegTrace(

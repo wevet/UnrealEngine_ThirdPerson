@@ -4,8 +4,8 @@
 #include "IKTypes.h"
 #include "HumanoidIK.h"
 #include "BoneControllers/AnimNode_SkeletalControlBase.h"
-#include "Engine/SkeletalMeshSocket.h"
 #include "AnimNode_HumanoidPelvisHeightAdjustment.generated.h"
+
 
 USTRUCT()
 struct RTIK_API FAnimNode_HumanoidPelvisHeightAdjustment : public FAnimNode_SkeletalControlBase
@@ -33,15 +33,15 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Settings, meta = (PinShownByDefault))
 	float MaxPelvisAdjustSize;
-	
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Settings)
 	bool bEnableDebugDraw;
 
 public:
 	FAnimNode_HumanoidPelvisHeightAdjustment() : Super()
 	{
-		PelvisAdjustVelocity = 150.0f;
-		MaxPelvisAdjustSize = 50.0f;
+		PelvisAdjustVelocity = 150.f;
+		MaxPelvisAdjustSize = 40.f;
 		LastPelvisOffset = FVector::ZeroVector;
 		bEnableDebugDraw = false;
 		DeltaTime = 0.0f;

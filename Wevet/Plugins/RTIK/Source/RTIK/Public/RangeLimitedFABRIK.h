@@ -10,8 +10,6 @@
 //
 // See in FABRIK algorithm.
 // ttp://www.andreasaristidou.com/FABRIK.html
-// 2つのノイズの多いエフェクターを含む3点閉ループ。
-// これは非常に特殊なタイプのIK「チェーン」であり、胴体の上半身と下半身の三角形に使用される
 struct RTIK_API FNoisyThreePointClosedLoop
 {
 public:
