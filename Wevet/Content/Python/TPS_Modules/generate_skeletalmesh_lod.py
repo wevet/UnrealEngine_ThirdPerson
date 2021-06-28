@@ -8,7 +8,7 @@ using
 import TPS_Modules.generate_skeletalmesh_lod as generate_skeletalmesh_lod
 import importlib
 importlib.reload(generate_skeletalmesh_lod)
-generate_skeletalmesh_lod.generate_lod()
+generate_skeletalmesh_lod.generate_skeletalmesh_lod()
 """
 
 
@@ -28,7 +28,14 @@ def generate_skeletalmesh_lod():
         # Baseのモデルは変更したくないためBaseのLODを取得し、設定
         base_lod_info = skeletal_mesh.get_editor_property("lod_info")
         lod_info.append(base_lod_info[0])
+        unreal.log(len(base_lod_info))
+
+        # ScreenSizeの設定
         screen_size_array = [0.8, 0.6, 0.4, 0.3]
+        # BaseLODからの頂点の割合を設定
+        vert_parcentage_array = [0.06, 0.03, 0.02, 0.01]
+        # リダクションの方法を設定
+        termination_array = [1, 1, 1, 1]
 
         # Fixed ScreenSize
         for screen_size in screen_size_array:
@@ -38,10 +45,6 @@ def generate_skeletalmesh_lod():
             info.set_editor_property("screen_size", per_platform_float)
             lod_info.append(info)
 
-        # BaseLODからの頂点の割合を設定
-        vert_parcentage_array = [0.06, 0.03, 0.02, 0.01]
-        # リダクションの方法を設定
-        termination_array = [1, 1, 1, 1]
         # BaseLodの次から開始するためにcount変数を1に設定
         count = 1
         for i in range(len(screen_size_array)):
