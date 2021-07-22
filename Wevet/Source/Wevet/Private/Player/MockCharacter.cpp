@@ -2,14 +2,11 @@
 
 #include "Player/MockCharacter.h"
 #include "Player/MockPlayerController.h"
-
 #include "AnimInstance/PlayerAnimInstance.h"
-
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "Math/RotationMatrix.h"
-
 #include "Wevet.h"
 #include "WevetExtension.h"
 #include "Net/UnrealNetwork.h"
@@ -19,7 +16,7 @@
 #define CAMERA_TRACE_R FName(TEXT("TP_CameraTrace_R"))
 
 
-AMockCharacter::AMockCharacter(const FObjectInitializer& ObjectInitializer)	: Super(ObjectInitializer)
+AMockCharacter::AMockCharacter(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {
 	// override baseCharacter
 	bUseControllerRotationYaw = false;
@@ -300,7 +297,7 @@ void AMockCharacter::MoveRight(float Value)
 #pragma region Interface
 void AMockCharacter::Die_Implementation()
 {
-	if (!ICombatInstigator::Execute_IsDeath(this))
+	if (!IsDeath_Implementation())
 	{
 		CharacterModel->DoTakeDamage(CharacterModel->GetMaxHealth());
 		CharacterModel->DoDie();
@@ -363,7 +360,8 @@ void AMockCharacter::UnEquipment_Implementation()
 		return;
 	}
 
-	ICombatInstigator::Execute_DoFireReleassed(this);
+	//ICombatInstigator::Execute_DoFireReleassed(this);
+	Super::DoFireReleassed_Implementation();
 
 	bool bPutWeaponSuccess = false;
 	BackPack->StoreWeapon(CurrentWeapon.Get(), bPutWeaponSuccess);
@@ -378,7 +376,7 @@ void AMockCharacter::UnEquipment_Implementation()
 
 bool AMockCharacter::CanPickup_Implementation() const
 {
-	return !ICombatInstigator::Execute_IsDeath(this);
+	return !IsDeath_Implementation();
 }
 
 
@@ -412,7 +410,7 @@ void AMockCharacter::OverlapActor_Implementation(AActor* Actor)
 }
 
 
-void AMockCharacter::SetALSCameraShake_Implementation(TSubclassOf<class UMatineeCameraShake> InShakeClass, const float InScale)
+void AMockCharacter::SetALSCameraShake_Implementation(TSubclassOf<class UCameraShakeBase> InShakeClass, const float InScale)
 {
 	if (PlayerController)
 	{

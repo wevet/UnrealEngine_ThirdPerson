@@ -58,6 +58,7 @@ UCharacterAnimInstanceBase::UCharacterAnimInstanceBase(const FObjectInitializer&
 	}
 }
 
+
 void UCharacterAnimInstanceBase::NativeInitializeAnimation()
 {
 	Super::NativeInitializeAnimation();
@@ -85,6 +86,7 @@ void UCharacterAnimInstanceBase::NativeInitializeAnimation()
 	ILocomotionSystemPawn::Execute_SetCrouchingSpeed(this, ILocomotionSystemPawn::Execute_GetCrouchingSpeed(Owner));
 	ILocomotionSystemPawn::Execute_SetSwimmingSpeed(this, ILocomotionSystemPawn::Execute_GetSwimmingSpeed(Owner));
 }
+
 
 void UCharacterAnimInstanceBase::NativeUpdateAnimation(float DeltaTimeX)
 {
@@ -114,22 +116,19 @@ void UCharacterAnimInstanceBase::NativeUpdateAnimation(float DeltaTimeX)
 		}
 	}
 
-	// Combat Update
-	SetEquip();
-	SetWeaponItemType();
-
-	// Update LocomotionSystem
-	SetVariableFromOwner();
-
-
-
-	CalculateAimOffset();
-	CalculateMovementState();
-	CalculateLayerValue();
+	UpdateCombatSystem();
+	UpdateLocomotionSystem();
 }
 
 
-#pragma region Weapon
+#pragma region Combat
+void UCharacterAnimInstanceBase::UpdateCombatSystem()
+{
+	SetEquip();
+	SetWeaponItemType();
+}
+
+
 void UCharacterAnimInstanceBase::SetEquip()
 {
 	if (Owner)
@@ -137,6 +136,7 @@ void UCharacterAnimInstanceBase::SetEquip()
 		IsEquip = Owner->HasEquipWeapon();
 	}
 }
+
 
 void UCharacterAnimInstanceBase::SetWeaponItemType()
 {
@@ -163,6 +163,7 @@ bool UCharacterAnimInstanceBase::IsLocallyControlled() const
 	return false;
 }
 
+
 FWeaponActionInfo* UCharacterAnimInstanceBase::GetActionInfo(const EWeaponItemType InWeaponItemType)
 {
 	if (Wevet::ArrayExtension::NullOrEmpty(ActionInfoArray))
@@ -180,6 +181,7 @@ FWeaponActionInfo* UCharacterAnimInstanceBase::GetActionInfo(const EWeaponItemTy
 	return nullptr;
 }
 
+
 const float UCharacterAnimInstanceBase::TakeDefaultDamage()
 {
 	if (DefaultHitDamageMontage == nullptr || Montage_IsPlaying(DefaultHitDamageMontage))
@@ -188,6 +190,7 @@ const float UCharacterAnimInstanceBase::TakeDefaultDamage()
 	}
 	return Super::Montage_Play(DefaultHitDamageMontage);
 }
+
 
 const float UCharacterAnimInstanceBase::PlayAnimationSequence(const FAnimSequenceInfo InAnimSequenceInfo, const FName InSlotNodeName)
 {
@@ -201,6 +204,7 @@ const float UCharacterAnimInstanceBase::PlayAnimationSequence(const FAnimSequenc
 		InAnimSequenceInfo.PlayRate);
 	return InAnimSequenceInfo.Animation->GetPlayLength();
 }
+
 
 const float UCharacterAnimInstanceBase::TakeDamageAnimation(FWeaponActionInfo* const InActionInfoPtr, const FName InSlotNodeName)
 {
@@ -217,6 +221,7 @@ const float UCharacterAnimInstanceBase::TakeDamageAnimation(FWeaponActionInfo* c
 	return PlayAnimationSequence(InActionInfoPtr->HitDamageSequence, InSlotNodeName);
 }
 
+
 float UCharacterAnimInstanceBase::GetAnimCurve(const FName InCurveName) const
 {
 	return GetCurveValue(InCurveName);
@@ -232,6 +237,7 @@ void UCharacterAnimInstanceBase::SetALSMovementMode_Implementation(const ELSMove
 	ALSMovementMode = InLSMovementMode;
 	ILocomotionSystemPawn::Execute_OnALSMovementModeChange(this);
 }
+
 
 void UCharacterAnimInstanceBase::OnALSMovementModeChange_Implementation()
 {
@@ -259,6 +265,7 @@ void UCharacterAnimInstanceBase::SetALSMovementAction_Implementation(const ELSMo
 	ALSMovementAction = NewALSMovementAction;
 }
 
+
 void UCharacterAnimInstanceBase::OnALSMovementActionChange_Implementation()
 {
 }
@@ -268,6 +275,7 @@ void UCharacterAnimInstanceBase::SetALSGait_Implementation(const ELSGait InLSGai
 {
 	ALSGait = InLSGait;
 }
+
 
 void UCharacterAnimInstanceBase::OnALSGaitChange_Implementation()
 {
@@ -279,6 +287,7 @@ void UCharacterAnimInstanceBase::SetALSStance_Implementation(const ELSStance InL
 	ALSStance = InLSStance;
 	ILocomotionSystemPawn::Execute_OnALSStanceChange(this);
 }
+
 
 void UCharacterAnimInstanceBase::OnALSStanceChange_Implementation()
 {
@@ -294,6 +303,7 @@ void UCharacterAnimInstanceBase::SetALSRotationMode_Implementation(const ELSRota
 	ALSRotationMode = InLSRotationMode;
 }
 
+
 void UCharacterAnimInstanceBase::OnALSRotationModeChange_Implementation()
 {
 }
@@ -304,6 +314,7 @@ void UCharacterAnimInstanceBase::SetALSViewMode_Implementation(const ELSViewMode
 	ALSViewMode = InLSViewMode;
 }
 
+
 void UCharacterAnimInstanceBase::OnALSViewModeChange_Implementation()
 {
 }
@@ -313,6 +324,7 @@ void UCharacterAnimInstanceBase::SetALSAiming_Implementation(const bool InAiming
 {
 	bWasAiming = InAiming;
 }
+
 
 void UCharacterAnimInstanceBase::OnALSAimingChange_Implementation()
 {
@@ -325,11 +337,13 @@ void UCharacterAnimInstanceBase::SetWalkingSpeed_Implementation(const float InWa
 	//UE_LOG(LogWevetClient, Log, TEXT("Walk : %s"), *FString(__FUNCTION__));
 }
 
+
 void UCharacterAnimInstanceBase::SetRunningSpeed_Implementation(const float InRunningSpeed)
 {
 	RunningSpeed = InRunningSpeed;
 	//UE_LOG(LogWevetClient, Log, TEXT("Run : %s"), *FString(__FUNCTION__));
 }
+
 
 void UCharacterAnimInstanceBase::SetSprintingSpeed_Implementation(const float InSprintingSpeed)
 {
@@ -337,11 +351,13 @@ void UCharacterAnimInstanceBase::SetSprintingSpeed_Implementation(const float In
 	//UE_LOG(LogWevetClient, Log, TEXT("Sprint : %s"), *FString(__FUNCTION__));
 }
 
+
 void UCharacterAnimInstanceBase::SetCrouchingSpeed_Implementation(const float InCrouchingSpeed)
 {
 	CrouchingSpeed = InCrouchingSpeed;
 	//UE_LOG(LogWevetClient, Log, TEXT("Crouch : %s"), *FString(__FUNCTION__));
 }
+
 
 void UCharacterAnimInstanceBase::SetSwimmingSpeed_Implementation(const float InSwimmingSpeed)
 {
@@ -357,6 +373,7 @@ void UCharacterAnimInstanceBase::SetALSIdleState_Implementation(const ELSIdleEnt
 	ALSIdleEntryState = InLSIdleEntryState;
 }
 
+
 void UCharacterAnimInstanceBase::SetGetup_Implementation(const bool InFaceDown)
 {
 	if (!GetUpFromFront || !GetUpFromBack)
@@ -371,15 +388,18 @@ void UCharacterAnimInstanceBase::SetGetup_Implementation(const bool InFaceDown)
 	BP_ReplicatePlayMontage(Montage, PlayRate, InTimeToStartMontageAt, true);
 }
 
+
 void UCharacterAnimInstanceBase::SetRF_Implementation(const bool InRF)
 {
 	bRF = InRF;
 }
 
+
 void UCharacterAnimInstanceBase::PoseSnapShot_Implementation(const FName InPoseName)
 {
 	SavePoseSnapshot(InPoseName);
 }
+
 
 void UCharacterAnimInstanceBase::SetALSAnimNotifyTurnInPlace_Implementation(UAnimMontage* InTurnInPlaceMontage, const bool InShouldTurnInPlace, const bool InTurningInPlace, const bool InTurningRight)
 {
@@ -397,6 +417,7 @@ void UCharacterAnimInstanceBase::SetALSAnimNotifyTurnInPlace_Implementation(UAni
 
 }
 
+
 void UCharacterAnimInstanceBase::SetALSAnimNotifyPivotData_Implementation(const FPivotData InPivotData)
 {
 	PivotData = InPivotData;
@@ -410,58 +431,70 @@ ELSMovementMode UCharacterAnimInstanceBase::GetALSMovementMode_Implementation() 
 	return ALSMovementMode;
 }
 
+
 ELSMovementAction UCharacterAnimInstanceBase::GetALSMovementAction_Implementation() const
 {
 	return ALSMovementAction;
 }
+
 
 ELSGait UCharacterAnimInstanceBase::GetALSGait_Implementation() const
 {
 	return ALSGait;
 }
 
+
 ELSStance UCharacterAnimInstanceBase::GetALSStance_Implementation() const
 {
 	return ALSStance;
 }
+
 
 ELSViewMode UCharacterAnimInstanceBase::GetALSViewMode_Implementation() const
 {
 	return ALSViewMode;
 }
 
+
 ELSRotationMode UCharacterAnimInstanceBase::GetALSRotationMode_Implementation() const
 {
 	return ALSRotationMode;
 }
 
+
 void UCharacterAnimInstanceBase::SetALSCharacterRotation_Implementation(const FRotator AddAmount)
 {
 }
 
-void UCharacterAnimInstanceBase::SetALSCameraShake_Implementation(TSubclassOf<class UMatineeCameraShake> InShakeClass, const float InScale)
+
+void UCharacterAnimInstanceBase::SetALSCameraShake_Implementation(TSubclassOf<class UCameraShakeBase> InShakeClass, const float InScale)
 {
 }
+
 
 bool UCharacterAnimInstanceBase::HasMovementInput_Implementation() const
 {
 	return bWasMovementInput;
 }
 
+
 bool UCharacterAnimInstanceBase::HasMoving_Implementation() const
 {
 	return bWasMoving;
 }
+
 
 bool UCharacterAnimInstanceBase::HasDebugTrace_Implementation() const
 {
 	return bDebugTrace;
 }
 
+
 bool UCharacterAnimInstanceBase::HasAiming_Implementation() const
 {
 	return bWasAiming;
 }
+
 
 FTransform UCharacterAnimInstanceBase::GetPivotTarget_Implementation() const
 {
@@ -469,11 +502,13 @@ FTransform UCharacterAnimInstanceBase::GetPivotTarget_Implementation() const
 	return ILocomotionSystemPawn::Execute_GetPivotTarget(Owner);
 }
 
+
 FVector UCharacterAnimInstanceBase::GetCameraTarget_Implementation() const
 {
 	// Not Use
 	return ILocomotionSystemPawn::Execute_GetCameraTarget(Owner);
 }
+
 
 float UCharacterAnimInstanceBase::GetWalkingSpeed_Implementation() const
 {
@@ -481,11 +516,13 @@ float UCharacterAnimInstanceBase::GetWalkingSpeed_Implementation() const
 	return WalkingSpeed;
 }
 
+
 float UCharacterAnimInstanceBase::GetRunningSpeed_Implementation() const
 {
 	// Not Use
 	return RunningSpeed;
 }
+
 
 float UCharacterAnimInstanceBase::GetSprintingSpeed_Implementation() const
 {
@@ -493,11 +530,13 @@ float UCharacterAnimInstanceBase::GetSprintingSpeed_Implementation() const
 	return SprintingSpeed;
 }
 
+
 float UCharacterAnimInstanceBase::GetCrouchingSpeed_Implementation() const
 {
 	// Not Use
 	return CrouchingSpeed;
 }
+
 
 float UCharacterAnimInstanceBase::GetSwimmingSpeed_Implementation() const
 {
@@ -505,11 +544,13 @@ float UCharacterAnimInstanceBase::GetSwimmingSpeed_Implementation() const
 	return SwimmingSpeed;
 }
 
+
 FCameraFOVParam UCharacterAnimInstanceBase::GetCameraFOVParam_Implementation() const
 {
 	// Not Use
 	return ILocomotionSystemPawn::Execute_GetCameraFOVParam(Owner);
 }
+
 
 FCameraTraceParam UCharacterAnimInstanceBase::GetCameraTraceParam_Implementation() const
 {
@@ -519,7 +560,15 @@ FCameraTraceParam UCharacterAnimInstanceBase::GetCameraTraceParam_Implementation
 #pragma endregion
 
 
-// InterfacePawn Have Copy to Variables
+void UCharacterAnimInstanceBase::UpdateLocomotionSystem()
+{
+	SetVariableFromOwner();
+	CalculateAimOffset();
+	CalculateMovementState();
+	CalculateLayerValue();
+}
+
+
 void UCharacterAnimInstanceBase::SetVariableFromOwner()
 {
 	bWasMovementInput = ILocomotionSystemPawn::Execute_HasMovementInput(Owner);
@@ -603,9 +652,7 @@ void UCharacterAnimInstanceBase::CalculateLayerValue()
 	Enable_AimOffset = FMath::Lerp(0.0f, 1.0f, GetAnimCurve(FName(TEXT("Mask_AimOffset"))));
 
 	BasePose_N = ALSStance == ELSStance::Standing ? 1.0f : 0.f;
-	//GetAnimCurve(FName(TEXT("BasePose_N")));
 	BasePose_CLF = ALSStance == ELSStance::Standing ? 0.0f : 1.0f;
-	//GetAnimCurve(FName(TEXT("BasePose_CLF")));
 
 	Spine_Add = GetAnimCurve(FName(TEXT("Layering_Spine_Add")));
 	Head_Add = GetAnimCurve(FName(TEXT("Layering_Head_Add")));
@@ -614,9 +661,6 @@ void UCharacterAnimInstanceBase::CalculateLayerValue()
 
 	Hand_L = GetAnimCurve(FName(TEXT("Layering_Hand_L")));
 	Hand_R = GetAnimCurve(FName(TEXT("Layering_Hand_R")));
-
-	Enable_HandIK_L = FMath::Lerp(0.0f, GetAnimCurve(FName(TEXT("Enable_HandIK_L"))), GetAnimCurve(FName(TEXT("Layering_Arm_L"))));
-	Enable_HandIK_R = FMath::Lerp(0.0f, GetAnimCurve(FName(TEXT("Enable_HandIK_R"))), GetAnimCurve(FName(TEXT("Layering_Arm_R"))));
 
 	Arm_L_LS = GetAnimCurve(FName(TEXT("Layering_Arm_L_LS")));
 	Arm_R_LS = GetAnimCurve(FName(TEXT("Layering_Arm_R_LS")));
@@ -628,10 +672,6 @@ void UCharacterAnimInstanceBase::CalculateLayerValue()
 	{
 		const int32 Diff = (1 - (int32)Arm_R_LS);
 		Arm_R_MS = (float)Diff;
-	}
-
-	{
-		SpineRotation = FRotator(0.f, (AimOffset.X / 4.f), 0.f);
 	}
 }
 

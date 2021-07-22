@@ -486,11 +486,11 @@ public:
 
 		if (TraceData.FootHitResult.GetActor() == nullptr || TraceData.ToeHitResult.GetActor() == nullptr)
 		{
-			if (TraceData.FootHitResult.GetActor() != nullptr)
+			if (TraceData.FootHitResult.GetActor())
 			{
 				OutFloorLocationCS = FootFloorCS;
 			}
-			else if (TraceData.ToeHitResult.GetActor() != nullptr)
+			else if (TraceData.ToeHitResult.GetActor())
 			{
 				OutFloorLocationCS = ToeFloorCS;
 			}
@@ -603,26 +603,17 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings")
 	TArray<FIKBone> BonesRootToEffector;
 	
-	FIKBone& operator[](size_t i)
-	{
-		return BonesRootToEffector[i];
-	}
-	
 	FIKBone& AccessFromEffector(size_t i)
 	{
 		size_t NumBones = BonesRootToEffector.Num();
 		return BonesRootToEffector[NumBones - 1 - i];
 	}
+
+	FIKBone& operator[](size_t i) { return BonesRootToEffector[i]; }
+
+	FIKBone& AccessFromRoot(size_t i) { return BonesRootToEffector[i]; }
 	
-	FIKBone& AccessFromRoot(size_t i)
-	{
-		return BonesRootToEffector[i];
-	}
-	
-	size_t Num() const
-	{
-		return BonesRootToEffector.Num();
-	}
+	size_t Num() const { return BonesRootToEffector.Num(); }
 
 	virtual const bool InitBoneReferences(const FBoneContainer& RequiredBones) override
 	{
@@ -704,6 +695,7 @@ public:
 		bInitialized = true;
 	}
 
+
 	const bool InitIfInvalid(const FBoneContainer& RequiredBones)
 	{
 		if (!bInitialized)
@@ -716,6 +708,7 @@ public:
 		return Bone.InitIfInvalid(RequiredBones);
 	}
 
+
 	const bool Init(const FBoneContainer& RequiredBones) 
 	{
 		if (!bInitialized)
@@ -727,6 +720,7 @@ public:
 		}
 		return Bone.Init(RequiredBones);
 	}
+
 
 	bool IsValid(const FBoneContainer& RequiredBones) const
 	{

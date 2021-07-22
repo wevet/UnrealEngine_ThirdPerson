@@ -29,17 +29,20 @@ public:
 		DeltaTime = 0.0f;
 	}
 
+
 	virtual void Initialize_AnyThread(const FAnimationInitializeContext& Context) override
 	{
 		Super::Initialize_AnyThread(Context);
 		BaseComponentPose.Initialize(Context);
 	}
 
+
 	virtual void CacheBones_AnyThread(const FAnimationCacheBonesContext& Context) override
 	{
 		Super::CacheBones_AnyThread(Context);
 		BaseComponentPose.CacheBones(Context);
 	}
+
 
 	virtual void UpdateInternal(const FAnimationUpdateContext& Context) override
 	{
@@ -48,10 +51,12 @@ public:
 		DeltaTime = Context.GetDeltaTime();
 	}
 	
+
 	virtual void EvaluateComponentSpaceInternal(FComponentSpacePoseContext& Output) override
 	{
 		Super::EvaluateComponentSpaceInternal(Output);
 	}
+
 
 	virtual bool IsValidToEvaluate(const USkeleton* Skeleton, const FBoneContainer& RequiredBones) override
 	{
@@ -59,10 +64,10 @@ public:
 		{
 			return false;
 		}
-		const bool bValid = Leg->InitIfInvalid(RequiredBones);
-		return bValid;
+		return Leg->InitIfInvalid(RequiredBones);
 	}
 	
+
 	virtual void InitializeBoneReferences(const FBoneContainer& RequiredBones) override
 	{
 		Super::InitializeBoneReferences(RequiredBones);
@@ -76,6 +81,7 @@ public:
 			//
 		}
 	}
+
 
 	virtual void EvaluateSkeletalControl_AnyThread(FComponentSpacePoseContext& Output, TArray<FBoneTransform>& OutBoneTransforms) override;
 

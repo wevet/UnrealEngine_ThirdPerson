@@ -69,4 +69,3 @@ void ABaseAmmo::OverlapActor(AActor* OtherActor)
 	WidgetComponent->SetVisibility(Target ? true : false);
 }
 
-

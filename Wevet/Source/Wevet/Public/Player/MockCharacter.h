@@ -43,7 +43,7 @@ public:
 	virtual void OverlapActor_Implementation(AActor* Actor) override;
 
 	// ALS
-	virtual void SetALSCameraShake_Implementation(TSubclassOf<class UMatineeCameraShake> InShakeClass, const float InScale) override;
+	virtual void SetALSCameraShake_Implementation(TSubclassOf<class UCameraShakeBase> InShakeClass, const float InScale) override;
 #pragma endregion
 
 

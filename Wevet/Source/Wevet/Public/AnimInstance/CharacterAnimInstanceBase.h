@@ -77,6 +77,9 @@ protected:
 	UFUNCTION(BlueprintCallable, Category = CharacterAnimInstance)
 	bool IsLocallyControlled() const;
 
+	virtual void UpdateLocomotionSystem();
+	virtual void UpdateCombatSystem();
+
 public:
 #pragma region ALS_Core
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AnimInstance|ALS_Pawn")
@@ -214,8 +217,8 @@ public:
 	virtual void SetALSCharacterRotation_Implementation(const FRotator AddAmount) override;
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AnimInstance|ALS_Pawn")
-	void SetALSCameraShake(TSubclassOf<class UMatineeCameraShake> InShakeClass, const float InScale);
-	virtual void SetALSCameraShake_Implementation(TSubclassOf<class UMatineeCameraShake> InShakeClass, const float InScale) override;
+	void SetALSCameraShake(TSubclassOf<class UCameraShakeBase> InShakeClass, const float InScale);
+	virtual void SetALSCameraShake_Implementation(TSubclassOf<class UCameraShakeBase> InShakeClass, const float InScale) override;
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AnimInstance|ALS_Pawn")
 	bool HasMovementInput() const;
@@ -317,10 +320,8 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ALS_Layer")
 	float Enable_AimOffset;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ALS_Layer")
-	FRotator SpineRotation;
 #pragma endregion
+
 
 #pragma region ALS
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ALS")
@@ -489,6 +490,7 @@ protected:
 	class UCurveFloat* LandAlphaCurve;
 #pragma endregion
 
+
 #pragma region ALSTurn
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ALS")
 	struct FTurnMontages N_Turn_90;
@@ -512,6 +514,7 @@ protected:
 
 	FTurnMontages GetTurnData() const { return bRF ? RF_Turn_90 : LF_Turn_90; }
 #pragma endregion
+
 
 #pragma region ALSNativeEvent
 	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "ALS|Event")

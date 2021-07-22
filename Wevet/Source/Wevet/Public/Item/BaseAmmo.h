@@ -21,5 +21,5 @@ protected:
 	virtual void EndOverlapRecieve(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex) override;
 
 private:
-	virtual void OverlapActor(AActor* OtherActor);
+	void OverlapActor(AActor* OtherActor);
 };

@@ -94,16 +94,19 @@ public:
 		DeltaTime = 0.0f;
 	}
 
+
 	virtual void UpdateInternal(const FAnimationUpdateContext& Context) override
 	{
 		DeltaTime = Context.GetDeltaTime();
 		Super::UpdateInternal(Context);
 	}
 
+
 	virtual void EvaluateComponentSpaceInternal(FComponentSpacePoseContext& Output) override
 	{
 		Super::EvaluateComponentSpaceInternal(Output);
 	}
+
 
 	virtual bool IsValidToEvaluate(const USkeleton* Skeleton, const FBoneContainer& RequiredBones) override
 	{
@@ -134,6 +137,7 @@ public:
 		}
 		return true;
 	}
+
 
 	virtual void InitializeBoneReferences(const FBoneContainer& RequiredBones) override
 	{
@@ -166,6 +170,7 @@ public:
 			return;
 		}
 	}
+
 
 	virtual void EvaluateSkeletalControl_AnyThread(FComponentSpacePoseContext& Output, TArray<FBoneTransform>& OutBoneTransforms) override;
 

@@ -49,6 +49,6 @@ ARifle::ARifle(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitia
 	WeaponItemInfo.WeaponItemType = EWeaponItemType::Rifle;
 	WeaponItemInfo.DisplayName = FString(TEXT("FN SCAR"));
 	WeaponItemInfo.MeleeDistance = 2000.f;
-	WeaponItemInfo.HearingRange = 1400.f;
+	WeaponItemInfo.HearingRange = 5000.f;
 }
 

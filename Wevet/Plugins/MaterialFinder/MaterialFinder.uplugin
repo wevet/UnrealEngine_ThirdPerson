@@ -2,22 +2,21 @@
 	"FileVersion": 3,
 	"Version": 1,
 	"VersionName": "1.0",
-	"FriendlyName": "LocomotionSystem Plugin",
-	"FriendlyVersion": "1.0",
-	"Description": "Character LocomotionSystem Plugin",
-	"Category": "Character",
+	"FriendlyName": "MaterialFinder",
+	"Description": "MaterialFindTool",
+	"Category": "Other",
 	"CreatedBy": "Shunji Nagasawa",
 	"CreatedByURL": "",
 	"DocsURL": "",
 	"MarketplaceURL": "",
 	"SupportURL": "",
-	"EnabledByDefault": true,
-	"CanContainContent": false,
+	"CanContainContent": true,
 	"IsBetaVersion": false,
+	"IsExperimentalVersion": false,
 	"Installed": false,
 	"Modules": [
 		{
-			"Name": "LocomotionSystem",
+			"Name": "MaterialFinder",
 			"Type": "Runtime",
 			"LoadingPhase": "Default"
 		}

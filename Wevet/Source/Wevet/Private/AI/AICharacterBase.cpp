@@ -11,6 +11,7 @@
 #include "Kismet/KismetSystemLibrary.h"
 #include "WevetExtension.h"
 #include "Lib/WevetBlueprintFunctionLibrary.h"
+#include "Lib/CombatBlueprintFunctionLibrary.h"
 #include "Widget/AIHealthController.h"
 
 
@@ -118,7 +119,7 @@ void AAICharacterBase::EquipmentActionMontage()
 
 void AAICharacterBase::ReleaseAllWeaponInventory()
 {
-	if (UWevetBlueprintFunctionLibrary::Probability())
+	if (UCombatBlueprintFunctionLibrary::WeaponDropProbability())
 	{
 		Super::ReleaseAllWeaponInventory();
 	}
@@ -132,7 +133,7 @@ void AAICharacterBase::ReleaseAllWeaponInventory()
 
 void AAICharacterBase::ReleaseAllItemInventory()
 {
-	if (UWevetBlueprintFunctionLibrary::Probability())
+	if (UCombatBlueprintFunctionLibrary::ItemDropProbability())
 	{
 		Super::ReleaseAllItemInventory();
 	}

@@ -99,7 +99,7 @@ public:
 	* first visible location
 	* Return sight strength for how well the target is seen.
 	*/
-	virtual bool CanBeSeenFrom(const FVector& ObserverLocation, FVector& OutSeenLocation, int32& NumberOfLoSChecksPerformed, float& OutSightStrength, const AActor* IgnoreActor = nullptr) const override;
+	virtual bool CanBeSeenFrom(const FVector& ObserverLocation, FVector& OutSeenLocation, int32& NumberOfLoSChecksPerformed, float& OutSightStrength, const AActor* IgnoreActor = nullptr, const bool* bWasVisible = nullptr, int32* UserData = nullptr) const override;
 
 
 protected:
@@ -731,8 +731,8 @@ public:
 	virtual void SetALSCharacterRotation_Implementation(const FRotator AddAmount) override;
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|ALS_Pawn")
-	void SetALSCameraShake(TSubclassOf<class UMatineeCameraShake> InShakeClass, const float InScale);
-	virtual void SetALSCameraShake_Implementation(TSubclassOf<class UMatineeCameraShake> InShakeClass, const float InScale) override;
+	void SetALSCameraShake(TSubclassOf<class UCameraShakeBase> InShakeClass, const float InScale);
+	virtual void SetALSCameraShake_Implementation(TSubclassOf<class UCameraShakeBase> InShakeClass, const float InScale) override;
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|ALS_Pawn")
 	void SetALSMovementMode(const ELSMovementMode NewALSMovementMode);

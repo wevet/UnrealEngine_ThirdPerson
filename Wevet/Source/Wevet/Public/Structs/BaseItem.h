@@ -78,6 +78,13 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
 	float HearingRange;
 
+
+public:
+	FORCEINLINE bool operator==(const FWeaponItemInfo& Other) const
+	{
+		return WeaponItemType == Other.WeaponItemType;
+	}
+
 	FWeaponItemInfo() : FBaseItem()
 	{
 		BaseItemType = EItemType::Weapon;
@@ -90,7 +97,6 @@ public:
 	}
 
 public:
-
 	void CopyTo(const FWeaponItemInfo& InWeaponItemInfo)
 	{
 		UnEquipSocketName = InWeaponItemInfo.UnEquipSocketName;
@@ -107,6 +113,8 @@ public:
 
 
 	bool EmptyCurrentAmmo() const {	return CurrentAmmo <= 0; }
+	bool EmptyAmmo() const { return MaxAmmo <= 0; }
+	bool CurrentFullAmmo() const { return CurrentAmmo >= ClipType; }
 
 
 	void DecrementAmmos()

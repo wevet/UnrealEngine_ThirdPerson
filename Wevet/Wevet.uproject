@@ -1,6 +1,6 @@
 {
 	"FileVersion": 3,
-	"EngineAssociation": "4.26",
+	"EngineAssociation": "5.0EA",
 	"Category": "Game",
 	"Description": "ActionGame",
 	"Modules": [
@@ -158,12 +158,16 @@
 			"Enabled": true
 		},
 		{
+			"Name": "MaterialFinder",
+			"Enabled": true
+		},
+		{
 			"Name": "Niagara",
 			"Enabled": true
 		},
 		{
 			"Name": "NiagaraExtras",
-			"Enabled": true
+			"Enabled": false
 		},
 		{
 			"Name": "LocomotionSystem",
@@ -171,7 +175,7 @@
 		},
 		{
 			"Name": "RLPlugin",
-			"Enabled": true
+			"Enabled": false
 		},
 		{
 			"Name": "ExtraCameraWindow",
@@ -203,7 +207,7 @@
 		},
 		{
 			"Name": "RLLiveLink",
-			"Enabled": true,
+			"Enabled": false,
 			"MarketplaceURL": "com.epicgames.launcher://ue/marketplace/content/f6a79afa7d0e4d429be8b993f7b6f5ad"
 		},
 		{
@@ -213,6 +217,19 @@
 		{
 			"Name": "FullBodyIK",
 			"Enabled": true
+		},
+		{
+			"Name": "EditorScriptingUtilities",
+			"Enabled": true
+		},
+		{
+			"Name": "Bridge",
+			"Enabled": true,
+			"SupportedTargetPlatforms": [
+				"Win64",
+				"Mac",
+				"Linux"
+			]
 		}
 	]
 }

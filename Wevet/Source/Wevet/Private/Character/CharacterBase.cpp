@@ -3,7 +3,6 @@
 #include "Character/CharacterBase.h"
 #include "AnimInstance/CharacterAnimInstanceBase.h"
 #include "AnimInstance/IKAnimInstance.h"
-
 #include "Engine.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
@@ -316,7 +315,7 @@ FGenericTeamId ACharacterBase::GetGenericTeamId() const
 
 // AI Perception
 // ttps://blog.gamedev.tv/ai-sight-perception-to-custom-points/
-bool ACharacterBase::CanBeSeenFrom(const FVector& ObserverLocation, FVector& OutSeenLocation, int32& NumberOfLoSChecksPerformed, float& OutSightStrength, const AActor* IgnoreActor) const
+bool ACharacterBase::CanBeSeenFrom(const FVector& ObserverLocation, FVector& OutSeenLocation, int32& NumberOfLoSChecksPerformed, float& OutSightStrength, const AActor* IgnoreActor, const bool* bWasVisible, int32* UserData) const
 {
 	check(GetMesh());
 	static const FName AILineOfSight = FName(TEXT("TestPawnLineOfSight"));
@@ -329,14 +328,14 @@ bool ACharacterBase::CanBeSeenFrom(const FVector& ObserverLocation, FVector& Out
 	{
 		const FVector SocketLocation = GetMesh()->GetSocketLocation(Sockets[i]->SocketName);
 		const bool bHitResult = GetWorld()->LineTraceSingleByObjectType(
-			HitResult, 
-			ObserverLocation, 
-			SocketLocation, 
+			HitResult,
+			ObserverLocation,
+			SocketLocation,
 			FCollisionObjectQueryParams(CollisionQuery),
 			FCollisionQueryParams(AILineOfSight, true, IgnoreActor));
 
 		++NumberOfLoSChecksPerformed;
-		if (!bHitResult || (HitResult.Actor.IsValid() && HitResult.Actor->IsOwnedBy(this)))
+		if (!bHitResult || (HitResult.GetActor() && HitResult.GetActor()->IsOwnedBy(this)))
 		{
 			OutSeenLocation = SocketLocation;
 			OutSightStrength = 1;
@@ -346,14 +345,14 @@ bool ACharacterBase::CanBeSeenFrom(const FVector& ObserverLocation, FVector& Out
 	}
 
 	const bool bHitResult = GetWorld()->LineTraceSingleByObjectType(
-		HitResult, 
-		ObserverLocation, 
-		GetActorLocation(), 
+		HitResult,
+		ObserverLocation,
+		GetActorLocation(),
 		FCollisionObjectQueryParams(CollisionQuery),
 		FCollisionQueryParams(AILineOfSight, true, IgnoreActor));
 
 	++NumberOfLoSChecksPerformed;
-	if (!bHitResult || (HitResult.Actor.IsValid() && HitResult.Actor->IsOwnedBy(this)))
+	if (!bHitResult || (HitResult.GetActor() && HitResult.GetActor()->IsOwnedBy(this)))
 	{
 		OutSeenLocation = GetActorLocation();
 		OutSightStrength = 1;
@@ -580,15 +579,18 @@ FCombatDelegate* ACharacterBase::GetDeathDelegate()
 	return &DeathDelegate;
 }
 
+
 FCombatDelegate* ACharacterBase::GetAliveDelegate()
 {
 	return &AliveDelegate;
 }
 
+
 FCombatOneDelegate* ACharacterBase::GetKillDelegate()
 {
 	return &KillDelegate;
 }
+
 
 float ACharacterBase::GetMeleeDistance_Implementation() const
 {
@@ -599,6 +601,7 @@ float ACharacterBase::GetMeleeDistance_Implementation() const
 	return CurrentWeapon.Get()->GetWeaponItemInfo().MeleeDistance;
 }
 
+
 void ACharacterBase::SetActionState_Implementation(const EAIActionState InAIActionState)
 {
 	if (ActionState != InAIActionState)
@@ -608,14 +611,17 @@ void ACharacterBase::SetActionState_Implementation(const EAIActionState InAIActi
 	}
 }
 
+
 void ACharacterBase::OnActionStateChange_Implementation()
 {
 }
+
 
 EAIActionState ACharacterBase::GetActionState_Implementation() const
 {
 	return ActionState;
 }
+
 
 bool ACharacterBase::CanMeleeStrike_Implementation() const
 {
@@ -635,17 +641,19 @@ bool ACharacterBase::CanMeleeStrike_Implementation() const
 	return bWasResult;
 }
 
+
 AActor* ACharacterBase::GetTarget_Implementation() const
 {
 	return TargetCharacter;
 }
+
 
 bool ACharacterBase::CanKillDealDamage_Implementation(const FName BoneName) const
 {
 	if (BoneName == HeadBoneName) 
 	{
 		USkeletalMeshComponent* SkeletalMeshComponent = Super::GetMesh();
-		const FReferenceSkeleton RefSkeleton = SkeletalMeshComponent->SkeletalMesh->Skeleton->GetReferenceSkeleton();
+		const FReferenceSkeleton RefSkeleton = SkeletalMeshComponent->SkeletalMesh->GetSkeleton()->GetReferenceSkeleton();
 		if (RefSkeleton.FindBoneIndex(BoneName) != INDEX_NONE)
 		{
 			return true;
@@ -654,10 +662,12 @@ bool ACharacterBase::CanKillDealDamage_Implementation(const FName BoneName) cons
 	return false;
 }
 
+
 AAbstractWeapon* ACharacterBase::GetCurrentWeapon_Implementation() const
 {
 	return CurrentWeapon.Get();
 }
+
 
 float ACharacterBase::MakeDamage_Implementation(UCharacterModel* DamageModel, const int InWeaponDamage) const
 {
@@ -668,6 +678,7 @@ float ACharacterBase::MakeDamage_Implementation(UCharacterModel* DamageModel, co
 	return FMath::Abs(Damage);
 }
 
+
 bool ACharacterBase::IsDeath_Implementation() const
 {
 	if (bWasDied || !CharacterModel)
@@ -677,10 +688,12 @@ bool ACharacterBase::IsDeath_Implementation() const
 	return CharacterModel->IsDie();
 }
 
+
 bool ACharacterBase::IsStan_Implementation() const
 {
 	return (ALSMovementMode == ELSMovementMode::Ragdoll);
 }
+
 
 void ACharacterBase::InfrictionDamage_Implementation(AActor* InfrictionActor, const bool bInfrictionDie)
 {
@@ -696,6 +709,7 @@ void ACharacterBase::InfrictionDamage_Implementation(AActor* InfrictionActor, co
 		// damage...
 	}
 }
+
 
 void ACharacterBase::Die_Implementation()
 {
@@ -721,6 +735,7 @@ void ACharacterBase::Die_Implementation()
 	KillRagdollPhysics();
 }
 
+
 void ACharacterBase::Alive_Implementation()
 {
 	if (CharacterModel)
@@ -736,6 +751,7 @@ void ACharacterBase::Alive_Implementation()
 	}
 }
 
+
 void ACharacterBase::Equipment_Implementation()
 {
 	if (CurrentWeapon.IsValid())
@@ -746,6 +762,7 @@ void ACharacterBase::Equipment_Implementation()
 		CurrentWeapon.Get()->SetEquip(true);
 	}
 }
+
 
 void ACharacterBase::UnEquipment_Implementation()
 {
@@ -760,10 +777,12 @@ void ACharacterBase::UnEquipment_Implementation()
 	ActionInfoPtr = nullptr;
 }
 
+
 UCharacterModel* ACharacterBase::GetPropertyModel_Implementation() const
 {
 	return CharacterModel;
 }
+
 
 void ACharacterBase::HitEffectReceive_Implementation(const FHitResult& HitResult, const EGiveDamageType InGiveDamageType)
 {
@@ -796,6 +815,7 @@ void ACharacterBase::HitEffectReceive_Implementation(const FHitResult& HitResult
 	}
 }
 
+
 void ACharacterBase::DoFirePressed_Implementation()
 {
 	if (CurrentWeapon.IsValid())
@@ -803,6 +823,7 @@ void ACharacterBase::DoFirePressed_Implementation()
 		IWeaponInstigator::Execute_DoFirePressed(CurrentWeapon.Get());
 	}
 }
+
 
 void ACharacterBase::DoFireReleassed_Implementation()
 {
@@ -812,6 +833,7 @@ void ACharacterBase::DoFireReleassed_Implementation()
 	}
 }
 
+
 void ACharacterBase::DoMeleeAttack_Implementation()
 {
 	if (CurrentWeapon.IsValid())
@@ -819,6 +841,7 @@ void ACharacterBase::DoMeleeAttack_Implementation()
 		MeleeAttackMontage();
 	}
 }
+
 
 void ACharacterBase::DoReload_Implementation()
 {
@@ -836,20 +859,24 @@ class UBehaviorTree* ACharacterBase::GetBehaviorTree_Implementation() const
 	return BehaviorTree;
 }
 
+
 void ACharacterBase::DoSightReceive_Implementation(AActor* Actor, const FAIStimulus InStimulus, const bool InWasKilledCrew)
 {
 
 }
+
 
 void ACharacterBase::DoHearReceive_Implementation(AActor* Actor, const FAIStimulus InStimulus, const bool InWasKilledCrew)
 {
 
 }
 
+
 void ACharacterBase::DoPredictionReceive_Implementation(AActor* Actor, const FAIStimulus InStimulus)
 {
 
 }
+
 
 void ACharacterBase::DoDamageReceive_Implementation(AActor* Actor, const FAIStimulus InStimulus)
 {
@@ -964,7 +991,7 @@ void ACharacterBase::SetALSCharacterRotation_Implementation(const FRotator AddAm
 	//UE_LOG(LogWevetClient, Log, TEXT("Rotation : %s"), *FString(__FUNCTION__));
 }
 
-void ACharacterBase::SetALSCameraShake_Implementation(TSubclassOf<class UMatineeCameraShake> InShakeClass, const float InScale)
+void ACharacterBase::SetALSCameraShake_Implementation(TSubclassOf<class UCameraShakeBase> InShakeClass, const float InScale)
 {
 }
 
