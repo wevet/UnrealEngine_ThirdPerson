@@ -22,6 +22,10 @@ AAICharacterBase::AAICharacterBase(const FObjectInitializer& ObjectInitializer)	
 	Tags.Add(WATER_TAG);
 	GetMesh()->ComponentTags.Add(WATER_LOCAL_TAG);
 
+	// Optimization Component Updated
+	GetMesh()->VisibilityBasedAnimTickOption = EVisibilityBasedAnimTickOption::OnlyTickPoseWhenRendered;
+	//GetMesh()->bComponentUseFixedSkelBounds = 1;
+
 	static ConstructorHelpers::FObjectFinder<UClass> FindAsset(Wevet::ProjectFile::GetNodeGeneratorPath());
 	NodeHolderTemplate = FindAsset.Object;
 

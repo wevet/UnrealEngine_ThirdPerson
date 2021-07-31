@@ -9,7 +9,6 @@
 
 /*
 *	Require AbstractWeapon
-*	武器固有のEventが定義
 */
 UINTERFACE(BlueprintType)
 class WEVET_API UWeaponInstigator : public UInterface

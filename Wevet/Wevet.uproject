@@ -1,6 +1,6 @@
 {
 	"FileVersion": 3,
-	"EngineAssociation": "5.0EA",
+	"EngineAssociation": "5.0",
 	"Category": "Game",
 	"Description": "ActionGame",
 	"Modules": [
@@ -230,6 +230,10 @@
 				"Mac",
 				"Linux"
 			]
+		},
+		{
+			"Name": "Volumetrics",
+			"Enabled": true
 		}
 	]
 }

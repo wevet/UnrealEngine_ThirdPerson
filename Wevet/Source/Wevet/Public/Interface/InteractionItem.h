@@ -7,7 +7,7 @@
 #include "WevetTypes.h"
 #include "InteractionItem.generated.h"
 
-class ACharacterBase;
+class APawn;
 
 /*
 *	Require ItemBase | AbstractWeapon classes
@@ -24,10 +24,10 @@ class WEVET_API IInteractionItem
 
 public :
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "InteractionItem")
-	void Take(ACharacterBase* NewCharacter);
+	void Take(APawn* NewCharacter);
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "InteractionItem")
-	void Release(ACharacterBase* NewCharacter);
+	void Release(APawn* NewCharacter);
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "InteractionItem")
 	EItemType GetItemType() const;

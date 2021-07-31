@@ -16,10 +16,4 @@ public:
 	ABaseAmmo(const FObjectInitializer& ObjectInitializer);
 	virtual void Tick(float DeltaTime) override;
 
-protected:
-	virtual void BeginOverlapRecieve(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult) override;
-	virtual void EndOverlapRecieve(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex) override;
-
-private:
-	void OverlapActor(AActor* OtherActor);
 };

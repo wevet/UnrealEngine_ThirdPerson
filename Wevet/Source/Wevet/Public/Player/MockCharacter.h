@@ -31,6 +31,10 @@ protected:
 
 #pragma region Interface
 public:
+	// CombatInstigator
+	virtual FVector BulletTraceRelativeLocation_Implementation() const override;
+	virtual FVector BulletTraceForwardLocation_Implementation() const override;
+	
 	// DamageInstigator
 	virtual void Die_Implementation() override;
 	virtual void Alive_Implementation() override;
@@ -48,8 +52,6 @@ public:
 
 
 public:
-	virtual FVector BulletTraceRelativeLocation() const override;
-	virtual FVector BulletTraceForwardLocation() const override;
 	virtual void EquipmentActionMontage() override;
 	virtual void CreateWeaponInstance(const TSubclassOf<class AAbstractWeapon> InWeaponTemplate, WeaponFunc Callback = nullptr) override;
 

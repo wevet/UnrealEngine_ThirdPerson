@@ -93,4 +93,16 @@ public:
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CombatInstigator")
 	AAbstractWeapon* GetCurrentWeapon() const;
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CombatInstigator")
+	FVector BulletTraceRelativeLocation() const;
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CombatInstigator")
+	FVector BulletTraceForwardLocation() const;
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CombatInstigator")
+	void FireActionMontage();
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CombatInstigator")
+	void ReloadActionMontage(float& OutReloadDuration);
 };

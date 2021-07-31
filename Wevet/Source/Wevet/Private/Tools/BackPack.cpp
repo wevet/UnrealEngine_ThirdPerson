@@ -21,12 +21,27 @@ ABackPack::ABackPack(const FObjectInitializer& ObjectInitializer) : Super(Object
 		SkeletalMeshComponent->SetSkeletalMesh(Asset);
 	}
 
+	BoxCollisionComponent = ObjectInitializer.CreateDefaultSubobject<UBoxComponent>(this, TEXT("BoxCollisionComponent"));
+	BoxCollisionComponent->SetupAttachment(SkeletalMeshComponent);
+	BoxCollisionComponent->SetGenerateOverlapEvents(false);
+	BoxCollisionComponent->CanCharacterStepUpOn = ECanBeCharacterBase::ECB_No;
+	BoxCollisionComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	BoxCollisionComponent->SetRelativeLocation(FVector(0.0f, -30.f, 66.f));
+	BoxCollisionComponent->SetBoxExtent(FVector(15.f, 14.f, 24.f));
 }
 
 
 void ABackPack::BeginPlay()
 {
 	Super::BeginPlay();
+	StopSimulatePhysics();
+}
+
+
+void ABackPack::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	Super::EndPlay(EndPlayReason);
+	StopSimulatePhysics();
 }
 
 
@@ -81,3 +96,4 @@ void ABackPack::StopSimulatePhysics()
 	SkeletalMeshComponent->SetRelativeTransform(Trans);
 	BP_OnSimulatePhysics(true);
 }
+

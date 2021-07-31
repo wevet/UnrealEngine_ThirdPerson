@@ -10,16 +10,19 @@ UAICharacterAnimInstanceBase::UAICharacterAnimInstanceBase(const FObjectInitiali
 	LookAtInterpSpeed = 2.4f;
 }
 
+
 void UAICharacterAnimInstanceBase::NativeInitializeAnimation()
 {
 	Super::NativeInitializeAnimation();
 	Character = Cast<AAICharacterBase>(OwningPawn);
 }
 
+
 void UAICharacterAnimInstanceBase::NativeUpdateAnimation(float DeltaTimeX)
 {
 	Super::NativeUpdateAnimation(DeltaTimeX);
 }
+
 
 void UAICharacterAnimInstanceBase::CalculateAimOffset()
 {
@@ -41,3 +44,4 @@ void UAICharacterAnimInstanceBase::CalculateAimOffset()
 		Super::CalculateAimOffset();
 	}
 }
+

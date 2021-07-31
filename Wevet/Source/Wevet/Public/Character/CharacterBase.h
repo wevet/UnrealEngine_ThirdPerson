@@ -249,6 +249,22 @@ public:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|CombatInstigator")
 	AAbstractWeapon* GetCurrentWeapon() const;
 	virtual AAbstractWeapon* GetCurrentWeapon_Implementation() const override;
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|CombatInstigator")
+	FVector BulletTraceRelativeLocation() const;
+	virtual FVector BulletTraceRelativeLocation_Implementation() const override;
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|CombatInstigator")
+	FVector BulletTraceForwardLocation() const;
+	virtual FVector BulletTraceForwardLocation_Implementation() const override;
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|CombatInstigator")
+	void FireActionMontage();
+	virtual void FireActionMontage_Implementation() override;
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|CombatInstigator")
+	void ReloadActionMontage(float& OutReloadDuration);
+	virtual void ReloadActionMontage_Implementation(float& OutReloadDuration) override;
 #pragma endregion
 
 
@@ -449,10 +465,6 @@ protected:
 	virtual void TakeDamageMontage(const bool InForcePlaying);
 	virtual void MeleeAttackMontage();
 
-public:
-	virtual void FireActionMontage();
-	virtual void ReloadActionMontage(float& OutReloadDuration);
-
 
 public:
 #pragma region Utils
@@ -460,8 +472,6 @@ public:
 	class UCharacterAnimInstanceBase* GetAnimInstance() const;
 	class UIKAnimInstance* GetIKAnimInstance() const;
 
-	virtual FVector BulletTraceRelativeLocation() const;
-	virtual FVector BulletTraceForwardLocation() const;
 	FVector GetHeadSocketLocation() const;
 	FVector GetChestSocketLocation() const;
 	const TArray<class AActor*>& GetIgnoreActors();

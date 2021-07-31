@@ -850,6 +850,72 @@ void ACharacterBase::DoReload_Implementation()
 		IWeaponInstigator::Execute_DoReload(CurrentWeapon.Get());
 	}
 }
+
+
+FVector ACharacterBase::BulletTraceRelativeLocation_Implementation() const
+{
+	if (CurrentWeapon.IsValid())
+	{
+		return CurrentWeapon.Get()->GetMuzzleTransform().GetLocation();
+	}
+	return GetActorLocation();
+}
+
+
+FVector ACharacterBase::BulletTraceForwardLocation_Implementation() const
+{
+	if (CurrentWeapon.IsValid())
+	{
+		const FTransform MuzzleTransform = CurrentWeapon.Get()->GetMuzzleTransform();
+		const FVector MuzzleLocation = MuzzleTransform.GetLocation();
+		const FRotator MuzzleRotation = FRotator(MuzzleTransform.GetRotation());
+		const float TraceDistance = CurrentWeapon.Get()->GetTraceDistance();
+		return MuzzleLocation + (MuzzleRotation.Vector() * TraceDistance);
+	}
+	return GetActorForwardVector();
+}
+
+
+void ACharacterBase::FireActionMontage_Implementation()
+{
+	if (!CurrentWeapon.IsValid())
+	{
+		return;
+	}
+
+	const bool bHasAnimMontage = (ActionInfoPtr && ActionInfoPtr->FireMontage);
+	if (!bHasAnimMontage)
+	{
+		UE_LOG(LogWevetClient, Error, TEXT("nullptr FireActionMontage : %s"), *GetName());
+		return;
+	}
+
+	if (!GetAnimInstance()->Montage_IsPlaying(ActionInfoPtr->FireMontage))
+	{
+		PlayAnimMontage(ActionInfoPtr->FireMontage, MONTAGE_DELAY);
+	}
+}
+
+
+void ACharacterBase::ReloadActionMontage_Implementation(float& OutReloadDuration)
+{
+	if (!CurrentWeapon.IsValid())
+	{
+		return;
+	}
+
+	const bool bHasAnimMontage = (ActionInfoPtr && ActionInfoPtr->ReloadMontage);
+	if (!bHasAnimMontage)
+	{
+		UE_LOG(LogWevetClient, Error, TEXT("nullptr ReloadActionMontage : %s"), *GetName());
+		return;
+	}
+
+	if (!GetAnimInstance()->Montage_IsPlaying(ActionInfoPtr->ReloadMontage))
+	{
+		OutReloadDuration += PlayAnimMontage(ActionInfoPtr->ReloadMontage);
+	}
+}
 #pragma endregion
 
 
@@ -1741,46 +1807,6 @@ void ACharacterBase::UnEquipmentActionMontage()
 	}
 }
 
-void ACharacterBase::FireActionMontage()
-{
-	if (!CurrentWeapon.IsValid())
-	{
-		return;
-	}
-
-	const bool bHasAnimMontage = (ActionInfoPtr && ActionInfoPtr->FireMontage);
-	if (!bHasAnimMontage)
-	{
-		UE_LOG(LogWevetClient, Error, TEXT("nullptr FireActionMontage : %s"), *GetName());
-		return;
-	}
-
-	if (!GetAnimInstance()->Montage_IsPlaying(ActionInfoPtr->FireMontage))
-	{
-		PlayAnimMontage(ActionInfoPtr->FireMontage, MONTAGE_DELAY);
-	}
-}
-
-void ACharacterBase::ReloadActionMontage(float& OutReloadDuration)
-{
-	if (!CurrentWeapon.IsValid())
-	{
-		return;
-	}
-
-	const bool bHasAnimMontage = (ActionInfoPtr && ActionInfoPtr->ReloadMontage);
-	if (!bHasAnimMontage)
-	{
-		UE_LOG(LogWevetClient, Error, TEXT("nullptr ReloadActionMontage : %s"), *GetName());
-		return;
-	}
-
-	if (!GetAnimInstance()->Montage_IsPlaying(ActionInfoPtr->ReloadMontage))
-	{
-		OutReloadDuration += PlayAnimMontage(ActionInfoPtr->ReloadMontage);
-	}
-}
-
 void ACharacterBase::TakeDamageMontage(const bool InForcePlaying)
 {
 	if (!InForcePlaying)
@@ -1844,28 +1870,6 @@ UCharacterAnimInstanceBase* ACharacterBase::GetAnimInstance() const
 UIKAnimInstance* ACharacterBase::GetIKAnimInstance() const
 {
 	return Cast<UIKAnimInstance>(GetMesh()->GetPostProcessInstance());
-}
-
-FVector ACharacterBase::BulletTraceRelativeLocation() const
-{
-	if (CurrentWeapon.IsValid())
-	{
-		return CurrentWeapon.Get()->GetMuzzleTransform().GetLocation();
-	}
-	return GetActorLocation();
-}
-
-FVector ACharacterBase::BulletTraceForwardLocation() const
-{
-	if (CurrentWeapon.IsValid())
-	{
-		const FTransform MuzzleTransform = CurrentWeapon.Get()->GetMuzzleTransform();
-		const FVector MuzzleLocation = MuzzleTransform.GetLocation();
-		const FRotator MuzzleRotation = FRotator(MuzzleTransform.GetRotation());
-		const float TraceDistance = CurrentWeapon.Get()->GetTraceDistance();
-		return MuzzleLocation + (MuzzleRotation.Vector() * TraceDistance);
-	}
-	return GetActorForwardVector();
 }
 
 FVector ACharacterBase::GetHeadSocketLocation() const

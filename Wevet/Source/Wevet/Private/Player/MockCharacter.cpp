@@ -295,6 +295,26 @@ void AMockCharacter::MoveRight(float Value)
 
 
 #pragma region Interface
+FVector AMockCharacter::BulletTraceRelativeLocation_Implementation() const
+{
+	const FVector BasePosition = Super::BulletTraceRelativeLocation_Implementation();
+	const FVector Position = (PlayerController ? PlayerController->GetCameraRelativeLocation() : BasePosition);
+	return bAiming ? Position : BasePosition;
+}
+
+
+FVector AMockCharacter::BulletTraceForwardLocation_Implementation() const
+{
+	const FTransform MuzzleTransform = CurrentWeapon.IsValid() ? CurrentWeapon.Get()->GetMuzzleTransform() : FTransform::Identity;
+	const FRotator MuzzleRotation = FRotator(MuzzleTransform.GetRotation());
+	const float TraceDistance = CurrentWeapon.IsValid() ? CurrentWeapon.Get()->GetTraceDistance() : ZERO_VALUE;
+
+	const FVector Position = (PlayerController ? PlayerController->GetCameraForwardVector() : MuzzleRotation.Vector());
+	const FVector ForwardLocation = bAiming ? Position : MuzzleRotation.Vector();
+	return BulletTraceRelativeLocation_Implementation() + (ForwardLocation * TraceDistance);
+}
+
+
 void AMockCharacter::Die_Implementation()
 {
 	if (!IsDeath_Implementation())
@@ -414,7 +434,6 @@ void AMockCharacter::SetALSCameraShake_Implementation(TSubclassOf<class UCameraS
 {
 	if (PlayerController)
 	{
-		// RPC's UFUNCTION unreliable, client
 		PlayerController->ClientStartCameraShake(InShakeClass, InScale, ECameraAnimPlaySpace::Type::CameraLocal);
 	}
 }
@@ -450,25 +469,6 @@ void AMockCharacter::EquipmentActionMontage()
 AAbstractWeapon* AMockCharacter::FindByIndexWeapon()
 {
 	return GetInventoryComponent()->FindByIndexWeapon(WeaponCurrentIndex);
-}
-
-
-FVector AMockCharacter::BulletTraceRelativeLocation() const
-{
-	const FVector Position = (PlayerController ? PlayerController->GetCameraRelativeLocation() : Super::BulletTraceRelativeLocation());
-	return bAiming ? Position : Super::BulletTraceRelativeLocation();
-}
-
-
-FVector AMockCharacter::BulletTraceForwardLocation() const
-{
-	const FTransform MuzzleTransform = CurrentWeapon.IsValid() ? CurrentWeapon.Get()->GetMuzzleTransform() : FTransform::Identity;
-	const FRotator MuzzleRotation = FRotator(MuzzleTransform.GetRotation());
-	const float TraceDistance = CurrentWeapon.IsValid() ? CurrentWeapon.Get()->GetTraceDistance() : ZERO_VALUE;
-
-	const FVector Position = (PlayerController ? PlayerController->GetCameraForwardVector() : MuzzleRotation.Vector());
-	const FVector ForwardLocation = bAiming ? Position : MuzzleRotation.Vector();
-	return BulletTraceRelativeLocation() + (ForwardLocation * TraceDistance);
 }
 
 
