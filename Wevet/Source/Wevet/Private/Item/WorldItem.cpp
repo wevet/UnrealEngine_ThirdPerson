@@ -9,7 +9,6 @@
 AWorldItem::AWorldItem(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {
 	PrimaryActorTick.bCanEverTick = false;
-
 	bRenderCutomDepthEnable = false;
 
 	static ConstructorHelpers::FObjectFinder<USoundBase> FindAsset(Wevet::ProjectFile::GetPickupSoundPath());
@@ -37,12 +36,14 @@ void AWorldItem::BeginDestroy()
 
 void AWorldItem::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
+	IgnoreActors.Reset(0);
 	Super::EndPlay(EndPlayReason);
 }
 
 
 void AWorldItem::BeginPlay()
 {
+	IgnoreActors.Add(this);
 	Super::BeginPlay();
 }
 
@@ -87,6 +88,7 @@ void AWorldItem::BeginOverlapRecieve(UPrimitiveComponent* OverlappedComponent, A
 
 	if (IInteractionPawn::Execute_CanPickup(Interface->_getUObject()))
 	{
+		OverlapActor(OtherActor);
 		IInteractionPawn::Execute_OverlapActor(Interface->_getUObject(), this);
 	}
 }
@@ -102,6 +104,7 @@ void AWorldItem::EndOverlapRecieve(UPrimitiveComponent* OverlappedComp, AActor* 
 
 	if (IInteractionPawn::Execute_CanPickup(Interface->_getUObject()))
 	{
+		OverlapActor(nullptr);
 		IInteractionPawn::Execute_OverlapActor(Interface->_getUObject(), nullptr);
 	}
 }
@@ -113,12 +116,13 @@ void AWorldItem::HitReceive(UPrimitiveComponent* HitComp, AActor* OtherActor, UP
 #pragma endregion
 
 
-/// <summary>
-/// CustomDepth Control
-/// </summary>
-/// <param name="PrimitiveComponent"></param>
-/// <param name="InEnable"></param>
-/// <param name="InDepthType"></param>
+void AWorldItem::Initialize(APawn* const NewCharacterOwner)
+{
+	IgnoreActors.Add(NewCharacterOwner);
+	Super::SetOwner(NewCharacterOwner);
+}
+
+
 void AWorldItem::MarkRenderStateDirty(UPrimitiveComponent* PrimitiveComponent, const bool InEnable, const ECustomDepthType InDepthType)
 {
 	if (!bRenderCutomDepthEnable)

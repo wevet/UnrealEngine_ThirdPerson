@@ -47,6 +47,9 @@ public:
 #pragma endregion
 
 
+public:
+	virtual void Initialize(APawn* const NewCharacterOwner);
+
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "WorldItem|Variable")
 	class USoundBase* PickupSound;
@@ -65,6 +68,12 @@ protected:
 	UFUNCTION()
 	virtual void EndOverlapRecieve(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 
+	/// <summary>
+	/// CustomDepth Control
+	/// </summary>
+	/// <param name="PrimitiveComponent"></param>
+	/// <param name="InEnable"></param>
+	/// <param name="InDepthType"></param>
 	virtual void MarkRenderStateDirty(UPrimitiveComponent* PrimitiveComponent, const bool InEnable, const ECustomDepthType InDepthType);
 
 
@@ -83,5 +92,8 @@ protected:
 	virtual void PrepareDestroy()
 	{
 	}
+
+protected:
+	TArray<class AActor*> IgnoreActors;
 };
 

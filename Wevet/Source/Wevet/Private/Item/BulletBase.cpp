@@ -6,15 +6,14 @@
 #include "Wevet.h"
 
 
-ABulletBase::ABulletBase(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer),
-	bWasHitResult(false),
-	bWasOverlapResult(false)
+ABulletBase::ABulletBase(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {
 	PrimaryActorTick.bCanEverTick = true;
 	LifeInterval = 2.0f;
+	bWasHitResult = false;
+	bWasOverlapResult = false;
 
 	Tags.Add(WATER_TAG);
-
 
 	{
 		static ConstructorHelpers::FObjectFinder<UParticleSystem> FindAsset(Wevet::ProjectFile::GetSplashBulletImpactPath());

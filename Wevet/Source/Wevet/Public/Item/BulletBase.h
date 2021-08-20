@@ -29,26 +29,28 @@ public:
 	EGiveDamageType GetGiveDamageType() const;
 	virtual EGiveDamageType GetGiveDamageType_Implementation() const override;
 
-protected:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Bullet|Variable")
-	float LifeInterval;
-
-	bool bWasHitResult;
-	bool bWasOverlapResult;
-
-public:
 	UPROPERTY(BlueprintAssignable)
 	FHitTriggerDelegate HitTriggerDelegate;
 
 	void SetOwners(const TArray<class AActor*>& InOwners);
-
 	void VisibleEmitter(const bool InVisible);
+
+protected:
+	UFUNCTION()
+	void BeginOverlapRecieve(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+
+	UFUNCTION()
+	void HitReceive(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
 
 protected:
 	class UPrimitiveComponent* PrimitiveComponent;
 	class UParticleSystemComponent* ParticleComponent;
-
 	TArray<class AActor*> IgnoreActors;
+	bool bWasHitResult;
+	bool bWasOverlapResult;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Bullet|Variable")
+	float LifeInterval;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Bullet|Variable")
 	class UParticleSystem* ImpactWaterEmitterTemplate;
@@ -56,9 +58,4 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Bullet|Variable")
 	class UParticleSystem* ImpactBloodEmitterTemplate;
 
-	UFUNCTION()
-	void BeginOverlapRecieve(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
-
-	UFUNCTION()
-	void HitReceive(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
 };
