@@ -20,6 +20,8 @@ rmdir /q /s ..\\Plugins\\LoadingScreen\\Binaries
 rmdir /q /s ..\\Plugins\\LoadingScreen\\Intermediate
 rmdir /q /s ..\\Plugins\\MaterialFinder\\Binaries
 rmdir /q /s ..\\Plugins\\MaterialFinder\\Intermediate
+rmdir /q /s ..\\Plugins\\KawaiiPhysics\\Binaries
+rmdir /q /s ..\\Plugins\\KawaiiPhysics\\Intermediate
 
 rmdir /q /s ..\\Plugins\\Auto_Setup_1.2\\Intermediate
 

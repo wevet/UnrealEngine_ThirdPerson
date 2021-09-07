@@ -232,6 +232,11 @@
 			]
 		},
 		{
+			"Name": "KawaiiPhysics",
+			"Enabled": true,
+			"MarketplaceURL": "KawaiiPhysics : Simple fake Physics for UnrealEngine4"
+		},
+		{
 			"Name": "Volumetrics",
 			"Enabled": true
 		}
