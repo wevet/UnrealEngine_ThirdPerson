@@ -143,23 +143,8 @@ UCLASS(Blueprintable)
 class KAWAIIPHYSICS_API UKawaiiPhysicsLimitsDataAsset : public UDataAsset
 {
 	GENERATED_BODY()
+
 public:
-
-#if WITH_EDITORONLY_DATA 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Spherical Limits")
-	TArray< FSphericalLimitData> SphericalLimitsData;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Capsule Limits")
-	TArray< FCapsuleLimitData> CapsuleLimitsData;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Planar Limits")
-	TArray< FPlanarLimitData> PlanarLimitsData;
-#endif
-
-#if WITH_EDITOR
-	void UpdateLimit(FCollisionLimitBase* Limit);
-#endif
-
 	UPROPERTY()
 	TArray<FSphericalLimit> SphericalLimits;
 
@@ -169,7 +154,20 @@ public:
 	UPROPERTY()
 	TArray<FPlanarLimit> PlanarLimits;
 
+#if WITH_EDITORONLY_DATA 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Spherical Limits")
+	TArray<FSphericalLimitData> SphericalLimitsData;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Capsule Limits")
+	TArray<FCapsuleLimitData> CapsuleLimitsData;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Planar Limits")
+	TArray<FPlanarLimitData> PlanarLimitsData;
+#endif
+
 #if WITH_EDITOR
+	void UpdateLimit(FCollisionLimitBase* Limit);
+
 	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
 #endif
 

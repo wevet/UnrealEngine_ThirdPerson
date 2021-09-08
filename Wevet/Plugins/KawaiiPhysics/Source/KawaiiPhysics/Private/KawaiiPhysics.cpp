@@ -1,15 +1,20 @@
 #include "KawaiiPhysics.h"
 
-#define LOCTEXT_NAMESPACE "FKawaiiPhysicsModule"
+DEFINE_LOG_CATEGORY(LogKawaiiPhysics)
 
-void FKawaiiPhysicsModule::StartupModule()
+class FKawaiiPhysicsPlugin : public IKawaiiPhysicsPlugin
 {
-}
+public:
+	virtual void StartupModule() override
+	{
+		UE_LOG(LogKawaiiPhysics, Log, TEXT("KawaiiPhysics Plugin : StartupModule"));
+	}
 
-void FKawaiiPhysicsModule::ShutdownModule()
-{
-}
+	virtual void ShutdownModule() override
+	{
+		UE_LOG(LogKawaiiPhysics, Log, TEXT("KawaiiPhysics Plugin : StartupModule"));
+	}
+};
 
-#undef LOCTEXT_NAMESPACE
+IMPLEMENT_MODULE(FKawaiiPhysicsPlugin, KawaiiPhysics)
 
-IMPLEMENT_MODULE(FKawaiiPhysicsModule, KawaiiPhysics)

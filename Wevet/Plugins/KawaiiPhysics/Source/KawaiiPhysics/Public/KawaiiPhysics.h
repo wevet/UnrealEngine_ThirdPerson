@@ -1,11 +1,26 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Modules/ModuleInterface.h"
 #include "Modules/ModuleManager.h"
+#include "Logging/LogMacros.h"
 
-class FKawaiiPhysicsModule : public IModuleInterface
+DECLARE_LOG_CATEGORY_EXTERN(LogKawaiiPhysics, All, All)
+
+
+class IKawaiiPhysicsPlugin : public IModuleInterface
 {
+
 public:
-	virtual void StartupModule() override;
-	virtual void ShutdownModule() override;
+
+	static inline IKawaiiPhysicsPlugin& Get()
+	{
+		return FModuleManager::LoadModuleChecked<IKawaiiPhysicsPlugin>("KawaiiPhysics");
+	}
+
+	static inline bool IsAvailable()
+	{
+		return FModuleManager::Get().IsModuleLoaded("KawaiiPhysics");
+	}
 };
+

@@ -86,6 +86,7 @@ struct FSphericalLimit : public FCollisionLimitBase
 {
 	GENERATED_BODY();
 
+public:
 	FSphericalLimit()
 	{
 #if WITH_EDITORONLY_DATA
@@ -106,7 +107,7 @@ struct FCapsuleLimit : public FCollisionLimitBase
 {
 	GENERATED_BODY();
 
-
+public:
 	FCapsuleLimit()
 	{
 #if WITH_EDITORONLY_DATA
@@ -127,6 +128,7 @@ struct FPlanarLimit : public FCollisionLimitBase
 {
 	GENERATED_BODY();
 
+public:
 	FPlanarLimit()
 	{
 #if WITH_EDITORONLY_DATA
@@ -211,7 +213,7 @@ public:
 public:
 	void UpdatePoseTranform(const FBoneContainer& BoneContainer, FCSPose<FCompactPose>& Pose)
 	{
-		auto CompactPoseIndex = BoneRef.GetCompactPoseIndex(BoneContainer);
+		FCompactPoseBoneIndex CompactPoseIndex = BoneRef.GetCompactPoseIndex(BoneContainer);
 		if (CompactPoseIndex < 0)
 		{
 			PoseLocation = FVector::ZeroVector;
@@ -220,7 +222,7 @@ public:
 			return;
 		}
 
-		auto ComponentSpaceTransform = Pose.GetComponentSpaceTransform(CompactPoseIndex);
+		const FTransform ComponentSpaceTransform = Pose.GetComponentSpaceTransform(CompactPoseIndex);
 		PoseLocation = ComponentSpaceTransform.GetLocation();
 		PoseRotation = ComponentSpaceTransform.GetRotation();
 		PoseScale = ComponentSpaceTransform.GetScale3D();
@@ -240,45 +242,44 @@ public:
 	UPROPERTY(EditAnywhere, Category = ModifyTarget)
 	TArray<FBoneReference> ExcludeBones;
 
-	UPROPERTY(EditAnywhere, Category = TargetFramerate, meta = (EditCondition = "OverrideTargetFramerate"))
-	int TargetFramerate = 60;
-
-	UPROPERTY(EditAnywhere, Category = TargetFramerate, meta = (InlineEditConditionToggle))
-	bool OverrideTargetFramerate = false;
-
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Physics Settings", meta = (PinHiddenByDefault))
 	FKawaiiPhysicsSettings PhysicsSettings;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Physics Settings", meta = (PinHiddenByDefault))
-	UCurveFloat* DampingCurve = nullptr;
+	UPROPERTY(EditAnywhere, Category = TargetFramerate, meta = (EditCondition = "OverrideTargetFramerate"))
+	int TargetFramerate;
+
+	UPROPERTY(EditAnywhere, Category = TargetFramerate, meta = (InlineEditConditionToggle))
+	bool OverrideTargetFramerate;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Physics Settings", meta = (PinHiddenByDefault))
-	UCurveFloat* WorldDampingLocationCurve = nullptr;
+	UCurveFloat* DampingCurve;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Physics Settings", meta = (PinHiddenByDefault))
-	UCurveFloat* WorldDampingRotationCurve = nullptr;
+	UCurveFloat* WorldDampingLocationCurve;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Physics Settings", meta = (PinHiddenByDefault))
-	UCurveFloat* StiffnessCurve = nullptr;
+	UCurveFloat* WorldDampingRotationCurve;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Physics Settings", meta = (PinHiddenByDefault))
-	UCurveFloat* RadiusCurve = nullptr;
+	UCurveFloat* StiffnessCurve;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Physics Settings", meta = (PinHiddenByDefault))
-	UCurveFloat* LimitAngleCurve = nullptr;
+	UCurveFloat* RadiusCurve;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Physics Settings", meta = (PinHiddenByDefault))
+	UCurveFloat* LimitAngleCurve;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Advanced Physics Settings", meta = (PinHiddenByDefault))
-	bool bUpdatePhysicsSettingsInGame = true;
+	bool bUpdatePhysicsSettingsInGame;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "DummyBone", meta = (PinHiddenByDefault, ClampMin = "0"))
-	float DummyBoneLength = 0.0f;
+	float DummyBoneLength;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "DummyBone", meta = (PinHiddenByDefault))
-	EBoneForwardAxis BoneForwardAxis = EBoneForwardAxis::X_Positive;
+	EBoneForwardAxis BoneForwardAxis;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Advanced Physics Settings", meta = (PinHiddenByDefault))
-	EPlanarConstraint PlanarConstraint = EPlanarConstraint::None;
-
+	EPlanarConstraint PlanarConstraint;
 
 	UPROPERTY(EditAnywhere, Category = "Spherical Limits")
 	TArray<FSphericalLimit> SphericalLimits;
@@ -290,7 +291,7 @@ public:
 	TArray<FPlanarLimit> PlanarLimits;
 
 	UPROPERTY(EditAnywhere, Category = "Limits Data(Experimental)")
-	UKawaiiPhysicsLimitsDataAsset* LimitsDataAsset = nullptr;
+	UKawaiiPhysicsLimitsDataAsset* LimitsDataAsset;
 
 	UPROPERTY(VisibleAnywhere, AdvancedDisplay, Category = "Limits Data(Experimental)")
 	TArray<FSphericalLimit> SphericalLimitsData;
@@ -301,30 +302,31 @@ public:
 	UPROPERTY(VisibleAnywhere, AdvancedDisplay, Category = "Limits Data(Experimental)")
 	TArray<FPlanarLimit> PlanarLimitsData;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Teleport", meta = (PinHiddenByDefault))
+	float TeleportDistanceThreshold;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Teleport", meta = (PinHiddenByDefault))
-	float TeleportDistanceThreshold = 300.0f;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Teleport", meta = (PinHiddenByDefault))
-	float TeleportRotationThreshold = 10.0f;
+	float TeleportRotationThreshold;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ExternalForce", meta = (PinHiddenByDefault))
-	FVector Gravity = FVector::ZeroVector;
+	FVector Gravity;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Wind, meta = (PinHiddenByDefault))
-	bool bEnableWind = false;
+	bool bEnableWind;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Wind, meta = (DisplayAfter = "bEnableWind"), meta = (PinHiddenByDefault))
-	float WindScale = 1.0f;
+	float WindScale;
 
 	UPROPERTY()
-	TArray< FKawaiiPhysicsModifyBone > ModifyBones;
+	TArray<FKawaiiPhysicsModifyBone> ModifyBones;
 
 private:
 	UPROPERTY()
 	float TotalBoneLength = 0;
+
 	UPROPERTY()
 	FTransform PreSkelCompTransform;
+
 	UPROPERTY()
 	bool bInitPhysicsSettings = false;
 
@@ -344,50 +346,41 @@ public:
 
 	virtual void Initialize_AnyThread(const FAnimationInitializeContext& Context) override;
 	virtual void CacheBones_AnyThread(const FAnimationCacheBonesContext& Context) override;
-	virtual bool NeedsDynamicReset() const override { return true; }
-	virtual void ResetDynamics(ETeleportType InTeleportType) override;
 
+	virtual bool NeedsDynamicReset() const override
+	{
+		return true; 
+	}
+
+	virtual void ResetDynamics(ETeleportType InTeleportType) override;
 	virtual void EvaluateSkeletalControl_AnyThread(FComponentSpacePoseContext& Output, TArray<FBoneTransform>& OutBoneTransforms) override;
 	virtual bool IsValidToEvaluate(const USkeleton* Skeleton, const FBoneContainer& RequiredBones) override;
 	virtual void UpdateInternal(const FAnimationUpdateContext& Context) override;
 
 	void InitModifyBones(FComponentSpacePoseContext& Output, const FBoneContainer& BoneContainer);
-	float GetTotalBoneLength()
+
+	float GetTotalBoneLength() const
 	{
 		return TotalBoneLength;
 	}
 
-
-private:
-	FVector GetBoneForwardVector(const FQuat& Rotation)
+	TArray<FKawaiiPhysicsModifyBone> GetModifyBones() const
 	{
-		switch (BoneForwardAxis) 
-		{
-			default:
-			case EBoneForwardAxis::X_Positive:
-			return Rotation.GetAxisX();
-			case EBoneForwardAxis::X_Negative:
-			return -Rotation.GetAxisX();
-			case EBoneForwardAxis::Y_Positive:
-			return Rotation.GetAxisY();
-			case EBoneForwardAxis::Y_Negative:
-			return -Rotation.GetAxisY();
-			case EBoneForwardAxis::Z_Positive:
-			return Rotation.GetAxisZ();
-			case EBoneForwardAxis::Z_Negative:
-			return -Rotation.GetAxisZ();
-		}
+		return ModifyBones;
 	}
 
+
+
+private:
 	virtual void InitializeBoneReferences(const FBoneContainer& RequiredBones) override;
 
 	void ApplyLimitsDataAsset(const FBoneContainer& RequiredBones);
 
 	int AddModifyBone(FComponentSpacePoseContext& Output, const FBoneContainer& BoneContainer, const FReferenceSkeleton& RefSkeleton, int BoneIndex);
-
 	int32 CollectChildBones(const FReferenceSkeleton& RefSkeleton, int32 ParentBoneIndex, TArray<int32>& Children) const;
-	void CalcBoneLength(FKawaiiPhysicsModifyBone& Bone, const TArray<FTransform>& RefBonePose);
+	FVector GetBoneForwardVector(const FQuat& Rotation) const;
 
+	void CalcBoneLength(FKawaiiPhysicsModifyBone& Bone, const TArray<FTransform>& RefBonePose);
 	void UpdatePhysicsSettingsOfModifyBones();
 	void UpdateSphericalLimits(TArray<FSphericalLimit>& Limits, FComponentSpacePoseContext& Output, const FBoneContainer& BoneContainer, FTransform& ComponentTransform);
 	void UpdateCapsuleLimits(TArray<FCapsuleLimit>& Limits, FComponentSpacePoseContext& Output, const FBoneContainer& BoneContainer, FTransform& ComponentTransform);
@@ -399,7 +392,6 @@ private:
 	void AdjustByPlanerCollision(FKawaiiPhysicsModifyBone& Bone, TArray<FPlanarLimit>& Limits);
 	void AdjustByAngleLimit(FComponentSpacePoseContext& Output, const FBoneContainer& BoneContainer, FTransform& ComponentTransform, FKawaiiPhysicsModifyBone& Bone, FKawaiiPhysicsModifyBone& ParentBone);
 	void AdjustByPlanarConstraint(FKawaiiPhysicsModifyBone& Bone, FKawaiiPhysicsModifyBone& ParentBone);
-
 
 	void ApplySimuateResult(FComponentSpacePoseContext& Output, const FBoneContainer& BoneContainer, TArray<FBoneTransform>& OutBoneTransforms);
 
