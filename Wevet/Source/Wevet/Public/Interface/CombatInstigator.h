@@ -44,7 +44,7 @@ public:
 	EAIActionState GetActionState() const;
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CombatInstigator")
-	bool CanMeleeStrike() const;
+	bool CanStrike() const;
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CombatInstigator")
 	void InfrictionDamage(AActor* InfrictionActor, const bool bInfrictionDie);
@@ -84,9 +84,6 @@ public:
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CombatInstigator")
 	void DoFireReleassed();
-
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CombatInstigator")
-	void DoMeleeAttack();
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CombatInstigator")
 	void DoReload();

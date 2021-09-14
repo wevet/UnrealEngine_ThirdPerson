@@ -58,9 +58,6 @@ public:
 	class UAnimMontage* UnEquipMontage;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
-	class UAnimMontage* MeleeAttackMontage;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
 	struct FAnimSequenceInfo HitDamageSequence;
 
 
@@ -70,7 +67,6 @@ public:
 		ReloadMontage  = nullptr;
 		EquipMontage   = nullptr;
 		UnEquipMontage = nullptr;
-		MeleeAttackMontage = nullptr;
 		WeaponItemType = EWeaponItemType::None;
 	}
 

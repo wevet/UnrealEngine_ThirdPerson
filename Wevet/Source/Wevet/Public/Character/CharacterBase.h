@@ -183,8 +183,8 @@ public:
 	virtual EAIActionState GetActionState_Implementation() const override;
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|CombatInstigator")
-	bool CanMeleeStrike() const;
-	virtual bool CanMeleeStrike_Implementation() const override;
+	bool CanStrike() const;
+	virtual bool CanStrike_Implementation() const override;
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|CombatInstigator")
 	void InfrictionDamage(AActor* InfrictionActor, const bool bInfrictionDie);
@@ -237,10 +237,6 @@ public:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|CombatInstigator")
 	void DoFireReleassed();
 	virtual void DoFireReleassed_Implementation() override;	
-
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|CombatInstigator")
-	void DoMeleeAttack();
-	virtual void DoMeleeAttack_Implementation() override;	
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|CombatInstigator")
 	void DoReload();
@@ -463,7 +459,6 @@ protected:
 	virtual void EquipmentActionMontage();
 	virtual void UnEquipmentActionMontage();
 	virtual void TakeDamageMontage(const bool InForcePlaying);
-	virtual void MeleeAttackMontage();
 
 
 public:

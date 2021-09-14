@@ -300,14 +300,14 @@ void AAICharacterBase::DoDamageReceive_Implementation(AActor* Actor, const FAISt
 }
 
 
-bool AAICharacterBase::CanMeleeStrike_Implementation() const
+bool AAICharacterBase::CanStrike_Implementation() const
 {
 	if (ALSMovementMode != ELSMovementMode::Grounded)
 	{
 		return false;
 	}
 
-	return Super::CanMeleeStrike_Implementation();
+	return Super::CanStrike_Implementation();
 }
 
 
@@ -348,6 +348,7 @@ void AAICharacterBase::CreateHealthController()
 	}
 
 }
+
 
 void AAICharacterBase::DestroyHealthController()
 {
@@ -390,6 +391,7 @@ void AAICharacterBase::CreateSearchNodeGenerator(const FVector SearchOriginLocat
 	AIController->SetBlackboardSearchNodeHolder(SpawningObject);
 	AIController->SetBlackboardDestinationLocation(SearchOriginLocation);
 }
+
 
 void AAICharacterBase::RemoveSearchNodeGenerator()
 {

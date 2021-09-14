@@ -7,8 +7,6 @@ ARifle::ARifle(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitia
 {
 	BulletDuration = 0.15f;
 	CollisionComponent->SetBoxExtent(FVector(16.f, 80.f, 32.f));
-	MeleeCollisionComponent->SetRelativeLocation(FVector(0.0f, 24.f, 18.f));
-	MeleeCollisionComponent->SetBoxExtent(FVector(3.f, 28.f, 12.f));
 
 	{
 		static ConstructorHelpers::FObjectFinder<USkeletalMesh> FindAsset(TEXT("/Game/Assets/MilitaryWeapon/Weapons/Assault_Rifle_A"));

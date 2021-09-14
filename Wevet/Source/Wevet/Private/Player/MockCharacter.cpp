@@ -187,7 +187,8 @@ void AMockCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInpu
 	FInputActionBinding MeleePressed("MeleeAttack", IE_Pressed);
 	MeleePressed.ActionDelegate.GetDelegateForManualSet().BindLambda([this]()
 	{
-		Super::DoMeleeAttack_Implementation();
+		//Super::DoMeleeAttack_Implementation();
+		UE_LOG(LogWevetClient, Error, TEXT("Can't Input MeleeAttack"));
 	});
 	PlayerInputComponent->AddActionBinding(MeleePressed);
 

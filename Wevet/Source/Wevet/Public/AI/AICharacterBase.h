@@ -37,7 +37,7 @@ public:
 	virtual void DoHearReceive_Implementation(AActor* Actor, const FAIStimulus InStimulus, const bool InWasKilledCrew) override;
 	virtual void DoPredictionReceive_Implementation(AActor* Actor, const FAIStimulus InStimulus) override;
 	virtual void DoDamageReceive_Implementation(AActor* Actor, const FAIStimulus InStimulus) override;
-	virtual bool CanMeleeStrike_Implementation() const override;
+	virtual bool CanStrike_Implementation() const override;
 	virtual void DoFirePressed_Implementation() override;
 #pragma endregion
 

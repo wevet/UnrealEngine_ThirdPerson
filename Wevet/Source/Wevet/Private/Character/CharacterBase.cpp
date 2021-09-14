@@ -623,7 +623,7 @@ EAIActionState ACharacterBase::GetActionState_Implementation() const
 }
 
 
-bool ACharacterBase::CanMeleeStrike_Implementation() const
+bool ACharacterBase::CanStrike_Implementation() const
 {
 	if (!TargetCharacter || !CurrentWeapon.IsValid() || ICombatInstigator::Execute_IsDeath(TargetCharacter))
 	{
@@ -830,15 +830,6 @@ void ACharacterBase::DoFireReleassed_Implementation()
 	if (CurrentWeapon.IsValid())
 	{
 		IWeaponInstigator::Execute_DoFireRelease(CurrentWeapon.Get());
-	}
-}
-
-
-void ACharacterBase::DoMeleeAttack_Implementation()
-{
-	if (CurrentWeapon.IsValid())
-	{
-		MeleeAttackMontage();
 	}
 }
 
@@ -1499,7 +1490,7 @@ void ACharacterBase::MeleeAttack(const bool InEnable)
 {
 	if (CurrentWeapon.IsValid())
 	{
-		IWeaponInstigator::Execute_DoMeleeAttack(CurrentWeapon.Get(), InEnable);
+		//IWeaponInstigator::Execute_DoMeleeAttack(CurrentWeapon.Get(), InEnable);
 	}
 }
 
@@ -1781,6 +1772,7 @@ void ACharacterBase::EquipmentActionMontage()
 	}
 }
 
+
 void ACharacterBase::UnEquipmentActionMontage()
 {
 	if (!HasEquipWeapon())
@@ -1807,6 +1799,7 @@ void ACharacterBase::UnEquipmentActionMontage()
 	}
 }
 
+
 void ACharacterBase::TakeDamageMontage(const bool InForcePlaying)
 {
 	if (!InForcePlaying)
@@ -1822,41 +1815,6 @@ void ACharacterBase::TakeDamageMontage(const bool InForcePlaying)
 	const bool bWasCrouched = (ALSStance == ELSStance::Crouching);
 	const FName NodeName = (bWasMoving || bWasCrouched) ? UPPER_BODY : FULL_BODY;
 	GetAnimInstance()->TakeDamageAnimation(ActionInfoPtr, NodeName);
-}
-
-void ACharacterBase::MeleeAttackMontage()
-{
-	if (WasMeleeAttackPlaying())
-	{
-		return;
-	}
-
-	if (ALSMovementMode != ELSMovementMode::Grounded)
-	{
-		return;
-	}
-
-	const bool bHasAnimMontage = (ActionInfoPtr && ActionInfoPtr->MeleeAttackMontage);
-	if (!bHasAnimMontage)
-	{
-		UE_LOG(LogWevetClient, Error, TEXT("nullptr MeleeAttackMontage : %s"), *GetName());
-		return;
-	}
-
-	if (GetAnimInstance()->Montage_IsPlaying(ActionInfoPtr->MeleeAttackMontage))
-	{
-		return;
-	}
-
-	MeleeAttackTimeOut = PlayAnimMontage(ActionInfoPtr->MeleeAttackMontage);
-	GetCharacterMovement()->DisableMovement();
-	FTimerDelegate TimerCallback;
-	TimerCallback.BindLambda([&]
-	{
-		MeleeAttackTimeOut = ZERO_VALUE;
-		GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
-	});
-	GetWorld()->GetTimerManager().SetTimer(MeleeAttackHundle, TimerCallback, MeleeAttackTimeOut, false);
 }
 #pragma endregion
 
