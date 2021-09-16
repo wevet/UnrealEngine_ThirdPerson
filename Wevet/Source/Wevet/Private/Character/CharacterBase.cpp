@@ -257,6 +257,11 @@ void ACharacterBase::BeginPlay()
 		ILocomotionSystemPawn::Execute_OnALSStanceChange(this);
 	}
 
+	CreateWeaponInstance(NakedWeapon, [&](AAbstractWeapon* Weapon)
+	{
+		//
+	});
+
 	GetCapsuleComponent()->OnComponentHit.AddDynamic(this, &ACharacterBase::HitReceive);
 }
 

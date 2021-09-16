@@ -328,6 +328,9 @@ protected:
 	TSubclassOf<class AAbstractWeapon> SecondaryWeapon;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "CharacterBase|Combat")
+	TSubclassOf<class AAbstractWeapon> NakedWeapon;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "CharacterBase|Combat")
 	class UBehaviorTree* BehaviorTree;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "CharacterBase|Combat")

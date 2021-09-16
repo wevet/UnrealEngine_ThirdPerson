@@ -70,6 +70,7 @@ enum class EWeaponItemType : uint8
 	Sniper UMETA(DisplayName = "Sniper"),
 	Knife  UMETA(DisplayName = "Knife"),
 	Bomb   UMETA(DisplayName = "Bomb"),
+	Naked  UMETA(DisplayName = "Naked"),
 };
 
 UENUM(BlueprintType)
@@ -88,4 +89,16 @@ enum class EGiveDamageType : uint8
 	Shoot  UMETA(DisplayName = "Shoot"),
 	Melee  UMETA(DisplayName = "Melee"),
 };
+
+
+UENUM(BlueprintType)
+enum class ENakedWeaponTriggerType : uint8
+{
+	None      UMETA(DisplayName = "None"),
+	LeftHand  UMETA(DisplayName = "LeftHand"),
+	RightHand UMETA(DisplayName = "RightHand"),
+	LeftFoot  UMETA(DisplayName = "LeftFoot"),
+	RightFoot UMETA(DisplayName = "RightFoot"),
+};
+
 

@@ -9,7 +9,9 @@
 #include "Particles/ParticleSystemComponent.h"
 #include "BulletBase.generated.h"
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FHitTriggerDelegate, AActor* const, OtherActor, FHitResult const, SweepResult);
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FBulletHitDelegate, AActor* const, OtherActor, FHitResult const, SweepResult);
+
 
 UCLASS()
 class WEVET_API ABulletBase : public AActor, public IDamageTypeInstigator
@@ -21,8 +23,10 @@ public:
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason);
 	virtual void Tick(float DeltaTime) override;
 
+
 protected:
 	virtual void BeginPlay() override;
+
 
 public:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Bullet|DamageTypeInstigator")
@@ -30,10 +34,11 @@ public:
 	virtual EGiveDamageType GetGiveDamageType_Implementation() const override;
 
 	UPROPERTY(BlueprintAssignable)
-	FHitTriggerDelegate HitTriggerDelegate;
+	FBulletHitDelegate BulletHitDelegate;
 
 	void SetOwners(const TArray<class AActor*>& InOwners);
 	void VisibleEmitter(const bool InVisible);
+
 
 protected:
 	UFUNCTION()
@@ -41,6 +46,7 @@ protected:
 
 	UFUNCTION()
 	void HitReceive(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
+
 
 protected:
 	class UPrimitiveComponent* PrimitiveComponent;

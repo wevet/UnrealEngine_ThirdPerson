@@ -66,6 +66,7 @@ void ABackPack::StoreWeapon(AAbstractWeapon* InWeapon, bool& OutAttachSuccess)
 	}
 
 	if (InWeapon->GetWeaponItemType() == EWeaponItemType::None ||
+		InWeapon->GetWeaponItemType() == EWeaponItemType::Naked ||
 		InWeapon->GetWeaponItemType() == EWeaponItemType::Knife)
 	{
 		UE_LOG(LogWevetClient, Warning, TEXT("Ignore Weapon : %s"), *InWeapon->GetName());
