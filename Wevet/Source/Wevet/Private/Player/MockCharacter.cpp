@@ -12,6 +12,7 @@
 #include "Net/UnrealNetwork.h"
 #include "Lib/WevetBlueprintFunctionLibrary.h"
 
+
 #define CAMERA_TRACE_L FName(TEXT("TP_CameraTrace_L"))
 #define CAMERA_TRACE_R FName(TEXT("TP_CameraTrace_R"))
 
@@ -261,6 +262,7 @@ void AMockCharacter::OnChangeWeapon()
 	}
 }
 
+
 void AMockCharacter::OnEquipWeapon()
 {
 	if (CurrentWeapon.IsValid())
@@ -273,20 +275,24 @@ void AMockCharacter::OnEquipWeapon()
 	}
 }
 
+
 void AMockCharacter::TurnAtRate(float Rate)
 {
 	Super::TurnAtRate(Rate);
 }
+
 
 void AMockCharacter::LookUpAtRate(float Rate)
 {
 	Super::LookUpAtRate(Rate);
 }
 
+
 void AMockCharacter::MoveForward(float Value)
 {
 	Super::MoveForward(Value);
 }
+
 
 void AMockCharacter::MoveRight(float Value)
 {
@@ -408,7 +414,7 @@ void AMockCharacter::Release_Implementation()
 	const FVector Forward = Super::GetActorLocation() + (ForwardOffset * DEFAULT_FORWARD_VECTOR);
 	const FTransform Transform = UKismetMathLibrary::MakeTransform(Forward, Rotation, FVector::OneVector);
 
-	if (AAbstractWeapon* Weapon = InventoryComponent->GetUnEquipWeaponByIndex(WeaponCurrentIndex))
+	if (AAbstractWeapon* Weapon = GetReleaseWeaponByIndex())
 	{
 		InventoryComponent->RemoveWeaponInventory(Weapon);
 		ReleaseWeaponToWorld(Transform, Weapon);
@@ -450,14 +456,14 @@ void AMockCharacter::EquipmentActionMontage()
 	}
 
 	check(InventoryComponent);
-	AAbstractWeapon* const WeaponPtr = FindByIndexWeapon();
-	if (WeaponPtr == nullptr)
+	AAbstractWeapon* Weapon = GetWeaponByIndex();
+	if (Weapon == nullptr)
 	{
 		return;
 	}
 
-	CurrentWeapon = MakeWeakObjectPtr<AAbstractWeapon>(WeaponPtr);
-	SetActionInfo(WeaponPtr->GetWeaponItemType());
+	CurrentWeapon = MakeWeakObjectPtr<AAbstractWeapon>(Weapon);
+	SetActionInfo(Weapon->GetWeaponItemType());
 
 	if (ActionInfoPtr && ActionInfoPtr->EquipMontage)
 	{
@@ -467,9 +473,15 @@ void AMockCharacter::EquipmentActionMontage()
 #pragma endregion
 
 
-AAbstractWeapon* AMockCharacter::FindByIndexWeapon()
+AAbstractWeapon* AMockCharacter::GetWeaponByIndex()
 {
-	return GetInventoryComponent()->FindByIndexWeapon(WeaponCurrentIndex);
+	return GetInventoryComponent()->GetWeaponByIndex(WeaponCurrentIndex);
+}
+
+
+AAbstractWeapon* AMockCharacter::GetReleaseWeaponByIndex()
+{
+	return GetInventoryComponent()->GetReleaseWeaponByIndex(WeaponCurrentIndex);
 }
 
 

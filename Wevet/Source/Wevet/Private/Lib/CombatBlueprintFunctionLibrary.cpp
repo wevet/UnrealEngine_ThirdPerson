@@ -74,7 +74,6 @@ bool UCombatBlueprintFunctionLibrary::CanDamagedActor(AActor* OtherActor, AActor
 	return false;
 }
 
-
 /// <summary>
 /// Calcurate BaseDamage
 /// </summary>
@@ -82,8 +81,9 @@ bool UCombatBlueprintFunctionLibrary::CanDamagedActor(AActor* OtherActor, AActor
 /// <param name="InSelf"></param>
 /// <param name="InOwner"></param>
 /// <param name="InBaseDamage"></param>
+/// <param name="InWeaponItemType"></param>
 /// <returns></returns>
-float UCombatBlueprintFunctionLibrary::CalcurateBaseDamage(const FHitResult& HitResult, AActor* InSelf, APawn* InOwner, const float InBaseDamage)
+float UCombatBlueprintFunctionLibrary::CalcurateBaseDamage(const FHitResult& HitResult, AActor* InSelf, APawn* InOwner, const float InBaseDamage, const EWeaponItemType InWeaponItemType)
 {
 	float TotalDamage = ZERO_VALUE;
 	AActor* OtherActor = HitResult.GetActor();
@@ -99,47 +99,33 @@ float UCombatBlueprintFunctionLibrary::CalcurateBaseDamage(const FHitResult& Hit
 	}
 
 	ICombatInstigator* CombatInstigator = Cast<ICombatInstigator>(OtherActor);
-	if (CombatInstigator)
+	if (CombatInstigator == nullptr)
 	{
-		// Calculate the basic damage value of Pawn.
-		UCharacterModel* const DamageModel = ICombatInstigator::Execute_GetPropertyModel(CombatInstigator->_getUObject());
-		const bool bCanKillDamage = ICombatInstigator::Execute_CanKillDealDamage(CombatInstigator->_getUObject(), HitResult.BoneName);
-		TotalDamage = ICombatInstigator::Execute_MakeDamage(InOwner, DamageModel, InBaseDamage);
+		return InBaseDamage;
+	}
 
-		if (bCanKillDamage)
-		{
-			TotalDamage += (float)DamageModel->GetKillDamage();
-		}
+	// Calculate the basic damage value of Pawn.
+	UCharacterModel* const DamageModel = ICombatInstigator::Execute_GetPropertyModel(CombatInstigator->_getUObject());
+	TotalDamage = ICombatInstigator::Execute_MakeDamage(InOwner, DamageModel, InBaseDamage);
+
+	// Bare handed damage isn't instant death.
+	bool bCanKillDamage = ICombatInstigator::Execute_CanKillDealDamage(CombatInstigator->_getUObject(), HitResult.BoneName);
+	bCanKillDamage &= (InWeaponItemType != EWeaponItemType::Knife) &&
+		(InWeaponItemType != EWeaponItemType::Naked) &&
+		(InWeaponItemType != EWeaponItemType::None);
+
+	if (bCanKillDamage)
+	{
+		TotalDamage += (float)DamageModel->GetKillDamage();
 	}
 	else
 	{
-		TotalDamage = InBaseDamage;
+		//
 	}
-
 
 	IDamageTypeInstigator* DamageTypeInstigator = Cast<IDamageTypeInstigator>(InSelf);
-	const EGiveDamageType GiveDamageType = DamageTypeInstigator ? 
-		IDamageTypeInstigator::Execute_GetGiveDamageType(DamageTypeInstigator->_getUObject()) : EGiveDamageType::None;
-
-	switch (GiveDamageType)
-	{
-		case EGiveDamageType::Shoot:
-		{
-			//
-		}
-		break;
-		case EGiveDamageType::Melee:
-		{
-			//
-		}
-		break;
-	}
-
-
-	if (CombatInstigator)
-	{
-		ICombatInstigator::Execute_HitEffectReceive(OtherActor, HitResult, GiveDamageType);
-	}
-
+	const EGiveDamageType GiveDamageType = IDamageTypeInstigator::Execute_GetGiveDamageType(DamageTypeInstigator->_getUObject());
+	ICombatInstigator::Execute_HitEffectReceive(OtherActor, HitResult, GiveDamageType);
 	return TotalDamage;
 }
+

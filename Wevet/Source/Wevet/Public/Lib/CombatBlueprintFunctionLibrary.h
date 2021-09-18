@@ -28,7 +28,7 @@ public:
 	static bool CanDamagedActor(AActor* OtherActor, AActor* InSelf, APawn* InOwner);
 
 	UFUNCTION(BlueprintPure, Category = Lib)
-	static float CalcurateBaseDamage(const FHitResult& HitResult, AActor* InSelf, APawn* InOwner, const float InBaseDamage);
+	static float CalcurateBaseDamage(const FHitResult& HitResult, AActor* InSelf, APawn* InOwner, const float InBaseDamage, const EWeaponItemType InWeaponItemType);
 
 private:
 	static bool Probability(const float InPercent);

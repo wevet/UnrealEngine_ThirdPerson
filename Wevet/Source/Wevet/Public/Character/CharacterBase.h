@@ -394,6 +394,7 @@ protected:
 	bool bDebugTrace;
 #pragma endregion
 
+
 protected:
 	UPROPERTY(EditAnywhere, Instanced, Category = "CharacterBase|CharacterModel")
 	UCharacterModel* CharacterModel;
@@ -452,6 +453,9 @@ protected:
 	virtual void ReleaseAllItemInventory();
 	void ReleaseWeaponToWorld(const FTransform& Transform, AAbstractWeapon*& Weapon);
 	void ReleaseItemToWorld(const FTransform& Transform, AAbstractItem*& Item);
+
+	UFUNCTION()
+	void WeaponFireCallBack(const bool InFiredAction);
 
 protected:
 	TWeakObjectPtr<class AAbstractWeapon> CurrentWeapon;

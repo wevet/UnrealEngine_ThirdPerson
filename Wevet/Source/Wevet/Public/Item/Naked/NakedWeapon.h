@@ -4,8 +4,13 @@
 
 #include "CoreMinimal.h"
 #include "Item/AbstractWeapon.h"
+#include "NakedWeaponTrigger.h"
 #include "NakedWeapon.generated.h"
 
+
+/*
+* Wrapper class ANakedWeaponTrigger
+*/
 UCLASS()
 class WEVET_API ANakedWeapon : public AAbstractWeapon
 {
@@ -13,4 +18,47 @@ class WEVET_API ANakedWeapon : public AAbstractWeapon
 	
 public:
 	ANakedWeapon(const FObjectInitializer& ObjectInitializer);
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason);
+
+protected:
+	virtual void BeginPlay() override;
+
+
+public:
+	virtual void Initialize(APawn* const NewCharacterOwner) override;
+
+	virtual bool CanReleaseItem() const override
+	{
+		return false;
+	}
+
+
+public:
+#pragma region Interface
+	virtual void DoFirePressed_Implementation() override;
+	virtual void DoFireRelease_Implementation() override;
+	virtual bool CanStrike_Implementation() const override;
+	
+	virtual void DoReload_Implementation() override
+	{
+		// Pass
+	}
+
+
+	virtual void DoReplenishment_Implementation(const int32 InAddAmmo) override
+	{
+		// Pass
+	}
+#pragma endregion
+
+
+protected:
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ANakedWeapon|Asset")
+	TSubclassOf<class ANakedWeaponTrigger> TriggerTemplates;
+
+	TMap<ENakedWeaponTriggerType, TArray<class ANakedWeaponTrigger*>> NakedWeaponTriggerMap;
+
+protected:
+	void DoDeployTemplate();
 };
+

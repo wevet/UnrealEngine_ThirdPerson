@@ -65,6 +65,7 @@ void AMockPlayerController::OnPossess(APawn* InPawn)
 			}
 		}
 
+
 		// AliveEventBind..
 		{
 			FCombatDelegate* Delegate = Interface->GetAliveDelegate();
@@ -95,6 +96,7 @@ void AMockPlayerController::OnUnPossess()
 			}
 		}
 
+
 		// KillEventUnBind..
 		{
 			FCombatOneDelegate* Delegate = Interface->GetKillDelegate();
@@ -103,6 +105,7 @@ void AMockPlayerController::OnUnPossess()
 				(*Delegate).RemoveDynamic(this, &AMockPlayerController::OnKill);
 			}
 		}
+
 
 		// AliveEventUnBind..
 		{

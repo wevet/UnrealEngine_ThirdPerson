@@ -13,6 +13,7 @@ ANakedWeaponTrigger::ANakedWeaponTrigger(const FObjectInitializer& ObjectInitial
 	AttachBoneName = NAME_None;
 	bWasHitResult = false;
 	bWasOverlapResult = false;
+	AddtionalDamage = 10.f;
 }
 
 
@@ -64,9 +65,13 @@ void ANakedWeaponTrigger::BeginOverlapRecieve(UPrimitiveComponent* OverlappedCom
 		return;
 	}
 
+
 	if (OtherActor->ActorHasTag(DAMAGE_TAG))
 	{
-
+		if (NakedHitDelegate.IsBound())
+		{
+			NakedHitDelegate.Broadcast(OtherActor, SweepResult);
+		}
 	}
 }
 

@@ -13,6 +13,7 @@
 #include "Perception/AISense_Hearing.h"
 
 
+
 ACharacterBase::ACharacterBase(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {
 	PrimaryActorTick.bCanEverTick = true;
@@ -115,6 +116,11 @@ ACharacterBase::ACharacterBase(const FObjectInitializer& ObjectInitializer) : Su
 	{
 		static ConstructorHelpers::FObjectFinder<USoundBase> FindAsset(Wevet::ProjectFile::GetFootStepPath());
 		FootStepSoundAsset = FindAsset.Object;
+	}
+
+	{
+		static ConstructorHelpers::FObjectFinder<UClass> FindAsset(Wevet::ProjectFile::GetNakedContainerPath());
+		NakedWeapon = FindAsset.Object;
 	}
 
 	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
@@ -759,13 +765,16 @@ void ACharacterBase::Alive_Implementation()
 
 void ACharacterBase::Equipment_Implementation()
 {
-	if (CurrentWeapon.IsValid())
+	if (!CurrentWeapon.IsValid())
 	{
-		const FName SocketName(CurrentWeapon.Get()->GetWeaponItemInfo().EquipSocketName);
-		FAttachmentTransformRules Rules(EAttachmentRule::SnapToTarget, true);
-		CurrentWeapon.Get()->AttachToComponent(Super::GetMesh(), Rules, SocketName);
-		CurrentWeapon.Get()->SetEquip(true);
+		return;
 	}
+
+	const FName SocketName(CurrentWeapon.Get()->GetWeaponItemInfo().EquipSocketName);
+	FAttachmentTransformRules Rules(EAttachmentRule::SnapToTarget, true);
+	CurrentWeapon.Get()->AttachToComponent(Super::GetMesh(), Rules, SocketName);
+	CurrentWeapon.Get()->WeaponActionDelegate.AddDynamic(this, &ACharacterBase::WeaponFireCallBack);
+	CurrentWeapon.Get()->SetEquip(true);
 }
 
 
@@ -777,6 +786,7 @@ void ACharacterBase::UnEquipment_Implementation()
 		const FName SocketName(CurrentWeapon.Get()->GetWeaponItemInfo().UnEquipSocketName);
 		FAttachmentTransformRules Rules(EAttachmentRule::SnapToTarget, true);
 		CurrentWeapon.Get()->AttachToComponent(Super::GetMesh(), Rules, SocketName);
+		CurrentWeapon.Get()->WeaponActionDelegate.RemoveDynamic(this, &ACharacterBase::WeaponFireCallBack);
 		CurrentWeapon.Get()->SetEquip(false);
 	}
 	ActionInfoPtr = nullptr;
@@ -1740,6 +1750,12 @@ void ACharacterBase::ReleaseItemToWorld(const FTransform& Transform, AAbstractIt
 		IInteractionItem::Execute_SpawnToWorld(ItemPtr);
 	}
 	Item = nullptr;
+}
+
+
+void ACharacterBase::WeaponFireCallBack(const bool InFiredAction)
+{
+	UE_LOG(LogWevetClient, Log, TEXT("WeaponFireCallBack => %s"), InFiredAction ? TEXT("true") : TEXT("false"));
 }
 #pragma endregion
 

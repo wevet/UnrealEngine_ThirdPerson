@@ -78,6 +78,11 @@ namespace Wevet
 			return TEXT("/Game/Game/Blueprints/Tool/BP_Backpack.BP_Backpack_C");
 		};
 
+		static const wchar_t* GetNakedContainerPath()
+		{
+			return TEXT("/Game/Game/Blueprints/Weapon/Basic/BP_Naked.BP_Naked_C");
+		};
+
 		static const wchar_t* GetUMGPath()
 		{
 			return TEXT("/Game/Game/Blueprints/Widgets/BP_UMGManager.BP_UMGManager_C");

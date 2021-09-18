@@ -95,7 +95,8 @@ public:
 
 	virtual void VisibleDeathPostProcess(const bool InEnabled);
 	
-	AAbstractWeapon* FindByIndexWeapon();
+	AAbstractWeapon* GetWeaponByIndex();
+	AAbstractWeapon* GetReleaseWeaponByIndex();
 
 
 protected:
