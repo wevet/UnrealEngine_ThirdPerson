@@ -78,6 +78,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
 	float HearingRange;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variable")
+	int32 Priority;
+
 
 public:
 	FORCEINLINE bool operator==(const FWeaponItemInfo& Other) const
@@ -94,6 +97,7 @@ public:
 		TraceDistance = 15000.f;
 		MeleeDistance = 1000.f;
 		HearingRange = 500.f;
+		Priority = 1;
 	}
 
 public:
@@ -109,9 +113,10 @@ public:
 		Texture = InWeaponItemInfo.Texture;
 		DisplayName = InWeaponItemInfo.DisplayName;
 		MeleeDistance = InWeaponItemInfo.MeleeDistance;
+		Priority = InWeaponItemInfo.Priority;
 	}
 
-
+	int32 GetPriority() const { return Priority; }
 	bool EmptyCurrentAmmo() const {	return CurrentAmmo <= 0; }
 	bool EmptyAmmo() const { return MaxAmmo <= 0; }
 	bool CurrentFullAmmo() const { return CurrentAmmo >= ClipType; }

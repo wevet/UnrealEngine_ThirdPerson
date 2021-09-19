@@ -462,12 +462,17 @@ void AMockCharacter::EquipmentActionMontage()
 		return;
 	}
 
-	CurrentWeapon = MakeWeakObjectPtr<AAbstractWeapon>(Weapon);
-	SetActionInfo(Weapon->GetWeaponItemType());
 
+	SetActionInfo(Weapon->GetWeaponItemType());
 	if (ActionInfoPtr && ActionInfoPtr->EquipMontage)
 	{
+		// I can relate the montage to the weapons.
+		CurrentWeapon = MakeWeakObjectPtr<AAbstractWeapon>(Weapon);
 		EquipWeaponTimeOut += PlayAnimMontage(ActionInfoPtr->EquipMontage, MONTAGE_DELAY);
+	}
+	else
+	{
+		Weapon = nullptr;
 	}
 }
 #pragma endregion

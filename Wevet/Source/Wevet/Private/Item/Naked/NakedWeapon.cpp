@@ -20,6 +20,7 @@ ANakedWeapon::ANakedWeapon(const FObjectInitializer& ObjectInitializer) : Super(
 	WeaponItemInfo.EquipSocketName = NAME_None;
 	WeaponItemInfo.UnEquipSocketName = NAME_None;
 	WeaponItemInfo.DisplayName = FString(TEXT("Bare Hands"));
+	WeaponItemInfo.Priority = 0;
 
 	MuzzleSocketName = NAME_None;
 	GripSocketName = NAME_None;

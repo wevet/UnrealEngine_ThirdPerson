@@ -443,7 +443,7 @@ public:
 	EWeaponItemType GetCurrentWeaponType() const;
 
 	UFUNCTION(BlueprintCallable, Category = "CharacterBase|Function")
-	void SwapWeaponAction(bool &OutSwapSuccess);
+	AAbstractWeapon* SwitchWeaponAction() const;
 
 protected:
 	AAbstractWeapon* FindByWeapon(const EWeaponItemType WeaponItemType) const;

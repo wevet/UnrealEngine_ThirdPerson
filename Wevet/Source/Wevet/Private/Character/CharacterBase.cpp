@@ -765,16 +765,19 @@ void ACharacterBase::Alive_Implementation()
 
 void ACharacterBase::Equipment_Implementation()
 {
-	if (!CurrentWeapon.IsValid())
+	if (CurrentWeapon.IsValid())
 	{
-		return;
-	}
+		const FName SocketName(CurrentWeapon.Get()->GetWeaponItemInfo().EquipSocketName);
+		FAttachmentTransformRules Rules(EAttachmentRule::SnapToTarget, true);
+		CurrentWeapon.Get()->AttachToComponent(Super::GetMesh(), Rules, SocketName);
+		CurrentWeapon.Get()->SetEquip(true);
 
-	const FName SocketName(CurrentWeapon.Get()->GetWeaponItemInfo().EquipSocketName);
-	FAttachmentTransformRules Rules(EAttachmentRule::SnapToTarget, true);
-	CurrentWeapon.Get()->AttachToComponent(Super::GetMesh(), Rules, SocketName);
-	CurrentWeapon.Get()->WeaponActionDelegate.AddDynamic(this, &ACharacterBase::WeaponFireCallBack);
-	CurrentWeapon.Get()->SetEquip(true);
+		const EWeaponItemType WeaponType = CurrentWeapon.Get()->GetWeaponItemType();
+		if (WeaponType == EWeaponItemType::Naked || WeaponType == EWeaponItemType::Knife)
+		{
+			CurrentWeapon.Get()->WeaponActionDelegate.AddDynamic(this, &ACharacterBase::WeaponFireCallBack);
+		}
+	}
 }
 
 
@@ -786,8 +789,14 @@ void ACharacterBase::UnEquipment_Implementation()
 		const FName SocketName(CurrentWeapon.Get()->GetWeaponItemInfo().UnEquipSocketName);
 		FAttachmentTransformRules Rules(EAttachmentRule::SnapToTarget, true);
 		CurrentWeapon.Get()->AttachToComponent(Super::GetMesh(), Rules, SocketName);
-		CurrentWeapon.Get()->WeaponActionDelegate.RemoveDynamic(this, &ACharacterBase::WeaponFireCallBack);
 		CurrentWeapon.Get()->SetEquip(false);
+
+		const EWeaponItemType WeaponType = CurrentWeapon.Get()->GetWeaponItemType();
+		if (WeaponType == EWeaponItemType::Naked || WeaponType == EWeaponItemType::Knife)
+		{
+			CurrentWeapon.Get()->WeaponActionDelegate.RemoveDynamic(this, &ACharacterBase::WeaponFireCallBack);
+		}
+
 	}
 	ActionInfoPtr = nullptr;
 }
@@ -1564,40 +1573,33 @@ EWeaponItemType ACharacterBase::GetCurrentWeaponType() const
 }
 
 /// <summary>
-/// ïêäÌÇì¸ÇÍë÷Ç¶ÇÈ
+/// Switch weapons.
 /// </summary>
-/// <param name="OutSwapSuccess"></param>
-void ACharacterBase::SwapWeaponAction(bool& OutSwapSuccess)
+/// <returns></returns>
+AAbstractWeapon* ACharacterBase::SwitchWeaponAction() const
 {
-	check(InventoryComponent);
-	AAbstractWeapon* Weapon = InventoryComponent->GetUnEquipWeapon();
-	if (Weapon && !Weapon->WasEmpty())
+	// @NOTE
+	// Find HighPriorityWeapon
+	// etx Pistol, Rifle
+	bool FoundResult = false;
+	GetInventoryComponent()->FindHighPriorityWeapon(FoundResult);
+	if (FoundResult)
 	{
-		OutSwapSuccess = true;
+		// Found Gun
+		return GetInventoryComponent()->GetAvailableWeapon();
 	}
-
-	// ãÛÇ∂Ç·Ç»ÇØÇÍÇŒUnEquipÇé¿çs
-	if (OutSwapSuccess)
+	else
 	{
-		UnEquipmentActionMontage();
+		// Not Found Naked
+		return GetInventoryComponent()->GetNakedWeapon();
 	}
+	return nullptr;
 }
 
 
 AAbstractWeapon* ACharacterBase::FindByWeapon(const EWeaponItemType WeaponItemType) const
 {
-	if (InventoryComponent->EmptyWeaponInventory())
-	{
-		return nullptr;
-	}
-	for (AAbstractWeapon* Weapon : InventoryComponent->GetWeaponInventory())
-	{
-		if (Weapon && Weapon->WasSameWeaponType(WeaponItemType))
-		{
-			return Weapon;
-		}
-	}
-	return nullptr;
+	return GetInventoryComponent()->FindByWeapon(WeaponItemType);
 }
 
 
@@ -1763,6 +1765,11 @@ void ACharacterBase::WeaponFireCallBack(const bool InFiredAction)
 #pragma region Montages
 void ACharacterBase::EquipmentActionMontage()
 {
+	if (ALSMovementMode != ELSMovementMode::Grounded)
+	{
+		return;
+	}
+
 	if (InventoryComponent->EmptyWeaponInventory())
 	{
 		return;
@@ -1774,6 +1781,7 @@ void ACharacterBase::EquipmentActionMontage()
 		return;
 	}
 
+	// AI already has a Pointer.
 	if (!CurrentWeapon.IsValid())
 	{
 		return;
@@ -1846,10 +1854,12 @@ UCharacterAnimInstanceBase* ACharacterBase::GetAnimInstance() const
 	return Cast<UCharacterAnimInstanceBase>(GetMesh()->GetAnimInstance());
 }
 
+
 UIKAnimInstance* ACharacterBase::GetIKAnimInstance() const
 {
 	return Cast<UIKAnimInstance>(GetMesh()->GetPostProcessInstance());
 }
+
 
 FVector ACharacterBase::GetHeadSocketLocation() const
 {
@@ -1875,6 +1885,7 @@ FVector ACharacterBase::GetHeadSocketLocation() const
 	return Position;
 }
 
+
 FVector ACharacterBase::GetChestSocketLocation() const
 {
 	FVector Position = GetActorLocation();
@@ -1899,15 +1910,18 @@ FVector ACharacterBase::GetChestSocketLocation() const
 	return Position;
 }
 
+
 const TArray<class AActor*>& ACharacterBase::GetIgnoreActors()
 {
 	return IgnoreActors;
 }
 
+
 EDrawDebugTrace::Type ACharacterBase::GetDrawDebugTrace() const
 {
 	return bDebugTrace ? EDrawDebugTrace::Type::ForOneFrame : EDrawDebugTrace::Type::None;
 }
+
 
 FTransform ACharacterBase::GetChestTransform() const
 {
@@ -1921,6 +1935,7 @@ FTransform ACharacterBase::GetChestTransform() const
 	}
 }
 
+
 void ACharacterBase::SetActionInfo(const EWeaponItemType InWeaponItemType)
 {
 	if (GetAnimInstance())
@@ -1928,6 +1943,7 @@ void ACharacterBase::SetActionInfo(const EWeaponItemType InWeaponItemType)
 		ActionInfoPtr = GetAnimInstance()->GetActionInfo(InWeaponItemType);
 	}
 }
+
 
 void ACharacterBase::SetEnableRecover(const bool InEnableRecover)
 {
