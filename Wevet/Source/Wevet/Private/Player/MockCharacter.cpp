@@ -417,7 +417,7 @@ void AMockCharacter::Release_Implementation()
 	if (AAbstractWeapon* Weapon = GetReleaseWeaponByIndex())
 	{
 		InventoryComponent->RemoveWeaponInventory(Weapon);
-		ReleaseWeaponToWorld(Transform, Weapon);
+		ReleaseItemToWorld(Transform, Weapon);
 		// Refresh Array Index
 		WeaponCurrentIndex = 0;
 	}

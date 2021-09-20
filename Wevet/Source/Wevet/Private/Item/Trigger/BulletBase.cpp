@@ -1,6 +1,6 @@
 // Copyright 2018 wevet works All Rights Reserved.
 
-#include "Item/BulletBase.h"
+#include "Item/Trigger/BulletBase.h"
 #include "Character/CharacterBase.h"
 #include "WevetExtension.h"
 #include "Wevet.h"
@@ -10,8 +10,6 @@ ABulletBase::ABulletBase(const FObjectInitializer& ObjectInitializer) : Super(Ob
 {
 	PrimaryActorTick.bCanEverTick = true;
 	LifeInterval = 2.0f;
-	bWasHitResult = false;
-	bWasOverlapResult = false;
 
 	Tags.Add(WATER_TAG);
 
@@ -32,7 +30,6 @@ void ABulletBase::BeginPlay()
 	Super::BeginPlay();
 	Super::SetLifeSpan(LifeInterval);
 
-	PrimitiveComponent = Cast<UPrimitiveComponent>(GetComponentByClass(UPrimitiveComponent::StaticClass()));
 	ParticleComponent = Cast<UParticleSystemComponent>(GetComponentByClass(UParticleSystemComponent::StaticClass()));
 
 	if (PrimitiveComponent)
@@ -54,26 +51,13 @@ void ABulletBase::EndPlay(const EEndPlayReason::Type EndPlayReason)
 		PrimitiveComponent->OnComponentBeginOverlap.RemoveDynamic(this, &ABulletBase::BeginOverlapRecieve);
 		PrimitiveComponent->OnComponentHit.RemoveDynamic(this, &ABulletBase::HitReceive);
 	}
-	IgnoreActors.Reset(0);
 	Super::EndPlay(EndPlayReason);
-}
-
-
-void ABulletBase::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
 }
 
 
 EGiveDamageType ABulletBase::GetGiveDamageType_Implementation() const
 {
 	return EGiveDamageType::Shoot;
-}
-
-
-void ABulletBase::SetOwners(const TArray<class AActor*>& InOwners)
-{
-	IgnoreActors = InOwners;
 }
 
 
@@ -96,10 +80,10 @@ void ABulletBase::BeginOverlapRecieve(UPrimitiveComponent* OverlappedComponent, 
 		return;
 	}
 
+#if false
 	if (OtherActor->ActorHasTag(WATER_BODY_TAG))
 	{
 
-#if false
 		if (!bWasOverlapResult)
 		{
 			bWasOverlapResult = true;
@@ -111,16 +95,17 @@ void ABulletBase::BeginOverlapRecieve(UPrimitiveComponent* OverlappedComponent, 
 			PS->ComponentTags.Add(WATER_TAG);
 			PS->GetOwner()->Tags.Add(WATER_TAG);
 		}
+	} 
 #endif
 
-	} 
-	else
+	if (OtherActor->ActorHasTag(DAMAGE_TAG))
 	{
-		if (!OtherActor->IsA(ACharacterBase::StaticClass()))
+		if (WeaponTriggerHitDelegate.IsBound())
 		{
-			UE_LOG(LogWevetClient, Log, TEXT("OtherActor => %s, funcName => %s"), *OtherActor->GetName(), *FString(__FUNCTION__));
+			WeaponTriggerHitDelegate.Broadcast(OtherActor, SweepResult);
 		}
 	}
+
 	Super::Destroy();
 }
 

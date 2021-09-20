@@ -5,27 +5,28 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "Interface/DamageTypeInstigator.h"
-#include "Components/PrimitiveComponent.h"
+#include "WeaponTriggerBase.h"
 #include "Particles/ParticleSystemComponent.h"
 #include "BulletBase.generated.h"
 
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FBulletHitDelegate, AActor* const, OtherActor, FHitResult const, SweepResult);
-
-
 UCLASS()
-class WEVET_API ABulletBase : public AActor, public IDamageTypeInstigator
+class WEVET_API ABulletBase : public AWeaponTriggerBase, public IDamageTypeInstigator
 {
 	GENERATED_BODY()
 	
 public:	
 	ABulletBase(const FObjectInitializer& ObjectInitializer);
-	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason);
-	virtual void Tick(float DeltaTime) override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 
 protected:
 	virtual void BeginPlay() override;
+
+
+protected:
+	virtual void BeginOverlapRecieve(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult) override;
+	virtual void HitReceive(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit) override;
 
 
 public:
@@ -33,27 +34,11 @@ public:
 	EGiveDamageType GetGiveDamageType() const;
 	virtual EGiveDamageType GetGiveDamageType_Implementation() const override;
 
-	UPROPERTY(BlueprintAssignable)
-	FBulletHitDelegate BulletHitDelegate;
-
-	void SetOwners(const TArray<class AActor*>& InOwners);
 	void VisibleEmitter(const bool InVisible);
 
 
 protected:
-	UFUNCTION()
-	void BeginOverlapRecieve(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
-
-	UFUNCTION()
-	void HitReceive(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
-
-
-protected:
-	class UPrimitiveComponent* PrimitiveComponent;
 	class UParticleSystemComponent* ParticleComponent;
-	TArray<class AActor*> IgnoreActors;
-	bool bWasHitResult;
-	bool bWasOverlapResult;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Bullet|Variable")
 	float LifeInterval;

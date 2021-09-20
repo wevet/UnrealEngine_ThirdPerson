@@ -102,4 +102,7 @@ public:
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CombatInstigator")
 	void ReloadActionMontage(float& OutReloadDuration);
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CombatInstigator")
+	void NakedAction(const ENakedWeaponTriggerType NakedWeaponTriggerType, const bool Enable, bool &FoundResult);
 };

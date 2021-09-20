@@ -11,6 +11,7 @@
 #include "Lib/WevetBlueprintFunctionLibrary.h"
 #include "LocomotionSystemMacroLibrary.h"
 #include "Perception/AISense_Hearing.h"
+#include "Item/NakedWeapon.h"
 
 
 
@@ -931,6 +932,12 @@ void ACharacterBase::ReloadActionMontage_Implementation(float& OutReloadDuration
 		OutReloadDuration += PlayAnimMontage(ActionInfoPtr->ReloadMontage);
 	}
 }
+
+
+void ACharacterBase::NakedAction_Implementation(const ENakedWeaponTriggerType NakedWeaponTriggerType, const bool Enable, bool& FoundResult)
+{
+	//ANakedWeapon
+}
 #pragma endregion
 
 
@@ -1654,44 +1661,39 @@ void ACharacterBase::CreateWeaponInstance(const TSubclassOf<class AAbstractWeapo
 
 void ACharacterBase::ReleaseAllWeaponInventory()
 {
-	if (InventoryComponent->EmptyWeaponInventory())
+	if (!GetInventoryComponent()->EmptyWeaponInventory())
 	{
-		return;
-	}
+		auto SourceArray = GetInventoryComponent()->GetWeaponInventory();
+		TArray<class AWorldItem*> DestArray(SourceArray);
+		ReleaseItemInventoryInternal(DestArray);
 
-	TArray<FVector> SpawnPoints;
-	const FVector RelativePosition = GetMesh()->GetComponentLocation();
-	const int32 WeaponNum = InventoryComponent->GetWeaponInventory().Num();
-	UWevetBlueprintFunctionLibrary::CircleSpawnPoints(WeaponNum, DEFAULT_FORWARD_VECTOR, RelativePosition, SpawnPoints);
-	for (int Index = 0; Index < WeaponNum; ++Index)
-	{
-		AAbstractWeapon* Weapon = InventoryComponent->GetWeaponInventory()[Index];
-		if (!Weapon)
-		{
-			continue;
-		}
-		const FVector Position = SpawnPoints[Index];
-		const FTransform SpawnTransform = FTransform(GetActorRotation(), Position, FVector::OneVector);
-		ReleaseWeaponToWorld(SpawnTransform, Weapon);
+		GetInventoryComponent()->ClearWeaponInventory();
 	}
-	InventoryComponent->ClearWeaponInventory();
 }
 
 
 void ACharacterBase::ReleaseAllItemInventory()
 {
-	if (InventoryComponent->EmptyItemInventory())
+	if (!GetInventoryComponent()->EmptyItemInventory())
 	{
-		return;
-	}
+		auto SourceArray = GetInventoryComponent()->GetItemInventory();
+		TArray<class AWorldItem*> DestArray(SourceArray);
+		ReleaseItemInventoryInternal(DestArray);
 
+		GetInventoryComponent()->ClearItemInventory();
+	}
+}
+
+
+void ACharacterBase::ReleaseItemInventoryInternal(TArray<class AWorldItem*> ItemArray)
+{
 	TArray<FVector> SpawnPoints;
 	const FVector RelativePosition = GetMesh()->GetComponentLocation();
-	const int32 WeaponNum = InventoryComponent->GetItemInventory().Num();
-	UWevetBlueprintFunctionLibrary::CircleSpawnPoints(WeaponNum, DEFAULT_FORWARD_VECTOR, RelativePosition, SpawnPoints);
-	for (int Index = 0; Index < WeaponNum; ++Index)
+	const int32 ItemNum = ItemArray.Num();
+	UWevetBlueprintFunctionLibrary::CircleSpawnPoints(ItemNum, DEFAULT_FORWARD_VECTOR, RelativePosition, SpawnPoints);
+	for (int Index = 0; Index < ItemNum; ++Index)
 	{
-		AAbstractItem* Item = InventoryComponent->GetItemInventory()[Index];
+		AWorldItem* Item = ItemArray[Index];
 		if (!Item)
 		{
 			continue;
@@ -1700,38 +1702,10 @@ void ACharacterBase::ReleaseAllItemInventory()
 		const FTransform SpawnTransform = FTransform(GetActorRotation(), Position, FVector::OneVector);
 		ReleaseItemToWorld(SpawnTransform, Item);
 	}
-	InventoryComponent->ClearItemInventory();
 }
 
 
-void ACharacterBase::ReleaseWeaponToWorld(const FTransform& Transform, AAbstractWeapon*& Weapon)
-{
-	if (!Weapon)
-	{
-		return;
-	}
-
-	FWeaponItemInfo WeaponItemInfo = Weapon->GetWeaponItemInfo();
-	IInteractionItem::Execute_Release(Weapon, nullptr);
-
-	FActorSpawnParameters SpawnParams;
-	SpawnParams.Owner = nullptr;
-	SpawnParams.Instigator = nullptr;
-	AAbstractWeapon* const WeaponPtr = GetWorld()->SpawnActor<AAbstractWeapon>(Weapon->GetClass(), Transform, SpawnParams);
-	if (WeaponPtr)
-	{
-#if WITH_EDITOR
-		WeaponPtr->SetFolderPath("/Weapon");
-#endif
-
-		WeaponPtr->CopyWeaponItemInfo(&WeaponItemInfo);
-		IInteractionItem::Execute_SpawnToWorld(WeaponPtr);
-	}
-	Weapon = nullptr;
-}
-
-
-void ACharacterBase::ReleaseItemToWorld(const FTransform& Transform, AAbstractItem*& Item)
+void ACharacterBase::ReleaseItemToWorld(const FTransform& Transform, AWorldItem* Item)
 {
 	if (!Item)
 	{
@@ -1742,11 +1716,11 @@ void ACharacterBase::ReleaseItemToWorld(const FTransform& Transform, AAbstractIt
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.Owner = nullptr;
 	SpawnParams.Instigator = nullptr;
-	AAbstractItem* const ItemPtr = GetWorld()->SpawnActor<AAbstractItem>(Item->GetClass(), Transform, SpawnParams);
+	AWorldItem* const ItemPtr = GetWorld()->SpawnActor<AWorldItem>(Item->GetClass(), Transform, SpawnParams);
 	if (ItemPtr)
 	{
 #if WITH_EDITOR
-		ItemPtr->SetFolderPath("/Item");
+		ItemPtr->SetFolderPath("/WorldItem");
 #endif
 
 		IInteractionItem::Execute_SpawnToWorld(ItemPtr);

@@ -169,6 +169,7 @@ void AAICharacterBase::StartRagdollAction()
 	RemoveSearchNodeGenerator();
 }
 
+
 void AAICharacterBase::RagdollToWakeUpAction()
 {
 	if (ICombatInstigator::Execute_IsDeath(this))

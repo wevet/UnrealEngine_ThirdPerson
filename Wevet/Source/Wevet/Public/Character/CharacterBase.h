@@ -261,6 +261,10 @@ public:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|CombatInstigator")
 	void ReloadActionMontage(float& OutReloadDuration);
 	virtual void ReloadActionMontage_Implementation(float& OutReloadDuration) override;
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|CombatInstigator")
+	void NakedAction(const ENakedWeaponTriggerType NakedWeaponTriggerType, const bool Enable, bool& FoundResult);
+	virtual void NakedAction_Implementation(const ENakedWeaponTriggerType NakedWeaponTriggerType, const bool Enable, bool& FoundResult) override;
 #pragma endregion
 
 
@@ -451,8 +455,9 @@ protected:
 	virtual void CreateWeaponInstance(const TSubclassOf<class AAbstractWeapon> InWeaponTemplate, WeaponFunc Callback = nullptr);
 	virtual void ReleaseAllWeaponInventory();
 	virtual void ReleaseAllItemInventory();
-	void ReleaseWeaponToWorld(const FTransform& Transform, AAbstractWeapon*& Weapon);
-	void ReleaseItemToWorld(const FTransform& Transform, AAbstractItem*& Item);
+
+	void ReleaseItemInventoryInternal(TArray<class AWorldItem*> ItemArray);
+	void ReleaseItemToWorld(const FTransform& Transform, AWorldItem* Item);
 
 	UFUNCTION()
 	void WeaponFireCallBack(const bool InFiredAction);

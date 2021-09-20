@@ -1,6 +1,7 @@
 // Copyright 2018 wevet works All Rights Reserved.
 
-#include "Item/Naked/NakedWeaponTrigger.h"
+
+#include "Item/Trigger/NakedWeaponTrigger.h"
 #include "Character/CharacterBase.h"
 #include "WevetExtension.h"
 #include "Wevet.h"
@@ -11,9 +12,11 @@ ANakedWeaponTrigger::ANakedWeaponTrigger(const FObjectInitializer& ObjectInitial
 	PrimaryActorTick.bCanEverTick = true;
 	NakedWeaponTriggerType = ENakedWeaponTriggerType::None;
 	AttachBoneName = NAME_None;
-	bWasHitResult = false;
-	bWasOverlapResult = false;
 	AddtionalDamage = 10.f;
+
+	CollisionComponent = ObjectInitializer.CreateDefaultSubobject<UBoxComponent>(this, TEXT("CollisionComponent"));
+	RootComponent = CollisionComponent;
+
 }
 
 
@@ -22,16 +25,7 @@ void ANakedWeaponTrigger::BeginPlay()
 	Super::BeginPlay();
 	Super::SetActorTickEnabled(false);
 
-	PrimitiveComponent = Cast<UPrimitiveComponent>(GetComponentByClass(UPrimitiveComponent::StaticClass()));
-
-	if (PrimitiveComponent)
-	{
-		PrimitiveComponent->SetCollisionProfileName(FName(TEXT("WorldDynamic")));
-		PrimitiveComponent->SetGenerateOverlapEvents(true);
-		PrimitiveComponent->SetNotifyRigidBodyCollision(true);
-		PrimitiveComponent->OnComponentBeginOverlap.AddDynamic(this, &ANakedWeaponTrigger::BeginOverlapRecieve);
-		PrimitiveComponent->ComponentTags.Add(WATER_LOCAL_TAG);
-	}
+	PrimitiveComponent = CollisionComponent;
 }
 
 
@@ -41,14 +35,7 @@ void ANakedWeaponTrigger::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	{
 		PrimitiveComponent->OnComponentBeginOverlap.RemoveDynamic(this, &ANakedWeaponTrigger::BeginOverlapRecieve);
 	}
-	IgnoreActors.Reset(0);
 	Super::EndPlay(EndPlayReason);
-}
-
-
-void ANakedWeaponTrigger::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
 }
 
 
@@ -68,17 +55,12 @@ void ANakedWeaponTrigger::BeginOverlapRecieve(UPrimitiveComponent* OverlappedCom
 
 	if (OtherActor->ActorHasTag(DAMAGE_TAG))
 	{
-		if (NakedHitDelegate.IsBound())
+		if (WeaponTriggerHitDelegate.IsBound())
 		{
-			NakedHitDelegate.Broadcast(OtherActor, SweepResult);
+			WeaponTriggerHitDelegate.Broadcast(OtherActor, SweepResult);
 		}
 	}
 }
 
-
-void ANakedWeaponTrigger::SetOwners(const TArray<class AActor*>& InOwners)
-{
-	IgnoreActors = InOwners;
-}
 
 

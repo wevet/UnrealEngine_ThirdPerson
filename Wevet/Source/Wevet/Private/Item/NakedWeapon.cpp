@@ -1,12 +1,13 @@
 // Copyright 2018 wevet works All Rights Reserved.
 
 
-#include "Item/Naked/NakedWeapon.h"
+#include "Item/NakedWeapon.h"
 #include "Character/CharacterBase.h"
 #include "Engine.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Wevet.h"
+#include "WevetExtension.h"
 
 
 ANakedWeapon::ANakedWeapon(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
@@ -118,9 +119,71 @@ bool ANakedWeapon::CanStrike_Implementation() const
 
 void ANakedWeapon::DoDeployTemplate()
 {
+	if (Wevet::ArrayExtension::NullOrEmpty(TriggerTemplates))
+	{
+		UE_LOG(LogWevetClient, Error, TEXT("Empty Template => %s"), *FString(__FUNCTION__));
+		return;
+	}
 
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.Owner = this;
+	SpawnParams.Instigator = GetPawnOwner();
+	const FTransform Transform = GetPawnOwner()->GetActorTransform();
+
+	// @TODO
+	// PawnClass needs to develop Interface.
+	auto OwnerMeshComponent = (GetPawnOwner()->GetClass() == ACharacter::StaticClass()) ? 
+		Cast<ACharacter>(GetPawnOwner())->GetMesh() : nullptr;
+
+
+	for (auto Template : TriggerTemplates)
+	{
+		if (!Template)
+		{
+			continue;
+		}
+
+		if (!OwnerMeshComponent)
+		{
+			continue;
+		}
+
+
+		ANakedWeaponTrigger* NakedWeaponTrigger = GetWorld()->SpawnActor<ANakedWeaponTrigger>(Template, Transform, SpawnParams);
+
+		if (NakedWeaponTrigger)
+		{
+			NakedWeaponTrigger->Initialize(IgnoreActors);
+
+			const FName AttachName = NakedWeaponTrigger->GetAttachBoneName();
+			const ENakedWeaponTriggerType TriggerType = NakedWeaponTrigger->GetNakedWeaponTriggerType();
+
+			FAttachmentTransformRules Rules(EAttachmentRule::SnapToTarget, true);
+			NakedWeaponTrigger->AttachToComponent(OwnerMeshComponent, Rules, AttachName);
+
+			NakedWeaponTriggerMap.FindOrAdd(TriggerType).Add(NakedWeaponTrigger);
+		}
+
+	}
+
+	// output log
+	for (const TPair<ENakedWeaponTriggerType, TArray<class ANakedWeaponTrigger*>>& Pair : NakedWeaponTriggerMap)
+	{
+		UE_LOG(LogWevetClient, Log, TEXT("Type => %s"), *GETENUMSTRING("ENakedWeaponTriggerType", Pair.Key));
+
+		for (class ANakedWeaponTrigger* Actor : Pair.Value)
+		{
+			if (Actor)
+			{
+				UE_LOG(LogWevetClient, Log, TEXT("Actor => %s"), *Actor->GetName());
+			}
+		}
+	}
 }
 
 
+void ANakedWeapon::NakedActionApply(const ENakedWeaponTriggerType NakedWeaponTriggerType, const bool Enable, bool& FoundResult)
+{
 
+}
 

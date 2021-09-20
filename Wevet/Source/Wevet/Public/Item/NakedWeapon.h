@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Item/AbstractWeapon.h"
-#include "NakedWeaponTrigger.h"
+#include "Item/Trigger/NakedWeaponTrigger.h"
 #include "NakedWeapon.generated.h"
 
 
@@ -32,6 +32,7 @@ public:
 		return false;
 	}
 
+	void NakedActionApply(const ENakedWeaponTriggerType NakedWeaponTriggerType, const bool Enable, bool& FoundResult);
 
 public:
 #pragma region Interface
@@ -54,7 +55,7 @@ public:
 
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ANakedWeapon|Asset")
-	TSubclassOf<class ANakedWeaponTrigger> TriggerTemplates;
+	TArray<TSubclassOf<class ANakedWeaponTrigger>> TriggerTemplates;
 
 	TMap<ENakedWeaponTriggerType, TArray<class ANakedWeaponTrigger*>> NakedWeaponTriggerMap;
 
