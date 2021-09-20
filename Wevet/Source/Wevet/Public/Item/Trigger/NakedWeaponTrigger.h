@@ -46,6 +46,6 @@ public:
 	FORCEINLINE float GetAddtionalDamage() const { return AddtionalDamage; }
 	FORCEINLINE FName GetAttachBoneName() const { return AttachBoneName; }
 
-
+	void NakedActionApply(const bool Enable);
 };
 

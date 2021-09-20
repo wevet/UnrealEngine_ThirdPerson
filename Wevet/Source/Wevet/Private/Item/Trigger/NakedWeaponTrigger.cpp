@@ -63,4 +63,9 @@ void ANakedWeaponTrigger::BeginOverlapRecieve(UPrimitiveComponent* OverlappedCom
 }
 
 
+void ANakedWeaponTrigger::NakedActionApply(const bool Enable)
+{
+
+}
+
 

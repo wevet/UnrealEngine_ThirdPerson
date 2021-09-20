@@ -182,8 +182,33 @@ void ANakedWeapon::DoDeployTemplate()
 }
 
 
+/// <summary>
+/// API From Combat Interface
+/// </summary>
+/// <param name="NakedWeaponTriggerType"></param>
+/// <param name="Enable"></param>
+/// <param name="FoundResult"></param>
 void ANakedWeapon::NakedActionApply(const ENakedWeaponTriggerType NakedWeaponTriggerType, const bool Enable, bool& FoundResult)
 {
+	auto TriggerArray = *NakedWeaponTriggerMap.Find(NakedWeaponTriggerType);
 
+	if (Wevet::ArrayExtension::NullOrEmpty(TriggerArray))
+	{
+		return;
+	}
+
+	const int32 MaxIndex = TriggerArray.Num();
+	int32 Index = 0;
+	for (class ANakedWeaponTrigger* WeaponTrigger : TriggerArray)
+	{
+		if (WeaponTrigger)
+		{
+			WeaponTrigger->NakedActionApply(Enable);
+			++Index;
+		}
+	}
+	FoundResult = (Index == MaxIndex);
 }
+
+
 

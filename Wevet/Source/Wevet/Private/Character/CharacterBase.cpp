@@ -936,7 +936,18 @@ void ACharacterBase::ReloadActionMontage_Implementation(float& OutReloadDuration
 
 void ACharacterBase::NakedAction_Implementation(const ENakedWeaponTriggerType NakedWeaponTriggerType, const bool Enable, bool& FoundResult)
 {
-	//ANakedWeapon
+	if (CurrentWeapon.IsValid())
+	{
+		if (ANakedWeapon* NakedWeaponActor = Cast<ANakedWeapon>(CurrentWeapon.Get()))
+		{
+			NakedWeaponActor->NakedActionApply(NakedWeaponTriggerType, Enable, FoundResult);
+		}
+	}
+
+	if (!FoundResult)
+	{
+		UE_LOG(LogWevetClient, Error, TEXT("Fail NakedAction => %s"), *FString(__FUNCTION__));
+	}
 }
 #pragma endregion
 
