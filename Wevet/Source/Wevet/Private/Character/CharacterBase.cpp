@@ -49,6 +49,10 @@ ACharacterBase::ACharacterBase(const FObjectInitializer& ObjectInitializer) : Su
 	bRagdollOnGround = false;
 	bWasMovementInput = false;
 
+	// Water Surface
+	Tags.Add(WATER_TAG);
+	GetMesh()->ComponentTags.Add(WATER_LOCAL_TAG);
+
 	// Noise Emitter
 	PawnNoiseEmitterComponent = ObjectInitializer.CreateDefaultSubobject<UPawnNoiseEmitterComponent>(this, TEXT("PawnNoiseEmitterComponent"));
 	PawnNoiseEmitterComponent->bAutoActivate = 1;
@@ -1090,9 +1094,11 @@ void ACharacterBase::SetALSCharacterRotation_Implementation(const FRotator AddAm
 	//UE_LOG(LogWevetClient, Log, TEXT("Rotation : %s"), *FString(__FUNCTION__));
 }
 
+
 void ACharacterBase::SetALSCameraShake_Implementation(TSubclassOf<class UCameraShakeBase> InShakeClass, const float InScale)
 {
 }
+
 
 void ACharacterBase::SetALSMovementMode_Implementation(const ELSMovementMode NewALSMovementMode)
 {
@@ -1109,6 +1115,7 @@ void ACharacterBase::SetALSMovementMode_Implementation(const ELSMovementMode New
 	ALSMovementMode = NewALSMovementMode;
 	ILocomotionSystemPawn::Execute_OnALSMovementModeChange(this);
 }
+
 
 void ACharacterBase::OnALSMovementModeChange_Implementation()
 {
@@ -1149,6 +1156,7 @@ void ACharacterBase::OnALSMovementModeChange_Implementation()
 	}
 }
 
+
 void ACharacterBase::SetALSMovementAction_Implementation(const ELSMovementAction NewALSMovementAction)
 {
 	if (ALSMovementAction == NewALSMovementAction)
@@ -1161,10 +1169,12 @@ void ACharacterBase::SetALSMovementAction_Implementation(const ELSMovementAction
 	ILocomotionSystemPawn::Execute_SetALSMovementAction(GetAnimInstance(), ALSMovementAction);
 }
 
+
 void ACharacterBase::OnALSMovementActionChange_Implementation()
 {
 	//
 }
+
 
 void ACharacterBase::SetALSGait_Implementation(const ELSGait NewALSGait)
 {
@@ -1175,11 +1185,13 @@ void ACharacterBase::SetALSGait_Implementation(const ELSGait NewALSGait)
 	ALSGait = NewALSGait;
 }
 
+
 void ACharacterBase::OnALSGaitChange_Implementation()
 {
 	ILocomotionSystemPawn::Execute_SetALSGait(GetAnimInstance(), ALSGait);
 	UpdateCharacterMovementSettings();
 }
+
 
 void ACharacterBase::SetALSStance_Implementation(const ELSStance NewALSStance)
 {
@@ -1191,12 +1203,14 @@ void ACharacterBase::SetALSStance_Implementation(const ELSStance NewALSStance)
 	ILocomotionSystemPawn::Execute_OnALSStanceChange(this);
 }
 
+
 void ACharacterBase::OnALSStanceChange_Implementation()
 {
 	ILocomotionSystemPawn::Execute_SetALSStance(GetAnimInstance(), ALSStance);
 	//ILocomotionSystemPawn::Execute_SetALSStance(GetIKAnimInstance(), ALSStance);
 	UpdateCharacterMovementSettings();
 }
+
 
 void ACharacterBase::SetALSRotationMode_Implementation(const ELSRotationMode NewALSRotationMode)
 {
@@ -1207,6 +1221,7 @@ void ACharacterBase::SetALSRotationMode_Implementation(const ELSRotationMode New
 	ALSRotationMode = NewALSRotationMode;
 	ILocomotionSystemPawn::Execute_OnALSRotationModeChange(this);
 }
+
 
 void ACharacterBase::OnALSRotationModeChange_Implementation()
 {
@@ -1239,6 +1254,7 @@ void ACharacterBase::OnALSRotationModeChange_Implementation()
 
 }
 
+
 void ACharacterBase::SetALSViewMode_Implementation(const ELSViewMode NewALSViewMode)
 {
 	if (ALSViewMode == NewALSViewMode)
@@ -1248,6 +1264,7 @@ void ACharacterBase::SetALSViewMode_Implementation(const ELSViewMode NewALSViewM
 	ALSViewMode = NewALSViewMode;
 	ILocomotionSystemPawn::Execute_OnALSViewModeChange(this);
 }
+
 
 void ACharacterBase::OnALSViewModeChange_Implementation()
 {
@@ -1267,6 +1284,7 @@ void ACharacterBase::OnALSViewModeChange_Implementation()
 	}
 }
 
+
 void ACharacterBase::SetALSAiming_Implementation(const bool NewALSAiming)
 {
 	if (bAiming == NewALSAiming)
@@ -1276,11 +1294,13 @@ void ACharacterBase::SetALSAiming_Implementation(const bool NewALSAiming)
 	bAiming = NewALSAiming;
 }
 
+
 void ACharacterBase::OnALSAimingChange_Implementation()
 {
 	ILocomotionSystemPawn::Execute_SetALSAiming(GetAnimInstance(), bAiming);
 	UpdateCharacterMovementSettings();
 }
+
 
 void ACharacterBase::SetWalkingSpeed_Implementation(const float InWalkingSpeed)
 {
@@ -1289,12 +1309,14 @@ void ACharacterBase::SetWalkingSpeed_Implementation(const float InWalkingSpeed)
 	UpdateCharacterMovementSettings();
 }
 
+
 void ACharacterBase::SetRunningSpeed_Implementation(const float InRunningSpeed)
 {
 	RunningSpeed = InRunningSpeed;
 	ILocomotionSystemPawn::Execute_SetRunningSpeed(GetAnimInstance(), RunningSpeed);
 	UpdateCharacterMovementSettings();
 }
+
 
 void ACharacterBase::SetSprintingSpeed_Implementation(const float InSprintingSpeed)
 {
@@ -1303,12 +1325,14 @@ void ACharacterBase::SetSprintingSpeed_Implementation(const float InSprintingSpe
 	UpdateCharacterMovementSettings();
 }
 
+
 void ACharacterBase::SetCrouchingSpeed_Implementation(const float InCrouchingSpeed)
 {
 	CrouchingSpeed = InCrouchingSpeed;
 	ILocomotionSystemPawn::Execute_SetCrouchingSpeed(GetAnimInstance(), CrouchingSpeed);
 	UpdateCharacterMovementSettings();
 }
+
 
 void ACharacterBase::SetSwimmingSpeed_Implementation(const float InSwimmingSpeed)
 {

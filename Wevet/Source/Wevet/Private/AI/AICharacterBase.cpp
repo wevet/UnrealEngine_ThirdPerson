@@ -19,9 +19,6 @@ AAICharacterBase::AAICharacterBase(const FObjectInitializer& ObjectInitializer)	
 {
 	WidgetViewPortOffset = FVector2D(0.5f, 0.0f);
 
-	Tags.Add(WATER_TAG);
-	GetMesh()->ComponentTags.Add(WATER_LOCAL_TAG);
-
 	// Optimization Component Updated
 	GetMesh()->VisibilityBasedAnimTickOption = EVisibilityBasedAnimTickOption::OnlyTickPoseWhenRendered;
 	//GetMesh()->bComponentUseFixedSkelBounds = 1;

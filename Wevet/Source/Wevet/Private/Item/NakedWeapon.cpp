@@ -15,6 +15,12 @@ ANakedWeapon::ANakedWeapon(const FObjectInitializer& ObjectInitializer) : Super(
 	PrimaryActorTick.bCanEverTick = true;
 	bRenderCutomDepthEnable = false;
 
+
+	WeaponItemInfo.NeededAmmo = 0;
+	WeaponItemInfo.ClipType = 0;
+	WeaponItemInfo.CurrentAmmo = 0;
+	WeaponItemInfo.MaxAmmo = 0;
+	WeaponItemInfo.Damage = 500.f;
 	WeaponItemInfo.WeaponItemType = EWeaponItemType::Naked;
 	WeaponItemInfo.MeleeDistance = 500.f;
 	WeaponItemInfo.TraceDistance = 500.f;
@@ -29,10 +35,12 @@ ANakedWeapon::ANakedWeapon(const FObjectInitializer& ObjectInitializer) : Super(
 	// Hidden Components
 	SkeletalMeshComponent->SetVisibility(false);
 	SkeletalMeshComponent->SetComponentTickEnabled(false);
+	SkeletalMeshComponent->SetHiddenInGame(true);
 	SkeletalMeshComponent->SetCollisionEnabled(ECollisionEnabled::Type::NoCollision);
 
 	CollisionComponent->SetVisibility(false);
 	CollisionComponent->SetComponentTickEnabled(false);
+	CollisionComponent->SetHiddenInGame(true);
 	CollisionComponent->SetCollisionEnabled(ECollisionEnabled::Type::NoCollision);
 }
 

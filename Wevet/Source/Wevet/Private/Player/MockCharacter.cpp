@@ -184,16 +184,6 @@ void AMockCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInpu
 	PlayerInputComponent->AddActionBinding(ReloadPressed);
 
 
-	// MeleeAttack
-	FInputActionBinding MeleePressed("MeleeAttack", IE_Pressed);
-	MeleePressed.ActionDelegate.GetDelegateForManualSet().BindLambda([this]()
-	{
-		//Super::DoMeleeAttack_Implementation();
-		UE_LOG(LogWevetClient, Error, TEXT("Can't Input MeleeAttack"));
-	});
-	PlayerInputComponent->AddActionBinding(MeleePressed);
-
-
 	// Jump
 	FInputActionBinding JumpPressed("JumpAction", IE_Pressed);
 	JumpPressed.ActionDelegate.GetDelegateForManualSet().BindLambda([this]()
@@ -231,6 +221,27 @@ void AMockCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInpu
 		Super::OnWalkAction();
 	});
 	PlayerInputComponent->AddActionBinding(WalkAction);
+
+
+	// ChangeRotationMode
+	FInputActionBinding ChangeRotationAction("ChangeRotationMode", IE_Pressed);
+	ChangeRotationAction.ActionDelegate.GetDelegateForManualSet().BindLambda([this]()
+	{
+		switch (ALSRotationMode)
+		{
+			case ELSRotationMode::LookingDirection:
+			{
+				ILocomotionSystemPawn::Execute_SetALSRotationMode(this, ELSRotationMode::VelocityDirection);
+			}
+			break;
+			case ELSRotationMode::VelocityDirection:
+			{
+				ILocomotionSystemPawn::Execute_SetALSRotationMode(this, ELSRotationMode::LookingDirection);
+			}
+			break;
+		}
+	});
+	PlayerInputComponent->AddActionBinding(ChangeRotationAction);
 }
 
 
@@ -245,13 +256,13 @@ void AMockCharacter::OnChangeWeapon()
 		}
 	}
 
-	if (InventoryComponent->EmptyWeaponInventory())
+	if (GetInventoryComponent()->EmptyWeaponInventory())
 	{
 		WeaponCurrentIndex = 0;
 		return;
 	}
 
-	const int32 LastIndex = (InventoryComponent->GetWeaponInventory().Num() - 1);
+	const int32 LastIndex = (GetInventoryComponent()->GetWeaponInventoryCount() - 1);
 	if (WeaponCurrentIndex >= LastIndex)
 	{
 		WeaponCurrentIndex = 0;

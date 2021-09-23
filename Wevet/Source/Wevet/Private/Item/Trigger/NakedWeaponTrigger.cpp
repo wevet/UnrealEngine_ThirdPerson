@@ -16,6 +16,10 @@ ANakedWeaponTrigger::ANakedWeaponTrigger(const FObjectInitializer& ObjectInitial
 
 	CollisionComponent = ObjectInitializer.CreateDefaultSubobject<UBoxComponent>(this, TEXT("CollisionComponent"));
 	RootComponent = CollisionComponent;
+	CollisionComponent->SetCollisionProfileName(FName(TEXT("WorldDynamic")));
+	CollisionComponent->SetGenerateOverlapEvents(true);
+	CollisionComponent->SetNotifyRigidBodyCollision(true);
+	CollisionComponent->SetCollisionEnabled(ECollisionEnabled::Type::NoCollision);
 
 }
 
@@ -26,6 +30,10 @@ void ANakedWeaponTrigger::BeginPlay()
 	Super::SetActorTickEnabled(false);
 
 	PrimitiveComponent = CollisionComponent;
+	if (PrimitiveComponent)
+	{
+		PrimitiveComponent->OnComponentBeginOverlap.AddDynamic(this, &ANakedWeaponTrigger::BeginOverlapRecieve);
+	}
 }
 
 
@@ -65,7 +73,11 @@ void ANakedWeaponTrigger::BeginOverlapRecieve(UPrimitiveComponent* OverlappedCom
 
 void ANakedWeaponTrigger::NakedActionApply(const bool Enable)
 {
-
+	if (PrimitiveComponent)
+	{
+		const ECollisionEnabled::Type CollisionType = Enable ? ECollisionEnabled::Type::QueryOnly : ECollisionEnabled::Type::NoCollision;
+		CollisionComponent->SetCollisionEnabled(CollisionType);
+	}
 }
 
 

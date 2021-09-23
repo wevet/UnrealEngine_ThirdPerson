@@ -40,8 +40,11 @@ ARifle::ARifle(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitia
 	}
 
 	// AK47
-	WeaponItemInfo.NeededAmmo = 30;
-	WeaponItemInfo.MaxAmmo = 600;
+	WeaponItemInfo.NeededAmmo = 50;
+	WeaponItemInfo.ClipType = 50;
+	WeaponItemInfo.CurrentAmmo = 50;
+	WeaponItemInfo.MaxAmmo = 400;
+	WeaponItemInfo.Damage = 1500.f;
 	WeaponItemInfo.EquipSocketName = FName(TEXT("RifleEquip_Socket"));
 	WeaponItemInfo.UnEquipSocketName = FName(TEXT("Rifle_Socket"));
 	WeaponItemInfo.WeaponItemType = EWeaponItemType::Rifle;
