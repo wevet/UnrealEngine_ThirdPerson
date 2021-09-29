@@ -8,6 +8,11 @@
 #include "Kismet/KismetMathLibrary.h"
 #include "Wevet.h"
 #include "WevetExtension.h"
+#include "Lib/CombatBlueprintFunctionLibrary.h"
+#include "Perception/AISense_Hearing.h"
+
+
+#define IMPACT_RANGE 400.f
 
 
 ANakedWeapon::ANakedWeapon(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
@@ -49,14 +54,18 @@ void ANakedWeapon::BeginPlay()
 {
 	Super::BeginPlay();
 	Super::SetActorTickEnabled(false);
+	NakedTriggerArray.Reset(0);
 	NakedWeaponTriggerMap.Reset();
 }
 
 
 void ANakedWeapon::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
-	Super::EndPlay(EndPlayReason);
+	ClearNakedActionApply();
+	RemoveDelegate();
+	NakedTriggerArray.Reset(0);
 	NakedWeaponTriggerMap.Reset();
+	Super::EndPlay(EndPlayReason);
 }
 
 
@@ -125,6 +134,45 @@ bool ANakedWeapon::CanStrike_Implementation() const
 #pragma endregion
 
 
+#pragma region Override
+void ANakedWeapon::TakeDamageOuter(const FHitResult& HitResult)
+{
+	if (!HitResult.GetActor())
+	{
+		return;
+	}
+
+	// calcurate baseDamage
+	float TotalDamage = UCombatBlueprintFunctionLibrary::CalcurateBaseDamage(
+		HitResult,
+		this,
+		GetPawnOwner(),
+		WeaponItemInfo.Damage,
+		WeaponItemInfo.WeaponItemType);
+
+	// additional trigger damage
+	TotalDamage += GetAdditionalDamage();
+	CreateDamage(HitResult.GetActor(), TotalDamage, HitResult);
+}
+
+
+void ANakedWeapon::RemoveDelegate()
+{
+	for (const TPair<ENakedWeaponTriggerType, TArray<class ANakedWeaponTrigger*>>& Pair : NakedWeaponTriggerMap)
+	{
+		for (class ANakedWeaponTrigger* Actor : Pair.Value)
+		{
+			if (!Actor)
+			{
+				continue;
+			}
+			Actor->WeaponTriggerHitDelegate.RemoveDynamic(this, &ANakedWeapon::OnNakedTriggerHitDelegate);
+		}
+	}
+}
+#pragma endregion
+
+
 void ANakedWeapon::DoDeployTemplate()
 {
 	if (Wevet::ArrayExtension::NullOrEmpty(TriggerTemplates))
@@ -133,17 +181,21 @@ void ANakedWeapon::DoDeployTemplate()
 		return;
 	}
 
-	FActorSpawnParameters SpawnParams;
-	SpawnParams.Owner = this;
-	SpawnParams.Instigator = GetPawnOwner();
-	const FTransform Transform = GetPawnOwner()->GetActorTransform();
-
 	// @TODO
 	// PawnClass needs to develop Interface.
 	auto OwnerMeshComponent = (GetPawnOwner()->GetClass() == ACharacter::StaticClass()) ? 
 		Cast<ACharacter>(GetPawnOwner())->GetMesh() : nullptr;
 
+	if (!OwnerMeshComponent)
+	{
+		return;
+	}
 
+	// Deploy Template
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.Owner = this;
+	SpawnParams.Instigator = GetPawnOwner();
+	const FTransform Transform = GetPawnOwner()->GetActorTransform();
 	for (auto Template : TriggerTemplates)
 	{
 		if (!Template)
@@ -151,42 +203,41 @@ void ANakedWeapon::DoDeployTemplate()
 			continue;
 		}
 
-		if (!OwnerMeshComponent)
+		ANakedWeaponTrigger* NakedWeaponTrigger = GetWorld()->SpawnActor<ANakedWeaponTrigger>(Template, Transform, SpawnParams);
+
+		if (!NakedWeaponTrigger)
 		{
 			continue;
 		}
 
+		NakedWeaponTrigger->Initialize(IgnoreActors);
+		const FName AttachName = NakedWeaponTrigger->GetAttachBoneName();
+		const ENakedWeaponTriggerType TriggerType = NakedWeaponTrigger->GetNakedWeaponTriggerType();
 
-		ANakedWeaponTrigger* NakedWeaponTrigger = GetWorld()->SpawnActor<ANakedWeaponTrigger>(Template, Transform, SpawnParams);
+		FAttachmentTransformRules Rules(EAttachmentRule::SnapToTarget, true);
+		NakedWeaponTrigger->AttachToComponent(OwnerMeshComponent, Rules, AttachName);
+		NakedWeaponTrigger->WeaponTriggerHitDelegate.AddDynamic(this, &ANakedWeapon::OnNakedTriggerHitDelegate);
 
-		if (NakedWeaponTrigger)
-		{
-			NakedWeaponTrigger->Initialize(IgnoreActors);
-
-			const FName AttachName = NakedWeaponTrigger->GetAttachBoneName();
-			const ENakedWeaponTriggerType TriggerType = NakedWeaponTrigger->GetNakedWeaponTriggerType();
-
-			FAttachmentTransformRules Rules(EAttachmentRule::SnapToTarget, true);
-			NakedWeaponTrigger->AttachToComponent(OwnerMeshComponent, Rules, AttachName);
-
-			NakedWeaponTriggerMap.FindOrAdd(TriggerType).Add(NakedWeaponTrigger);
-		}
+		NakedWeaponTriggerMap.FindOrAdd(TriggerType).Add(NakedWeaponTrigger);
 
 	}
 
 	// output log
-	for (const TPair<ENakedWeaponTriggerType, TArray<class ANakedWeaponTrigger*>>& Pair : NakedWeaponTriggerMap)
 	{
-		UE_LOG(LogWevetClient, Log, TEXT("Type => %s"), *GETENUMSTRING("ENakedWeaponTriggerType", Pair.Key));
-
-		for (class ANakedWeaponTrigger* Actor : Pair.Value)
+		for (const TPair<ENakedWeaponTriggerType, TArray<class ANakedWeaponTrigger*>>& Pair : NakedWeaponTriggerMap)
 		{
-			if (Actor)
+			UE_LOG(LogWevetClient, Log, TEXT("Type => %s"), *GETENUMSTRING("ENakedWeaponTriggerType", Pair.Key));
+
+			for (class ANakedWeaponTrigger* Actor : Pair.Value)
 			{
-				UE_LOG(LogWevetClient, Log, TEXT("Actor => %s"), *Actor->GetName());
+				if (Actor)
+				{
+					UE_LOG(LogWevetClient, Log, TEXT("Actor => %s"), *Actor->GetName());
+				}
 			}
 		}
 	}
+
 }
 
 
@@ -198,16 +249,20 @@ void ANakedWeapon::DoDeployTemplate()
 /// <param name="FoundResult"></param>
 void ANakedWeapon::NakedActionApply(const ENakedWeaponTriggerType NakedWeaponTriggerType, const bool Enable, bool& FoundResult)
 {
-	auto TriggerArray = *NakedWeaponTriggerMap.Find(NakedWeaponTriggerType);
+	if (!Wevet::ArrayExtension::NullOrEmpty(NakedTriggerArray))
+	{
+		NakedTriggerArray.Reset(0);
+	}
 
-	if (Wevet::ArrayExtension::NullOrEmpty(TriggerArray))
+	NakedTriggerArray = *NakedWeaponTriggerMap.Find(NakedWeaponTriggerType);
+	if (Wevet::ArrayExtension::NullOrEmpty(NakedTriggerArray))
 	{
 		return;
 	}
 
-	const int32 MaxIndex = TriggerArray.Num();
 	int32 Index = 0;
-	for (class ANakedWeaponTrigger* WeaponTrigger : TriggerArray)
+	const int32 MaxIndex = NakedTriggerArray.Num();
+	for (class ANakedWeaponTrigger* WeaponTrigger : NakedTriggerArray)
 	{
 		if (WeaponTrigger)
 		{
@@ -219,4 +274,58 @@ void ANakedWeapon::NakedActionApply(const ENakedWeaponTriggerType NakedWeaponTri
 }
 
 
+void ANakedWeapon::ClearNakedActionApply()
+{
+	for (const TPair<ENakedWeaponTriggerType, TArray<class ANakedWeaponTrigger*>>& Pair : NakedWeaponTriggerMap)
+	{
+		for (class ANakedWeaponTrigger* NakedWeaponTrigger : Pair.Value)
+		{
+			if (!NakedWeaponTrigger)
+			{
+				continue;
+			}
+			NakedWeaponTrigger->NakedActionApply(false);
+		}
+	}
+}
+
+
+void ANakedWeapon::OnNakedTriggerHitDelegate(AActor* OtherActor, const FHitResult SweepResult)
+{
+	if (!CanStrike_Implementation())
+	{
+		return;
+	}
+
+	const bool bCanDamageResult = UCombatBlueprintFunctionLibrary::CanDamagedActor(SweepResult.GetActor(), this, GetPawnOwner());
+	if (!bCanDamageResult)
+	{
+		return;
+	}
+
+	GiveDamageType = EGiveDamageType::Melee;
+	TakeDamageOuter(SweepResult);
+	const FVector ImpactLocation = SweepResult.ImpactNormal;
+	//ISoundInstigator::Execute_ReportNoiseOther(GetPawnOwner(), this, ImpactSound, DEFAULT_VOLUME, ImpactLocation);
+	UAISense_Hearing::ReportNoiseEvent(GetWorld(), ImpactLocation, DEFAULT_VOLUME, this, IMPACT_RANGE);
+}
+
+
+float ANakedWeapon::GetAdditionalDamage() const
+{
+	if (Wevet::ArrayExtension::NullOrEmpty(NakedTriggerArray))
+	{
+		return DEFAULT_VALUE;
+	}
+
+	float Total = 0.0f;
+	for (class ANakedWeaponTrigger* WeaponTrigger : NakedTriggerArray)
+	{
+		if (WeaponTrigger)
+		{
+			Total += WeaponTrigger->GetAddtionalDamage();
+		}
+	}
+	return Total;
+}
 

@@ -776,12 +776,16 @@ void ACharacterBase::Equipment_Implementation()
 		FAttachmentTransformRules Rules(EAttachmentRule::SnapToTarget, true);
 		CurrentWeapon.Get()->AttachToComponent(Super::GetMesh(), Rules, SocketName);
 		CurrentWeapon.Get()->SetEquip(true);
+		CurrentWeapon.Get()->WeaponActionDelegate.AddDynamic(this, &ACharacterBase::WeaponFireCallBack);
 
+#if false
 		const EWeaponItemType WeaponType = CurrentWeapon.Get()->GetWeaponItemType();
 		if (WeaponType == EWeaponItemType::Naked || WeaponType == EWeaponItemType::Knife)
 		{
 			CurrentWeapon.Get()->WeaponActionDelegate.AddDynamic(this, &ACharacterBase::WeaponFireCallBack);
 		}
+#endif
+
 	}
 }
 
@@ -795,12 +799,15 @@ void ACharacterBase::UnEquipment_Implementation()
 		FAttachmentTransformRules Rules(EAttachmentRule::SnapToTarget, true);
 		CurrentWeapon.Get()->AttachToComponent(Super::GetMesh(), Rules, SocketName);
 		CurrentWeapon.Get()->SetEquip(false);
+		CurrentWeapon.Get()->WeaponActionDelegate.RemoveDynamic(this, &ACharacterBase::WeaponFireCallBack);
 
+#if false
 		const EWeaponItemType WeaponType = CurrentWeapon.Get()->GetWeaponItemType();
 		if (WeaponType == EWeaponItemType::Naked || WeaponType == EWeaponItemType::Knife)
 		{
 			CurrentWeapon.Get()->WeaponActionDelegate.RemoveDynamic(this, &ACharacterBase::WeaponFireCallBack);
 		}
+#endif
 
 	}
 	ActionInfoPtr = nullptr;
@@ -1696,31 +1703,35 @@ void ACharacterBase::CreateWeaponInstance(const TSubclassOf<class AAbstractWeapo
 
 void ACharacterBase::ReleaseAllWeaponInventory()
 {
-	if (!GetInventoryComponent()->EmptyWeaponInventory())
+	check(GetInventoryComponent());
+	if (GetInventoryComponent()->EmptyWeaponInventory())
 	{
-		auto SourceArray = GetInventoryComponent()->GetWeaponInventory();
-		TArray<class AWorldItem*> DestArray(SourceArray);
-		ReleaseItemInventoryInternal(DestArray);
-
-		GetInventoryComponent()->ClearWeaponInventory();
+		return;
 	}
+
+	auto SourceArray = GetInventoryComponent()->GetWeaponInventory();
+	TArray<class AWorldItem*> DestArray(SourceArray);
+	ReleaseItemToWorld(DestArray);
+	GetInventoryComponent()->ClearWeaponInventory();
 }
 
 
 void ACharacterBase::ReleaseAllItemInventory()
 {
-	if (!GetInventoryComponent()->EmptyItemInventory())
+	check(GetInventoryComponent());
+	if (GetInventoryComponent()->EmptyItemInventory())
 	{
-		auto SourceArray = GetInventoryComponent()->GetItemInventory();
-		TArray<class AWorldItem*> DestArray(SourceArray);
-		ReleaseItemInventoryInternal(DestArray);
-
-		GetInventoryComponent()->ClearItemInventory();
+		return;
 	}
+
+	auto SourceArray = GetInventoryComponent()->GetItemInventory();
+	TArray<class AWorldItem*> DestArray(SourceArray);
+	ReleaseItemToWorld(DestArray);
+	GetInventoryComponent()->ClearItemInventory();
 }
 
 
-void ACharacterBase::ReleaseItemInventoryInternal(TArray<class AWorldItem*> ItemArray)
+void ACharacterBase::ReleaseItemToWorld(TArray<class AWorldItem*> ItemArray)
 {
 	TArray<FVector> SpawnPoints;
 	const FVector RelativePosition = GetMesh()->GetComponentLocation();
@@ -1735,12 +1746,12 @@ void ACharacterBase::ReleaseItemInventoryInternal(TArray<class AWorldItem*> Item
 		}
 		const FVector Position = SpawnPoints[Index];
 		const FTransform SpawnTransform = FTransform(GetActorRotation(), Position, FVector::OneVector);
-		ReleaseItemToWorld(SpawnTransform, Item);
+		ReleaseItemToWorld(Item, SpawnTransform);
 	}
 }
 
 
-void ACharacterBase::ReleaseItemToWorld(const FTransform& Transform, AWorldItem* Item)
+void ACharacterBase::ReleaseItemToWorld(AWorldItem* Item, const FTransform& Transform)
 {
 	if (!Item)
 	{

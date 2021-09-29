@@ -120,28 +120,28 @@ void AAICharacterBase::EquipmentActionMontage()
 
 void AAICharacterBase::ReleaseAllWeaponInventory()
 {
+	check(GetInventoryComponent());
 	if (UCombatBlueprintFunctionLibrary::WeaponDropProbability())
 	{
 		Super::ReleaseAllWeaponInventory();
 	}
 	else
 	{
-		check(InventoryComponent);
-		InventoryComponent->ReleaseAllWeaponInventory();
+		GetInventoryComponent()->ReleaseAllWeaponInventory();
 	}
 }
 
 
 void AAICharacterBase::ReleaseAllItemInventory()
 {
+	check(GetInventoryComponent());
 	if (UCombatBlueprintFunctionLibrary::ItemDropProbability())
 	{
 		Super::ReleaseAllItemInventory();
 	}
 	else
 	{
-		check(InventoryComponent);
-		InventoryComponent->ReleaseAllItemInventory();
+		GetInventoryComponent()->ReleaseAllItemInventory();
 	}
 }
 

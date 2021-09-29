@@ -13,7 +13,6 @@
 // AIModule
 #include "Perception/AISightTargetInterface.h"
 #include "GenericTeamAgentInterface.h"
-
 #include "Item/AbstractWeapon.h"
 #include "Item/AbstractItem.h"
 
@@ -456,8 +455,8 @@ protected:
 	virtual void ReleaseAllWeaponInventory();
 	virtual void ReleaseAllItemInventory();
 
-	void ReleaseItemInventoryInternal(TArray<class AWorldItem*> ItemArray);
-	void ReleaseItemToWorld(const FTransform& Transform, AWorldItem* Item);
+	void ReleaseItemToWorld(TArray<class AWorldItem*> ItemArray);
+	void ReleaseItemToWorld(AWorldItem* Item, const FTransform& Transform);
 
 	UFUNCTION()
 	void WeaponFireCallBack(const bool InFiredAction);

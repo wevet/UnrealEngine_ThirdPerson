@@ -33,6 +33,7 @@ public:
 	}
 
 	void NakedActionApply(const ENakedWeaponTriggerType NakedWeaponTriggerType, const bool Enable, bool& FoundResult);
+	void ClearNakedActionApply();
 
 public:
 #pragma region Interface
@@ -52,14 +53,22 @@ public:
 	}
 #pragma endregion
 
+protected:
+	virtual void TakeDamageOuter(const FHitResult& HitResult) override;
+	virtual	void RemoveDelegate() override;
 
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ANakedWeapon|Asset")
 	TArray<TSubclassOf<class ANakedWeaponTrigger>> TriggerTemplates;
 
 	TMap<ENakedWeaponTriggerType, TArray<class ANakedWeaponTrigger*>> NakedWeaponTriggerMap;
+	TArray<class ANakedWeaponTrigger*> NakedTriggerArray;
 
 protected:
 	void DoDeployTemplate();
+
+	void OnNakedTriggerHitDelegate(AActor* OtherActor, const FHitResult SweepResult);
+
+	float GetAdditionalDamage() const;
 };
 

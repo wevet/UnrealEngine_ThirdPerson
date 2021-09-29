@@ -352,9 +352,9 @@ void AMockCharacter::Die_Implementation()
 		DeathDelegate.Broadcast();
 	}
 
-	if (PlayerAnimInstance)
+	if (GetAnimInstance())
 	{
-		PlayerAnimInstance->SetArmTorsoIKMode(false, false);
+		GetAnimInstance()->SetArmTorsoIKMode(false, false);
 	}
 
 	if (BackPack)
@@ -428,7 +428,7 @@ void AMockCharacter::Release_Implementation()
 	if (AAbstractWeapon* Weapon = GetReleaseWeaponByIndex())
 	{
 		InventoryComponent->RemoveWeaponInventory(Weapon);
-		ReleaseItemToWorld(Transform, Weapon);
+		ReleaseItemToWorld(Weapon, Transform);
 		// Refresh Array Index
 		WeaponCurrentIndex = 0;
 	}

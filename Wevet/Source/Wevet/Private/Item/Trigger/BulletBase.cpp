@@ -63,7 +63,10 @@ EGiveDamageType ABulletBase::GetGiveDamageType_Implementation() const
 
 void ABulletBase::VisibleEmitter(const bool InVisible)
 {
-	ParticleComponent->SetVisibility(InVisible);
+	if (ParticleComponent)
+	{
+		ParticleComponent->SetVisibility(InVisible);
+	}
 }
 
 
