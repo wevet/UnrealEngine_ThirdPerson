@@ -47,5 +47,6 @@ protected:
 	bool bWasHitResult;
 	bool bWasOverlapResult;
 
+	bool HasOtherOwner(AActor* OtherActor) const;
 };
 

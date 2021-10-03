@@ -526,7 +526,14 @@ void AMockCharacter::CreateWeaponInstance(const TSubclassOf<class AAbstractWeapo
 	BackPack->StoreWeapon(SpawningObject, bPutWeaponSuccess);
 	if (!bPutWeaponSuccess)
 	{
+		FAttachmentTransformRules Rules(EAttachmentRule::SnapToTarget, true);
+		SpawningObject->FinishSpawning(GetActorTransform());
+		SpawningObject->AttachToComponent(Super::GetMesh(), Rules, SpawningObject->GetWeaponItemInfo().UnEquipSocketName);
 		UE_LOG(LogWevetClient, Error, TEXT("PutError : %s"), *SpawningObject->GetName());
+	}
+	else
+	{
+		//
 	}
 	InventoryComponent->AddWeaponInventory(SpawningObject);
 	IInteractionItem::Execute_Take(SpawningObject, this);

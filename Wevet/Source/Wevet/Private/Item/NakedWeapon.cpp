@@ -13,13 +13,14 @@
 
 
 #define IMPACT_RANGE 400.f
+#define HAND_DAMAGE 10.0f
+#define FOOT_DAMAGE 20.0f
 
 
 ANakedWeapon::ANakedWeapon(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {
 	PrimaryActorTick.bCanEverTick = true;
 	bRenderCutomDepthEnable = false;
-
 
 	WeaponItemInfo.NeededAmmo = 0;
 	WeaponItemInfo.ClipType = 0;
@@ -69,20 +70,18 @@ void ANakedWeapon::EndPlay(const EEndPlayReason::Type EndPlayReason)
 }
 
 
-#pragma region Public
-void ANakedWeapon::Initialize(APawn* const NewCharacterOwner)
+#pragma region Interface
+void ANakedWeapon::Take_Implementation(APawn* NewCharacter)
 {
-	Super::Initialize(NewCharacterOwner);
+	Super::Take_Implementation(NewCharacter);
 
 	if (GetPawnOwner())
 	{
 		DoDeployTemplate();
 	}
 }
-#pragma endregion
 
 
-#pragma region Interface
 void ANakedWeapon::DoFirePressed_Implementation()
 {
 	Super::DoFirePressed_Implementation();
@@ -183,11 +182,12 @@ void ANakedWeapon::DoDeployTemplate()
 
 	// @TODO
 	// PawnClass needs to develop Interface.
-	auto OwnerMeshComponent = (GetPawnOwner()->GetClass() == ACharacter::StaticClass()) ? 
+	auto OwnerMeshComponent = (GetPawnOwner()->IsA(ACharacter::StaticClass())) ?
 		Cast<ACharacter>(GetPawnOwner())->GetMesh() : nullptr;
 
 	if (!OwnerMeshComponent)
 	{
+		UE_LOG(LogWevetClient, Error, TEXT("nullptr Owner Mesh => %s"), *(GetPawnOwner()->GetClass()->GetName()));
 		return;
 	}
 
@@ -270,7 +270,7 @@ void ANakedWeapon::NakedActionApply(const ENakedWeaponTriggerType NakedWeaponTri
 			++Index;
 		}
 	}
-	FoundResult = (Index == MaxIndex);
+	FoundResult = (Index >= MaxIndex);
 }
 
 
@@ -292,7 +292,7 @@ void ANakedWeapon::ClearNakedActionApply()
 
 void ANakedWeapon::OnNakedTriggerHitDelegate(AActor* OtherActor, const FHitResult SweepResult)
 {
-	if (!CanStrike_Implementation())
+	if (!IWeaponInstigator::Execute_CanStrike(this))
 	{
 		return;
 	}
@@ -313,19 +313,35 @@ void ANakedWeapon::OnNakedTriggerHitDelegate(AActor* OtherActor, const FHitResul
 
 float ANakedWeapon::GetAdditionalDamage() const
 {
-	if (Wevet::ArrayExtension::NullOrEmpty(NakedTriggerArray))
-	{
-		return DEFAULT_VALUE;
-	}
-
 	float Total = 0.0f;
 	for (class ANakedWeaponTrigger* WeaponTrigger : NakedTriggerArray)
 	{
 		if (WeaponTrigger)
 		{
-			Total += WeaponTrigger->GetAddtionalDamage();
+			Total += ANakedWeapon::GetAdditionalDamage(WeaponTrigger->GetNakedWeaponTriggerType());
 		}
 	}
 	return Total;
+}
+
+
+const float ANakedWeapon::GetAdditionalDamage(const ENakedWeaponTriggerType NakedWeaponTriggerType)
+{
+	switch (NakedWeaponTriggerType)
+	{
+		case ENakedWeaponTriggerType::LeftHand:
+		case ENakedWeaponTriggerType::RightHand:
+		{
+			return HAND_DAMAGE;
+		}
+		break;
+		case ENakedWeaponTriggerType::LeftFoot:
+		case ENakedWeaponTriggerType::RightFoot:
+		{
+			return FOOT_DAMAGE;
+		}
+		break;
+	}
+	return DEFAULT_VALUE;
 }
 

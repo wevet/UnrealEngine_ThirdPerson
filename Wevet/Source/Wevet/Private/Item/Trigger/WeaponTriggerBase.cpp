@@ -42,23 +42,39 @@ void AWeaponTriggerBase::Initialize(const TArray<class AActor*>& InOwners)
 
 void AWeaponTriggerBase::BeginOverlapRecieve(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	if (!OtherActor || OtherActor == this)
+	if (!HasOtherOwner(OtherActor))
 	{
 		return;
 	}
 
-	if (IgnoreActors.Contains(OtherActor))
+	if (OtherActor->ActorHasTag(DAMAGE_TAG))
 	{
-		UE_LOG(LogWevetClient, Warning, TEXT("Ignores Actor : %s"), *OtherActor->GetName());
-		return;
+		if (WeaponTriggerHitDelegate.IsBound())
+		{
+			WeaponTriggerHitDelegate.Broadcast(OtherActor, SweepResult);
+		}
 	}
-
-
 }
 
 
 void AWeaponTriggerBase::HitReceive(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
 	
+}
+
+
+bool AWeaponTriggerBase::HasOtherOwner(AActor* OtherActor) const
+{
+	if (!OtherActor || OtherActor == this)
+	{
+		return false;
+	}
+
+	if (IgnoreActors.Contains(OtherActor))
+	{
+		UE_LOG(LogWevetClient, Warning, TEXT("Ignores Actor : %s, funcName : %s"), *OtherActor->GetName(), *FString(__FUNCTION__));
+		return false;
+	}
+	return true;
 }
 

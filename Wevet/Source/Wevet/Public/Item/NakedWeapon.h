@@ -25,8 +25,6 @@ protected:
 
 
 public:
-	virtual void Initialize(APawn* const NewCharacterOwner) override;
-
 	virtual bool CanReleaseItem() const override
 	{
 		return false;
@@ -37,6 +35,7 @@ public:
 
 public:
 #pragma region Interface
+	virtual void Take_Implementation(APawn* NewCharacter) override;
 	virtual void DoFirePressed_Implementation() override;
 	virtual void DoFireRelease_Implementation() override;
 	virtual bool CanStrike_Implementation() const override;
@@ -67,8 +66,11 @@ protected:
 protected:
 	void DoDeployTemplate();
 
+	UFUNCTION()
 	void OnNakedTriggerHitDelegate(AActor* OtherActor, const FHitResult SweepResult);
 
 	float GetAdditionalDamage() const;
+
+	const static float GetAdditionalDamage(const ENakedWeaponTriggerType NakedWeaponTriggerType);
 };
 

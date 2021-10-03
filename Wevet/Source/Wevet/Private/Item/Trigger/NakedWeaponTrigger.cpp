@@ -13,14 +13,14 @@ ANakedWeaponTrigger::ANakedWeaponTrigger(const FObjectInitializer& ObjectInitial
 	NakedWeaponTriggerType = ENakedWeaponTriggerType::None;
 	AttachBoneName = NAME_None;
 	AddtionalDamage = 10.f;
+	bShowMesh = false;
 
-	CollisionComponent = ObjectInitializer.CreateDefaultSubobject<UBoxComponent>(this, TEXT("CollisionComponent"));
-	RootComponent = CollisionComponent;
-	CollisionComponent->SetCollisionProfileName(FName(TEXT("WorldDynamic")));
-	CollisionComponent->SetGenerateOverlapEvents(true);
-	CollisionComponent->SetNotifyRigidBodyCollision(true);
-	CollisionComponent->SetCollisionEnabled(ECollisionEnabled::Type::NoCollision);
-
+	StaticMeshComponent = ObjectInitializer.CreateDefaultSubobject<UStaticMeshComponent>(this, TEXT("StaticMeshComponent"));
+	StaticMeshComponent->SetCollisionProfileName(FName(TEXT("WorldDynamic")));
+	StaticMeshComponent->SetGenerateOverlapEvents(false);
+	StaticMeshComponent->SetNotifyRigidBodyCollision(false);
+	StaticMeshComponent->SetCollisionEnabled(ECollisionEnabled::Type::NoCollision);
+	RootComponent = StaticMeshComponent;
 }
 
 
@@ -29,10 +29,10 @@ void ANakedWeaponTrigger::BeginPlay()
 	Super::BeginPlay();
 	Super::SetActorTickEnabled(false);
 
-	PrimitiveComponent = CollisionComponent;
 	if (PrimitiveComponent)
 	{
 		PrimitiveComponent->OnComponentBeginOverlap.AddDynamic(this, &ANakedWeaponTrigger::BeginOverlapRecieve);
+		PrimitiveComponent->SetVisibility(bShowMesh);
 	}
 }
 
@@ -49,25 +49,7 @@ void ANakedWeaponTrigger::EndPlay(const EEndPlayReason::Type EndPlayReason)
 
 void ANakedWeaponTrigger::BeginOverlapRecieve(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	if (!OtherActor || OtherActor == this)
-	{
-		return;
-	}
-
-	if (IgnoreActors.Contains(OtherActor))
-	{
-		UE_LOG(LogWevetClient, Warning, TEXT("Ignores Actor : %s"), *OtherActor->GetName());
-		return;
-	}
-
-
-	if (OtherActor->ActorHasTag(DAMAGE_TAG))
-	{
-		if (WeaponTriggerHitDelegate.IsBound())
-		{
-			WeaponTriggerHitDelegate.Broadcast(OtherActor, SweepResult);
-		}
-	}
+	Super::BeginOverlapRecieve(OverlappedComponent, OtherActor, OtherComp, OtherBodyIndex, bFromSweep, SweepResult);
 }
 
 
@@ -75,8 +57,10 @@ void ANakedWeaponTrigger::NakedActionApply(const bool Enable)
 {
 	if (PrimitiveComponent)
 	{
+		PrimitiveComponent->SetGenerateOverlapEvents(Enable);
+		PrimitiveComponent->SetNotifyRigidBodyCollision(Enable);
 		const ECollisionEnabled::Type CollisionType = Enable ? ECollisionEnabled::Type::QueryOnly : ECollisionEnabled::Type::NoCollision;
-		CollisionComponent->SetCollisionEnabled(CollisionType);
+		PrimitiveComponent->SetCollisionEnabled(CollisionType);
 	}
 }
 

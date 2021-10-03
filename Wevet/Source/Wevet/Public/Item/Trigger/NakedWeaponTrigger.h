@@ -6,7 +6,7 @@
 #include "GameFramework/Actor.h"
 #include "WevetTypes.h"
 #include "WeaponTriggerBase.h"
-#include "Components/BoxComponent.h"
+#include "Components/StaticMeshComponent.h"
 #include "NakedWeaponTrigger.generated.h"
 
 
@@ -29,7 +29,7 @@ protected:
 
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Components, meta = (AllowPrivateAccess = "true"))
-	class UBoxComponent* CollisionComponent;
+	class UStaticMeshComponent* StaticMeshComponent;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Parameters")
 	ENakedWeaponTriggerType NakedWeaponTriggerType;
@@ -40,12 +40,17 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Parameters")
 	float AddtionalDamage;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Parameters")
+	bool bShowMesh;
+
 
 public:
 	ENakedWeaponTriggerType GetNakedWeaponTriggerType() const { return NakedWeaponTriggerType; }
 	FORCEINLINE float GetAddtionalDamage() const { return AddtionalDamage; }
 	FORCEINLINE FName GetAttachBoneName() const { return AttachBoneName; }
 
+
+public:
 	void NakedActionApply(const bool Enable);
 };
 

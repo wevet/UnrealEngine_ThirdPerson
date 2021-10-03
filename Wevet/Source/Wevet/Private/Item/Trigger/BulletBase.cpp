@@ -9,7 +9,7 @@
 ABulletBase::ABulletBase(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {
 	PrimaryActorTick.bCanEverTick = true;
-	LifeInterval = 2.0f;
+	LifeInterval = 4.0f;
 
 	Tags.Add(WATER_TAG);
 
@@ -30,7 +30,11 @@ void ABulletBase::BeginPlay()
 	Super::BeginPlay();
 	Super::SetLifeSpan(LifeInterval);
 
-	ParticleComponent = Cast<UParticleSystemComponent>(GetComponentByClass(UParticleSystemComponent::StaticClass()));
+	ParticleComponent = Wevet::ComponentExtension::GetComponentFirstOrDefault<UParticleSystemComponent>(this);
+	if (ParticleComponent)
+	{
+		ParticleComponent->ComponentTags.Add(WATER_TAG);
+	}
 
 	if (PrimitiveComponent)
 	{
@@ -40,6 +44,7 @@ void ABulletBase::BeginPlay()
 		PrimitiveComponent->OnComponentBeginOverlap.AddDynamic(this, &ABulletBase::BeginOverlapRecieve);
 		PrimitiveComponent->OnComponentHit.AddDynamic(this, &ABulletBase::HitReceive);
 		PrimitiveComponent->ComponentTags.Add(WATER_LOCAL_TAG);
+		//PrimitiveComponent->ComponentTags.Add(WATER_TAG);
 	}
 }
 
@@ -55,12 +60,6 @@ void ABulletBase::EndPlay(const EEndPlayReason::Type EndPlayReason)
 }
 
 
-EGiveDamageType ABulletBase::GetGiveDamageType_Implementation() const
-{
-	return EGiveDamageType::Shoot;
-}
-
-
 void ABulletBase::VisibleEmitter(const bool InVisible)
 {
 	if (ParticleComponent)
@@ -72,21 +71,11 @@ void ABulletBase::VisibleEmitter(const bool InVisible)
 
 void ABulletBase::BeginOverlapRecieve(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	if (!OtherActor || OtherActor == this)
-	{
-		return;
-	}
-
-	if (IgnoreActors.Contains(OtherActor))
-	{
-		UE_LOG(LogWevetClient, Warning, TEXT("Ignores Actor : %s"), *OtherActor->GetName());
-		return;
-	}
+	Super::BeginOverlapRecieve(OverlappedComponent, OtherActor, OtherComp, OtherBodyIndex, bFromSweep, SweepResult);
 
 #if false
 	if (OtherActor->ActorHasTag(WATER_BODY_TAG))
 	{
-
 		if (!bWasOverlapResult)
 		{
 			bWasOverlapResult = true;
@@ -101,15 +90,10 @@ void ABulletBase::BeginOverlapRecieve(UPrimitiveComponent* OverlappedComponent, 
 	} 
 #endif
 
-	if (OtherActor->ActorHasTag(DAMAGE_TAG))
+	if (HasOtherOwner(OtherActor))
 	{
-		if (WeaponTriggerHitDelegate.IsBound())
-		{
-			WeaponTriggerHitDelegate.Broadcast(OtherActor, SweepResult);
-		}
+		Super::Destroy();
 	}
-
-	Super::Destroy();
 }
 
 
