@@ -167,7 +167,10 @@ void AMockCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInpu
 	FInputActionBinding FirePressed("Fire", IE_Pressed);
 	FirePressed.ActionDelegate.GetDelegateForManualSet().BindLambda([this]()
 	{
-		Super::DoFirePressed_Implementation();
+		if (ILocomotionSystemPawn::Execute_HasAiming(this))
+		{
+			Super::DoFirePressed_Implementation();
+		}
 	});
 	FInputActionBinding FireReleased("Fire", IE_Released);
 	FireReleased.ActionDelegate.GetDelegateForManualSet().BindLambda([this]()
@@ -383,11 +386,19 @@ void AMockCharacter::Alive_Implementation()
 
 void AMockCharacter::Equipment_Implementation()
 {
-	if (!CurrentWeapon.IsValid())
+	//Super::Equipment_Implementation();
+	if (CurrentWeapon.IsValid())
 	{
-		return;
+		const FName SocketName(CurrentWeapon.Get()->GetWeaponItemInfo().EquipSocketName);
+		FAttachmentTransformRules Rules(EAttachmentRule::SnapToTarget, true);
+		CurrentWeapon.Get()->AttachToComponent(Super::GetMesh(), Rules, SocketName);
+		CurrentWeapon.Get()->SetEquip(true);
+
+		if (!CurrentWeapon.Get()->WeaponActionDelegate.IsBound())
+		{
+			CurrentWeapon.Get()->WeaponActionDelegate.AddDynamic(this, &AMockCharacter::WeaponFireCallBack);
+		}
 	}
-	Super::Equipment_Implementation();
 }
 
 
@@ -398,15 +409,30 @@ void AMockCharacter::UnEquipment_Implementation()
 		return;
 	}
 
-	//ICombatInstigator::Execute_DoFireReleassed(this);
-	Super::DoFireReleassed_Implementation();
+	ICombatInstigator::Execute_DoFireReleassed(this);
 
-	bool bPutWeaponSuccess = false;
-	BackPack->StoreWeapon(CurrentWeapon.Get(), bPutWeaponSuccess);
-	if (!bPutWeaponSuccess)
+	if (BackPack)
 	{
-		UE_LOG(LogWevetClient, Error, TEXT("PutError : %s"), *CurrentWeapon.Get()->GetName());
+		bool bPutWeaponSuccess = false;
+		BackPack->StoreWeapon(CurrentWeapon.Get(), bPutWeaponSuccess);
+		if (!bPutWeaponSuccess)
+		{
+			UE_LOG(LogWevetClient, Error, TEXT("PutError : %s"), *CurrentWeapon.Get()->GetName());
+		}
 	}
+	else
+	{
+		const FName SocketName(CurrentWeapon.Get()->GetWeaponItemInfo().EquipSocketName);
+		FAttachmentTransformRules Rules(EAttachmentRule::SnapToTarget, true);
+		CurrentWeapon.Get()->AttachToComponent(Super::GetMesh(), Rules, SocketName);
+		CurrentWeapon.Get()->SetEquip(true);
+	}
+
+	if (CurrentWeapon.Get()->WeaponActionDelegate.IsBound())
+	{
+		CurrentWeapon.Get()->WeaponActionDelegate.RemoveDynamic(this, &AMockCharacter::WeaponFireCallBack);
+	}
+
 	CurrentWeapon.Reset();
 	ActionInfoPtr = nullptr;
 }
@@ -475,30 +501,19 @@ void AMockCharacter::EquipmentActionMontage()
 
 
 	SetActionInfo(Weapon->GetWeaponItemType());
-	if (ActionInfoPtr && ActionInfoPtr->EquipMontage)
+
+	if (ActionInfoPtr)
 	{
-		// I can relate the montage to the weapons.
 		CurrentWeapon = MakeWeakObjectPtr<AAbstractWeapon>(Weapon);
-		EquipWeaponTimeOut += PlayAnimMontage(ActionInfoPtr->EquipMontage, MONTAGE_DELAY);
-	}
-	else
-	{
-		Weapon = nullptr;
+
+		// Play back the montage if it is associated with it.
+		if (ActionInfoPtr->EquipMontage)
+		{
+			EquipWeaponTimeOut += PlayAnimMontage(ActionInfoPtr->EquipMontage, MONTAGE_DELAY);
+		}
 	}
 }
 #pragma endregion
-
-
-AAbstractWeapon* AMockCharacter::GetWeaponByIndex()
-{
-	return GetInventoryComponent()->GetWeaponByIndex(WeaponCurrentIndex);
-}
-
-
-AAbstractWeapon* AMockCharacter::GetReleaseWeaponByIndex()
-{
-	return GetInventoryComponent()->GetReleaseWeaponByIndex(WeaponCurrentIndex);
-}
 
 
 void AMockCharacter::CreateWeaponInstance(const TSubclassOf<class AAbstractWeapon> InWeaponTemplate, WeaponFunc Callback)
@@ -602,5 +617,11 @@ void AMockCharacter::StartRagdollAction()
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
 	GetMesh()->SetAllBodiesBelowSimulatePhysics(PelvisBoneName, true);
+}
+
+
+void AMockCharacter::WeaponFireCallBack(const bool InFiredAction)
+{
+	Super::WeaponFireCallBack(InFiredAction);
 }
 

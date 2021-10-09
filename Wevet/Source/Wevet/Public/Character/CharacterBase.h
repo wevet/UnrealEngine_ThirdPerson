@@ -459,7 +459,7 @@ protected:
 	void ReleaseItemToWorld(AWorldItem* Item, const FTransform& Transform);
 
 	UFUNCTION()
-	void WeaponFireCallBack(const bool InFiredAction);
+	virtual void WeaponFireCallBack(const bool InFiredAction);
 
 protected:
 	TWeakObjectPtr<class AAbstractWeapon> CurrentWeapon;

@@ -52,9 +52,11 @@ public:
 	}
 #pragma endregion
 
+
 protected:
 	virtual void TakeDamageOuter(const FHitResult& HitResult) override;
 	virtual	void RemoveDelegate() override;
+	virtual void OnFirePressInternal() override;
 
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "ANakedWeapon|Asset")
@@ -63,8 +65,10 @@ protected:
 	TMap<ENakedWeaponTriggerType, TArray<class ANakedWeaponTrigger*>> NakedWeaponTriggerMap;
 	TArray<class ANakedWeaponTrigger*> NakedTriggerArray;
 
+
 protected:
 	void DoDeployTemplate();
+	void AllClearNakedActionApply();
 
 	UFUNCTION()
 	void OnNakedTriggerHitDelegate(AActor* OtherActor, const FHitResult SweepResult);
@@ -72,5 +76,7 @@ protected:
 	float GetAdditionalDamage() const;
 
 	const static float GetAdditionalDamage(const ENakedWeaponTriggerType NakedWeaponTriggerType);
+
+	const static FName GetAttachBoneName(const ENakedWeaponTriggerType NakedWeaponTriggerType);
 };
 

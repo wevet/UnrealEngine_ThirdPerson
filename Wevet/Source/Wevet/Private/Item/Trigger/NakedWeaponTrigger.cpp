@@ -29,10 +29,14 @@ void ANakedWeaponTrigger::BeginPlay()
 	Super::BeginPlay();
 	Super::SetActorTickEnabled(false);
 
+	PrimitiveComponent = Cast<UStaticMeshComponent>(GetComponentByClass(UStaticMeshComponent::StaticClass()));
+
 	if (PrimitiveComponent)
 	{
 		PrimitiveComponent->OnComponentBeginOverlap.AddDynamic(this, &ANakedWeaponTrigger::BeginOverlapRecieve);
 		PrimitiveComponent->SetVisibility(bShowMesh);
+
+		UE_LOG(LogWevetClient, Log, TEXT("PrimitiveComp Found => %s"), *FString(__FUNCTION__));
 	}
 }
 

@@ -65,11 +65,16 @@ void ABackPack::StoreWeapon(AAbstractWeapon* InWeapon, bool& OutAttachSuccess)
 		return;
 	}
 
-	if (InWeapon->GetWeaponItemType() == EWeaponItemType::None ||
-		InWeapon->GetWeaponItemType() == EWeaponItemType::Naked ||
+	if (InWeapon->GetWeaponItemType() == EWeaponItemType::None)
+	{
+		UE_LOG(LogWevetClient, Error, TEXT("Unknown item type. : %s"), *InWeapon->GetName());
+		return;
+	}
+
+	if (InWeapon->GetWeaponItemType() == EWeaponItemType::Naked ||
 		InWeapon->GetWeaponItemType() == EWeaponItemType::Knife)
 	{
-		UE_LOG(LogWevetClient, Warning, TEXT("Ignore Weapon : %s"), *InWeapon->GetName());
+		UE_LOG(LogWevetClient, Warning, TEXT("These can not be stored. : %s"), *InWeapon->GetName());
 		return;
 	}
 

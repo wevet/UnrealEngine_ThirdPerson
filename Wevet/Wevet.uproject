@@ -216,7 +216,7 @@
 		},
 		{
 			"Name": "FullBodyIK",
-			"Enabled": true
+			"Enabled": false
 		},
 		{
 			"Name": "EditorScriptingUtilities",

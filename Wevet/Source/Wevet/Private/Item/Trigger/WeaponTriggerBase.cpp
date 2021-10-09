@@ -17,7 +17,7 @@ AWeaponTriggerBase::AWeaponTriggerBase(const FObjectInitializer& ObjectInitializ
 void AWeaponTriggerBase::BeginPlay()
 {
 	Super::BeginPlay();
-	PrimitiveComponent = Cast<UPrimitiveComponent>(GetComponentByClass(UPrimitiveComponent::StaticClass()));
+	//PrimitiveComponent = Cast<UPrimitiveComponent>(GetComponentByClass(UPrimitiveComponent::StaticClass()));
 }
 
 

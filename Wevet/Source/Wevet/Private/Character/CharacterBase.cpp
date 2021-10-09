@@ -14,7 +14,6 @@
 #include "Item/NakedWeapon.h"
 
 
-
 ACharacterBase::ACharacterBase(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {
 	PrimaryActorTick.bCanEverTick = true;
@@ -776,16 +775,11 @@ void ACharacterBase::Equipment_Implementation()
 		FAttachmentTransformRules Rules(EAttachmentRule::SnapToTarget, true);
 		CurrentWeapon.Get()->AttachToComponent(Super::GetMesh(), Rules, SocketName);
 		CurrentWeapon.Get()->SetEquip(true);
-		CurrentWeapon.Get()->WeaponActionDelegate.AddDynamic(this, &ACharacterBase::WeaponFireCallBack);
 
-#if false
-		const EWeaponItemType WeaponType = CurrentWeapon.Get()->GetWeaponItemType();
-		if (WeaponType == EWeaponItemType::Naked || WeaponType == EWeaponItemType::Knife)
+		if (!CurrentWeapon.Get()->WeaponActionDelegate.IsBound())
 		{
 			CurrentWeapon.Get()->WeaponActionDelegate.AddDynamic(this, &ACharacterBase::WeaponFireCallBack);
 		}
-#endif
-
 	}
 }
 
@@ -799,17 +793,13 @@ void ACharacterBase::UnEquipment_Implementation()
 		FAttachmentTransformRules Rules(EAttachmentRule::SnapToTarget, true);
 		CurrentWeapon.Get()->AttachToComponent(Super::GetMesh(), Rules, SocketName);
 		CurrentWeapon.Get()->SetEquip(false);
-		CurrentWeapon.Get()->WeaponActionDelegate.RemoveDynamic(this, &ACharacterBase::WeaponFireCallBack);
 
-#if false
-		const EWeaponItemType WeaponType = CurrentWeapon.Get()->GetWeaponItemType();
-		if (WeaponType == EWeaponItemType::Naked || WeaponType == EWeaponItemType::Knife)
+		if (CurrentWeapon.Get()->WeaponActionDelegate.IsBound())
 		{
 			CurrentWeapon.Get()->WeaponActionDelegate.RemoveDynamic(this, &ACharacterBase::WeaponFireCallBack);
 		}
-#endif
-
 	}
+	CurrentWeapon.Reset();
 	ActionInfoPtr = nullptr;
 }
 

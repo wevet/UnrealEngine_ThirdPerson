@@ -45,9 +45,13 @@ protected:
 
 
 public:
-	ENakedWeaponTriggerType GetNakedWeaponTriggerType() const { return NakedWeaponTriggerType; }
-	FORCEINLINE float GetAddtionalDamage() const { return AddtionalDamage; }
-	FORCEINLINE FName GetAttachBoneName() const { return AttachBoneName; }
+	ENakedWeaponTriggerType GetNakedWeaponTriggerType() const
+	{
+		return NakedWeaponTriggerType; 
+	}
+
+	//FORCEINLINE float GetAddtionalDamage() const { return AddtionalDamage; }
+	//FORCEINLINE FName GetAttachBoneName() const { return AttachBoneName; }
 
 
 public:

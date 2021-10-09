@@ -13,8 +13,6 @@
 
 
 #define IMPACT_RANGE 400.f
-#define HAND_DAMAGE 10.0f
-#define FOOT_DAMAGE 20.0f
 
 
 ANakedWeapon::ANakedWeapon(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
@@ -62,7 +60,7 @@ void ANakedWeapon::BeginPlay()
 
 void ANakedWeapon::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
-	ClearNakedActionApply();
+	AllClearNakedActionApply();
 	RemoveDelegate();
 	NakedTriggerArray.Reset(0);
 	NakedWeaponTriggerMap.Reset();
@@ -169,6 +167,23 @@ void ANakedWeapon::RemoveDelegate()
 		}
 	}
 }
+
+
+void ANakedWeapon::OnFirePressInternal()
+{
+	// @TODO
+	if (!IWeaponInstigator::Execute_CanStrike(this))
+	{
+		return;
+	}
+
+	if (!bCanFire)
+	{
+		return;
+	}
+
+	ICombatInstigator::Execute_FireActionMontage(GetPawnOwner());
+}
 #pragma endregion
 
 
@@ -211,11 +226,13 @@ void ANakedWeapon::DoDeployTemplate()
 		}
 
 		NakedWeaponTrigger->Initialize(IgnoreActors);
-		const FName AttachName = NakedWeaponTrigger->GetAttachBoneName();
-		const ENakedWeaponTriggerType TriggerType = NakedWeaponTrigger->GetNakedWeaponTriggerType();
+		//UE_LOG(LogWevetClient, Log, TEXT("BoneName => %s"), *BoneName.ToString());
 
+		//const FName AttachName = NakedWeaponTrigger->GetAttachBoneName();
+		auto BoneName = ANakedWeapon::GetAttachBoneName(NakedWeaponTrigger->GetNakedWeaponTriggerType());
+		const ENakedWeaponTriggerType TriggerType = NakedWeaponTrigger->GetNakedWeaponTriggerType();
 		FAttachmentTransformRules Rules(EAttachmentRule::SnapToTarget, true);
-		NakedWeaponTrigger->AttachToComponent(OwnerMeshComponent, Rules, AttachName);
+		NakedWeaponTrigger->AttachToComponent(OwnerMeshComponent, Rules, BoneName);
 		NakedWeaponTrigger->WeaponTriggerHitDelegate.AddDynamic(this, &ANakedWeapon::OnNakedTriggerHitDelegate);
 
 		NakedWeaponTriggerMap.FindOrAdd(TriggerType).Add(NakedWeaponTrigger);
@@ -243,6 +260,7 @@ void ANakedWeapon::DoDeployTemplate()
 
 /// <summary>
 /// API From Combat Interface
+/// Enable & Disable Naked Apply Event
 /// </summary>
 /// <param name="NakedWeaponTriggerType"></param>
 /// <param name="Enable"></param>
@@ -274,7 +292,22 @@ void ANakedWeapon::NakedActionApply(const ENakedWeaponTriggerType NakedWeaponTri
 }
 
 
+/// <summary>
+/// Remove Current NakedApply
+/// </summary>
 void ANakedWeapon::ClearNakedActionApply()
+{
+	for (class ANakedWeaponTrigger* WeaponTrigger : NakedTriggerArray)
+	{
+		if (WeaponTrigger)
+		{
+			WeaponTrigger->NakedActionApply(false);
+		}
+	}
+}
+
+
+void ANakedWeapon::AllClearNakedActionApply()
 {
 	for (const TPair<ENakedWeaponTriggerType, TArray<class ANakedWeaponTrigger*>>& Pair : NakedWeaponTriggerMap)
 	{
@@ -327,21 +360,63 @@ float ANakedWeapon::GetAdditionalDamage() const
 
 const float ANakedWeapon::GetAdditionalDamage(const ENakedWeaponTriggerType NakedWeaponTriggerType)
 {
+	const float HandDamage = 10.0f;
+	const float FootDamage = 20.0f;
+
 	switch (NakedWeaponTriggerType)
 	{
 		case ENakedWeaponTriggerType::LeftHand:
 		case ENakedWeaponTriggerType::RightHand:
 		{
-			return HAND_DAMAGE;
+			return HandDamage;
 		}
 		break;
 		case ENakedWeaponTriggerType::LeftFoot:
 		case ENakedWeaponTriggerType::RightFoot:
 		{
-			return FOOT_DAMAGE;
+			return FootDamage;
 		}
 		break;
 	}
 	return DEFAULT_VALUE;
+}
+
+
+const FName ANakedWeapon::GetAttachBoneName(const ENakedWeaponTriggerType NakedWeaponTriggerType)
+{
+	const FString HandPrefix = FString("hand_");
+	const FString FootPrefix = FString("foot_");
+	const FString L = FString("l");
+	const FString R = FString("r");
+	FString BoneName = FString("naked_");
+
+	switch (NakedWeaponTriggerType)
+	{
+		case ENakedWeaponTriggerType::LeftHand:
+		{
+			BoneName.Append(HandPrefix);
+			BoneName.Append(L);
+		}
+		break;
+		case ENakedWeaponTriggerType::RightHand:
+		{
+			BoneName.Append(HandPrefix);
+			BoneName.Append(R);
+		}
+		break;
+		case ENakedWeaponTriggerType::LeftFoot:
+		{
+			BoneName.Append(FootPrefix);
+			BoneName.Append(L);
+		}
+		break;
+		case ENakedWeaponTriggerType::RightFoot:
+		{
+			BoneName.Append(FootPrefix);
+			BoneName.Append(R);
+		}
+		break;
+	}
+	return FName(*BoneName);
 }
 

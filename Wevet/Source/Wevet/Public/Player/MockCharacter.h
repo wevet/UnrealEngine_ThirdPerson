@@ -95,8 +95,16 @@ public:
 
 	virtual void VisibleDeathPostProcess(const bool InEnabled);
 	
-	AAbstractWeapon* GetWeaponByIndex();
-	AAbstractWeapon* GetReleaseWeaponByIndex();
+	AAbstractWeapon* GetWeaponByIndex()
+	{
+		return GetInventoryComponent()->GetWeaponByIndex(WeaponCurrentIndex);
+	}
+
+
+	AAbstractWeapon* GetReleaseWeaponByIndex()
+	{
+		return GetInventoryComponent()->GetReleaseWeaponByIndex(WeaponCurrentIndex);
+	}
 
 
 protected:
@@ -107,6 +115,8 @@ protected:
 	void OnChangeWeapon();
 	void OnEquipWeapon();
 	void CreateBackPack();
+
+	virtual void WeaponFireCallBack(const bool InFiredAction) override;
 
 protected:
 	// Apply to OnALSGaitChange_Implementation
