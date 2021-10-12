@@ -72,6 +72,10 @@ protected:
 
 	virtual void SetEquip();
 	virtual void SetWeaponItemType();
+	virtual void SetWeaponFabrikIKTransform();
+
+	UFUNCTION(BlueprintCallable, Category = CharacterAnimInstance)
+	virtual void SetWeaponFabrikEnable();
 
 protected:
 	UFUNCTION(BlueprintCallable, Category = CharacterAnimInstance)

@@ -182,7 +182,8 @@ void ANakedWeapon::OnFirePressInternal()
 		return;
 	}
 
-	ICombatInstigator::Execute_FireActionMontage(GetPawnOwner());
+	float FireDuration = DEFAULT_VALUE;
+	ICombatInstigator::Execute_FireActionMontage(GetPawnOwner(), FireDuration);
 }
 #pragma endregion
 
@@ -293,9 +294,10 @@ void ANakedWeapon::NakedActionApply(const ENakedWeaponTriggerType NakedWeaponTri
 
 
 /// <summary>
+/// Parent Class override
 /// Remove Current NakedApply
 /// </summary>
-void ANakedWeapon::ClearNakedActionApply()
+void ANakedWeapon::ClearCollisionApply()
 {
 	for (class ANakedWeaponTrigger* WeaponTrigger : NakedTriggerArray)
 	{

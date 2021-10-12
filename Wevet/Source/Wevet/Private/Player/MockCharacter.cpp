@@ -393,11 +393,7 @@ void AMockCharacter::Equipment_Implementation()
 		FAttachmentTransformRules Rules(EAttachmentRule::SnapToTarget, true);
 		CurrentWeapon.Get()->AttachToComponent(Super::GetMesh(), Rules, SocketName);
 		CurrentWeapon.Get()->SetEquip(true);
-
-		if (!CurrentWeapon.Get()->WeaponActionDelegate.IsBound())
-		{
-			CurrentWeapon.Get()->WeaponActionDelegate.AddDynamic(this, &AMockCharacter::WeaponFireCallBack);
-		}
+		CurrentWeapon.Get()->WeaponActionDelegate.AddDynamic(this, &AMockCharacter::WeaponFireCallBack);
 	}
 }
 
@@ -410,6 +406,7 @@ void AMockCharacter::UnEquipment_Implementation()
 	}
 
 	ICombatInstigator::Execute_DoFireReleassed(this);
+	CurrentWeapon.Get()->WeaponActionDelegate.RemoveDynamic(this, &AMockCharacter::WeaponFireCallBack);
 
 	if (BackPack)
 	{
@@ -422,16 +419,12 @@ void AMockCharacter::UnEquipment_Implementation()
 	}
 	else
 	{
-		const FName SocketName(CurrentWeapon.Get()->GetWeaponItemInfo().EquipSocketName);
+		const FName SocketName(CurrentWeapon.Get()->GetWeaponItemInfo().UnEquipSocketName);
 		FAttachmentTransformRules Rules(EAttachmentRule::SnapToTarget, true);
 		CurrentWeapon.Get()->AttachToComponent(Super::GetMesh(), Rules, SocketName);
-		CurrentWeapon.Get()->SetEquip(true);
+		CurrentWeapon.Get()->SetEquip(false);
 	}
 
-	if (CurrentWeapon.Get()->WeaponActionDelegate.IsBound())
-	{
-		CurrentWeapon.Get()->WeaponActionDelegate.RemoveDynamic(this, &AMockCharacter::WeaponFireCallBack);
-	}
 
 	CurrentWeapon.Reset();
 	ActionInfoPtr = nullptr;

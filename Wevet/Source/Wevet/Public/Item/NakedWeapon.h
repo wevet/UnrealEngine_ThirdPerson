@@ -25,15 +25,6 @@ protected:
 
 
 public:
-	virtual bool CanReleaseItem() const override
-	{
-		return false;
-	}
-
-	void NakedActionApply(const ENakedWeaponTriggerType NakedWeaponTriggerType, const bool Enable, bool& FoundResult);
-	void ClearNakedActionApply();
-
-public:
 #pragma region Interface
 	virtual void Take_Implementation(APawn* NewCharacter) override;
 	virtual void DoFirePressed_Implementation() override;
@@ -51,6 +42,19 @@ public:
 		// Pass
 	}
 #pragma endregion
+
+
+public:
+	virtual bool CanReleaseItem() const override
+	{
+		return false;
+	}
+
+	virtual void ClearCollisionApply() override;
+
+
+public:
+	void NakedActionApply(const ENakedWeaponTriggerType NakedWeaponTriggerType, const bool Enable, bool& FoundResult);
 
 
 protected:

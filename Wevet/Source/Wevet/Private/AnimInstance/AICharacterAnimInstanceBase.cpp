@@ -33,15 +33,45 @@ void UAICharacterAnimInstanceBase::CalculateAimOffset()
 		const FRotator CurrentRotation = Character->GetActorRotation();
 		const FRotator LookAtRotation = UKismetMathLibrary::FindLookAtRotation(Start, Target);
 		
-		AimOffset.Y = FMath::Clamp(LookAtRotation.Pitch, -90.f, 90.f);
+		AimOffset.Y = FMath::Clamp(LookAtRotation.Pitch, -180.f, 180.f);
+		
 		//AimOffset.X = FMath::Clamp(FMath::Abs(LookAtRotation.Yaw), -180.f, 180.f);
-
-		const FRotator ResultRotation = UKismetMathLibrary::RInterpTo(CurrentRotation, FRotator(0.0f, LookAtRotation.Yaw, 0.0f), GetWorld()->GetDeltaSeconds(), LookAtInterpSpeed);
+		//const FRotator ResultRotation = UKismetMathLibrary::RInterpTo(CurrentRotation, FRotator(0.0f, LookAtRotation.Yaw, 0.0f), GetWorld()->GetDeltaSeconds(), LookAtInterpSpeed);
 		//Character->SetActorRelativeRotation(FRotator(0.0f, ResultRotation.Yaw, 0.0f));
 	}
 	else
 	{
 		Super::CalculateAimOffset();
+	}
+}
+
+
+void UAICharacterAnimInstanceBase::SetWeaponFabrikIKTransform()
+{
+	if (!Owner)
+	{
+		return;
+	}
+
+	auto Weapon = Owner->GetCurrentWeapon();
+	if (!Weapon)
+	{
+		return;
+	}
+
+	switch (WeaponItemType)
+	{
+		case EWeaponItemType::Pistol:
+		{
+			Super::SetWeaponFabrikIKTransform();
+		}
+		break;
+		case EWeaponItemType::Rifle:
+		case EWeaponItemType::Sniper:
+		{
+			Super::SetHandTransform(Weapon->GetGripTransform(RifleGripSocketName), FTransform::Identity);
+		}
+		break;
 	}
 }
 

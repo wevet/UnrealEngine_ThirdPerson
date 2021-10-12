@@ -254,8 +254,8 @@ public:
 	virtual FVector BulletTraceForwardLocation_Implementation() const override;
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|CombatInstigator")
-	void FireActionMontage();
-	virtual void FireActionMontage_Implementation() override;
+	void FireActionMontage(float& OutFireDuration);
+	virtual void FireActionMontage_Implementation(float& OutFireDuration) override;
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CharacterBase|CombatInstigator")
 	void ReloadActionMontage(float& OutReloadDuration);

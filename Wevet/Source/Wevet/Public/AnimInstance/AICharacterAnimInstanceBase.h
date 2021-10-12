@@ -24,7 +24,12 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "AI|Variable")
 	float LookAtInterpSpeed;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "AI|Variable")
+	FName RifleGripSocketName;
+
 protected:
 	class AAICharacterBase* Character;
 	virtual void CalculateAimOffset() override;
+
+	virtual void SetWeaponFabrikIKTransform() override;
 };

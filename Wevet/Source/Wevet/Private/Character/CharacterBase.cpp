@@ -452,6 +452,13 @@ float ACharacterBase::TakeDamage(float Damage, struct FDamageEvent const& Damage
 	{
 		ICombatInstigator::Execute_InfrictionDamage(EventInstigator->GetPawn(), this, bWasDie);
 	}
+
+	// if NakedWeapon Clear Collision
+	if (CurrentWeapon.IsValid())
+	{
+		CurrentWeapon.Get()->ClearCollisionApply();
+	}
+
 	return ActualDamage;
 }
 
@@ -775,11 +782,7 @@ void ACharacterBase::Equipment_Implementation()
 		FAttachmentTransformRules Rules(EAttachmentRule::SnapToTarget, true);
 		CurrentWeapon.Get()->AttachToComponent(Super::GetMesh(), Rules, SocketName);
 		CurrentWeapon.Get()->SetEquip(true);
-
-		if (!CurrentWeapon.Get()->WeaponActionDelegate.IsBound())
-		{
-			CurrentWeapon.Get()->WeaponActionDelegate.AddDynamic(this, &ACharacterBase::WeaponFireCallBack);
-		}
+		CurrentWeapon.Get()->WeaponActionDelegate.AddDynamic(this, &ACharacterBase::WeaponFireCallBack);
 	}
 }
 
@@ -789,15 +792,11 @@ void ACharacterBase::UnEquipment_Implementation()
 	if (CurrentWeapon.IsValid())
 	{
 		ICombatInstigator::Execute_DoFireReleassed(this);
+		CurrentWeapon.Get()->WeaponActionDelegate.RemoveDynamic(this, &ACharacterBase::WeaponFireCallBack);
 		const FName SocketName(CurrentWeapon.Get()->GetWeaponItemInfo().UnEquipSocketName);
 		FAttachmentTransformRules Rules(EAttachmentRule::SnapToTarget, true);
 		CurrentWeapon.Get()->AttachToComponent(Super::GetMesh(), Rules, SocketName);
 		CurrentWeapon.Get()->SetEquip(false);
-
-		if (CurrentWeapon.Get()->WeaponActionDelegate.IsBound())
-		{
-			CurrentWeapon.Get()->WeaponActionDelegate.RemoveDynamic(this, &ACharacterBase::WeaponFireCallBack);
-		}
 	}
 	CurrentWeapon.Reset();
 	ActionInfoPtr = nullptr;
@@ -893,7 +892,7 @@ FVector ACharacterBase::BulletTraceForwardLocation_Implementation() const
 }
 
 
-void ACharacterBase::FireActionMontage_Implementation()
+void ACharacterBase::FireActionMontage_Implementation(float& OutFireDuration)
 {
 	if (!CurrentWeapon.IsValid())
 	{
@@ -909,7 +908,7 @@ void ACharacterBase::FireActionMontage_Implementation()
 
 	if (!GetAnimInstance()->Montage_IsPlaying(ActionInfoPtr->FireMontage))
 	{
-		PlayAnimMontage(ActionInfoPtr->FireMontage, MONTAGE_DELAY);
+		OutFireDuration += PlayAnimMontage(ActionInfoPtr->FireMontage, MONTAGE_DELAY);
 	}
 }
 

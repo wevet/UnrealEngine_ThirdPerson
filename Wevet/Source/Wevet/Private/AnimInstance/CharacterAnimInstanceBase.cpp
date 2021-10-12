@@ -126,6 +126,7 @@ void UCharacterAnimInstanceBase::UpdateCombatSystem()
 {
 	SetEquip();
 	SetWeaponItemType();
+	SetWeaponFabrikIKTransform();
 }
 
 
@@ -148,6 +149,67 @@ void UCharacterAnimInstanceBase::SetWeaponItemType()
 		{
 			WeaponItemType = Current;
 		}
+	}
+}
+
+
+void UCharacterAnimInstanceBase::SetWeaponFabrikIKTransform()
+{
+	if (!Owner)
+	{
+		return;
+	}
+
+	auto Weapon = Owner->GetCurrentWeapon();
+	if (!Weapon)
+	{
+		return;
+	}
+
+	switch (WeaponItemType)
+	{
+		case EWeaponItemType::Pistol:
+		case EWeaponItemType::Rifle:
+		case EWeaponItemType::Sniper:
+		{
+			Super::SetHandTransform(Weapon->GetGripTransform(), FTransform::Identity);
+		}
+		break;
+	}
+}
+
+
+void UCharacterAnimInstanceBase::SetWeaponFabrikEnable()
+{
+	if (!Owner)
+	{
+		return;
+	}
+
+
+	auto Weapon = Owner->GetCurrentWeapon();
+	if (!Weapon)
+	{
+		Super::SetArmTorsoIKMode(false, false);
+		return;
+	}
+
+	switch (WeaponItemType)
+	{
+		case EWeaponItemType::Pistol:
+		{
+			if (!Owner->HasAiming_Implementation())
+			{
+			}
+			Super::SetArmTorsoIKMode(true, false);
+		}
+		break;
+		case EWeaponItemType::Rifle:
+		case EWeaponItemType::Sniper:
+		{
+			Super::SetArmTorsoIKMode(true, false);
+		}
+		break;
 	}
 }
 #pragma endregion

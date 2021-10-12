@@ -98,7 +98,7 @@ public:
 	FVector BulletTraceForwardLocation() const;
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CombatInstigator")
-	void FireActionMontage();
+	void FireActionMontage(float& OutFireDuration);
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CombatInstigator")
 	void ReloadActionMontage(float& OutReloadDuration);
