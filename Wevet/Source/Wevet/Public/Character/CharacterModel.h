@@ -22,13 +22,30 @@ public:
 	FORCEINLINE int32 GetHealth() const { return Health; }
 	FORCEINLINE int32 GetAttack() const { return Attack; }
 	FORCEINLINE int32 GetDefence() const { return Defence; }
-	FORCEINLINE int32 GetWisdom() const { return Wisdom; }
 	FORCEINLINE int32 GetKillDamage() const { return MaxHealth; }
 	FORCEINLINE float GetHealthToWidget() const { return (float)Health / (float)MaxHealth; }
 
 	FORCEINLINE bool IsFullHealth() const { return Health >= MaxHealth; }
 	FORCEINLINE bool CanDie() const { return (Health <= INT_ZERO); }
 	FORCEINLINE bool IsDie() const { return (Health <= INT_ZERO) && bDie; }
+
+
+	// @NOTE
+	// Determine the change in weapons by increasing or decreasing wisdom.
+	UFUNCTION(BlueprintCallable, Category = "CharacterModel|Function")
+	int32 GetWisdom() const
+	{
+		auto CurrentWisdom = Wisdom;
+		if (IsHealthHalf())
+		{
+			CurrentWisdom *= HALF_WEIGHT;
+		}
+		else if (IsHealthQuarter())
+		{
+			CurrentWisdom *= QUART_WEIGHT;
+		}
+		return CurrentWisdom;
+	}
 
 
 	FORCEINLINE bool IsHealthHalf() const

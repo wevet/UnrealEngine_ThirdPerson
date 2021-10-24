@@ -8,6 +8,7 @@
 UAICharacterAnimInstanceBase::UAICharacterAnimInstanceBase(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {
 	LookAtInterpSpeed = 2.4f;
+	Character = nullptr;
 }
 
 
@@ -26,23 +27,29 @@ void UAICharacterAnimInstanceBase::NativeUpdateAnimation(float DeltaTimeX)
 
 void UAICharacterAnimInstanceBase::CalculateAimOffset()
 {
-	if (Character && Character->GetTarget_Implementation())
+#if false
+
+	if (!Character)
+	{
+		Super::CalculateAimOffset();
+		return;
+	}
+
+	if (Character->GetTarget_Implementation())
 	{
 		const FVector Start = Character->GetActorLocation();
 		const FVector Target = Character->GetTarget_Implementation()->GetActorLocation();
 		const FRotator CurrentRotation = Character->GetActorRotation();
-		const FRotator LookAtRotation = UKismetMathLibrary::FindLookAtRotation(Start, Target);
-		
+		const FRotator LookAtRotation = UKismetMathLibrary::FindLookAtRotation(Start, Target);	
 		AimOffset.Y = FMath::Clamp(LookAtRotation.Pitch, -180.f, 180.f);
-		
-		//AimOffset.X = FMath::Clamp(FMath::Abs(LookAtRotation.Yaw), -180.f, 180.f);
-		//const FRotator ResultRotation = UKismetMathLibrary::RInterpTo(CurrentRotation, FRotator(0.0f, LookAtRotation.Yaw, 0.0f), GetWorld()->GetDeltaSeconds(), LookAtInterpSpeed);
-		//Character->SetActorRelativeRotation(FRotator(0.0f, ResultRotation.Yaw, 0.0f));
+		AimOffset.X = FMath::Clamp(LookAtRotation.Yaw, -180.f, 180.f);
 	}
 	else
 	{
 		Super::CalculateAimOffset();
 	}
+#endif
+
 }
 
 

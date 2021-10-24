@@ -227,15 +227,11 @@ void ANakedWeapon::DoDeployTemplate()
 		}
 
 		NakedWeaponTrigger->Initialize(IgnoreActors);
-		//UE_LOG(LogWevetClient, Log, TEXT("BoneName => %s"), *BoneName.ToString());
-
-		//const FName AttachName = NakedWeaponTrigger->GetAttachBoneName();
 		auto BoneName = ANakedWeapon::GetAttachBoneName(NakedWeaponTrigger->GetNakedWeaponTriggerType());
 		const ENakedWeaponTriggerType TriggerType = NakedWeaponTrigger->GetNakedWeaponTriggerType();
 		FAttachmentTransformRules Rules(EAttachmentRule::SnapToTarget, true);
 		NakedWeaponTrigger->AttachToComponent(OwnerMeshComponent, Rules, BoneName);
 		NakedWeaponTrigger->WeaponTriggerHitDelegate.AddDynamic(this, &ANakedWeapon::OnNakedTriggerHitDelegate);
-
 		NakedWeaponTriggerMap.FindOrAdd(TriggerType).Add(NakedWeaponTrigger);
 
 	}

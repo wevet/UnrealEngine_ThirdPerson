@@ -9,7 +9,7 @@ UCharacterModel::UCharacterModel(const FObjectInitializer& ObjectInitializer) : 
 	MaxHealth(100), 
 	Attack(100), 
 	Defence(100), 
-	Wisdom(100), 
+	Wisdom(60), 
 	bDie(false)
 {
 	//

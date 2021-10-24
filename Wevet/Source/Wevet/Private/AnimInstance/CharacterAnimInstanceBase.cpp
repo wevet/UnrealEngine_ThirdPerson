@@ -10,6 +10,7 @@
 
 UCharacterAnimInstanceBase::UCharacterAnimInstanceBase(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {
+	Owner = nullptr;
 	bWasMoving = false;
 	bWasAiming = false;
 	bDebugTrace = false;
@@ -65,7 +66,7 @@ void UCharacterAnimInstanceBase::NativeInitializeAnimation()
 	OwningPawn = TryGetPawnOwner();
 	Owner = Cast<ACharacterBase>(OwningPawn);
 
-	if (Owner == nullptr)
+	if (!Owner)
 	{
 		return;
 	}
@@ -1005,7 +1006,7 @@ void UCharacterAnimInstanceBase::CalculateGroundedLeaningValues()
 		AccelerationDifference = (MovementSpeed - PreviousSpeed) / DeltaSeconds;
 		PreviousSpeed = MovementSpeed;
 		const float MaxAcceleration = CharacterMovementComponent->GetMaxAcceleration();
-		const float BrakingDecelerationWalking = CharacterMovementComponent->BrakingDecelerationWalking;
+		const float BrakingDecelerationWalking = CharacterMovementComponent->GetMaxBrakingDeceleration();
 		const float ValueA = UKismetMathLibrary::MapRangeClamped(FMath::Abs(AccelerationDifference), 0.0f, MaxAcceleration, 0.0f, 1.0f);
 		const float ValueB = UKismetMathLibrary::MapRangeClamped(FMath::Abs(AccelerationDifference), 0.0f, BrakingDecelerationWalking, 0.0f, -1.0f);
 		const float Speed = UKismetMathLibrary::MapRangeClamped(MovementSpeed, WalkingSpeed, RunningSpeed, 0.0f, 1.0f);
@@ -1033,7 +1034,7 @@ void UCharacterAnimInstanceBase::CalculateInAirLeaningValues()
 void UCharacterAnimInstanceBase::CalculateLandPredictionAlpha()
 {
 	const float DeltaSeconds = GetWorld()->GetDeltaSeconds();
-	const float InterpSpeed = 10.f;
+	float InterpSpeed = 10.f;
 
 	if (Velocity.Z > 0.0f)
 	{
@@ -1041,8 +1042,9 @@ void UCharacterAnimInstanceBase::CalculateLandPredictionAlpha()
 		return;
 	}
 
-	if (!Owner)
+	if (!Owner || !CharacterMovementComponent || !CapsuleComponent)
 	{
+		LandPredictionAlpha = UKismetMathLibrary::FInterpTo(LandPredictionAlpha, 0.0f, DeltaSeconds, InterpSpeed);
 		return;
 	}
 
@@ -1053,19 +1055,19 @@ void UCharacterAnimInstanceBase::CalculateLandPredictionAlpha()
 	const FVector StartLocation = FVector(Location.X, Location.Y, OffsetZ);
 
 	const float ClampMin = -4000.f;
-	FVector EndPos = UKismetMathLibrary::Normal(FVector(Velocity.X, Velocity.Y, FMath::Clamp(Velocity.Z, ClampMin, -200.f)));
-	EndPos *= UKismetMathLibrary::MapRangeClamped(Velocity.Z, 0.0f, ClampMin, 50.f, 2000.f);
-	const FVector EndLocation = StartLocation + EndPos;
+	const float ClampMax = 2000.f;
+	FVector EndLocation = UKismetMathLibrary::Normal(FVector(Velocity.X, Velocity.Y, FMath::Clamp(Velocity.Z, ClampMin, -200.f)));
+	EndLocation *= UKismetMathLibrary::MapRangeClamped(Velocity.Z, 0.0f, ClampMin, 50.f, ClampMax);
 
 	//TArray<AActor*> IgnoreActors = Owner->GetIgnoreActors();
 	FHitResult HitData(ForceInit);
 	TArray<AActor*> IgnoreActors;
-	const float DrawTime = 1.0f;
+
 
 	const bool bWasHitResult = UKismetSystemLibrary::SphereTraceSingle(
 		GetWorld(),
 		StartLocation,
-		EndLocation,
+		StartLocation + EndLocation,
 		Radius,
 		UEngineTypes::ConvertToTraceType(ECC_Visibility),
 		false,
@@ -1075,15 +1077,15 @@ void UCharacterAnimInstanceBase::CalculateLandPredictionAlpha()
 		true, 
 		FLinearColor::Red, 
 		FLinearColor::Green, 
-		DrawTime);
+		1.0f);
 
 	const float FloorZ = CharacterMovementComponent->GetWalkableFloorZ();
 	if (HitData.bBlockingHit && (HitData.ImpactNormal.Z >= FloorZ))
 	{
-		const float HitSpeed = 20.f;
+		InterpSpeed = 20.f;
 		const float Value = UKismetMathLibrary::MapRangeClamped(HitData.Time, 0.0f, 1.0f, 1.0f, 0.0f);
-		const float CurveValue = LandAlphaCurve->GetFloatValue(Value);
-		LandPredictionAlpha = UKismetMathLibrary::FInterpTo(LandPredictionAlpha, CurveValue, DeltaSeconds, HitSpeed);
+		const float CurveValue = LandAlphaCurve ? LandAlphaCurve->GetFloatValue(Value) : Value;
+		LandPredictionAlpha = UKismetMathLibrary::FInterpTo(LandPredictionAlpha, CurveValue, DeltaSeconds, InterpSpeed);
 	}
 	else
 	{
@@ -1138,7 +1140,7 @@ void UCharacterAnimInstanceBase::OnTurnInPlaceRespons(const float AimYawLimit, c
 
 	if (!bSuccess || Montage_IsPlaying(SelectMontage))
 	{
-		UE_LOG(LogWevetClient, Warning, TEXT("fail Success or Playing Montage => %s"), *SelectMontage->GetName());
+		UE_LOG(LogWevetClient, Error, TEXT("fail Success or Playing Montage => %s"), *SelectMontage->GetName());
 		return;
 	}
 

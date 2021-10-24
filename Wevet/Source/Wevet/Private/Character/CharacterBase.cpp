@@ -419,7 +419,7 @@ void ACharacterBase::UpdateRecoverTimer(const float InDeltaTime)
 	}
 }
 
-// 
+
 float ACharacterBase::TakeDamage(float Damage, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
 #if WITH_EDITOR
