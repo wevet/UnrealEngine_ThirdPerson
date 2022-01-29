@@ -988,37 +988,28 @@ void UCharacterAnimInstanceBase::CalcuratePivotState()
 // Locomotion State Moving
 void UCharacterAnimInstanceBase::CalculateGroundedLeaningValues()
 {
-	float LeanRotation;
-	float LeanAcceleration;
+	check(GetWorld());
 
-	{
-		const float DeltaSeconds = GetWorld()->GetDeltaSeconds();
-		const FRotator DeltaRot = UKismetMathLibrary::NormalizedDeltaRotator(LastVelocityRotation, PreviousVelocityRotation);
-		DeltaVelocityDifference = (DeltaRot.Yaw / DeltaSeconds);
-		PreviousVelocityRotation = LastVelocityRotation;
-		const float ValueA = UKismetMathLibrary::MapRangeClamped(DeltaVelocityDifference, -200.0f, 200.0f, -1.0f, 1.0f);
-		const float Speed = UKismetMathLibrary::MapRangeClamped(MovementSpeed, WalkingSpeed, RunningSpeed, 0.0f, 1.0f);
-		LeanRotation = (ValueA * Speed);
-	}
+	const float DeltaSeconds = GetWorld()->GetDeltaSeconds();
+	const float Speed = UKismetMathLibrary::MapRangeClamped(MovementSpeed, WalkingSpeed, RunningSpeed, 0.0f, 1.0f);
+	const FRotator DeltaRot = UKismetMathLibrary::NormalizedDeltaRotator(LastVelocityRotation, PreviousVelocityRotation);
+	DeltaVelocityDifference = (DeltaRot.Yaw / DeltaSeconds);
+	PreviousVelocityRotation = LastVelocityRotation;
+	const float DeltaVelocityClampValue = UKismetMathLibrary::MapRangeClamped(DeltaVelocityDifference, -200.0f, 200.0f, -1.0f, 1.0f);
+	const float LeanRotation = (DeltaVelocityClampValue * Speed);
 
-	{
-		const float DeltaSeconds = GetWorld()->GetDeltaSeconds();
-		AccelerationDifference = (MovementSpeed - PreviousSpeed) / DeltaSeconds;
-		PreviousSpeed = MovementSpeed;
-		const float MaxAcceleration = CharacterMovementComponent->GetMaxAcceleration();
-		const float BrakingDecelerationWalking = CharacterMovementComponent->GetMaxBrakingDeceleration();
-		const float ValueA = UKismetMathLibrary::MapRangeClamped(FMath::Abs(AccelerationDifference), 0.0f, MaxAcceleration, 0.0f, 1.0f);
-		const float ValueB = UKismetMathLibrary::MapRangeClamped(FMath::Abs(AccelerationDifference), 0.0f, BrakingDecelerationWalking, 0.0f, -1.0f);
-		const float Speed = UKismetMathLibrary::MapRangeClamped(MovementSpeed, WalkingSpeed, RunningSpeed, 0.0f, 1.0f);
-		LeanAcceleration = Speed * UKismetMathLibrary::SelectFloat(ValueA, ValueB, (AccelerationDifference > 0.0f));
-	}
+	AccelerationDifference = (MovementSpeed - PreviousSpeed) / DeltaSeconds;
+	PreviousSpeed = MovementSpeed;
+	const float MaxAcceleration = CharacterMovementComponent->GetMaxAcceleration();
+	const float BrakingDecelerationWalking = CharacterMovementComponent->GetMaxBrakingDeceleration();
+	const float MaxAccelerationClamp = UKismetMathLibrary::MapRangeClamped(FMath::Abs(AccelerationDifference), 0.0f, MaxAcceleration, 0.0f, 1.0f);
+	const float BrakingDecelerationClamp = UKismetMathLibrary::MapRangeClamped(FMath::Abs(AccelerationDifference), 0.0f, BrakingDecelerationWalking, 0.0f, -1.0f);
+	const float LeanAcceleration = Speed * UKismetMathLibrary::SelectFloat(MaxAccelerationClamp, BrakingDecelerationClamp, (AccelerationDifference > 0.0f));
 
-	{
-		const FVector LeanPosition = FVector(LeanRotation, LeanAcceleration, 0.0f);
-		const FVector AngleAxis = UKismetMathLibrary::RotateAngleAxis(LeanPosition, Direction, FVector(0.0f, 0.0f, -1.0f));
-		LeanGrounded.X = AngleAxis.X;
-		LeanGrounded.Y = AngleAxis.Y;
-	}
+	const FVector LeanPosition = FVector(LeanRotation, LeanAcceleration, 0.0f);
+	const FVector AngleAxis = UKismetMathLibrary::RotateAngleAxis(LeanPosition, Direction, FVector(0.0f, 0.0f, -1.0f));
+	LeanGrounded.X = AngleAxis.X;
+	LeanGrounded.Y = AngleAxis.Y;
 }
 
 // Falling Update
@@ -1056,18 +1047,19 @@ void UCharacterAnimInstanceBase::CalculateLandPredictionAlpha()
 
 	const float ClampMin = -4000.f;
 	const float ClampMax = 2000.f;
+	const float DrawTime = 1.0f;
+
 	FVector EndLocation = UKismetMathLibrary::Normal(FVector(Velocity.X, Velocity.Y, FMath::Clamp(Velocity.Z, ClampMin, -200.f)));
 	EndLocation *= UKismetMathLibrary::MapRangeClamped(Velocity.Z, 0.0f, ClampMin, 50.f, ClampMax);
-
+	EndLocation += StartLocation;
 	//TArray<AActor*> IgnoreActors = Owner->GetIgnoreActors();
 	FHitResult HitData(ForceInit);
 	TArray<AActor*> IgnoreActors;
 
-
-	const bool bWasHitResult = UKismetSystemLibrary::SphereTraceSingle(
+	UKismetSystemLibrary::SphereTraceSingle(
 		GetWorld(),
 		StartLocation,
-		StartLocation + EndLocation,
+		EndLocation,
 		Radius,
 		UEngineTypes::ConvertToTraceType(ECC_Visibility),
 		false,
@@ -1077,10 +1069,11 @@ void UCharacterAnimInstanceBase::CalculateLandPredictionAlpha()
 		true, 
 		FLinearColor::Red, 
 		FLinearColor::Green, 
-		1.0f);
+		DrawTime);
 
 	const float FloorZ = CharacterMovementComponent->GetWalkableFloorZ();
-	if (HitData.bBlockingHit && (HitData.ImpactNormal.Z >= FloorZ))
+	const bool bWasHitNormalGreater = (HitData.ImpactNormal.Z >= FloorZ);
+	if (HitData.bBlockingHit && bWasHitNormalGreater)
 	{
 		InterpSpeed = 20.f;
 		const float Value = UKismetMathLibrary::MapRangeClamped(HitData.Time, 0.0f, 1.0f, 1.0f, 0.0f);
@@ -1118,16 +1111,18 @@ void UCharacterAnimInstanceBase::OnTurnInPlaceRespons(const float AimYawLimit, c
 	bool bSuccess = false;
 	if (bTurningInPlace)
 	{
+		const bool bAimYawGreater = (AimYawDelta > 0.0f);
+
 		if (bTurningRight)
 		{
-			if (!(AimYawDelta > 0.0f))
+			if (!bAimYawGreater)
 			{
 				bSuccess = true;
 			}
 		}
 		else
 		{
-			if (AimYawDelta > 0.0f)
+			if (bAimYawGreater)
 			{
 				bSuccess = true;
 			}
@@ -1143,7 +1138,6 @@ void UCharacterAnimInstanceBase::OnTurnInPlaceRespons(const float AimYawLimit, c
 		UE_LOG(LogWevetClient, Error, TEXT("fail Success or Playing Montage => %s"), *SelectMontage->GetName());
 		return;
 	}
-
 	const float Value = PlayRate * UKismetMathLibrary::MapRangeClamped(FMath::Abs(AimYawRate), 120.f, 400.f, 1.0f, 2.0f);
 	Montage_Play(SelectMontage, Value, EMontagePlayReturnType::MontageLength, 0.0f, true);
 	BP_ReplicatePlayMontage(SelectMontage, Value, 0.0f, true);
@@ -1161,18 +1155,21 @@ void UCharacterAnimInstanceBase::OnTurnInPlaceDelay(
 	const float RateSecond, 
 	const FTurnMontages TurnAnimsSecond)
 {
+
+	check(GetWorld());
+
 	UAnimMontage* FirstMontage = (AimYawDelta > 0.0f) ? TurnAnimsFirst.TurnRAnim : TurnAnimsFirst.TurnLAnim;
 	UAnimMontage* SecondMontage = (AimYawDelta > 0.0f) ? TurnAnimsSecond.TurnRAnim : TurnAnimsSecond.TurnLAnim;
 	UAnimMontage* SelectMontage = (FMath::Abs(AimYawDelta) >= AimLimitSecond) ? SecondMontage : FirstMontage;
 
 	const float PlayRate = (FMath::Abs(AimYawDelta) >= AimLimitSecond) ? RateSecond : RateFirst;
 	const float AimClamp = UKismetMathLibrary::MapRangeClamped(FMath::Abs(AimYawDelta), AimLimitFirst, AimLimitSecond, TimeFirst, TimeSecond);
-	const bool bGreaterAimYawDelta = (FMath::Abs(AimYawDelta) > AimLimitFirst);
-	const bool bGreaterCameraSpeed = (FMath::Abs(AimYawRate) < CameraSpeed);
+	const bool bWasAimYawDeltaGreater = (FMath::Abs(AimYawDelta) > AimLimitFirst);
+	const bool bWasCameraSpeedGreater = (FMath::Abs(AimYawRate) < CameraSpeed);
+	const float DeltaSeconds = GetWorld()->GetDeltaSeconds();
 
-	if (bGreaterCameraSpeed && bGreaterAimYawDelta)
+	if (bWasCameraSpeedGreater && bWasAimYawDeltaGreater)
 	{
-		const float DeltaSeconds = GetWorld()->GetDeltaSeconds();
 		TurnInPlaceDelayCount += DeltaSeconds;
 		bShouldTurnInPlace = (TurnInPlaceDelayCount > AimClamp);
 

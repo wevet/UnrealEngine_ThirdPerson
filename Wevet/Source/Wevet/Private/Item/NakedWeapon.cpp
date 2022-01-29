@@ -12,7 +12,8 @@
 #include "Perception/AISense_Hearing.h"
 
 
-#define IMPACT_RANGE 400.f
+#define NAKED_IMPACT_RANGE 400.f
+using namespace Wevet;
 
 
 ANakedWeapon::ANakedWeapon(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
@@ -190,7 +191,7 @@ void ANakedWeapon::OnFirePressInternal()
 
 void ANakedWeapon::DoDeployTemplate()
 {
-	if (Wevet::ArrayExtension::NullOrEmpty(TriggerTemplates))
+	if (ArrayExtension::NullOrEmpty(TriggerTemplates))
 	{
 		UE_LOG(LogWevetClient, Error, TEXT("Empty Template => %s"), *FString(__FUNCTION__));
 		return;
@@ -264,13 +265,13 @@ void ANakedWeapon::DoDeployTemplate()
 /// <param name="FoundResult"></param>
 void ANakedWeapon::NakedActionApply(const ENakedWeaponTriggerType NakedWeaponTriggerType, const bool Enable, bool& FoundResult)
 {
-	if (!Wevet::ArrayExtension::NullOrEmpty(NakedTriggerArray))
+	if (!ArrayExtension::NullOrEmpty(NakedTriggerArray))
 	{
 		NakedTriggerArray.Reset(0);
 	}
 
 	NakedTriggerArray = *NakedWeaponTriggerMap.Find(NakedWeaponTriggerType);
-	if (Wevet::ArrayExtension::NullOrEmpty(NakedTriggerArray))
+	if (ArrayExtension::NullOrEmpty(NakedTriggerArray))
 	{
 		return;
 	}
@@ -338,7 +339,7 @@ void ANakedWeapon::OnNakedTriggerHitDelegate(AActor* OtherActor, const FHitResul
 	TakeDamageOuter(SweepResult);
 	const FVector ImpactLocation = SweepResult.ImpactNormal;
 	//ISoundInstigator::Execute_ReportNoiseOther(GetPawnOwner(), this, ImpactSound, DEFAULT_VOLUME, ImpactLocation);
-	UAISense_Hearing::ReportNoiseEvent(GetWorld(), ImpactLocation, DEFAULT_VOLUME, this, IMPACT_RANGE);
+	UAISense_Hearing::ReportNoiseEvent(GetWorld(), ImpactLocation, DEFAULT_VOLUME, this, NAKED_IMPACT_RANGE);
 }
 
 
